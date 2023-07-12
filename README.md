@@ -10,4 +10,8 @@
     </dependency>
 ```
 
-2. 实现 MonitorLogPrinter 接口，并为实现类打上 @Component 注解交由Spring容器即可
+2. 在应用中流量出入口的类上打上@MonitorLog注解， 则该类的方法在执行时就会自动聚合日志所需的字段信息
+
+3. 通常情况下，解析器会自动按常规方式解析方法的响应结果，也可以在目标方法上打上@LogParser注解来提供自定义响应结果解析器
+
+4. 实现 MonitorLogPrinter 接口，并为实现类打上 @Component 注解交由Spring容器即可
