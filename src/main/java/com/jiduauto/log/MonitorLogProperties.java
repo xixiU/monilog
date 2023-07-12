@@ -34,7 +34,7 @@ public class MonitorLogProperties {
         if (StringUtils.isNotBlank(logDir)) {
             return logDir;
         }
-        String serviceName = null;
+        String serviceName;
         if (StringUtils.isNotBlank(appName)) {
             serviceName = appName;
         } else {
