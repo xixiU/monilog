@@ -82,7 +82,7 @@ class MonitorLogAop {
         params.setMsgCode(parsedResult.getMsgCode());
         params.setMsgInfo(parsedResult.getMsgInfo());
         params.setCost(ctx.getCost());
-        params.setEx(ctx.getException());
+        params.setException(ctx.getException());
         params.setInput(ctx.getArgs());
         params.setOutput(ctx.getResult());
         logPrinter.log(params);
