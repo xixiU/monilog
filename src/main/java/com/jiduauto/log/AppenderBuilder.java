@@ -55,7 +55,7 @@ public class AppenderBuilder {
         appender.setFile(fileName);
         appender.setContext(ctx);
         PatternLayoutEncoder encoder = getEncoder(ctx, pattern);
-        SizeAndTimeBasedRollingPolicy<ILoggingEvent> rollingPolicy = getRollingPolicy(ctx, appender, maxLogHistory, maxLogSize);
+        SizeAndTimeBasedRollingPolicy<ILoggingEvent> rollingPolicy = getRollingPolicy(ctx, fileName, appender, maxLogHistory, maxLogSize);
         appender.setEncoder(encoder);
         if (filter != null) {
             appender.addFilter(filter);
@@ -118,9 +118,9 @@ public class AppenderBuilder {
         return encoder;
     }
 
-    public static SizeAndTimeBasedRollingPolicy<ILoggingEvent> getRollingPolicy(LoggerContext ctx, FileAppender<?> appender, int maxLogHistory, String maxLogSize) {
+    public static SizeAndTimeBasedRollingPolicy<ILoggingEvent> getRollingPolicy(LoggerContext ctx, String fileName, FileAppender<?> appender, int maxLogHistory, String maxLogSize) {
         SizeAndTimeBasedRollingPolicy<ILoggingEvent> rollingPolicy = new SizeAndTimeBasedRollingPolicy<>();
-        String file = StringUtils.removeEnd(appender.getFile(), ".log");
+        String file = StringUtils.removeEnd(fileName, ".log");
         rollingPolicy.setFileNamePattern(file + ".%d{yyyy-MM-dd}.%i.log.gz"); // 设置日志文件滚动策略
         rollingPolicy.setMaxHistory(maxLogHistory);
         rollingPolicy.setMaxFileSize(FileSize.valueOf(maxLogSize));
