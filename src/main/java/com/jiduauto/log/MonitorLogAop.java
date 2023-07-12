@@ -75,6 +75,7 @@ class MonitorLogAop {
     private void afterProcess(MonitorLogAspectCtx ctx) {
         MonitorLogParams params = new MonitorLogParams();
         ParsedResult parsedResult = ctx.getParsedResult();
+        params.setServiceCls(ctx.getMethodOwnedClass());
         params.setLogPoint(ctx.getLogPoint());
         params.setService(ctx.parseServiceName());
         params.setAction(ctx.getMethodName());

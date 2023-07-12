@@ -9,6 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class MonitorLogParams {
+    private Class<?> serviceCls;
     private LogPoint logPoint;
     private String service;
     private String action;
