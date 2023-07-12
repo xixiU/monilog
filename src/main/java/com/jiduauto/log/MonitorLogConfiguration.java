@@ -19,10 +19,4 @@ public class MonitorLogConfiguration {
     public MonitorLogAop aspectProcessor(MonitorLogPrinter processor) {
         return new MonitorLogAop(processor);
     }
-
-    @Bean(initMethod = "init")
-    @ConditionalOnProperty(prefix = "monitor.log", name = "resetLogAppenders", matchIfMissing = true)
-    public LogbackInitializer logbackConfiguration() {
-        return new LogbackInitializer();
-    }
 }

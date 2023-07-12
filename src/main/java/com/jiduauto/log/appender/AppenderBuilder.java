@@ -1,4 +1,4 @@
-package com.jiduauto.log;
+package com.jiduauto.log.appender;
 
 import ch.qos.logback.classic.AsyncAppender;
 import ch.qos.logback.classic.Level;
