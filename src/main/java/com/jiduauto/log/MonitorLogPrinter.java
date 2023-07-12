@@ -5,5 +5,5 @@ package com.jiduauto.log;
  * @date 2023/07/12
  */
 public interface MonitorLogPrinter {
-    void log(MonitorLogParams params);
+    void log(MonitorLogParams p);
 }
