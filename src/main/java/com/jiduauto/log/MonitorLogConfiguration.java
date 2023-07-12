@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Configuration;
 public class MonitorLogConfiguration {
     @Bean
     @ConditionalOnBean(MonitorLogPrinter.class)
-    public AspectProcessor aspectProcessor(MonitorLogPrinter processor) {
-        return new AspectProcessor(processor);
+    public MonitorLogAop aspectProcessor(MonitorLogPrinter processor) {
+        return new MonitorLogAop(processor);
     }
 }

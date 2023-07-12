@@ -12,10 +12,10 @@ import org.aspectj.lang.annotation.Pointcut;
  */
 @Slf4j
 @Aspect
-class AspectProcessor {
+class MonitorLogAop {
     private final MonitorLogPrinter logPrinter;
 
-    public AspectProcessor(MonitorLogPrinter logPrinter) {
+    public MonitorLogAop(MonitorLogPrinter logPrinter) {
         this.logPrinter = logPrinter;
     }
 
