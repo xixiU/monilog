@@ -32,7 +32,7 @@ class AspectProcessor {
     }
 
     private Object processAround(ProceedingJoinPoint pjp) throws Throwable {
-        AspectCtx ctx = null;
+        MonitorLogAspectCtx ctx = null;
         Throwable tx = null;
         try {
             try {
@@ -56,11 +56,11 @@ class AspectProcessor {
         }
     }
 
-    private AspectCtx beforeProcess(ProceedingJoinPoint pjp) {
-        return new AspectCtx(pjp, pjp.getArgs());
+    private MonitorLogAspectCtx beforeProcess(ProceedingJoinPoint pjp) {
+        return new MonitorLogAspectCtx(pjp, pjp.getArgs());
     }
 
-    private void doProcess(ProceedingJoinPoint pjp, AspectCtx ctx) {
+    private void doProcess(ProceedingJoinPoint pjp, MonitorLogAspectCtx ctx) {
         Object result = null;
         Throwable ex = null;
         long start = System.currentTimeMillis();
@@ -72,7 +72,7 @@ class AspectProcessor {
         ctx.buildResult(System.currentTimeMillis() - start, result, ex);
     }
 
-    private void afterProcess(AspectCtx ctx) {
+    private void afterProcess(MonitorLogAspectCtx ctx) {
         MonitorLogParams params = new MonitorLogParams();
         ParsedResult parsedResult = ctx.getParsedResult();
         params.setLogPoint(ctx.getLogPoint());
@@ -88,7 +88,7 @@ class AspectProcessor {
         logPrinter.log(params);
     }
 
-    private void beforeReturn(AspectCtx ctx) {
+    private void beforeReturn(MonitorLogAspectCtx ctx) {
         //...
     }
 }

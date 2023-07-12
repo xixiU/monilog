@@ -18,7 +18,7 @@ import java.util.Map;
  * @author yp
  */
 @Getter
-class AspectCtx {
+class MonitorLogAspectCtx {
     private static final Map<Class<?>, Logger> LOGGERS = new HashMap<>();
     private static final Map<Method, Class<?>> METHOD_CLS_CACHE = new HashMap<>();
     private final Method method;
@@ -34,7 +34,7 @@ class AspectCtx {
      */
     private ParsedResult parsedResult;
 
-    public AspectCtx(ProceedingJoinPoint pjp, Object[] args) {
+    public MonitorLogAspectCtx(ProceedingJoinPoint pjp, Object[] args) {
         Method method = ((MethodSignature) pjp.getSignature()).getMethod();
         Preconditions.checkNotNull(method, "aspect方法为空");
         this.method = method;
@@ -88,7 +88,7 @@ class AspectCtx {
         return annotation;
     }
 
-    public AspectCtx buildResult(long cost, Object result, Throwable exception) {
+    public MonitorLogAspectCtx buildResult(long cost, Object result, Throwable exception) {
         this.cost = cost;
         this.result = result;
         this.exception = exception;
