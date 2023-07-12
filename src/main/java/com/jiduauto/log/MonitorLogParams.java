@@ -2,9 +2,6 @@ package com.jiduauto.log;
 
 import lombok.Getter;
 import lombok.Setter;
-
-import java.text.MessageFormat;
-
 /**
  * @author yp
  * @date 2023/07/12
@@ -22,8 +19,4 @@ public class MonitorLogParams {
     private Throwable exception;
     private Object[] input;
     private Object output;
-
-    public String format(LogPattern pattern) {
-        return null;
-    }
 }
