@@ -43,7 +43,7 @@ public class AppenderBuilder {
             int maxLogHistory,
             String maxLogSize
     ) {
-        if (StringUtils.endsWith(logFileName, ".log")) {
+        if (!StringUtils.endsWith(logFileName, ".log")) {
             throw new IllegalArgumentException("日志文件名应当以.log结尾");
         }
         String fileName = Paths.get(logDir, logFileName).toString();
