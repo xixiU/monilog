@@ -1,0 +1,21 @@
+package com.jiduauto.log;
+
+import lombok.Getter;
+
+/**
+ * @author yp
+ * @date 2023/07/12
+ */
+@Getter
+enum ErrorEnum {
+    PARAM_ERROR("参数错误"),
+    SERVICE_TIMEOUT("服务超时"),
+    SYSTEM_ERROR("系统异常"),
+    SUCCESS("成功");
+
+    private final String msg;
+
+    ErrorEnum(String msg) {
+        this.msg = msg;
+    }
+}
