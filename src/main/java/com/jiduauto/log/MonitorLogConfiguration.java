@@ -13,9 +13,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @EnableConfigurationProperties(MonitorLogProperties.class)
 @ConditionalOnProperty(prefix = "monitor.log", name = "enable", matchIfMissing = true)
+@ConditionalOnBean(MonitorLogPrinter.class)
 public class MonitorLogConfiguration {
     @Bean
-    @ConditionalOnBean(MonitorLogPrinter.class)
     public AspectProcessor aspectProcessor(MonitorLogPrinter processor) {
         return new AspectProcessor(processor);
     }
