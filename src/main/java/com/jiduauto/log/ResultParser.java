@@ -19,7 +19,7 @@ public final class ResultParser {
     /**
      * 默认的结果解析路径，注意对于基于方法的解析方式，仅支持无参方法
      */
-    public static final String Default_Bool_Expr = "$.success,$.succeeded,$.succeed,$.succ,$.code=SUCCESS,$.isSuccess(),$.getSuccess(),$.isSucceed(),$.getSucceed(),$.isSucceeded(),$.getSucceeded(),$.isSucc(),$.getResult()";
+    public static final String Default_Bool_Expr = "$.success,$.succeeded,$.succeed,$.succ,$.code=SUCCESS,$.isOk(),$.isSuccess(),$.getSuccess(),$.isSucceed(),$.getSucceed(),$.isSucceeded(),$.getSucceeded(),$.isSucc(),$.getResult()";
     /**
      * 默认的错误码解析路径，注意对于基于方法的解析方式，仅支持无参方法
      */
