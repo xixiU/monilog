@@ -52,6 +52,9 @@ class MonitorLogAop {
                 throw e;
             }
             log.error("AspectProcessor processAround error", e);
+            if (ctx != null && ctx.isHasExecuted()) {
+                return ctx.getResult();
+            }
             return pjp.proceed();
         }
     }

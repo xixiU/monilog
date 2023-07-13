@@ -26,6 +26,7 @@ class MonitorLogAspectCtx {
     private final LogPoint logPoint;
     private final LogParser logParserAnnotation;
     private final Class<?> methodOwnedClass;
+    private boolean hasExecuted;
     private long cost;
     private Object result;
     private Throwable exception;
@@ -89,6 +90,7 @@ class MonitorLogAspectCtx {
     }
 
     public MonitorLogAspectCtx buildResult(long cost, Object result, Throwable exception) {
+        this.hasExecuted = true;
         this.cost = cost;
         this.result = result;
         this.exception = exception;
