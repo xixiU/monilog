@@ -6,7 +6,7 @@
     <dependency>
         <groupId>com.jiduauto.log</groupId>
         <artifactId>monitor-log-spring-boot-starter</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>1.0.0</version>
     </dependency>
 ```
 
