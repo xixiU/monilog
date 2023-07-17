@@ -108,7 +108,7 @@ class MonitorLogAop {
             if (tx != null && e == tx) {
                 throw e;
             }
-            log.error("AspectProcessor processAround error", e);
+            log.error("MonitorLogAop processAround error", e);
             if (ctx != null && ctx.isHasExecuted()) {
                 return ctx.getResult();
             }
