@@ -1,10 +1,12 @@
 package com.jiduauto.log;
 
+import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
+import org.checkerframework.checker.units.qual.A;
 
 /**
  * @author yp
@@ -18,31 +20,37 @@ class MonitorLogAop {
         this.logPrinter = logPrinter;
     }
 
-    /**
-     * 声明指定注解标的服务接口的实现类的公共方法为切点
-     */
-    @Pointcut("(@target(com.jiduauto.log.MonitorLog) || @within(com.jiduauto.log.MonitorLog) || @annotation(com.jiduauto.log.MonitorLog)) && execution(public * *(..))")
-    private void custom() {
+    @Pointcut("(@target(org.springframework.cloud.openfeign.FeignClient) || @within(org.springframework.cloud.openfeign.FeignClient)) && execution(public * *(..))")
+    private void feign() {
     }
 
     @Pointcut("execution(public * (@org.springframework.web.bind.annotation.RestController *+).*(..)) || execution(public * (@org.springframework.stereotype.Controller *+).*(..)) || execution(public * (@org.springframework.web.servlet.mvc.Controller *+).*(..))")
     private void httpController() {
     }
 
-    @Pointcut("(@target(org.springframework.cloud.openfeign.FeignClient) || @within(org.springframework.cloud.openfeign.FeignClient)) && execution(public * *(..))")
-    private void feign() {
-    }
+    @Pointcut("@annotation(io.grpc.stub.annotations.RpcMethod)")
+    private void grpc() {}
 
-    @Pointcut("execution(public * (com.baomidou.mybatisplus.core.mapper.Mapper+).*(..)) || execution(public * (com.baomidou.mybatisplus.extension.service.IService+).*(..))")
+    @Pointcut("execution(public * com.baomidou.mybatisplus.core.mapper.Mapper+.*(..)) || execution(public * com.baomidou.mybatisplus.extension.service.IService+.*(..))")
     private void mapper() {
     }
 
-    @Pointcut("execution(public * org.apache.rocketmq.client.consumer.listener.MessageListener.*(..))")
+    @Pointcut("execution(public * org.apache.rocketmq.client.consumer.listener.MessageListener+.*(..))")
     private void rocketMq() {
     }
 
-    @Pointcut("execution(public * com.xxl.job.core.handler.IJobHandler.execute(..))")
+    @Pointcut("execution(public * org.apache.rocketmq.client.producer.DefaultMQProducer.send(..))")
+    private void rocketMqSend(){}
+
+    @Pointcut("execution(public * com.xxl.job.core.handler.IJobHandler+.execute(..))")
     private void xxljob() {
+    }
+
+    /**
+     * 声明指定注解标的服务接口的实现类的公共方法为切点, 优先级最高
+     */
+    @Pointcut("(@target(com.jiduauto.log.MonitorLog) || @within(com.jiduauto.log.MonitorLog) || @annotation(com.jiduauto.log.MonitorLog)) && execution(public * *(..))")
+    private void custom() {
     }
 
     @Around("httpController()")
@@ -50,9 +58,19 @@ class MonitorLogAop {
         return processAround(pjp, LogPoint.WEB_ENTRY);
     }
 
+    @Around("feign() || grpc()")
+    public Object doRpcAround(ProceedingJoinPoint pjp) throws Throwable {
+        return processAround(pjp, LogPoint.REMOTE_CLIENT);
+    }
+
     @Around("rocketMq()")
     public Object doMsgAround(ProceedingJoinPoint pjp) throws Throwable {
         return processAround(pjp, LogPoint.MSG_ENTRY);
+    }
+
+    @Around("rocketMqSend()")
+    public Object doMsgSendAround(ProceedingJoinPoint pjp)throws Throwable{
+        return processAround(pjp, LogPoint.MSG_PRODUCER);
     }
 
     @Around("mapper()")
@@ -63,11 +81,6 @@ class MonitorLogAop {
     @Around("xxljob()")
     public Object doJobAroud(ProceedingJoinPoint pjp) throws Throwable {
         return processAround(pjp, LogPoint.TASK_ENTRY);
-    }
-
-    @Around("feign()")
-    public Object doRpcAroud(ProceedingJoinPoint pjp) throws Throwable {
-        return processAround(pjp, LogPoint.REMOTE_CLIENT);
     }
 
     @Around("custom()")

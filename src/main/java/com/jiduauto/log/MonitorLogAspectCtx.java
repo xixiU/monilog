@@ -52,12 +52,12 @@ class MonitorLogAspectCtx {
         }
         //找到方法上的ClientLog注解，如果找不到则向上找类上的，如果还找不到，则再向上找接口上的
         this.logParserAnnotation = getAnnotation(LogParser.class, targetMethod, method);
-        if (point != null) {
-            this.logPoint = point;
+        MonitorLog anno = getAnnotation(MonitorLog.class, targetMethod, method);
+        if (anno != null) {
+            this.logPoint = anno.value();
             return;
         }
-        MonitorLog anno = getAnnotation(MonitorLog.class, targetMethod, method);
-        this.logPoint = anno == null ? LogPoint.UNKNOWN_ENTRY : anno.value();
+        this.logPoint = point == null ? LogPoint.UNKNOWN_ENTRY : point;
     }
 
     private <T extends Annotation> T getAnnotation(Class<T> annotationClass, Method... methods) {
