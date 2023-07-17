@@ -11,7 +11,6 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * @author yepei
- * @date 2021/08/03
  */
 class ExceptionUtil {
     public static ErrorInfo parseException(Throwable ex) {

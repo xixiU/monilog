@@ -31,32 +31,26 @@ public final class ResultParseUtil {
             return new ParsedResult(false, errorInfo.getErrorCode(), errorInfo.getErrorMsg());
         }
 
-        boolean succ;
-        String successCode = "SUCCESS";
-        String successMsg = "成功";
-        String msgCode;
-        String msgInfo;
+        boolean succ = true;
+        ErrorEnum errorEnum = ErrorEnum.SUCCESS;
         switch (strategy) {
-            case IfNotNull:
-                succ = returnObj != null;
-                msgCode = succ ? successCode : "NULL_RESULT";
-                msgInfo = succ ? successMsg : "结果为null";
-                return new ParsedResult(succ, msgCode, msgInfo);
-            case IfNotEmpty:
-                succ = isNotEmpty(returnObj);
-                msgCode = succ ? successCode : "EMPTY_RESULT";
-                msgInfo = succ ? successMsg : "结果为null";
-                return new ParsedResult(succ, msgCode, msgInfo);
             case IfSuccess:
-                msgCode = ResultParser.parseErrCode(returnObj, codeExpr);
-                msgInfo = ResultParser.parseErrMsg(returnObj, msgExpr);
+                String msgCode = ResultParser.parseErrCode(returnObj, codeExpr);
+                String msgInfo = ResultParser.parseErrMsg(returnObj, msgExpr);
                 return new ParsedResult(parsedSucc != null && parsedSucc, msgCode, msgInfo);
             case IfNotException:
+                return new ParsedResult(succ, errorEnum.name(), errorEnum.getMsg());
+            case IfNotNull:
+                if (!(succ = returnObj != null)) {
+                    errorEnum = ErrorEnum.NULL_RESULT;
+                }
+                return new ParsedResult(succ, errorEnum.name(), errorEnum.getMsg());
+            case IfNotEmpty:
             default:
-                succ = isNotEmpty(returnObj);
-                msgCode = succ ? successCode : "EMPTY_RESULT";
-                msgInfo = succ ? successMsg : "结果为空";
-                return new ParsedResult(succ, msgCode, msgInfo);
+                if (!(succ = isNotEmpty(returnObj))) {
+                    errorEnum = ErrorEnum.EMPTY_RESULT;
+                }
+                return new ParsedResult(succ, errorEnum.name(), errorEnum.getMsg());
         }
     }
 

@@ -8,7 +8,6 @@ import org.aspectj.lang.annotation.Pointcut;
 
 /**
  * @author yp
- * @date 2022/01/03
  */
 @Slf4j
 @Aspect

@@ -11,6 +11,8 @@ enum ErrorEnum {
     PARAM_ERROR("参数错误"),
     SERVICE_TIMEOUT("服务超时"),
     SYSTEM_ERROR("系统异常"),
+    NULL_RESULT("结果为null"),
+    EMPTY_RESULT("结果为空"),
     SUCCESS("成功");
 
     private final String msg;
