@@ -23,9 +23,10 @@ class MonitorLogAspectCtx {
     private static final Map<Method, Class<?>> METHOD_CLS_CACHE = new HashMap<>();
     private final Method method;
     private final Object[] args;
-    private final LogPoint logPoint;
-    private final LogParser logParserAnnotation;
-    private final Class<?> methodOwnedClass;
+    private LogPoint logPoint;
+    private LogParser logParserAnnotation;
+    private Class<?> methodOwnedClass;
+    private boolean ignore;
     private boolean hasExecuted;
     private long cost;
     private Object result;
@@ -40,6 +41,10 @@ class MonitorLogAspectCtx {
         Preconditions.checkNotNull(method, "aspect方法为空");
         this.method = method;
         this.args = args;
+        if (!Modifier.isPublic(method.getModifiers())) {
+            this.ignore = true;
+            return;
+        }
         //找到指定方法的所属的接口，如果找不到接口，则返回方法的所属类
         this.methodOwnedClass = getMethodCls(method);
         Method targetMethod = null;
