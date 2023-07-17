@@ -19,13 +19,22 @@ class MonitorLogAop {
     }
 
     /**
-     * 声明HSF服务接口的实现类的公共方法为切点
+     * 声明指定注解标的服务接口的实现类的公共方法为切点
      */
-    @Pointcut("@within(com.jiduauto.log.MonitorLog)")
-    private void monitorLogPointCut() {
+    @Pointcut("(@target(com.jiduauto.log.MonitorLog) || @within(com.jiduauto.log.MonitorLog) || @annotation(com.jiduauto.log.MonitorLog)) && execution(public * *(..))")
+    private void annotationPointCut() {
     }
 
-    @Around("monitorLogPointCut()")
+    @Pointcut("execution(public * *(..)) && (target(com.baomidou.mybatisplus.core.mapper.Mapper) || target(com.baomidou.mybatisplus.core.mapper.Mapper))")
+    private void mapperPointCut() {
+    }
+
+    @Pointcut("execution(public * org.apache.rocketmq.client.consumer.listener.MessageListener.*(..))")
+    private void rocketMqPointCut() {
+
+    }
+
+    @Around("annotationPointCut() || mapperPointCut() || rocketMqPointCut()")
     public Object doAround(ProceedingJoinPoint pjp) throws Throwable {
         return processAround(pjp);
     }
