@@ -24,7 +24,7 @@ class MonitorLogAop {
     private void feign() {
     }
 
-    @Pointcut("execution(public * (@org.springframework.web.bind.annotation.RestController *+).*(..)) || execution(public * (@org.springframework.stereotype.Controller *+).*(..)) || execution(public * (@org.springframework.web.servlet.mvc.Controller *+).*(..))")
+    @Pointcut("execution(public * (@org.springframework.web.bind.annotation.RestController *+).*(..)) || execution(public * (@org.springframework.stereotype.Controller *+).*(..))")
     private void httpController() {
     }
 
