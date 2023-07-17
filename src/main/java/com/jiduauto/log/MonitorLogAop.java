@@ -22,34 +22,56 @@ class MonitorLogAop {
      * 声明指定注解标的服务接口的实现类的公共方法为切点
      */
     @Pointcut("(@target(com.jiduauto.log.MonitorLog) || @within(com.jiduauto.log.MonitorLog) || @annotation(com.jiduauto.log.MonitorLog)) && execution(public * *(..))")
-    private void annotationPointCut() {
+    private void custom() {
     }
 
-    @Pointcut("execution(public * *(..)) && (target(com.baomidou.mybatisplus.core.mapper.Mapper) || target(com.baomidou.mybatisplus.core.mapper.Mapper))")
-    private void mapperPointCut() {
+    @Pointcut("execution(public * (@org.springframework.web.bind.annotation.RestController *+).*(..)) || execution(public * (@org.springframework.stereotype.Controller *+).*(..)) || execution(public * (@org.springframework.web.servlet.mvc.Controller *+).*(..))")
+    private void httpController() {
+    }
+
+    @Pointcut("(@target(org.springframework.cloud.openfeign.FeignClient) || @within(org.springframework.cloud.openfeign.FeignClient)) && execution(public * *(..))")
+    private void feign() {
+    }
+
+    @Pointcut("execution(public * (com.baomidou.mybatisplus.core.mapper.Mapper+).*(..)) || execution(public * (com.baomidou.mybatisplus.extension.service.IService+).*(..))")
+    private void mapper() {
     }
 
     @Pointcut("execution(public * org.apache.rocketmq.client.consumer.listener.MessageListener.*(..))")
-    private void rocketMqPointCut() {
-
+    private void rocketMq() {
     }
 
-    @Around("annotationPointCut()")
-    public Object doAround(ProceedingJoinPoint pjp) throws Throwable {
-        return processAround(pjp);
+    @Pointcut("execution(public * com.xxl.job.core.handler.IJobHandler.execute(..))")
+    private void xxljob() {
     }
 
-    @Around("mapperPointCut()")
-    public Object doDaoAround(ProceedingJoinPoint pjp) throws Throwable {
-        return processAround(pjp, LogPoint.DAL_CLIENT);
+    @Around("httpController()")
+    public Object doHttpAround(ProceedingJoinPoint pjp) throws Throwable {
+        return processAround(pjp, LogPoint.WEB_ENTRY);
     }
 
-    @Around("rocketMqPointCut()")
+    @Around("rocketMq()")
     public Object doMsgAround(ProceedingJoinPoint pjp) throws Throwable {
         return processAround(pjp, LogPoint.MSG_ENTRY);
     }
 
-    private Object processAround(ProceedingJoinPoint pjp) throws Throwable {
+    @Around("mapper()")
+    public Object doDaoAround(ProceedingJoinPoint pjp) throws Throwable {
+        return processAround(pjp, LogPoint.DAL_CLIENT);
+    }
+
+    @Around("xxljob()")
+    public Object doJobAroud(ProceedingJoinPoint pjp) throws Throwable {
+        return processAround(pjp, LogPoint.TASK_ENTRY);
+    }
+
+    @Around("feign()")
+    public Object doRpcAroud(ProceedingJoinPoint pjp) throws Throwable {
+        return processAround(pjp, LogPoint.REMOTE_CLIENT);
+    }
+
+    @Around("custom()")
+    public Object doAround(ProceedingJoinPoint pjp) throws Throwable {
         return processAround(pjp, null);
     }
 
