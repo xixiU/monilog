@@ -20,31 +20,31 @@ class MonitorLogAop {
         this.logPrinter = logPrinter;
     }
 
-    //    @Pointcut("execution(public * (@org.springframework.cloud.openfeign.FeignClient *+).*(..))")
+    @Pointcut("execution(public * (@org.springframework.cloud.openfeign.FeignClient *+).*(..))")
     private void feign() {
     }
 
-    @Pointcut("execution(public * *(..)) && (@annotation(org.springframework.web.bind.annotation.RestController) || @annotation(org.springframework.stereotype.Controller))")
+    @Pointcut("execution(public * (@org.springframework.web.bind.annotation.RestController *+).*(..)) || execution(public * (@org.springframework.stereotype.Controller *+).*(..))")
     private void httpController() {
     }
 
-    //    @Pointcut("@annotation(io.grpc.stub.annotations.RpcMethod)")
+    @Pointcut("@annotation(io.grpc.stub.annotations.RpcMethod)")
     private void grpc() {
     }
 
-    //@Pointcut("execution(public * com.baomidou.mybatisplus.core.mapper.Mapper+.*(..)) || execution(public * com.baomidou.mybatisplus.extension.service.IService+.*(..))")
+    @Pointcut("execution(public * com.baomidou.mybatisplus.core.mapper.Mapper+.*(..)) || execution(public * com.baomidou.mybatisplus.extension.service.IService+.*(..))")
     private void mapper() {
     }
 
-    //    @Pointcut("execution(public * org.apache.rocketmq.client.consumer.listener.MessageListener+.*(..))")
+    @Pointcut("execution(public * org.apache.rocketmq.client.consumer.listener.MessageListener+.*(..))")
     private void rocketMq() {
     }
 
-    //    @Pointcut("execution(public * org.apache.rocketmq.client.producer.DefaultMQProducer.send(..))")
+    @Pointcut("execution(public * org.apache.rocketmq.client.producer.DefaultMQProducer.send(..))")
     private void rocketMqSend() {
     }
 
-    //    @Pointcut("execution(public * com.xxl.job.core.handler.IJobHandler+.execute(..))")
+    @Pointcut("execution(public * com.xxl.job.core.handler.IJobHandler+.execute(..))")
     private void xxljob() {
     }
 
@@ -60,27 +60,27 @@ class MonitorLogAop {
         return processAround(pjp, LogPoint.WEB_ENTRY);
     }
 
-    //    @Around("feign() || grpc()")
+    @Around("feign() || grpc()")
     public Object doRpcAround(ProceedingJoinPoint pjp) throws Throwable {
         return processAround(pjp, LogPoint.REMOTE_CLIENT);
     }
 
-    //    @Around("rocketMq()")
+    @Around("rocketMq()")
     public Object doMsgAround(ProceedingJoinPoint pjp) throws Throwable {
         return processAround(pjp, LogPoint.MSG_ENTRY);
     }
 
-    //    @Around("rocketMqSend()")
+    @Around("rocketMqSend()")
     public Object doMsgSendAround(ProceedingJoinPoint pjp) throws Throwable {
         return processAround(pjp, LogPoint.MSG_PRODUCER);
     }
 
-    //@Around("mapper()")
+    @Around("mapper()")
     public Object doDaoAround(ProceedingJoinPoint pjp) throws Throwable {
         return processAround(pjp, LogPoint.DAL_CLIENT);
     }
 
-    //    @Around("xxljob()")
+    @Around("xxljob()")
     public Object doJobAroud(ProceedingJoinPoint pjp) throws Throwable {
         return processAround(pjp, LogPoint.TASK_ENTRY);
     }
