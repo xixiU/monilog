@@ -34,17 +34,31 @@ class MonitorLogAop {
 
     }
 
-    @Around("annotationPointCut() || mapperPointCut() || rocketMqPointCut()")
+    @Around("annotationPointCut()")
     public Object doAround(ProceedingJoinPoint pjp) throws Throwable {
         return processAround(pjp);
     }
 
+    @Around("mapperPointCut()")
+    public Object doDaoAround(ProceedingJoinPoint pjp) throws Throwable {
+        return processAround(pjp, LogPoint.DAL_CLIENT);
+    }
+
+    @Around("rocketMqPointCut()")
+    public Object doMsgAround(ProceedingJoinPoint pjp) throws Throwable {
+        return processAround(pjp, LogPoint.MSG_ENTRY);
+    }
+
     private Object processAround(ProceedingJoinPoint pjp) throws Throwable {
+        return processAround(pjp, null);
+    }
+
+    private Object processAround(ProceedingJoinPoint pjp, LogPoint point) throws Throwable {
         MonitorLogAspectCtx ctx = null;
         Throwable tx = null;
         try {
             try {
-                ctx = beforeProcess(pjp);
+                ctx = beforeProcess(pjp, point);
                 doProcess(pjp, ctx);
                 afterProcess(ctx);
                 tx = ctx.getException();
@@ -67,8 +81,8 @@ class MonitorLogAop {
         }
     }
 
-    private MonitorLogAspectCtx beforeProcess(ProceedingJoinPoint pjp) {
-        return new MonitorLogAspectCtx(pjp, pjp.getArgs());
+    private MonitorLogAspectCtx beforeProcess(ProceedingJoinPoint pjp, LogPoint point) {
+        return new MonitorLogAspectCtx(pjp, pjp.getArgs(), point);
     }
 
     private void doProcess(ProceedingJoinPoint pjp, MonitorLogAspectCtx ctx) {

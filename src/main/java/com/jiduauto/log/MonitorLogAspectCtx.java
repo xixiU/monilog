@@ -35,7 +35,7 @@ class MonitorLogAspectCtx {
      */
     private ParsedResult parsedResult;
 
-    public MonitorLogAspectCtx(ProceedingJoinPoint pjp, Object[] args) {
+    public MonitorLogAspectCtx(ProceedingJoinPoint pjp, Object[] args, LogPoint point) {
         Method method = ((MethodSignature) pjp.getSignature()).getMethod();
         Preconditions.checkNotNull(method, "aspect方法为空");
         this.method = method;
@@ -52,6 +52,10 @@ class MonitorLogAspectCtx {
         }
         //找到方法上的ClientLog注解，如果找不到则向上找类上的，如果还找不到，则再向上找接口上的
         this.logParserAnnotation = getAnnotation(LogParser.class, targetMethod, method);
+        if (point != null) {
+            this.logPoint = point;
+            return;
+        }
         MonitorLog anno = getAnnotation(MonitorLog.class, targetMethod, method);
         this.logPoint = anno == null ? LogPoint.UNKNOWN_ENTRY : anno.value();
     }
