@@ -17,7 +17,7 @@ public class WebMonitorFilterConfig {
         filterRegBean.setFilter(new LogMonitorHandlerFilter());
         filterRegBean.setOrder(Integer.MAX_VALUE);
         filterRegBean.setEnabled(Boolean.TRUE);
-        filterRegBean.setName("log filter");
+        filterRegBean.setName("log monitor filter");
         filterRegBean.setAsyncSupported(Boolean.TRUE);
         return filterRegBean;
     }
