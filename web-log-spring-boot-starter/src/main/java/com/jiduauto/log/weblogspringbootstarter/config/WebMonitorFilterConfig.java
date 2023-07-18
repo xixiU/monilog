@@ -11,11 +11,11 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnProperty(prefix = "monitor.log.web", name = "enable", havingValue = "true", matchIfMissing = true)
 public class WebMonitorFilterConfig {
     @Bean
-    @ConditionalOnMissingBean(LogMonitorHandlerFilter.class)
-    public FilterRegistrationBean<LogMonitorHandlerFilter> logFilterBean() {
+    @ConditionalOnMissingBean(name = "logMonitorFilterBean")
+    public FilterRegistrationBean<LogMonitorHandlerFilter> logMonitorFilterBean() {
         FilterRegistrationBean<LogMonitorHandlerFilter> filterRegBean = new FilterRegistrationBean<>();
         filterRegBean.setFilter(new LogMonitorHandlerFilter());
-        filterRegBean.setOrder(-100);
+        filterRegBean.setOrder(Integer.MAX_VALUE);
         filterRegBean.setEnabled(Boolean.TRUE);
         filterRegBean.setName("log filter");
         filterRegBean.setAsyncSupported(Boolean.TRUE);
