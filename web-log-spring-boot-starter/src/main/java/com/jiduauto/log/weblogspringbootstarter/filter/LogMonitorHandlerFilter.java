@@ -16,6 +16,7 @@ import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerExecutionChain;
@@ -48,14 +49,6 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
     @Value("${monitor.web.blackList}")
     private List<String> BLACK_LIST;
 
-    private static List<HandlerMapping> handlerMappings;
-
-    static {
-        Map<String, HandlerMapping> matchingBeans =
-                BeanFactoryUtils.beansOfTypeIncludingAncestors(SpringUtils.getApplicationContext(),
-                        HandlerMapping.class, true, false);
-        handlerMappings = new ArrayList<>(matchingBeans.values());
-    }
 
 
     @Override
@@ -119,6 +112,10 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
     }
 
     private HandlerMethod getHandlerMethod(HttpServletRequest request) {
+        Map<String, HandlerMapping> matchingBeans =
+                BeanFactoryUtils.beansOfTypeIncludingAncestors(SpringUtils.getApplicationContext(),
+                        HandlerMapping.class, true, false);
+        List<HandlerMapping> handlerMappings = new ArrayList<>(matchingBeans.values());
         for (HandlerMapping mapping : handlerMappings) {
             HandlerExecutionChain handlerExecutionChain = null;
             try {
