@@ -50,7 +50,6 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
     private List<String> BLACK_LIST;
 
 
-
     @Override
     public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws IOException, ServletException {

@@ -1,5 +1,6 @@
 package com.jiduauto.log.weblogspringbootstarter.config;
 
+import com.jiduauto.log.util.SpringUtils;
 import com.jiduauto.log.weblogspringbootstarter.filter.LogMonitorHandlerFilter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -13,6 +14,11 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnWebApplication
 @ConditionalOnProperty(prefix = "monitor.log.web", name = "enable", havingValue = "true", matchIfMissing = true)
 public class WebMonitorFilterConfig {
+    @Bean
+    @ConditionalOnMissingBean(name ="springUtils")
+    public SpringUtils springUtils(){
+        return new SpringUtils();
+    }
     @Bean
     @ConditionalOnMissingBean(name = "logMonitorFilterBean")
     public FilterRegistrationBean<LogMonitorHandlerFilter> logMonitorFilterBean() {
