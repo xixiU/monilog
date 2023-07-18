@@ -6,7 +6,10 @@ import io.opentelemetry.api.trace.Span;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -28,17 +31,20 @@ import java.util.UUID;
 @Configuration
 @ConditionalOnProperty(prefix = "monitor.log.web", name = "enable", havingValue = "true", matchIfMissing = true)
 public class WebFilterConfig {
+    @Value("${spring.application.name}")
+    private String appName;
 
     /**** Filter配置 ****/
     @Bean
     @ConditionalOnMissingBean(InitTraceIdFilter.class)
+    @ConditionalOnMissingClass("initTraceIdFilter")
     public FilterRegistrationBean<InitTraceIdFilter> initTraceIdFilter() {
         FilterRegistrationBean<InitTraceIdFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(new InitTraceIdFilter());
         registration.setName("initTraceIdFilter");
         registration.setOrder(-101);
         registration.addUrlPatterns("*");
-        registration.addInitParameter("app", "crm-auth-service");
+        registration.addInitParameter("app", appName);
         return registration;
     }
 
