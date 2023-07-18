@@ -37,7 +37,7 @@ public class MonitorUtil {
         if (StringUtils.isBlank(applicationName)) {
             throw new Exception("spring.application.name must be specify");
         }
-        applicationName = applicationName;
+        MonitorUtil.applicationName = applicationName;
     }
 
     public static void log(MonitorLogParams logParams){
