@@ -28,19 +28,19 @@ class MonitorLogAop {
     private void httpController() {
     }
 
-    @Pointcut("@annotation(io.grpc.stub.annotations.RpcMethod)")
+    @Pointcut("execution(public * io.grpc.stub.Abstract*Stub+.*(..))")
     private void grpc() {
     }
 
-    @Pointcut("execution(public * com.baomidou.mybatisplus.core.mapper.Mapper+.*(..)) || execution(public * com.baomidou.mybatisplus.extension.service.IService+.*(..))")
+    @Pointcut("execution(public * com.baomidou.mybatisplus.core.mapper.BaseMapper+.*(..)) || execution(public * com.baomidou.mybatisplus.extension.service.IService+.*(..))")
     private void mapper() {
     }
 
-    @Pointcut("execution(public * org.apache.rocketmq.client.consumer.listener.MessageListener+.*(..))")
+    @Pointcut("execution(public * org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently+.*(..)) || execution(public * org.apache.rocketmq.client.consumer.listener.MessageListenerOrderly+.*(..))")
     private void rocketMq() {
     }
 
-    @Pointcut("execution(public * org.apache.rocketmq.client.producer.DefaultMQProducer.send(..))")
+    @Pointcut("execution(public * org.apache.rocketmq.client.producer.DefaultMQProducer+.send(..))")
     private void rocketMqSend() {
     }
 
@@ -48,10 +48,7 @@ class MonitorLogAop {
     private void xxljob() {
     }
 
-    /**
-     * 声明指定注解标的服务接口的实现类的公共方法为切点, 优先级最高
-     */
-    @Pointcut("@annotation(com.jiduauto.log.MonitorLog) && execution(public * *(..))")
+    @Pointcut("@within(com.jiduauto.log.MonitorLog) ||@annotation(com.jiduauto.log.MonitorLog) && execution(public * *(..))")
     private void custom() {
     }
 
