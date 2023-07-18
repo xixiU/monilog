@@ -1,20 +1,25 @@
 package com.jiduauto.log.weblogspringbootstarter.filter;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.jiduauto.log.constant.Constants;
 import com.jiduauto.log.enums.LogPoint;
 import com.jiduauto.log.model.MonitorLogParams;
 import com.jiduauto.log.util.MonitorUtil;
+import com.jiduauto.log.util.SpringUtils;
 import com.jiduauto.log.weblogspringbootstarter.model.DataResponse;
 import com.jiduauto.log.weblogspringbootstarter.util.UrlMatcherUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.HandlerExecutionChain;
+import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 import org.springframework.web.util.WebUtils;
@@ -43,6 +48,15 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
     @Value("${monitor.web.blackList}")
     private List<String> BLACK_LIST;
 
+    private static List<HandlerMapping> handlerMappings;
+
+    static {
+        Map<String, HandlerMapping> matchingBeans =
+                BeanFactoryUtils.beansOfTypeIncludingAncestors(SpringUtils.getApplicationContext(),
+                        HandlerMapping.class, true, false);
+        handlerMappings = new ArrayList<>(matchingBeans.values());
+    }
+
 
     @Override
     public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
@@ -55,8 +69,11 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        HandlerMethod method = (HandlerMethod) request.getAttribute("org.springframework.web.servlet.HandlerMapping.bestMatchingHandler");
-
+        HandlerMethod method = getHandlerMethod(request);
+        if (method == null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         long startTime = System.currentTimeMillis();
         String responseBodyStr = "";
         MonitorLogParams logParams = new MonitorLogParams();
@@ -64,7 +81,7 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
         logParams.setServiceCls(method.getMethod().getClass());
         logParams.setService(getClassName(request));
         logParams.setAction(getMethodName(request));
-
+        dealRequestTags(request, logParams);
         try {
             ContentCachingRequestWrapper wrapperRequest = new ContentCachingRequestWrapper(request);
             ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(response);
@@ -99,6 +116,54 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
                         cost, responseBodyStr);
             MonitorUtil.log(logParams);
         }
+    }
+
+    private HandlerMethod getHandlerMethod(HttpServletRequest request) {
+        for (HandlerMapping mapping : handlerMappings) {
+            HandlerExecutionChain handlerExecutionChain = null;
+            try {
+                handlerExecutionChain = mapping.getHandler(request);
+            } catch (Exception e) {
+                log.error("getHandler error" ,e);
+                continue;
+            }
+            if (handlerExecutionChain == null) {
+                continue;
+            }
+
+            if (!(handlerExecutionChain.getHandler() instanceof HandlerMethod)) {
+                continue;
+            }
+            // 返回第一个不为空的HandlerMethod
+            return (HandlerMethod) handlerExecutionChain.getHandler();
+        }
+        return null;
+    }
+
+    /**
+     * 处理请求tag
+     * @param request
+     * @param logParams
+     */
+    private void dealRequestTags(HttpServletRequest request, MonitorLogParams logParams) {
+        String[] oriTags = logParams.getTags();
+        for (int i = 0; oriTags!= null && i < oriTags.length; i++) {
+            if (!oriTags[i].startsWith("{") || !oriTags[i].endsWith("}")) {
+                continue;
+            }
+            String parameterName = oriTags[i].substring(1, oriTags[i].length() - 1);
+            String resultTagValue = request.getParameter(parameterName);
+//            if (StringUtils.isBlank(resultTagValue) && (request instanceof RequestWrapper)) {
+//                String bodyString = ((RequestWrapper) request).getBodyString();
+//                JSONObject bodyJson = JSONObject.parseObject(bodyString);
+//                resultTagValue = bodyJson == null ? resultTagValue : bodyJson.getString(parameterName);
+//            }
+
+            resultTagValue = StringUtils.isNotBlank(resultTagValue) ? resultTagValue : Constants.NO_VALUE_CODE;
+            oriTags[i] = resultTagValue;
+        }
+        logParams.setTags(oriTags);
+//        return oriTags;
     }
 
     private String getClassName(HttpServletRequest request) {

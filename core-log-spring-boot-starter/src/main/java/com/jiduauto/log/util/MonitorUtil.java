@@ -48,22 +48,7 @@ public class MonitorUtil {
 
     private static void realLog(MonitorLogParams logParams) {
         MonitorType[] monitorTypes = logParams.getMonitorTypes();
-        ArrayList<String> tagList = new ArrayList<>();
-        String[] tags = logParams.getTags();
-
-        if (tags!= null && tags.length>0) {
-            tagList = new ArrayList<>(Arrays.asList(tags));
-        }
-        tagList.add(Constants.RESULT);
-        boolean success = logParams.isSuccess();
-        if (!success || logParams.getException() != null) {
-            tagList.add(Constants.ERROR);
-        }else{
-            tagList.add(Constants.SUCCESS);
-        }
-        tagList.add(Constants.APPNAME);
-        tagList.add(applicationName);
-        tags = CollectionUtils.isNotEmpty(tagList) ? tagList.toArray(tags) : null;
+        String[] tags = processTags(logParams);
         for (MonitorType monitorType : monitorTypes) {
             String name = StringUtils.join(Constants.DOT, applicationName, logParams.getLogPoint().name(), logParams.getService() , logParams.getServiceCls().getName()) + monitorType.getMark();
             // 默认打一个record记录
@@ -77,5 +62,27 @@ public class MonitorUtil {
         }
     }
 
+    private static String[] processTags(MonitorLogParams logParams){
+        String[] tags = logParams.getTags();
+        ArrayList<String> tagList = new ArrayList<>();
+
+        if (tags!= null && tags.length>0) {
+            tagList = new ArrayList<>(Arrays.asList(tags));
+        }
+        tagList.add(Constants.RESULT);
+        boolean success = logParams.isSuccess();
+        if (!success || logParams.getException() != null) {
+            tagList.add(Constants.ERROR);
+        }else{
+            tagList.add(Constants.SUCCESS);
+        }
+        tagList.add(Constants.APPNAME);
+        tagList.add(applicationName);
+        tagList.add(Constants.LOG_POINT);
+        tagList.add(logParams.getLogPoint().name());
+
+        tags = tagList.toArray(new String[0]);
+        return tags;
+    }
 
 }

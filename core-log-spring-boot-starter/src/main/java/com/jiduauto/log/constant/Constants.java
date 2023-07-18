@@ -37,6 +37,9 @@ public class Constants {
      */
     public static final String APPNAME = "appName";
 
+    public static final String LOG_POINT = "logPoint";
+
+
     /**
      * 健康检查地址
      */
