@@ -15,6 +15,8 @@ import org.springframework.stereotype.Component;
 
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -40,13 +42,17 @@ public class MybatisSqlFilter implements Interceptor {
         logParams.setLogPoint(LogPoint.DAL_CLIENT);
         logParams.setService(target.getClass().getSimpleName());
         logParams.setServiceCls(target.getClass());
+        // .crm-auth-serviceDAL_CLIENT$Proxy234com.sun.proxy.$Proxy234_record
         logParams.setAction(invocation.getMethod().getName());
         logParams.setInput(invocation.getArgs());
+        List<String> tags  = new ArrayList<>();
         try {
             Object obj = invocation.proceed();
             String sql = ((StatementHandler) target).getBoundSql().getSql();
             long costTime = System.currentTimeMillis() - nowTime;
             logParams.setCost(costTime);
+            tags.add(Constants.SQL);
+            tags.add(sql);
             // 超过两秒的，打印错误日志
             if (costTime > Constants.SQL_TAKING_TOO_LONG) {
                 log.error("sql cost time too long, sql{}, time:{}", sql, costTime);

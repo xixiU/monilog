@@ -20,6 +20,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.UUID;
 
+import static com.jiduauto.log.constant.Constants.TRACE_ID;
+
 /**
  * @author qiang.zhang
  * @since 2023/5/5 14:31
@@ -44,8 +46,6 @@ public class WebIdTraceFilterConfig {
 
     @Slf4j
     private static class InitTraceIdFilter extends OncePerRequestFilter {
-        private static final String TRACE_ID = "trace_id";
-
         @Override
         public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain chain) throws IOException, ServletException {
             MDC.put(TRACE_ID, getTraceId(request));

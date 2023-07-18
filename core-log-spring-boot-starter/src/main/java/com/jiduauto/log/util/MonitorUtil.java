@@ -5,7 +5,6 @@ import com.jiduauto.log.enums.MonitorType;
 import com.jiduauto.log.model.MonitorLogParams;
 import com.metric.MetricMonitor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -81,7 +80,7 @@ public class MonitorUtil {
         }else{
             tagList.add(Constants.SUCCESS);
         }
-        tagList.add(Constants.APPNAME);
+        tagList.add(Constants.APPLICATION);
         tagList.add(applicationName);
         tagList.add(Constants.LOG_POINT);
         tagList.add(logParams.getLogPoint().name());

@@ -21,10 +21,6 @@ public class Constants {
      */
     public static final String DOT = ".";
 
-    /**
-     * sql耗时过长
-     */
-    public static final Long SQL_TAKING_TOO_LONG = 2000L;
 
     public static final String RESULT = "result";
 
@@ -35,18 +31,29 @@ public class Constants {
     /**
      * 应用名称
      */
-    public static final String APPNAME = "appName";
+    public static final String APPLICATION = "application";
 
     public static final String LOG_POINT = "logPoint";
 
+    // web相关常量
 
     /**
      * 健康检查地址
      */
     public static final String MISC_PING_URL = "/misc/ping";
 
+    // sql相关常量
+
+    /**
+     * sql耗时过长
+     */
+    public static final String SQL = "sql";
+
+    public static final Long SQL_TAKING_TOO_LONG = 2000L;
 
     public static final String SQL_QUERY_START = "select";
+
+    // mq相关常量
 
     /**
      * rocketmq header name
