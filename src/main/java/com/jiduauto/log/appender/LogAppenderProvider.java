@@ -27,58 +27,64 @@ public interface LogAppenderProvider {
     }
 
     static ConsoleAppender<ILoggingEvent> getConsoleAppender(LoggerContext ctx, MonitorLogProperties properties) {
-        return AppenderBuilder.buildAndStartConsoleAppender("console", ctx, properties.getPattern());
+        String pattern = null;
+        //String pattern = properties.getPattern();
+        return AppenderBuilder.buildAndStartConsoleAppender("console", ctx, pattern);
     }
 
     static RollingFileAppender<ILoggingEvent> getDigestAppender(LoggerContext ctx, MonitorLogProperties properties) {
-        return AppenderBuilder.buildAndStartRollingFileAppender(
-                "digest",
-                ctx,
-                null,
-                properties.getLogDir(),
-                "digest.log",
-                properties.getPattern(),
-                properties.getMaxLogHistory(),
-                properties.getMaxLogSize()
-        );
+//        return AppenderBuilder.buildAndStartRollingFileAppender(
+//                "digest",
+//                ctx,
+//                null,
+//                properties.getLogDir(),
+//                "digest.log",
+//                properties.getPattern(),
+//                properties.getMaxLogHistory(),
+//                properties.getMaxLogSize()
+//        );
+        return null;
     }
 
     static RollingFileAppender<ILoggingEvent> getDetailAppender(LoggerContext ctx, MonitorLogProperties properties) {
-        return AppenderBuilder.buildAndStartRollingFileAppender(
-                "detail",
-                ctx,
-                null,
-                properties.getLogDir(),
-                "detail.log",
-                properties.getPattern(),
-                properties.getMaxLogHistory(),
-                properties.getMaxLogSize()
-        );
+//        return AppenderBuilder.buildAndStartRollingFileAppender(
+//                "detail",
+//                ctx,
+//                null,
+//                properties.getLogDir(),
+//                "detail.log",
+//                properties.getPattern(),
+//                properties.getMaxLogHistory(),
+//                properties.getMaxLogSize()
+//        );
+        return null;
     }
 
     static RollingFileAppender<ILoggingEvent> getAppAppender(LoggerContext ctx, MonitorLogProperties properties) {
-        return AppenderBuilder.buildAndStartRollingFileAppender(
-                "app",
-                ctx,
-                null,
-                properties.getLogDir(),
-                "app.log",
-                properties.getPattern(),
-                properties.getMaxLogHistory(),
-                properties.getMaxLogSize()
-        );
+//        return AppenderBuilder.buildAndStartRollingFileAppender(
+//                "app",
+//                ctx,
+//                null,
+//                properties.getLogDir(),
+//                "app.log",
+//                properties.getPattern(),
+//                properties.getMaxLogHistory(),
+//                properties.getMaxLogSize()
+//        );
+        return null;
     }
 
     static RollingFileAppender<ILoggingEvent> getErrorAppender(LoggerContext ctx, MonitorLogProperties properties) {
-        return AppenderBuilder.buildAndStartRollingFileAppender(
-                "error",
-                ctx,
-                AppenderBuilder.getLevelFilter(ctx, Level.ERROR),
-                properties.getLogDir(),
-                "error.log",
-                properties.getPattern(),
-                properties.getMaxLogHistory(),
-                properties.getMaxLogSize()
-        );
+//        return AppenderBuilder.buildAndStartRollingFileAppender(
+//                "error",
+//                ctx,
+//                AppenderBuilder.getLevelFilter(ctx, Level.ERROR),
+//                properties.getLogDir(),
+//                "error.log",
+//                properties.getPattern(),
+//                properties.getMaxLogHistory(),
+//                properties.getMaxLogSize()
+//        );
+        return null;
     }
 }

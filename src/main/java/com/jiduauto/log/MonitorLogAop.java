@@ -1,12 +1,11 @@
 package com.jiduauto.log;
 
-import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.annotation.Pointcut;
-import org.checkerframework.checker.units.qual.A;
+
+import java.util.List;
 
 /**
  * @author yp
@@ -16,74 +15,73 @@ import org.checkerframework.checker.units.qual.A;
 class MonitorLogAop {
     private final MonitorLogPrinter logPrinter;
 
-    public MonitorLogAop(MonitorLogPrinter logPrinter) {
+    private final MonitorLogProperties properties;
+
+    public MonitorLogAop(MonitorLogPrinter logPrinter, MonitorLogProperties properties) {
         this.logPrinter = logPrinter;
+        this.properties = properties;
     }
 
-    @Pointcut("execution(public * (@org.springframework.cloud.openfeign.FeignClient *+).*(..))")
-    private void feign() {
+    private String dao() {
+        return join(properties.getDaoAopExpressions());
     }
 
-    @Pointcut("execution(public * (@org.springframework.web.bind.annotation.RestController *+).*(..)) || execution(public * (@org.springframework.stereotype.Controller *+).*(..))")
-    private void httpController() {
+    private String rpc() {
+        return join(properties.getRpcAopExpressions());
     }
 
-    @Pointcut("execution(public * io.grpc.stub.Abstract*Stub+.*(..))")
-    private void grpc() {
+    private String mqConsumer() {
+        return join(properties.getMqConsumerAopExpressions());
     }
 
-    @Pointcut("execution(public * com.baomidou.mybatisplus.core.mapper.BaseMapper+.*(..)) || execution(public * com.baomidou.mybatisplus.extension.service.IService+.*(..))")
-    private void mapper() {
+    private String mqProducer() {
+        return join(properties.getMqProducerAopExpressions());
     }
 
-    @Pointcut("execution(public * org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently+.*(..)) || execution(public * org.apache.rocketmq.client.consumer.listener.MessageListenerOrderly+.*(..))")
-    private void rocketMq() {
+    private String http() {
+        return join(properties.getHttpAopExpressions());
     }
 
-    @Pointcut("execution(public * org.apache.rocketmq.client.producer.DefaultMQProducer+.send(..))")
-    private void rocketMqSend() {
+    private String job() {
+        return join(properties.getJobAopExpressions());
     }
 
-    @Pointcut("execution(public * com.xxl.job.core.handler.IJobHandler+.execute(..))")
-    private void xxljob() {
+    private String custom() {
+        return "@within(com.jiduauto.log.MonitorLog) ||@annotation(com.jiduauto.log.MonitorLog) && execution(public * *(..))";
     }
 
-    @Pointcut("@within(com.jiduauto.log.MonitorLog) ||@annotation(com.jiduauto.log.MonitorLog) && execution(public * *(..))")
-    private void custom() {
-    }
-
-    @Around("httpController()")
-    public Object doHttpAround(ProceedingJoinPoint pjp) throws Throwable {
+    @Around("execution(String http())")
+    public Object doHttp(ProceedingJoinPoint pjp) throws Throwable {
         return processAround(pjp, LogPoint.WEB_ENTRY);
     }
 
-    @Around("feign() || grpc()")
-    public Object doRpcAround(ProceedingJoinPoint pjp) throws Throwable {
+    @Around("execution(String rpc())")
+    public Object doRpc(ProceedingJoinPoint pjp) throws Throwable {
         return processAround(pjp, LogPoint.REMOTE_CLIENT);
     }
 
-    @Around("rocketMq()")
-    public Object doMsgAround(ProceedingJoinPoint pjp) throws Throwable {
+    @Around("execution(String mqConsumer())")
+    public Object doMqConsumer(ProceedingJoinPoint pjp) throws Throwable {
         return processAround(pjp, LogPoint.MSG_ENTRY);
     }
 
-    @Around("rocketMqSend()")
-    public Object doMsgSendAround(ProceedingJoinPoint pjp) throws Throwable {
+    @Around("execution(String mqProducer())")
+    public Object doMqProducer(ProceedingJoinPoint pjp) throws Throwable {
         return processAround(pjp, LogPoint.MSG_PRODUCER);
     }
 
-    @Around("mapper()")
-    public Object doDaoAround(ProceedingJoinPoint pjp) throws Throwable {
+    @Around("execution(String dao())")
+    public Object doDao(ProceedingJoinPoint pjp) throws Throwable {
         return processAround(pjp, LogPoint.DAL_CLIENT);
     }
 
-    @Around("xxljob()")
-    public Object doJobAroud(ProceedingJoinPoint pjp) throws Throwable {
+    @Around("execution(String job())")
+    public Object doJob(ProceedingJoinPoint pjp) throws Throwable {
         return processAround(pjp, LogPoint.TASK_ENTRY);
     }
 
-    @Around("custom()")
-    public Object doAround(ProceedingJoinPoint pjp) throws Throwable {
+    @Around("execution(String custom())")
+    public Object doCustom(ProceedingJoinPoint pjp) throws Throwable {
         return processAround(pjp, null);
     }
 
@@ -153,5 +151,10 @@ class MonitorLogAop {
 
     private void beforeReturn(MonitorLogAspectCtx ctx) {
         //...
+    }
+
+
+    private static String join(List<String> patterns) {
+        return patterns == null || patterns.isEmpty() ? "" : String.join("||", patterns);
     }
 }
