@@ -37,6 +37,12 @@ public class Constants {
      */
     public static final String APPNAME = "appName";
 
+    /**
+     * 健康检查地址
+     */
+    public static final String MISC_PING_URL = "/misc/ping";
+
+
     public static final String SQL_QUERY_START = "select";
 
     /**

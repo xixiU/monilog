@@ -1,16 +1,12 @@
 package com.jiduauto.log.weblogspringbootstarter.config;
 
 
-import com.jiduauto.log.weblogspringbootstarter.filter.LogMonitorHandlerFilter;
 import io.opentelemetry.api.trace.Span;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,15 +25,13 @@ import java.util.UUID;
  * @since 2023/5/5 14:31
  */
 @Configuration
-@ConditionalOnProperty(prefix = "monitor.log.web", name = "enable", havingValue = "true", matchIfMissing = true)
-public class WebFilterConfig {
+@ConditionalOnMissingBean(name = "initTraceIdFilter")
+public class WebIdTraceFilterConfig {
     @Value("${spring.application.name}")
     private String appName;
 
     /**** Filter配置 ****/
     @Bean
-    @ConditionalOnMissingBean(InitTraceIdFilter.class)
-    @ConditionalOnMissingClass("initTraceIdFilter")
     public FilterRegistrationBean<InitTraceIdFilter> initTraceIdFilter() {
         FilterRegistrationBean<InitTraceIdFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(new InitTraceIdFilter());
@@ -46,18 +40,6 @@ public class WebFilterConfig {
         registration.addUrlPatterns("*");
         registration.addInitParameter("app", appName);
         return registration;
-    }
-
-    @Bean
-    @ConditionalOnMissingBean(LogMonitorHandlerFilter.class)
-    public FilterRegistrationBean<LogMonitorHandlerFilter> logFilterBean() {
-        final FilterRegistrationBean<LogMonitorHandlerFilter> filterRegBean = new FilterRegistrationBean<>();
-        filterRegBean.setFilter(new LogMonitorHandlerFilter());
-        filterRegBean.setOrder(-100);
-        filterRegBean.setEnabled(Boolean.TRUE);
-        filterRegBean.setName("log filter");
-        filterRegBean.setAsyncSupported(Boolean.TRUE);
-        return filterRegBean;
     }
 
     @Slf4j

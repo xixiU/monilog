@@ -1,10 +1,12 @@
 package com.jiduauto.log.weblogspringbootstarter.filter;
 
 import com.alibaba.fastjson.JSON;
+import com.jiduauto.log.constant.Constants;
 import com.jiduauto.log.enums.LogPoint;
 import com.jiduauto.log.model.MonitorLogParams;
 import com.jiduauto.log.util.MonitorUtil;
 import com.jiduauto.log.weblogspringbootstarter.model.DataResponse;
+import com.jiduauto.log.weblogspringbootstarter.util.UrlMatcherUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -18,6 +20,7 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 import org.springframework.web.util.WebUtils;
 
 import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -40,9 +43,18 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
     @Value("${monitor.web.blackList}")
     private List<String> BLACK_LIST;
 
+
     @Override
     public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain) throws IOException {
+            @NonNull FilterChain filterChain) throws IOException, ServletException {
+        if (CollectionUtils.isEmpty(BLACK_LIST)) {
+            BLACK_LIST = Collections.singletonList(Constants.MISC_PING_URL);
+        }
+
+        if (UrlMatcherUtils.checkContains(BLACK_LIST, request.getRequestURI())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         HandlerMethod method = (HandlerMethod) request.getAttribute("org.springframework.web.servlet.HandlerMapping.bestMatchingHandler");
 
         long startTime = System.currentTimeMillis();
@@ -83,11 +95,9 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
         } finally {
             long cost = System.currentTimeMillis() - startTime;
             logParams.setCost(cost);
-            if (CollectionUtils.isNotEmpty(BLACK_LIST) &&  !BLACK_LIST.contains(request.getRequestURI())) {
-                log.info("RESPONSE:URI={} cost {} ms, result={}", request.getRequestURI(),
+            log.info("RESPONSE:URI={} cost {} ms, result={}", request.getRequestURI(),
                         cost, responseBodyStr);
-                MonitorUtil.log(logParams);
-            }
+            MonitorUtil.log(logParams);
         }
     }
 
