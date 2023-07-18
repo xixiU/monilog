@@ -9,6 +9,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -22,6 +23,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @Component
+@EnableAutoConfiguration
 public class MonitorUtil {
 
     /**
@@ -48,6 +50,9 @@ public class MonitorUtil {
 
     private static void realLog(MonitorLogParams logParams) {
         MonitorType[] monitorTypes = logParams.getMonitorTypes();
+        if (monitorTypes == null || monitorTypes.length == 0) {
+            monitorTypes = new MonitorType[]{MonitorType.RECORD};
+        }
         String[] tags = processTags(logParams);
         for (MonitorType monitorType : monitorTypes) {
             String name = StringUtils.join(Constants.DOT, applicationName, logParams.getLogPoint().name(), logParams.getService() , logParams.getServiceCls().getName()) + monitorType.getMark();
