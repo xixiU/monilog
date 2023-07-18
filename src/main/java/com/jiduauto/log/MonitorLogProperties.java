@@ -17,11 +17,4 @@ import java.util.List;
 @Setter
 public class MonitorLogProperties {
     private boolean enable;
-
-    private List<String> daoAopExpressions;
-    private List<String> mqConsumerAopExpressions;
-    private List<String> mqProducerAopExpressions;
-    private List<String> jobAopExpressions;
-    private List<String> httpAopExpressions;
-    private List<String> rpcAopExpressions;
 }
