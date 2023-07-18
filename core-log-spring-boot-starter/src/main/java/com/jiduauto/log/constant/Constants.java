@@ -32,7 +32,10 @@ public class Constants {
 
     public static final String ERROR = "error";
 
-
+    /**
+     * 应用名称
+     */
+    public static final String APPNAME = "appName";
 
     public static final String SQL_QUERY_START = "select";
 

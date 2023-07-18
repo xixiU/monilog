@@ -1,31 +1,29 @@
 package com.jiduauto.log.mybatislogspringbootstarter.filter;
 
-import com.jiduauto.log.MonitorLog;
 import com.jiduauto.log.constant.Constants;
 import com.jiduauto.log.enums.LogPoint;
 import com.jiduauto.log.model.MonitorLogParams;
 import com.jiduauto.log.util.MonitorUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.executor.statement.StatementHandler;
+import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.plugin.*;
-import org.apache.ibatis.session.ResultHandler;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.InvocationTargetException;
-import java.sql.Statement;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author ：xiaoxu.bao
  * @date ：2022/11/14 21:39
  */
 @Component
+@ConditionalOnProperty(prefix = "monitor.log.mybatis", name = "enable", havingValue = "true", matchIfMissing = true)
 @Intercepts({
-        @Signature(
-                type = StatementHandler.class,
-                method = "query",
-                args = {Statement.class, ResultHandler.class})
+        @Signature(type = Executor.class, method = "update", args = {MappedStatement.class, Object.class}),
+        @Signature(type = Executor.class, method = "query", args = {MappedStatement.class, Object.class})
 })
 @Slf4j
 public class MybatisSqlFilter implements Interceptor {

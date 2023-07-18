@@ -26,7 +26,7 @@ import java.util.UUID;
  * @since 2023/5/5 14:31
  */
 @Configuration
-@ConditionalOnProperty(prefix = "monitor.log.web", name = "enable", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "monitor.log.web", name = "enable", havingValue = "true", matchIfMissing = true)
 public class WebFilterConfig {
 
     /**** Filter配置 ****/

@@ -3,7 +3,6 @@ package com.jiduauto.log.util;
 import com.jiduauto.log.constant.Constants;
 import com.jiduauto.log.enums.MonitorType;
 import com.jiduauto.log.model.MonitorLogParams;
-import com.jiduauto.log.model.MonitorLogProperties;
 import com.metric.MetricMonitor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -12,10 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -42,6 +39,14 @@ public class MonitorUtil {
     }
 
     public static void log(MonitorLogParams logParams){
+        try{
+            realLog(logParams);
+        }catch (Exception e){
+            log.error("log error", e);
+        }
+    }
+
+    private static void realLog(MonitorLogParams logParams) {
         MonitorType[] monitorTypes = logParams.getMonitorTypes();
         ArrayList<String> tagList = new ArrayList<>();
         String[] tags = logParams.getTags();
@@ -56,6 +61,8 @@ public class MonitorUtil {
         }else{
             tagList.add(Constants.SUCCESS);
         }
+        tagList.add(Constants.APPNAME);
+        tagList.add(applicationName);
         tags = CollectionUtils.isNotEmpty(tagList) ? tagList.toArray(tags) : null;
         for (MonitorType monitorType : monitorTypes) {
             String name = StringUtils.join(Constants.DOT, applicationName, logParams.getLogPoint().name(), logParams.getService() , logParams.getServiceCls().getName()) + monitorType.getMark();
@@ -67,9 +74,7 @@ public class MonitorUtil {
             }
             // 对返回值添加累加记录
             MetricMonitor.cumulation(name, 1, tags);
-
         }
-
     }
 
 
