@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>all-log-spring-boot-start</artifactId>
+    <packaging>pom</packaging>
 
    <dependencies>
        <dependency>

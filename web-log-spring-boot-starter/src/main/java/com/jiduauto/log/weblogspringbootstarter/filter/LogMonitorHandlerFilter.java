@@ -1,11 +1,10 @@
 package com.jiduauto.log.weblogspringbootstarter.filter;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.jiduauto.log.constant.Constants;
 import com.jiduauto.log.enums.LogPoint;
 import com.jiduauto.log.model.MonitorLogParams;
-import com.jiduauto.log.util.MonitorUtil;
+import com.jiduauto.log.util.MonitorLogUtil;
 import com.jiduauto.log.util.SpringUtils;
 import com.jiduauto.log.weblogspringbootstarter.model.DataResponse;
 import com.jiduauto.log.weblogspringbootstarter.util.UrlMatcherUtils;
@@ -16,7 +15,6 @@ import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerExecutionChain;
@@ -106,7 +104,7 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
             logParams.setCost(cost);
             log.info("RESPONSE:URI={} cost {} ms, result={}", request.getRequestURI(),
                         cost, responseBodyStr);
-            MonitorUtil.log(logParams);
+            MonitorLogUtil.log(logParams);
         }
     }
 

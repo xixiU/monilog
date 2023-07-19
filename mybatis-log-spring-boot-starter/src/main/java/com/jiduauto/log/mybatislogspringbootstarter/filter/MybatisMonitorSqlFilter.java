@@ -3,7 +3,7 @@ package com.jiduauto.log.mybatislogspringbootstarter.filter;
 import com.jiduauto.log.constant.Constants;
 import com.jiduauto.log.enums.LogPoint;
 import com.jiduauto.log.model.MonitorLogParams;
-import com.jiduauto.log.util.MonitorUtil;
+import com.jiduauto.log.util.MonitorLogUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.executor.statement.StatementHandler;
 import org.apache.ibatis.plugin.*;
@@ -60,7 +60,7 @@ public class MybatisMonitorSqlFilter implements Interceptor {
             logParams.setCost(System.currentTimeMillis() - nowTime);
             logParams.setSuccess(false);
         }finally {
-            MonitorUtil.log(logParams);
+            MonitorLogUtil.log(logParams);
         }
         return null;
     }

@@ -35,6 +35,11 @@ public class Constants {
 
     public static final String LOG_POINT = "logPoint";
 
+    /**
+     * 环境
+     */
+    public static final String ENV = "env";
+
     // web相关常量
 
     /**

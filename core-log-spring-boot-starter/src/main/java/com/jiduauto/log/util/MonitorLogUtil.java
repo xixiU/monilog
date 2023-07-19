@@ -8,9 +8,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
@@ -22,22 +22,9 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @Component
-@EnableAutoConfiguration
-public class MonitorUtil {
+public class MonitorLogUtil {
 
-    /**
-     * 获取应用名称
-     */
-    private static String applicationName;
-
-    @Value("${spring.application.name}")
-    @Autowired
-    public void setEnv(String applicationName) throws Exception {
-        if (StringUtils.isBlank(applicationName)) {
-            throw new Exception("spring.application.name must be specify");
-        }
-        MonitorUtil.applicationName = applicationName;
-    }
+    private static final String applicationName = SpringUtils.getApplicationName();
 
     public static void log(MonitorLogParams logParams){
         try{
@@ -84,7 +71,8 @@ public class MonitorUtil {
         tagList.add(applicationName);
         tagList.add(Constants.LOG_POINT);
         tagList.add(logParams.getLogPoint().name());
-
+        tagList.add(Constants.ENV);
+        tagList.add(SpringUtils.getActiveProfile());
         tags = tagList.toArray(new String[0]);
         return tags;
     }

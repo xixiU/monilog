@@ -17,10 +17,10 @@ public class MonitorLogProperties {
     @Value("${spring.application.name}")
     private String appName;
 
-    @Value("${spring.profiles.active:}")
+    @Value("${spring.profiles.active}")
     private String profiles;
 
-    @Value("${app.id:}")
+    @Value("${app.id}")
     private String appId;
 
     private boolean enable;
