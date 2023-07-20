@@ -6,7 +6,7 @@
 
     <groupId>com.jiduauto.log</groupId>
     <artifactId>monitor-log-spring-boot-starter</artifactId>
-    <version>1.0.4-SNAPSHOT</version>
+    <version>1.0.5-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <parent>
