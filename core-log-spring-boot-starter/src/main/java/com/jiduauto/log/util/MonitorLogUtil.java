@@ -41,7 +41,7 @@ public class MonitorLogUtil {
         }
         String[] tags = processTags(logParams);
         for (MonitorType monitorType : monitorTypes) {
-            String name = StringUtils.join(Constants.DOT, applicationName, logParams.getLogPoint().name(), logParams.getService() , logParams.getServiceCls().getName()) + monitorType.getMark();
+            String name = StringUtils.join(logParams.getService() , logParams.getAction() , monitorType.getMark());
             // 默认打一个record记录
             MetricMonitor.record(name, tags);
 
@@ -52,6 +52,12 @@ public class MonitorLogUtil {
             MetricMonitor.cumulation(name, 1, tags);
         }
     }
+
+    /**
+     * 统一打上环境标、应用名、打标类型、处理结果
+     * @param logParams
+     * @return
+     */
 
     private static String[] processTags(MonitorLogParams logParams){
         String[] tags = logParams.getTags();
@@ -73,6 +79,10 @@ public class MonitorLogUtil {
         tagList.add(logParams.getLogPoint().name());
         tagList.add(Constants.ENV);
         tagList.add(SpringUtils.getActiveProfile());
+        if (logParams.getException() != null) {
+            tagList.add(Constants.EXCEPTION);
+            tagList.add(logParams.getException().getClass().getSimpleName());
+        }
         tags = tagList.toArray(new String[0]);
         return tags;
     }

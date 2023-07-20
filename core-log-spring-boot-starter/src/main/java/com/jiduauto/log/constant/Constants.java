@@ -12,6 +12,8 @@ public class Constants {
      */
     public static final String NO_VALUE_CODE = "00";
 
+    public static final String EXCEPTION  ="exception";
+
     public static final String COMMA_BRACKETS = ",}";
 
     public static final String BRACKETS = "}";
@@ -39,24 +41,6 @@ public class Constants {
      * 环境
      */
     public static final String ENV = "env";
-
-    // web相关常量
-
-    /**
-     * 健康检查地址
-     */
-    public static final String MISC_PING_URL = "/misc/ping";
-
-    // sql相关常量
-
-    /**
-     * sql耗时过长
-     */
-    public static final String SQL = "sql";
-
-    public static final Long SQL_TAKING_TOO_LONG = 2000L;
-
-    public static final String SQL_QUERY_START = "select";
 
     // mq相关常量
 

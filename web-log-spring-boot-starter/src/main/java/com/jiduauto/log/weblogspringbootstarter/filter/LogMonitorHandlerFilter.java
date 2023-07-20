@@ -6,6 +6,7 @@ import com.jiduauto.log.enums.LogPoint;
 import com.jiduauto.log.model.MonitorLogParams;
 import com.jiduauto.log.util.MonitorLogUtil;
 import com.jiduauto.log.util.SpringUtils;
+import com.jiduauto.log.weblogspringbootstarter.WebLogConstant;
 import com.jiduauto.log.weblogspringbootstarter.model.DataResponse;
 import com.jiduauto.log.weblogspringbootstarter.util.UrlMatcherUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -51,11 +52,12 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
     @Override
     public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws IOException, ServletException {
+        String requestURI = request.getRequestURI();
         if (CollectionUtils.isEmpty(BLACK_LIST)) {
-            BLACK_LIST = Collections.singletonList(Constants.MISC_PING_URL);
+            BLACK_LIST = Collections.singletonList(WebLogConstant.MISC_PING_URL);
         }
 
-        if (UrlMatcherUtils.checkContains(BLACK_LIST, request.getRequestURI())) {
+        if (UrlMatcherUtils.checkContains(BLACK_LIST, requestURI)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -65,12 +67,18 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
             return;
         }
         long startTime = System.currentTimeMillis();
+        List<String> tagList = new ArrayList<>();
         String responseBodyStr = "";
         MonitorLogParams logParams = new MonitorLogParams();
         logParams.setLogPoint(LogPoint.WEB_ENTRY);
-        logParams.setServiceCls(method.getMethod().getClass());
-        logParams.setService(getClassName(request));
-        logParams.setAction(getMethodName(request));
+        logParams.setServiceCls(method.getBeanType());
+        logParams.setService(method.getBeanType().getSimpleName());
+        logParams.setAction(method.getMethod().getName());
+        tagList.add(WebLogConstant.URI);
+        tagList.add(requestURI);
+        tagList.add(WebLogConstant.METHOD);
+        tagList.add(request.getMethod());
+        logParams.setTags(tagList.toArray(new String[0]));
         dealRequestTags(request, logParams);
         try {
             ContentCachingRequestWrapper wrapperRequest = new ContentCachingRequestWrapper(request);
@@ -91,7 +99,7 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
             logParams.setOutput(responseBodyStr);
             logParams.setSuccess(true);
         } catch (Exception e) {
-            log.warn("RESPONSE:ERROR:URI:{},FilterChainException:" + e.getMessage(), request.getRequestURI());
+            log.warn("RESPONSE:ERROR:URI:{},FilterChainException:" + e.getMessage(), requestURI);
             log.warn("caught Exception: quit filter chain, send out response.", e);
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             DataResponse<String> errorResponse = new DataResponse<>().setData(
@@ -102,7 +110,7 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
         } finally {
             long cost = System.currentTimeMillis() - startTime;
             logParams.setCost(cost);
-            log.info("RESPONSE:URI={} cost {} ms, result={}", request.getRequestURI(),
+            log.info("RESPONSE:URI={} cost {} ms, result={}", requestURI,
                         cost, responseBodyStr);
             MonitorLogUtil.log(logParams);
         }
@@ -160,9 +168,6 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
 //        return oriTags;
     }
 
-    private String getClassName(HttpServletRequest request) {
-        return request.getServletPath();
-    }
 
     private String getMethodName(HttpServletRequest request) {
         return request.getMethod();

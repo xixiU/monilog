@@ -3,6 +3,7 @@ package com.jiduauto.log.mybatislogspringbootstarter.filter;
 import com.jiduauto.log.constant.Constants;
 import com.jiduauto.log.enums.LogPoint;
 import com.jiduauto.log.model.MonitorLogParams;
+import com.jiduauto.log.mybatislogspringbootstarter.constant.MybatisLogConstant;
 import com.jiduauto.log.util.MonitorLogUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.executor.statement.StatementHandler;
@@ -47,10 +48,10 @@ public class MybatisMonitorSqlFilter implements Interceptor {
             String sql = ((StatementHandler) target).getBoundSql().getSql();
             long costTime = System.currentTimeMillis() - nowTime;
             logParams.setCost(costTime);
-            tags.add(Constants.SQL);
+            tags.add(MybatisLogConstant.SQL);
             tags.add(sql);
             // 超过两秒的，打印错误日志
-            if (costTime > Constants.SQL_TAKING_TOO_LONG) {
+            if (costTime > MybatisLogConstant.SQL_TAKING_TOO_LONG) {
                 log.error("sql cost time too long, sql{}, time:{}", sql, costTime);
             }
             logParams.setSuccess(true);
