@@ -19,6 +19,12 @@ public class Constants {
     public static final String BRACKETS = "}";
 
     /**
+     * 下划线
+     */
+    public static final String UNDERLINE = "_";
+
+
+    /**
      * 点
      */
     public static final String DOT = ".";
@@ -36,6 +42,23 @@ public class Constants {
     public static final String APPLICATION = "application";
 
     public static final String LOG_POINT = "logPoint";
+
+    /**
+     * 服务名
+     */
+    public static final String SERVICE_NAME = "service";
+
+    /**
+     * 方法名
+     */
+    public static final String METHOD_NAME = "methodName";
+
+    /**
+     * 耗时
+     */
+    public static final String COST = "cost";
+
+
 
     /**
      * 环境

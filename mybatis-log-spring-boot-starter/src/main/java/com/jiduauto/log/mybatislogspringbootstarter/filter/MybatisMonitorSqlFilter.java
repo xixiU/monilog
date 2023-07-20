@@ -50,6 +50,7 @@ public class MybatisMonitorSqlFilter implements Interceptor {
             logParams.setCost(costTime);
             tags.add(MybatisLogConstant.SQL);
             tags.add(sql);
+            logParams.setTags(tags.toArray(new String[0]));
             // 超过两秒的，打印错误日志
             if (costTime > MybatisLogConstant.SQL_TAKING_TOO_LONG) {
                 log.error("sql cost time too long, sql{}, time:{}", sql, costTime);

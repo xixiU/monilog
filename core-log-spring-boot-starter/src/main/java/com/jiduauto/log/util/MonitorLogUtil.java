@@ -41,15 +41,17 @@ public class MonitorLogUtil {
         }
         String[] tags = processTags(logParams);
         for (MonitorType monitorType : monitorTypes) {
-            String name = StringUtils.join(logParams.getService() , logParams.getAction() , monitorType.getMark());
+            String name = StringUtils.join(logParams.getService() ,Constants.UNDERLINE, logParams.getAction());
             // 默认打一个record记录
-            MetricMonitor.record(name, tags);
+            MetricMonitor.record(name +  monitorType.getMark(), tags);
 
-            if (MonitorType.TIMER.equals(monitorType)) {
-                MetricMonitor.eventDruation(name, tags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
-            }
             // 对返回值添加累加记录
-            MetricMonitor.cumulation(name, 1, tags);
+            MetricMonitor.cumulation(name +  MonitorType.CUMULATION.getMark(), 1, tags);
+
+            if (MonitorType.TIMER.equals(monitorType) || logParams.getCost()> 0L) {
+                MetricMonitor.eventDruation(name +  monitorType.getMark(), tags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
+            }
+            
         }
     }
 
@@ -83,6 +85,21 @@ public class MonitorLogUtil {
             tagList.add(Constants.EXCEPTION);
             tagList.add(logParams.getException().getClass().getSimpleName());
         }
+
+        if (StringUtils.isNotBlank(logParams.getService())) {
+            tagList.add(Constants.SERVICE_NAME);
+            tagList.add(logParams.getService());
+        }
+
+        if (StringUtils.isNotBlank(logParams.getAction())) {
+            tagList.add(Constants.METHOD_NAME);
+            tagList.add(logParams.getAction());
+        }
+        if (logParams.getCost()> 0L) {
+            tagList.add(Constants.COST);
+            tagList.add(String.valueOf(logParams.getCost()));
+        }
+
         tags = tagList.toArray(new String[0]);
         return tags;
     }
