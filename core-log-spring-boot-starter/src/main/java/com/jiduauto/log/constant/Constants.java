@@ -51,7 +51,7 @@ public class Constants {
     /**
      * 方法名
      */
-    public static final String METHOD_NAME = "methodName";
+    public static final String ACTION_NAME = "action";
 
     /**
      * 耗时

@@ -6,11 +6,8 @@ import com.jiduauto.log.model.MonitorLogParams;
 import com.metric.MetricMonitor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
@@ -92,7 +89,7 @@ public class MonitorLogUtil {
         }
 
         if (StringUtils.isNotBlank(logParams.getAction())) {
-            tagList.add(Constants.METHOD_NAME);
+            tagList.add(Constants.ACTION_NAME);
             tagList.add(logParams.getAction());
         }
         if (logParams.getCost()> 0L) {
