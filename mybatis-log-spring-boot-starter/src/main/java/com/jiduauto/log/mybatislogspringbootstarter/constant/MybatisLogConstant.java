@@ -5,7 +5,7 @@ package com.jiduauto.log.mybatislogspringbootstarter.constant;
  * @author rongjie.yuan
  * @date 2023/7/19 15:41
  */
-public class MybatisLogConstant {
+public final class MybatisLogConstant {
     /**
      * sql耗时过长
      */
