@@ -27,7 +27,7 @@ import java.util.Properties;
  */
 @Intercepts({
         @Signature(type = StatementHandler.class, method = "query", args = {Statement.class, ResultHandler.class}),
-        @Signature(type = StatementHandler.class, method = "update", args = {MappedStatement.class}),
+        @Signature(type = StatementHandler.class, method = "update", args = {Statement.class}),
 
 })
 @Slf4j

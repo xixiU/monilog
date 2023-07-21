@@ -19,7 +19,6 @@ public class MonitorLogParams {
     private String msgCode;
     private String msgInfo;
     private String[] tags;
-    private MonitorType[] monitorTypes;
     private long cost;
     private Throwable exception;
     private Object[] input;

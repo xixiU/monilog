@@ -32,22 +32,14 @@ public class MonitorLogUtil {
     }
 
     private static void realLog(MonitorLogParams logParams) {
-        MonitorType[] monitorTypes = logParams.getMonitorTypes();
-        if (monitorTypes == null || monitorTypes.length == 0) {
-            monitorTypes = new MonitorType[]{MonitorType.RECORD};
-        }
         String[] tags = processTags(logParams);
-        for (MonitorType monitorType : monitorTypes) {
-            // 默认打一个record记录
-            MetricMonitor.record(Constants.BUSINESS_NAME_PREFIX +  monitorType.getMark(), tags);
 
-            // 对返回值添加累加记录
-            MetricMonitor.cumulation(Constants.BUSINESS_NAME_PREFIX +  MonitorType.CUMULATION.getMark(), 1, tags);
-
-            if (MonitorType.TIMER.equals(monitorType) || logParams.getCost()> 0L) {
-                MetricMonitor.eventDruation(Constants.BUSINESS_NAME_PREFIX +  monitorType.getMark(), tags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
-            }
-            
+        // 默认打一个record记录
+        MetricMonitor.record(Constants.BUSINESS_NAME_PREFIX +  MonitorType.RECORD.getMark(), tags);
+        // 对返回值添加累加记录
+        MetricMonitor.cumulation(Constants.BUSINESS_NAME_PREFIX +  MonitorType.CUMULATION.getMark(), 1, tags);
+        if (logParams.getCost()> 0L) {
+            MetricMonitor.eventDruation(Constants.BUSINESS_NAME_PREFIX +  MonitorType.TIMER.getMark(), tags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
         }
     }
 
