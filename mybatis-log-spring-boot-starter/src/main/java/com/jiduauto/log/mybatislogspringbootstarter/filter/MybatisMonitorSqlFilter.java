@@ -1,9 +1,12 @@
 package com.jiduauto.log.mybatislogspringbootstarter.filter;
 
+import com.jiduauto.log.constant.Constants;
 import com.jiduauto.log.enums.LogPoint;
+import com.jiduauto.log.enums.MonitorType;
 import com.jiduauto.log.model.MonitorLogParams;
 import com.jiduauto.log.mybatislogspringbootstarter.constant.MybatisLogConstant;
 import com.jiduauto.log.util.MonitorLogUtil;
+import com.metric.MetricMonitor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
@@ -13,7 +16,9 @@ import org.apache.ibatis.plugin.*;
 import org.apache.ibatis.reflection.MetaObject;
 import org.apache.ibatis.reflection.SystemMetaObject;
 import org.apache.ibatis.session.ResultHandler;
+import org.springframework.beans.factory.annotation.Value;
 
+import javax.annotation.Resource;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.sql.Statement;
@@ -32,6 +37,11 @@ import java.util.Properties;
 })
 @Slf4j
 public class MybatisMonitorSqlFilter implements Interceptor {
+    /**
+     * 超时时间，单位毫秒，默认2000毫秒
+     */
+    @Value("${monitor.log.mybatis.long.query.time:2000}")
+    private Long longQueryTime;
 
     @SneakyThrows
     @Override
@@ -65,7 +75,8 @@ public class MybatisMonitorSqlFilter implements Interceptor {
             tags.add(sql);
             logParams.setTags(tags.toArray(new String[0]));
             // 超过两秒的，打印错误日志
-            if (costTime > MybatisLogConstant.SQL_TAKING_TOO_LONG) {
+            if (costTime > longQueryTime) {
+                MetricMonitor.record(MybatisLogConstant.SQL_COST_TOO_LONG +  MonitorType.RECORD.getMark(), tags.toArray(new String[0]));
                 log.error("sql cost time too long, sql{}, time:{}", sql, costTime);
             }
             logParams.setSuccess(true);

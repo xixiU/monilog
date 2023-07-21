@@ -11,7 +11,8 @@ public class MybatisLogConstant {
      */
     public static final String SQL = "sql";
 
-    public static final Long SQL_TAKING_TOO_LONG = 2000L;
+    public static final String SQL_COST_TOO_LONG = "sqlCostTooLang";
+
 
     public static final String SQL_QUERY_START = "select";
 
