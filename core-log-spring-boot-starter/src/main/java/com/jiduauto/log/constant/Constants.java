@@ -12,7 +12,6 @@ public class Constants {
      */
     public static final String NO_VALUE_CODE = "00";
 
-    public static final String EXCEPTION  ="exception";
 
     public static final String COMMA_BRACKETS = ",}";
 
@@ -33,6 +32,25 @@ public class Constants {
     public static final String RESULT = "result";
 
     public static final String SUCCESS = "success";
+
+    public static final String MSG_CODE = "msgCode";
+
+    /**
+     * 异常的类
+     */
+    public static final String EXCEPTION  ="exception";
+
+    /**
+     * 错误
+     */
+    public static final String EXCEPTION_MSG = "exceptionMsg";
+
+
+    /**
+     * 统一的埋点前缀
+     */
+    public static final String BUSINESS_NAME_PREFIX = "business_monitor";
+
 
     public static final String ERROR = "error";
 
@@ -58,12 +76,11 @@ public class Constants {
      */
     public static final String COST = "cost";
 
-
-
     /**
      * 环境
      */
     public static final String ENV = "env";
+
 
     // mq相关常量
 
