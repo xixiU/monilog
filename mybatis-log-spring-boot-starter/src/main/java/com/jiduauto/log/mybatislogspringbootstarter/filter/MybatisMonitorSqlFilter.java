@@ -1,6 +1,5 @@
 package com.jiduauto.log.mybatislogspringbootstarter.filter;
 
-import com.jiduauto.log.constant.Constants;
 import com.jiduauto.log.enums.LogPoint;
 import com.jiduauto.log.model.MonitorLogParams;
 import com.jiduauto.log.mybatislogspringbootstarter.constant.MybatisLogConstant;
@@ -8,17 +7,13 @@ import com.jiduauto.log.util.MonitorLogUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.ibatis.executor.statement.PreparedStatementHandler;
-import org.apache.ibatis.executor.statement.RoutingStatementHandler;
 import org.apache.ibatis.executor.statement.StatementHandler;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.plugin.*;
 import org.apache.ibatis.reflection.MetaObject;
 import org.apache.ibatis.reflection.SystemMetaObject;
 import org.apache.ibatis.session.ResultHandler;
-import org.apache.ibatis.session.RowBounds;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.sql.Statement;
