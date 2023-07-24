@@ -1,1 +1,1 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.jiduauto.log.mybatislogspringbootstarter.MybatisSqlFilterAutoConfiguration
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.jiduauto.log.mybatis.MybatisSqlFilterAutoConfiguration
