@@ -24,7 +24,7 @@ import java.util.List;
  */
 @Aspect
 @Component
-public class RocketMQConsumerInterceptor {
+public class RocketMQConsumerAop {
 
     @Around("execution(* org.apache.rocketmq.spring.core.RocketMQListener.onMessage(..))")
     public void interceptRocketMQConsumer(ProceedingJoinPoint pjp) throws Throwable {
@@ -76,7 +76,6 @@ public class RocketMQConsumerInterceptor {
             logParams.setTags(tagList.toArray(new String[0]));
             logParams.setCost(System.currentTimeMillis() - startTime);
             MonitorLogUtil.log(logParams);
-
         }
 
 

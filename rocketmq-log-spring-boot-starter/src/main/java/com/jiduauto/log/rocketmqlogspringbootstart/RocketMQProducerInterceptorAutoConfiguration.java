@@ -1,6 +1,6 @@
 package com.jiduauto.log.rocketmqlogspringbootstart;
 
-import com.jiduauto.log.rocketmqlogspringbootstart.aop.RocketMQConsumerInterceptor;
+import com.jiduauto.log.rocketmqlogspringbootstart.aop.RocketMQConsumerAop;
 import com.jiduauto.log.rocketmqlogspringbootstart.interceptor.RocketMQSendInterceptor;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -20,7 +20,7 @@ public class RocketMQProducerInterceptorAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(prefix = "monitor.log.rocketmq.consumer", name = "enable", havingValue = "true", matchIfMissing = true)
-    public RocketMQConsumerInterceptor rocketMQConsumerInterceptor() {
-        return new RocketMQConsumerInterceptor();
+    public RocketMQConsumerAop rocketMQConsumerInterceptor() {
+        return new RocketMQConsumerAop();
     }
 }
