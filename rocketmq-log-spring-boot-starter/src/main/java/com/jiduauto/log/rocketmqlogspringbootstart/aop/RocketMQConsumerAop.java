@@ -12,7 +12,6 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +40,7 @@ public class RocketMQConsumerAop {
         tagList.add(RocketMQLogConstant.TOPIC);
         tagList.add(messageExt.getTopic());
 
-        tagList.add(RocketMQLogConstant.mqBody);
+        tagList.add(RocketMQLogConstant.MQ_BODY);
         tagList.add(new String(messageExt.getBody()));
         processRocketMQTag(declaringClass, tagList);
 
