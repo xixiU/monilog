@@ -22,11 +22,10 @@ import java.util.List;
  * @date 2023/7/21 17:25
  */
 @Aspect
-@Component
 public class RocketMQConsumerAop {
 
     @Around("execution(* org.apache.rocketmq.spring.core.RocketMQListener.onMessage(..))")
-    public void interceptRocketMQConsumer(ProceedingJoinPoint pjp) throws Throwable {
+    public void interceptorRocketMQConsumer(ProceedingJoinPoint pjp) throws Throwable {
         MonitorLogParams logParams = new MonitorLogParams();
         logParams.setLogPoint(LogPoint.MSG_ENTRY);
 
