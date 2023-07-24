@@ -73,7 +73,6 @@ public class MybatisMonitorSqlFilter implements Interceptor {
             logParams.setCost(costTime);
             tags.add(MybatisLogConstant.SQL);
             tags.add(sql);
-            logParams.setTags(tags.toArray(new String[0]));
             // 超过两秒的，打印错误日志
             if (costTime > longQueryTime) {
                 MetricMonitor.record(MybatisLogConstant.SQL_COST_TOO_LONG +  MonitorType.RECORD.getMark(), tags.toArray(new String[0]));
@@ -83,10 +82,11 @@ public class MybatisMonitorSqlFilter implements Interceptor {
             return obj;
         } catch (Throwable e) {
             log.error("intercept process error", e);
-            logParams.setCost(System.currentTimeMillis() - nowTime);
             logParams.setSuccess(false);
             logParams.setException(e);
         }finally {
+            logParams.setTags(tags.toArray(new String[0]));
+            logParams.setCost(System.currentTimeMillis() - nowTime);
             MonitorLogUtil.log(logParams);
         }
         return null;
