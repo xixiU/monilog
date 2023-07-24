@@ -4,6 +4,7 @@ import com.jiduauto.log.enums.LogPoint;
 import com.jiduauto.log.model.MonitorLogParams;
 import com.jiduauto.log.rocketmqlogspringbootstart.constant.RocketMQLogConstant;
 import com.jiduauto.log.util.MonitorLogUtil;
+import com.jiduauto.log.util.SpringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.spring.annotation.RocketMQMessageListener;
@@ -72,17 +73,18 @@ public class RocketMQConsumerAop {
         if (listenerAnnotation == null) {
             return;
         }
+
         if (StringUtils.isNotBlank(listenerAnnotation.consumerGroup())) {
             tagList.add(RocketMQLogConstant.GROUP);
-            tagList.add(listenerAnnotation.consumerGroup());
+            tagList.add(SpringUtils.getApplicationContext().getEnvironment().resolvePlaceholders(listenerAnnotation.consumerGroup()));
         }
         if (listenerAnnotation.selectorType() != null) {
             tagList.add(RocketMQLogConstant.SELECTOR_TYPE);
-            tagList.add(listenerAnnotation.selectorType().name());
+            tagList.add(SpringUtils.getApplicationContext().getEnvironment().resolvePlaceholders(listenerAnnotation.selectorType().name()));
         }
         if (StringUtils.isNotBlank(listenerAnnotation.selectorExpression())) {
             tagList.add(RocketMQLogConstant.SELECTOR_EXPRESSION);
-            tagList.add(listenerAnnotation.selectorExpression());
+            tagList.add(SpringUtils.getApplicationContext().getEnvironment().resolvePlaceholders(listenerAnnotation.selectorExpression()));
         }
     }
 
