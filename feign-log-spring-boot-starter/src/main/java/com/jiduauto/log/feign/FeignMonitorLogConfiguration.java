@@ -15,9 +15,11 @@ import feign.Client;
 import feign.Feign;
 import feign.Request;
 import feign.Response;
+import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -42,12 +44,19 @@ import java.nio.charset.StandardCharsets;
 public class FeignMonitorLogConfiguration {
 
     @Bean
-    public Client getClient() {
-        return new MonitorLogClient(null, null);
+    @ConditionalOnBean(Client.class)
+    public Client getClient(Client c) {
+        MonitorLogClient client = new MonitorLogClient(null, null);
+        client.setC(c);
+        return client;
     }
 
 
+    @Setter
     static class MonitorLogClient extends Client.Default {
+        private Client c;
+
+
         public MonitorLogClient(SSLSocketFactory sslContextFactory, HostnameVerifier hostnameVerifier) {
             super(sslContextFactory, hostnameVerifier);
         }
@@ -66,7 +75,7 @@ public class FeignMonitorLogConfiguration {
             long cost = 0;
             try {
                 //原始调用
-                originResponse = super.execute(request, options);
+                originResponse = c.execute(request, options);
             } catch (Throwable e) {
                 ex = e;
             } finally {
