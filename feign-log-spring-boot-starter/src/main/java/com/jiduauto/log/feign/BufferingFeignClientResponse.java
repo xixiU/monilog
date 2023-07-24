@@ -64,6 +64,18 @@ class BufferingFeignClientResponse implements Closeable {
         return null;
     }
 
+    String body() throws IOException {
+        StringBuilder sb = new StringBuilder();
+        try (InputStreamReader reader = new InputStreamReader(getBody())) {
+            char[] tmp = new char[1024];
+            int len;
+            while ((len = reader.read(tmp, 0, tmp.length)) != -1) {
+                sb.append(new String(tmp, 0, len));
+            }
+        }
+        return sb.toString();
+    }
+
     InputStream getBody() throws IOException {
         if (this.body == null) {
             this.body = StreamUtils.copyToByteArray(this.response.body().asInputStream());

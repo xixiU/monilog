@@ -15,7 +15,6 @@ import feign.Client;
 import feign.Request;
 import feign.Response;
 import lombok.SneakyThrows;
-import org.apache.commons.io.IOUtils;
 import org.springframework.http.HttpStatus;
 
 import java.nio.charset.Charset;
@@ -88,7 +87,7 @@ public class EnhancedFeignClient implements Client {
             if (response.isDownstream()) {
                 mlp.setOutput("Binary data");
             } else {
-                resultStr = IOUtils.toString(originResponse.body().asReader(charset)); //读掉原始response中的数据
+                resultStr = response.body(); //读掉原始response中的数据
                 mlp.setOutput(resultStr);
             }
             if (resultStr != null && response.isJson()) {
