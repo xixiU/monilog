@@ -95,6 +95,7 @@ public class EnhancedFeignClient implements Client {
             if (resultStr != null && response.isJson()) {
                 Object json = JSON.parse(resultStr);
                 if (json != null) {
+                    mlp.setOutput(json);
                     LogParser cl = ReflectUtil.getAnnotation(LogParser.class, mlp.getServiceCls(), m);
                     //尝试更精确的提取业务失败信息
                     ResultParseStrategy rps = cl == null ? null : cl.resultParseStrategy();
@@ -125,7 +126,7 @@ public class EnhancedFeignClient implements Client {
         return ret;
     }
 
-    private static String formatRequestInfo(Request request) {
+    private static JSONObject formatRequestInfo(Request request) {
         String bodyParams = request.isBinary() ? "Binary data" : request.length() == 0 ? null : new String(request.body(), request.charset()).trim();
         Map<String, Collection<String>> queries = request.requestTemplate().queries();
         Map<String, Collection<String>> headers = request.headers();
@@ -144,6 +145,6 @@ public class EnhancedFeignClient implements Client {
             }
             obj.put("headers", headerMap);
         }
-        return obj.toJSONString();
+        return obj;
     }
 }
