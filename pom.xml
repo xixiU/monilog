@@ -24,6 +24,7 @@
         <module>grpc-log-spring-boot-starter</module>
         <module>all-log-spring-boot-start</module>
         <module>feign-log-spring-boot-starter</module>
+        <module>xxljob-log-spring-boot-starter</module>
     </modules>
 
     <properties>
