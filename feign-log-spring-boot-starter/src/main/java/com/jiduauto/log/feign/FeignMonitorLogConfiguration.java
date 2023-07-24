@@ -39,7 +39,7 @@ import java.nio.charset.StandardCharsets;
  */
 @Configuration
 @EnableConfigurationProperties
-@ConditionalOnProperty(prefix = "monitor.log.feign", name = "enable", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "monitor.log.feign", name = "enable", havingValue = "true", matchIfMissing = false)
 @ConditionalOnClass(Feign.class)
 @Slf4j
 public class FeignMonitorLogConfiguration {
