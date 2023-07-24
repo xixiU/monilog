@@ -12,6 +12,7 @@ public enum ErrorEnum {
     FAILED("失败"),
     SERVICE_TIMEOUT("服务超时"),
     SYSTEM_ERROR("系统异常"),
+    UNKNOWN_HOST("服务解析异常"),
     NULL_RESULT("结果为null"),
     EMPTY_RESULT("结果为空"),
     SUCCESS("成功");

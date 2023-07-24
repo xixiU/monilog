@@ -8,6 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
+import java.net.UnknownHostException;
 import java.sql.SQLTimeoutException;
 import java.util.concurrent.TimeoutException;
 
@@ -21,6 +22,9 @@ public class ExceptionUtil {
         }
         if (ex instanceof IllegalArgumentException) {
             return ErrorInfo.of(ErrorEnum.PARAM_ERROR.name(), getErrorMsg(ex));
+        }
+        if (ex instanceof UnknownHostException) {
+            return ErrorInfo.of(ErrorEnum.UNKNOWN_HOST.name(), ex.getClass().getSimpleName() + ":" + ex.getMessage());
         }
         boolean isTimeout = ExceptionUtil.isTimeout(ex);
         ErrorEnum ee = isTimeout ? ErrorEnum.SERVICE_TIMEOUT : ErrorEnum.SYSTEM_ERROR;
