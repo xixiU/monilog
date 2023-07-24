@@ -23,6 +23,7 @@
         <module>web-log-spring-boot-starter</module>
         <module>grpc-log-spring-boot-starter</module>
         <module>all-log-spring-boot-start</module>
+        <module>feign-log-spring-boot-starter</module>
     </modules>
 
     <properties>
@@ -70,6 +71,12 @@
                 <groupId>com.jiduauto.log</groupId>
                 <artifactId>grpc-log-spring-boot-starter</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.jiduauto.log</groupId>
+                <artifactId>feign-log-spring-boot-starter</artifactId>
+                <version>1.0.5-SNAPSHOT</version>
             </dependency>
 
             <dependency>

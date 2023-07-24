@@ -22,10 +22,4 @@ public @interface MonitorLog {
      *
      */
     String[] tags() default { "" };
-
-
-    /**
-     * 监控类型
-     */
-    MonitorType[] monitorType() default { MonitorType.RECORD };
 }

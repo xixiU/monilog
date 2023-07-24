@@ -1,38 +1,30 @@
 package com.jiduauto.log.weblogspringbootstarter.util;
 
+import org.springframework.util.AntPathMatcher;
+
+import java.util.Arrays;
 import java.util.List;
 
 public class UrlMatcherUtils {
 
-    public static boolean checkContains(List<String> blackUrlList, String url) {
-        for (String blackUrl : blackUrlList) {
-            if (matchUrl(blackUrl, url)) {
+    public static boolean checkUrlMatch(List<String> urls, String url) {
+        AntPathMatcher antPathMatcher = new AntPathMatcher();
+        for (String pattern : urls) {
+            if (antPathMatcher.match(pattern, url)) {
                 return true;
             }
         }
         return false;
     }
 
-    private static boolean matchUrl(String pattern, String url) {
-        String[] patternParts = pattern.split("/");
-        String[] urlParts = url.split("/");
 
-        int patternLength = patternParts.length;
-        int urlLength = urlParts.length;
-
-        if (patternLength > urlLength) {
-            return false;
-        }
-
-        for (int i = 0; i < patternLength; i++) {
-            String patternPart = patternParts[i];
-            String urlPart = urlParts[i];
-
-            if (!"*".equals(patternPart) && !patternPart.equals(urlPart)) {
-                return false;
-            }
-        }
-
-        return true;
+    public static void main(String[] args) {
+        List<String> urlPatterns = Arrays.asList("/api/v1/users/*", "/api/v1/posts/*");
+        String url1 = "/api/v1/users/123";
+        String url2 = "/api/v1/comments/456";
+        boolean match1 = checkUrlMatch(urlPatterns, url1);
+        boolean match2 = checkUrlMatch(urlPatterns, url2);
+        System.out.println("URL1 matching: " + match1);
+        System.out.println("URL2 matching: " + match2);
     }
 }

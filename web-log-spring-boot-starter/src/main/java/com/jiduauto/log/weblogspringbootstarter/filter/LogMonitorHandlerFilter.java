@@ -16,6 +16,7 @@ import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerExecutionChain;
@@ -49,6 +50,7 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
     private List<String> BLACK_LIST;
 
 
+
     @Override
     public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws IOException, ServletException {
@@ -57,7 +59,7 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
             BLACK_LIST = Collections.singletonList(WebLogConstant.MISC_PING_URL);
         }
 
-        if (UrlMatcherUtils.checkContains(BLACK_LIST, requestURI)) {
+        if (UrlMatcherUtils.checkUrlMatch(BLACK_LIST, requestURI)) {
             filterChain.doFilter(request, response);
             return;
         }

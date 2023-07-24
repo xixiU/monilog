@@ -6,11 +6,8 @@ import com.jiduauto.log.model.MonitorLogParams;
 import com.metric.MetricMonitor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
@@ -35,21 +32,14 @@ public class MonitorLogUtil {
     }
 
     private static void realLog(MonitorLogParams logParams) {
-        MonitorType[] monitorTypes = logParams.getMonitorTypes();
-        if (monitorTypes == null || monitorTypes.length == 0) {
-            monitorTypes = new MonitorType[]{MonitorType.RECORD};
-        }
         String[] tags = processTags(logParams);
-        for (MonitorType monitorType : monitorTypes) {
-            String name = StringUtils.join(logParams.getService() , logParams.getAction() , monitorType.getMark());
-            // 默认打一个record记录
-            MetricMonitor.record(name, tags);
 
-            if (MonitorType.TIMER.equals(monitorType)) {
-                MetricMonitor.eventDruation(name, tags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
-            }
-            // 对返回值添加累加记录
-            MetricMonitor.cumulation(name, 1, tags);
+        // 默认打一个record记录
+        MetricMonitor.record(Constants.BUSINESS_NAME_PREFIX +  MonitorType.RECORD.getMark(), tags);
+        // 对返回值添加累加记录
+        MetricMonitor.cumulation(Constants.BUSINESS_NAME_PREFIX +  MonitorType.CUMULATION.getMark(), 1, tags);
+        if (logParams.getCost()> 0L) {
+            MetricMonitor.eventDruation(Constants.BUSINESS_NAME_PREFIX +  MonitorType.TIMER.getMark(), tags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
         }
     }
 
@@ -73,6 +63,10 @@ public class MonitorLogUtil {
         }else{
             tagList.add(Constants.SUCCESS);
         }
+        if (StringUtils.isNotBlank(logParams.getMsgCode())) {
+            tagList.add(Constants.MSG_CODE);
+            tagList.add(logParams.getMsgCode());
+        }
         tagList.add(Constants.APPLICATION);
         tagList.add(applicationName);
         tagList.add(Constants.LOG_POINT);
@@ -80,8 +74,26 @@ public class MonitorLogUtil {
         tagList.add(Constants.ENV);
         tagList.add(SpringUtils.getActiveProfile());
         if (logParams.getException() != null) {
+            Throwable exception = logParams.getException();
             tagList.add(Constants.EXCEPTION);
-            tagList.add(logParams.getException().getClass().getSimpleName());
+            tagList.add(exception.getClass().getSimpleName());
+
+            tagList.add(Constants.EXCEPTION_MSG);
+            tagList.add(exception.getMessage());
+        }
+
+        if (StringUtils.isNotBlank(logParams.getService())) {
+            tagList.add(Constants.SERVICE_NAME);
+            tagList.add(logParams.getService());
+        }
+
+        if (StringUtils.isNotBlank(logParams.getAction())) {
+            tagList.add(Constants.ACTION_NAME);
+            tagList.add(logParams.getAction());
+        }
+        if (logParams.getCost()> 0L) {
+            tagList.add(Constants.COST);
+            tagList.add(String.valueOf(logParams.getCost()));
         }
         tags = tagList.toArray(new String[0]);
         return tags;
