@@ -6,6 +6,7 @@ import com.alibaba.fastjson.util.TypeUtils;
 import com.google.common.collect.Sets;
 import org.apache.commons.collections4.CollectionUtils;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -14,6 +15,48 @@ import java.util.stream.Collectors;
  * @author yepei
  */
 public class ReflectUtil {
+    /**
+     * //找到方法上的注解，如果找不到则向上找类上的，如果还找不到，则再向上找接口上的
+     *
+     * @param annotationClass
+     * @param methodOwnedClass
+     * @param methods
+     * @param <T>
+     * @return
+     */
+    public static <T extends Annotation> T getAnnotation(Class<T> annotationClass, Class<?> methodOwnedClass, Method... methods) {
+        assert methods != null && methods.length > 0;
+        T annotation = null;
+        //方法上的
+        for (Method method : methods) {
+            annotation = method == null ? null : method.getAnnotation(annotationClass);
+            if (annotation != null) {
+                break;
+            }
+        }
+        if (annotation != null) {
+            return annotation;
+        }
+        //类上的
+        for (Method method : methods) {
+            annotation = method == null ? null : method.getDeclaringClass().getAnnotation(annotationClass);
+            if (annotation != null) {
+                break;
+            }
+        }
+        if (annotation != null) {
+            return annotation;
+        }
+        //接口上的
+        for (Method method : methods) {
+            annotation = method == null ? null : methodOwnedClass.getAnnotation(annotationClass);
+            if (annotation != null) {
+                break;
+            }
+        }
+        return annotation;
+    }
+
     public static Object invokeMethod(Object service, String methodName, Object... args) {
         if (args == null) {
             args = new Object[]{};

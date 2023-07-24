@@ -76,7 +76,7 @@ class BufferingFeignClientResponse implements Closeable {
         return sb.toString();
     }
 
-    InputStream getBody() throws IOException {
+    private InputStream getBody() throws IOException {
         if (this.body == null) {
             this.body = StreamUtils.copyToByteArray(this.response.body().asInputStream());
         }

@@ -3,6 +3,7 @@ package com.jiduauto.log.feign;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.jiduauto.log.core.ErrorInfo;
+import com.jiduauto.log.core.LogParser;
 import com.jiduauto.log.core.enums.ErrorEnum;
 import com.jiduauto.log.core.enums.LogPoint;
 import com.jiduauto.log.core.model.MonitorLogParams;
@@ -10,15 +11,22 @@ import com.jiduauto.log.core.parse.ParsedResult;
 import com.jiduauto.log.core.parse.ResultParseStrategy;
 import com.jiduauto.log.core.util.ExceptionUtil;
 import com.jiduauto.log.core.util.MonitorLogUtil;
+import com.jiduauto.log.core.util.ReflectUtil;
 import com.jiduauto.log.core.util.ResultParseUtil;
 import feign.Client;
+import feign.MethodMetadata;
 import feign.Request;
 import feign.Response;
 import lombok.SneakyThrows;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 
+import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.Map;
 
 /**
  * @author yp
@@ -46,20 +54,19 @@ public class EnhancedFeignClient implements Client {
         } finally {
             cost = System.currentTimeMillis() - start;
         }
-
-        //TODO 这里需要拿到feign的目标接口信息，并尝试提取其上的LogParser注解
+        MethodMetadata mm = request.requestTemplate().methodMetadata();
+        Method m = mm.method();
         MonitorLogParams mlp = new MonitorLogParams();
-        mlp.setServiceCls(null);
-        mlp.setService("");
-        mlp.setAction("");
-        mlp.setTags(new String[]{""});
-
+        mlp.setServiceCls(m.getDeclaringClass());
+        mlp.setService(m.getDeclaringClass().getSimpleName());
+        mlp.setAction(m.getName());
+        mlp.setTags(new String[]{"method", request.httpMethod().toString(), "url", request.url()});
 
         mlp.setCost(cost);
         mlp.setException(ex);
         mlp.setSuccess(ex == null);
         mlp.setLogPoint(LogPoint.REMOTE_CLIENT);
-        mlp.setInput(new Object[]{request.toString()});
+        mlp.setInput(new Object[]{formatRequestInfo(request)});
         mlp.setMsgCode(ErrorEnum.SUCCESS.name());
         mlp.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
         if (ex != null) {
@@ -92,10 +99,17 @@ public class EnhancedFeignClient implements Client {
             }
             if (resultStr != null && response.isJson()) {
                 Object json = JSON.parse(resultStr);
-                if (json instanceof JSONObject) {
+                if (json != null) {
+                    LogParser cl = ReflectUtil.getAnnotation(LogParser.class, mlp.getServiceCls(), m);
                     //尝试更精确的提取业务失败信息
-                    //TODO 这里如何能基于配置或接口注解中的判定表达式更准确判断结果呢？ 例如: $.code==0
-                    ParsedResult parsedResult = ResultParseUtil.parseResult(json, ResultParseStrategy.IfSuccess, null);
+                    ResultParseStrategy rps = cl == null ? null : cl.resultParseStrategy();
+                    if (rps == null) {
+                        rps = ResultParseStrategy.IfSuccess;
+                    }
+                    String boolExpr = cl == null ? null : cl.boolExpr();
+                    String codeExpr = cl == null ? null : cl.errorCodeExpr();
+                    String msgExpr = cl == null ? null : cl.errorMsgExpr();
+                    ParsedResult parsedResult = ResultParseUtil.parseResult(json, rps, null, boolExpr, codeExpr, msgExpr);
                     mlp.setSuccess(parsedResult.isSuccess());
                     mlp.setMsgCode(parsedResult.getMsgCode());
                     mlp.setMsgInfo(parsedResult.getMsgInfo());
@@ -114,5 +128,22 @@ public class EnhancedFeignClient implements Client {
             MonitorLogUtil.log(mlp);
         }
         return ret;
+    }
+
+    private static String formatRequestInfo(Request request) {
+        String bodyParams = request.isBinary() ? "Binary data" : request.length() == 0 ? null : new String(request.body(), request.charset());
+        Map<String, Collection<String>> queries = request.requestTemplate().queries();
+        Map<String, Collection<String>> headers = request.headers();
+        JSONObject obj = new JSONObject();
+        if (StringUtils.isNotBlank(bodyParams)) {
+            obj.put("body", bodyParams);
+        }
+        if (MapUtils.isNotEmpty(queries)) {
+            obj.put("query", queries);
+        }
+        if (MapUtils.isNotEmpty(headers)) {
+            obj.put("headers", headers);
+        }
+        return obj.toJSONString();
     }
 }

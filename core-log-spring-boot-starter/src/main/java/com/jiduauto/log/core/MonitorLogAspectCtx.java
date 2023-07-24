@@ -13,7 +13,6 @@ import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
@@ -37,7 +36,6 @@ public class MonitorLogAspectCtx {
     private Throwable exception;
     /**
      * 指标tag
-     *
      */
     private final String[] tags;
 
@@ -61,44 +59,11 @@ public class MonitorLogAspectCtx {
             } catch (NoSuchMethodException ignore) {
             }
         }
-        //找到方法上的ClientLog注解，如果找不到则向上找类上的，如果还找不到，则再向上找接口上的
-        this.logParserAnnotation = getAnnotation(LogParser.class, targetMethod, method);
-        MonitorLog anno = getAnnotation(MonitorLog.class, targetMethod, method);
+        //找到方法上的注解，如果找不到则向上找类上的，如果还找不到，则再向上找接口上的
+        this.logParserAnnotation = ReflectUtil.getAnnotation(LogParser.class, methodOwnedClass, targetMethod, method);
+        MonitorLog anno = ReflectUtil.getAnnotation(MonitorLog.class, methodOwnedClass, targetMethod, method);
         this.logPoint = anno == null ? LogPoint.UNKNOWN_ENTRY : anno.value();
         this.tags = anno == null ? null : anno.tags();
-    }
-
-    private <T extends Annotation> T getAnnotation(Class<T> annotationClass, Method... methods) {
-        assert methods != null && methods.length > 0;
-        T annotation = null;
-        //方法上的
-        for (Method method : methods) {
-            annotation = method == null ? null : method.getAnnotation(annotationClass);
-            if (annotation != null) {
-                break;
-            }
-        }
-        if (annotation != null) {
-            return annotation;
-        }
-        //类上的
-        for (Method method : methods) {
-            annotation = method == null ? null : method.getDeclaringClass().getAnnotation(annotationClass);
-            if (annotation != null) {
-                break;
-            }
-        }
-        if (annotation != null) {
-            return annotation;
-        }
-        //接口上的
-        for (Method method : methods) {
-            annotation = method == null ? null : methodOwnedClass.getAnnotation(annotationClass);
-            if (annotation != null) {
-                break;
-            }
-        }
-        return annotation;
     }
 
     public MonitorLogAspectCtx buildResult(long cost, Object result, Throwable exception) {
