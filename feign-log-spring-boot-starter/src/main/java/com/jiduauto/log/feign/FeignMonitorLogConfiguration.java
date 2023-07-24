@@ -25,6 +25,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpStatus;
 
 import javax.net.ssl.HostnameVerifier;
@@ -53,6 +54,7 @@ public class FeignMonitorLogConfiguration {
 
 
     @Setter
+    @Primary
     static class MonitorLogClient extends Client.Default {
         private Client c;
 
