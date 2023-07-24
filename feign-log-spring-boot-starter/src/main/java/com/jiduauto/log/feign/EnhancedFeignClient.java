@@ -9,14 +9,8 @@ import com.jiduauto.log.core.enums.LogPoint;
 import com.jiduauto.log.core.model.MonitorLogParams;
 import com.jiduauto.log.core.parse.ParsedResult;
 import com.jiduauto.log.core.parse.ResultParseStrategy;
-import com.jiduauto.log.core.util.ExceptionUtil;
-import com.jiduauto.log.core.util.MonitorLogUtil;
-import com.jiduauto.log.core.util.ReflectUtil;
-import com.jiduauto.log.core.util.ResultParseUtil;
-import feign.Client;
-import feign.MethodMetadata;
-import feign.Request;
-import feign.Response;
+import com.jiduauto.log.core.util.*;
+import feign.*;
 import lombok.SneakyThrows;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -26,6 +20,7 @@ import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -131,18 +126,23 @@ public class EnhancedFeignClient implements Client {
     }
 
     private static String formatRequestInfo(Request request) {
-        String bodyParams = request.isBinary() ? "Binary data" : request.length() == 0 ? null : new String(request.body(), request.charset());
+        String bodyParams = request.isBinary() ? "Binary data" : request.length() == 0 ? null : new String(request.body(), request.charset()).trim();
         Map<String, Collection<String>> queries = request.requestTemplate().queries();
         Map<String, Collection<String>> headers = request.headers();
         JSONObject obj = new JSONObject();
         if (StringUtils.isNotBlank(bodyParams)) {
-            obj.put("body", bodyParams);
+            JSON json = StringUtil.tryConvert2Json(bodyParams);
+            obj.put("body", json != null ? json : bodyParams);
         }
         if (MapUtils.isNotEmpty(queries)) {
-            obj.put("query", queries);
+            obj.put("query", StringUtil.encodeQueryString(queries));
         }
         if (MapUtils.isNotEmpty(headers)) {
-            obj.put("headers", headers);
+            Map<String, String> headerMap = new HashMap<>();
+            for (Map.Entry<String, Collection<String>> me : headers.entrySet()) {
+                headerMap.put(me.getKey(), String.join(",", me.getValue()));
+            }
+            obj.put("headers", headerMap);
         }
         return obj.toJSONString();
     }
