@@ -76,7 +76,6 @@ public class RocketMQConsumerAop {
             logParams.setTags(tagList.toArray(new String[0]));
             logParams.setCost(System.currentTimeMillis() - startTime);
             MonitorLogUtil.log(logParams);
-
         }
 
 
