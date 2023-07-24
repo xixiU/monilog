@@ -38,6 +38,12 @@
            <artifactId>feign-log-spring-boot-starter</artifactId>
            <version>1.0.5-SNAPSHOT</version>
        </dependency>
+
+       <dependency>
+           <groupId>com.jiduauto.log</groupId>
+           <artifactId>xxljob-log-spring-boot-starter</artifactId>
+           <version>1.0.5-SNAPSHOT</version>
+       </dependency>
    </dependencies>
 
 </project>
