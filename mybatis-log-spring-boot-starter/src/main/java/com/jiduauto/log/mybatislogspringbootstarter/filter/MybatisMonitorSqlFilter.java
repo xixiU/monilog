@@ -85,6 +85,7 @@ public class MybatisMonitorSqlFilter implements Interceptor {
             log.error("intercept process error", e);
             logParams.setCost(System.currentTimeMillis() - nowTime);
             logParams.setSuccess(false);
+            logParams.setException(e);
         }finally {
             MonitorLogUtil.log(logParams);
         }
