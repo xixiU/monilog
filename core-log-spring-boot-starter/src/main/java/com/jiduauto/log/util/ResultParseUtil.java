@@ -60,7 +60,7 @@ public final class ResultParseUtil {
     }
 
 
-    public ParsedResult parseResult(Object returnObj, ResultParseStrategy strategy, Throwable t) {
+    public static ParsedResult parseResult(Object returnObj, ResultParseStrategy strategy, Throwable t) {
         return parseResult(returnObj, strategy, t, null, null, null);
     }
 

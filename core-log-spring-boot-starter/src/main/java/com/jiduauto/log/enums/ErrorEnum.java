@@ -9,6 +9,7 @@ import lombok.Getter;
 @Getter
 public enum ErrorEnum {
     PARAM_ERROR("参数错误"),
+    FAILED("失败"),
     SERVICE_TIMEOUT("服务超时"),
     SYSTEM_ERROR("系统异常"),
     NULL_RESULT("结果为null"),
