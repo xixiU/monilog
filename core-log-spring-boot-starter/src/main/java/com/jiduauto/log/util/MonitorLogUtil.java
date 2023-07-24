@@ -1,6 +1,7 @@
 package com.jiduauto.log.util;
 
 import com.jiduauto.log.constant.Constants;
+import com.jiduauto.log.enums.LogPoint;
 import com.jiduauto.log.enums.MonitorType;
 import com.jiduauto.log.model.MonitorLogParams;
 import com.metric.MetricMonitor;
@@ -34,12 +35,17 @@ public class MonitorLogUtil {
     private static void realLog(MonitorLogParams logParams) {
         String[] tags = processTags(logParams);
 
+        LogPoint logPoint = logParams.getLogPoint();
+        if (logPoint == null) {
+            logPoint = LogPoint.UNKNOWN_ENTRY;
+        }
+        String name = Constants.BUSINESS_NAME_PREFIX +Constants.UNDERLINE  + logPoint.name();
         // 默认打一个record记录
-        MetricMonitor.record(Constants.BUSINESS_NAME_PREFIX +  MonitorType.RECORD.getMark(), tags);
+        MetricMonitor.record(name +  MonitorType.RECORD.getMark(), tags);
         // 对返回值添加累加记录
-        MetricMonitor.cumulation(Constants.BUSINESS_NAME_PREFIX +  MonitorType.CUMULATION.getMark(), 1, tags);
+        MetricMonitor.cumulation(name +  MonitorType.CUMULATION.getMark(), 1, tags);
         if (logParams.getCost()> 0L) {
-            MetricMonitor.eventDruation(Constants.BUSINESS_NAME_PREFIX +  MonitorType.TIMER.getMark(), tags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
+            MetricMonitor.eventDruation(name +  MonitorType.TIMER.getMark(), tags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
         }
     }
 

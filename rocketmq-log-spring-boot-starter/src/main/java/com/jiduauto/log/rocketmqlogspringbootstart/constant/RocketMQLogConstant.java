@@ -9,7 +9,11 @@ public final class RocketMQLogConstant {
 
     public static final String SELECTOR_EXPRESSION = "selectorExpression";
 
-    public static final String mqBody = "mqBody";
+    public static final String MQ_BODY = "mqBody";
+
+    public static final String STATUS = "status";
+
+    public static final String SEND_RESULT = "sendResult";
 
 
 
