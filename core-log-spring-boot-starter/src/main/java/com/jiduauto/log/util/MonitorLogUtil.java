@@ -32,23 +32,14 @@ public class MonitorLogUtil {
     }
 
     private static void realLog(MonitorLogParams logParams) {
-        MonitorType[] monitorTypes = logParams.getMonitorTypes();
-        if (monitorTypes == null || monitorTypes.length == 0) {
-            monitorTypes = new MonitorType[]{MonitorType.RECORD};
-        }
         String[] tags = processTags(logParams);
-        for (MonitorType monitorType : monitorTypes) {
-            String name = StringUtils.join(logParams.getService() ,Constants.UNDERLINE, logParams.getAction());
-            // 默认打一个record记录
-            MetricMonitor.record(name +  monitorType.getMark(), tags);
 
-            // 对返回值添加累加记录
-            MetricMonitor.cumulation(name +  MonitorType.CUMULATION.getMark(), 1, tags);
-
-            if (MonitorType.TIMER.equals(monitorType) || logParams.getCost()> 0L) {
-                MetricMonitor.eventDruation(name +  monitorType.getMark(), tags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
-            }
-            
+        // 默认打一个record记录
+        MetricMonitor.record(Constants.BUSINESS_NAME_PREFIX +  MonitorType.RECORD.getMark(), tags);
+        // 对返回值添加累加记录
+        MetricMonitor.cumulation(Constants.BUSINESS_NAME_PREFIX +  MonitorType.CUMULATION.getMark(), 1, tags);
+        if (logParams.getCost()> 0L) {
+            MetricMonitor.eventDruation(Constants.BUSINESS_NAME_PREFIX +  MonitorType.TIMER.getMark(), tags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
         }
     }
 
@@ -72,6 +63,10 @@ public class MonitorLogUtil {
         }else{
             tagList.add(Constants.SUCCESS);
         }
+        if (StringUtils.isNotBlank(logParams.getMsgCode())) {
+            tagList.add(Constants.MSG_CODE);
+            tagList.add(logParams.getMsgCode());
+        }
         tagList.add(Constants.APPLICATION);
         tagList.add(applicationName);
         tagList.add(Constants.LOG_POINT);
@@ -79,8 +74,12 @@ public class MonitorLogUtil {
         tagList.add(Constants.ENV);
         tagList.add(SpringUtils.getActiveProfile());
         if (logParams.getException() != null) {
+            Throwable exception = logParams.getException();
             tagList.add(Constants.EXCEPTION);
-            tagList.add(logParams.getException().getClass().getSimpleName());
+            tagList.add(exception.getClass().getSimpleName());
+
+            tagList.add(Constants.EXCEPTION_MSG);
+            tagList.add(exception.getMessage());
         }
 
         if (StringUtils.isNotBlank(logParams.getService())) {
@@ -96,7 +95,6 @@ public class MonitorLogUtil {
             tagList.add(Constants.COST);
             tagList.add(String.valueOf(logParams.getCost()));
         }
-
         tags = tagList.toArray(new String[0]);
         return tags;
     }
