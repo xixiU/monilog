@@ -46,7 +46,8 @@ public class FeignMonitorLogConfiguration {
 
     @Bean
     @ConditionalOnBean(Client.class)
-    public Client getClient(Client c) {
+    @Primary
+    public MonitorLogClient getClient(Client c) {
         MonitorLogClient client = new MonitorLogClient(null, null);
         client.setC(c);
         return client;
@@ -54,7 +55,6 @@ public class FeignMonitorLogConfiguration {
 
 
     @Setter
-    @Primary
     static class MonitorLogClient extends Client.Default {
         private Client c;
 
