@@ -6,6 +6,7 @@ import com.jiduauto.log.core.model.MonitorLogParams;
 import com.jiduauto.log.core.util.MonitorLogUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 
 /**
  * @author rongjie.yuan
@@ -13,6 +14,9 @@ import org.slf4j.LoggerFactory;
  * @date 2023/7/25 20:55
  */
 public class DefaultMonitorLogPrinter implements MonitorLogPrinter {
+
+    @Value("${monitor.log.printer.text.len.max:5000}")
+    private int maxTextLen = 5000;
 
     @Override
     public void log(MonitorLogParams logParams) {
@@ -24,13 +28,33 @@ public class DefaultMonitorLogPrinter implements MonitorLogPrinter {
             serviceCls = MonitorLogUtil.class;
         }
         Logger logger = LoggerFactory.getLogger(serviceCls);
-        if (!logParams.isSuccess() || logParams.getException() != null) {
-            logger.error("logPoint:{} service:{} action:{} input:{} has error", logParams.getLogPoint(),
-                    logParams.getService(), logParams.getAction(), logParams.getInput(), logParams.getException());
+        String logPoint = logParams.getLogPoint().name();
+        String service = logParams.getService();
+        String action = logParams.getAction();
+        String success = logParams.isSuccess() ? "Y" : "N";
+        String code = logParams.getMsgCode();
+        String msg = logParams.getMsgInfo();
+        String rt = logParams.getCost() + "ms";
+        String input = formatLongText(logParams.getInput());
+        String output = formatLongText(logParams.getOutput());
+        Throwable ex = logParams.getException();
+
+        if (!logParams.isSuccess()) {
+            logger.error("monitorlog[{}]-{}.{} {}-{}-{} {}ms input:{}, output:{}", logPoint, service, action, success, code, msg, rt, input, output, ex);
             return;
         }
-        String[] tags = MonitorLogUtil.processTags(logParams);
-        logger.info("logPoint:{} service:{} action:{} input:{} tag:{}",
-                logParams.getLogPoint(), logParams.getService(), logParams.getAction(), logParams.getInput(), JSON.toJSONString(tags));
+        String tags = JSON.toJSONString(MonitorLogUtil.processTags(logParams));
+        logger.error("monitorlog[{}]-{}.{} {}-{}-{} {}ms input:{}, output:{}, tags:{}", logPoint, service, action, success, code, msg, rt, input, output, tags);
+    }
+
+    private String formatLongText(Object o) {
+        if (o == null) {
+            return null;
+        }
+        String str = JSON.toJSONString(o);
+        if (str.length() > maxTextLen) {
+            return str.substring(0, maxTextLen - 3) + "...";
+        }
+        return str;
     }
 }
