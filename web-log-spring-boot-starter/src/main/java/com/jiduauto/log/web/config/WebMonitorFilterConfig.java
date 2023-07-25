@@ -1,7 +1,5 @@
 package com.jiduauto.log.web.config;
 
-import com.jiduauto.log.core.MonitorLogPrinter;
-import com.jiduauto.log.core.service.DefaultMonitorLogPrinter;
 import com.jiduauto.log.core.util.SpringUtils;
 import com.jiduauto.log.web.filter.LogMonitorHandlerFilter;
 import com.jiduauto.log.web.service.DefaultHttpRequestValidator;
@@ -37,7 +35,7 @@ public class WebMonitorFilterConfig {
 
     @ConditionalOnMissingBean(HttpRequestValidator.class)
     @Bean
-    public HttpRequestValidator monitorLogPrinter() {
+    public HttpRequestValidator httpRequestValidator() {
         return new DefaultHttpRequestValidator();
     }
 }
