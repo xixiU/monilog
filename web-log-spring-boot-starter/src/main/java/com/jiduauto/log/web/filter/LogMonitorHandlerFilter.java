@@ -1,7 +1,6 @@
 package com.jiduauto.log.web.filter;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.JSONValidator;
 import com.alibaba.fastjson.TypeReference;
 import com.jiduauto.log.core.annotation.MonitorLogTags;
@@ -57,10 +56,9 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
     private List<String> BLACK_LIST;
 
 
-
     @Override
     public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain) throws IOException, ServletException {
+                                 @NonNull FilterChain filterChain) throws IOException, ServletException {
         String requestURI = request.getRequestURI();
         if (CollectionUtils.isEmpty(BLACK_LIST)) {
             BLACK_LIST = Collections.singletonList(WebLogConstant.MISC_PING_URL);
@@ -78,12 +76,14 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
         }
         List<String> tagList = new ArrayList<>();
 
-        MonitorLogTags logTags = ReflectUtil.getAnnotation(MonitorLogTags.class, method.getBeanType() , method.getMethod());
-        if (logTags.tags() != null && logTags.tags().length %2 ==0) {
-            tagList = Arrays.asList(logTags.tags());
-        }else{
-            // 非偶数tag prometheus上报会报错，这里只打一行日志提醒
-            log.error("tags length must be double，method：{}", method.getMethod().getName());
+        MonitorLogTags logTags = ReflectUtil.getAnnotation(MonitorLogTags.class, method.getBeanType(), method.getMethod());
+        if (logTags != null && logTags.tags() != null) {
+            if (logTags.tags().length % 2 == 0) {
+                tagList = Arrays.asList(logTags.tags());
+            } else {
+                // 非偶数tag prometheus上报会报错，这里只打一行日志提醒
+                log.error("tags length must be double，method：{}", method.getMethod().getName());
+            }
         }
 
         long startTime = System.currentTimeMillis();
@@ -158,7 +158,7 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
                 || StringUtils.containsIgnoreCase(header, "filename");
     }
 
-    private String getHeaderValue(Map<String, String> headerMap, String headerKey){
+    private String getHeaderValue(Map<String, String> headerMap, String headerKey) {
         if (MapUtils.isEmpty(headerMap) || StringUtils.isBlank(headerKey)) {
             return null;
         }
@@ -176,7 +176,7 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
             try {
                 handlerExecutionChain = mapping.getHandler(request);
             } catch (Exception e) {
-                log.error("getHandler error" ,e);
+                log.error("getHandler error", e);
                 continue;
             }
             if (handlerExecutionChain == null) {
@@ -194,6 +194,7 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
 
     /**
      * 处理返回的tag
+     *
      * @param responseBodyStr
      * @param logParams
      */
@@ -205,7 +206,7 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
         }
         HashMap<String, String> jsonMap = JSON.parseObject(responseBodyStr, new TypeReference<HashMap<String, String>>() {
         });
-        for (int i = 0; oriTags!= null && i < oriTags.length; i++) {
+        for (int i = 0; oriTags != null && i < oriTags.length; i++) {
             if (!oriTags[i].startsWith("{") || !oriTags[i].endsWith("}")) {
                 continue;
             }
@@ -221,12 +222,13 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
 
     /**
      * 处理请求tag
+     *
      * @param request
      * @param logParams
      */
     private void dealRequestTags(HttpServletRequest request, MonitorLogParams logParams) {
         String[] oriTags = logParams.getTags();
-        for (int i = 0; oriTags!= null && i < oriTags.length; i++) {
+        for (int i = 0; oriTags != null && i < oriTags.length; i++) {
             if (!oriTags[i].startsWith("{") || !oriTags[i].endsWith("}")) {
                 continue;
             }
