@@ -1,23 +1,13 @@
 package com.jiduauto.log.rocketmq;
 
-import com.jiduauto.log.rocketmq.hook.RocketMqConsumerHook;
-import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
-import org.apache.rocketmq.spring.annotation.RocketMQMessageListener;
-import org.apache.rocketmq.spring.autoconfigure.ListenerContainerConfiguration;
-import org.apache.rocketmq.spring.autoconfigure.RocketMQAutoConfiguration;
-import org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import org.springframework.core.Ordered;
 
 @Configuration
 @ConditionalOnProperty(prefix = "monitor.log.rocketmq", name = "enable", havingValue = "true", matchIfMissing = true)
+@ConditionalOnClass(name = "org.apache.rocketmq.client.MQAdmin")
 public class RocketMQProducerInterceptorAutoConfiguration {
     // aop的注解是可以使用的，但是会对业务有要求，先注释掉
 //    @Bean
