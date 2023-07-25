@@ -1,91 +1,154 @@
 package com.jiduauto.log.grpc.filter;
 
-import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageOrBuilder;
 import com.google.protobuf.util.JsonFormat;
+import com.jiduauto.log.core.enums.ErrorEnum;
 import com.jiduauto.log.core.enums.LogPoint;
 import com.jiduauto.log.core.model.MonitorLogParams;
+import com.jiduauto.log.core.util.ExceptionUtil;
 import com.jiduauto.log.core.util.MonitorLogUtil;
-import com.jiduauto.log.grpc.GrpcMonitorLogClientCall;
 import io.grpc.*;
-import io.grpc.ForwardingClientCallListener.SimpleForwardingClientCallListener;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @author fan.zhang02
- * @date 2023/07/21/15:29
+ * @author yp
+ * @date 2023/07/25
  */
-@Slf4j
-public class GrpcLogPrintClientInterceptor implements ClientInterceptor {
+public class GrpcLogPrintClientInterceptor extends InterceptorHelper implements ClientInterceptor {
     @Override
     public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> method, CallOptions callOptions, Channel next) {
-        log.info("GrpcLogPrintClientInterceptor call...");
-        return new GrpcMonitorLogClientCall<ReqT, RespT>(next.newCall(method, callOptions), new HashMap<>()) {
-            MonitorLogParams params = new MonitorLogParams();
+        return new GrpcMonitorLogClientCall<>(next.newCall(method, callOptions), new ConcurrentHashMap<>(), method.getServiceName(), method.getFullMethodName());
+    }
 
-            @Override
-            public void start(Listener<RespT> responseListener, Metadata headers) {
-                log.info("GrpcLogPrintClientInterceptor start...");
-                params.setServiceCls(GrpcClient.class);
-                params.setLogPoint(LogPoint.RPC_ENTRY);
-                params.setTags(null);
-                params.setService(next.authority());
-                params.setAction(method.getFullMethodName());
-                params.setSuccess(true);
-                params.setMsgCode("0");
-                params.setMsgInfo("success");
-                Map<String, Object> context = this.getContext();
+    @Slf4j
+    static class GrpcMonitorLogClientCall<ReqT, RespT> extends ForwardingClientCall.SimpleForwardingClientCall<ReqT, RespT> {
+        private final ConcurrentHashMap<String, Object> context;
+        private final MonitorLogParams params;
+        private final String serviceName;
+        private final String fullMethodName;
 
-                super.start(new SimpleForwardingClientCallListener<RespT>(responseListener) {
-                    @Override
-                    public void onMessage(RespT message) {
+        public GrpcMonitorLogClientCall(ClientCall<ReqT, RespT> delegate, ConcurrentHashMap<String, Object> context, String serviceName, String fullMethodName) {
+            super(delegate);
+            this.context = context == null ? new ConcurrentHashMap<>() : context;
+            this.params = new MonitorLogParams();
+            this.serviceName = serviceName;
+            this.fullMethodName = fullMethodName;
+        }
+
+        @Override
+        public void start(Listener<RespT> responseListener, Metadata headers) {
+            params.setServiceCls(GrpcClient.class);//TODO
+            params.setLogPoint(LogPoint.REMOTE_CLIENT);
+            params.setService(serviceName);
+            params.setAction(buildActionName(fullMethodName, serviceName));
+            params.setSuccess(true);
+            params.setMsgCode(ErrorEnum.SUCCESS.name());
+            params.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
+            params.setTags(null);
+            super.start(new ForwardingClientCallListener.SimpleForwardingClientCallListener<RespT>(responseListener) {
+                @Override
+                public void onMessage(RespT message) {
+                    System.out.println("GrpcLogPrintClientInterceptor onMessage...");
+                    try {
                         if (message instanceof MessageOrBuilder) {
-                            try {
-                                params.setOutput(JsonFormat.printer().omittingInsignificantWhitespace()
-                                        .print((MessageOrBuilder) message));
-                            } catch (InvalidProtocolBufferException e) {
-                                log.error("rpc onMessage序列化成json错误", e);
-                            } finally {
-                                params.setCost(System.currentTimeMillis() - Long.parseLong(String.valueOf(context.get("nowTime"))));
-                                MonitorLogUtil.log(params);
-                            }
+                            params.setOutput(print2Json((MessageOrBuilder) message));
                         }
                         super.onMessage(message);
-                    }
-                }, headers);
-
-            }
-
-            @Override
-            public void sendMessage(ReqT message) {
-                log.info("GrpcLogPrintClientInterceptor sendMessage...");
-                if (message instanceof MessageOrBuilder) {
-                    //json序列化打印
-                    try {
-                        params.setInput(new Object[]{JsonFormat.printer().omittingInsignificantWhitespace()
-                                .print((MessageOrBuilder) message)});
-                    } catch (InvalidProtocolBufferException e) {
-                        log.error("rpc sendMessage序列化成json错误", e);
+                    } catch (Exception e) {
+                        if (params.getException() == null) {
+                            params.setException(e);
+                        }
+                        throw e;
+                    } finally {
+                        params.setCost(parseCostTime(context));
+                        MonitorLogUtil.log(params);
                     }
                 }
-                this.getContext().put("nowTime", System.currentTimeMillis());
-                try {
-                    super.sendMessage(message);
-                } catch (Throwable t) {
-                    params.setSuccess(false);
-                    params.setException(t);
-                    params.setMsgCode("1");
-                    params.setMsgInfo("fail");
-                    params.setCost(System.currentTimeMillis() - Long.parseLong(String.valueOf(this.getContext().get("nowTime"))));
+
+                @Override
+                public void onClose(Status status, Metadata trailers) {
+                    if (params.getCost() == 0) {
+                        params.setCost(parseCostTime(context));
+                    }
+                    System.out.println("GrpcLogPrintClientInterceptor onClose...");
                 }
 
+                @Override
+                public void onHeaders(Metadata headers) {
+                    super.onHeaders(headers);
+                    System.out.println("GrpcLogPrintClientInterceptor onHeaders...");
+                }
+
+                @Override
+                public void onReady() {
+                    super.onReady();
+                    System.out.println("GrpcLogPrintClientInterceptor onReady...");
+                }
+            }, headers);
+        }
+
+        @Override
+        public void sendMessage(ReqT message) {
+            System.out.println("GrpcLogPrintClientInterceptor sendMessage...");
+            if (message instanceof MessageOrBuilder) {
+                params.setInput(new Object[]{print2Json((MessageOrBuilder) message)});
             }
+            context.put("nowTime", System.currentTimeMillis());
+            try {
+                super.sendMessage(message);
+            } catch (Throwable t) {
+                params.setSuccess(false);
+                params.setException(t);
+                params.setMsgCode(ErrorEnum.FAILED.name());
+                params.setMsgInfo("Rpc调用异常:" + ExceptionUtil.getErrorMsg(t));
+            }
+        }
 
+        @Override
+        public void request(int numMessages) {
+            super.request(numMessages);
+            System.out.println("GrpcLogPrintClientInterceptor request...");
+        }
 
-        };
+        @Override
+        public void cancel(@Nullable String message, @Nullable Throwable cause) {
+            super.cancel(message, cause);
+            System.out.println("GrpcLogPrintClientInterceptor cancel...");
+        }
+
+        @Override
+        public void halfClose() {
+            super.halfClose();
+            System.out.println("GrpcLogPrintClientInterceptor halfClose...");
+        }
+
+        private static long parseCostTime(Map<String, Object> context) {
+            Long nowTime = (Long) context.get("nowTime");
+            long cost = 0;
+            if (nowTime != null) {
+                cost = System.currentTimeMillis() - nowTime;
+            }
+            return cost;
+        }
+
+        private static String print2Json(MessageOrBuilder message) {
+            try {
+                return JsonFormat.printer().omittingInsignificantWhitespace().print(message);
+            } catch (Exception e) {
+                log.error("rpc message序列化成json错误", e);
+                return message.toString();
+            }
+        }
+
+        private static String buildActionName(String fullMethodName, String serviceName) {
+            return StringUtils.remove(StringUtils.removeStart(fullMethodName, serviceName), "/");
+        }
     }
 }
+
