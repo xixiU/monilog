@@ -51,8 +51,8 @@ import java.util.*;
 @Slf4j
 public class LogMonitorHandlerFilter extends OncePerRequestFilter {
 
-    private static final List<HttpRequestValidator> HTTP_REQUEST_VALIDATORS = SpringFactoriesLoader.loadFactories(HttpRequestValidator.class,
-            Thread.currentThread().getContextClassLoader());
+//    private static final List<HttpRequestValidator> HTTP_REQUEST_VALIDATORS = SpringFactoriesLoader.loadFactories(HttpRequestValidator.class,
+//            Thread.currentThread().getContextClassLoader());
 
 
     /**
@@ -109,13 +109,22 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
         boolean isMultipart = ServletFileUpload.isMultipartContent(request);
         ContentCachingRequestWrapper wrapperRequest = isMultipart ? null : new ContentCachingRequestWrapper(request);
         ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(response);
-        for (HttpRequestValidator validator : HTTP_REQUEST_VALIDATORS) {
-            LogPoint logPoint = validator.validateRequest(wrapperRequest);
-            logParams.setLogPoint(logPoint);
-            if (!LogPoint.UNKNOWN_ENTRY.equals(logPoint)) {
-                break;
-            }
+        HttpRequestValidator validator = null;
+        try{
+            validator = SpringUtils.getBean(HttpRequestValidator.class);
+        }catch (Exception e){
+            log.error("no HttpRequestValidator instance found");
         }
+        if (validator != null) {
+            logParams.setLogPoint(validator.validateRequest(wrapperRequest));
+        }
+//        for (HttpRequestValidator validator : HTTP_REQUEST_VALIDATORS) {
+//            LogPoint logPoint = validator.validateRequest(wrapperRequest);
+//            logParams.setLogPoint(logPoint);
+//            if (!LogPoint.UNKNOWN_ENTRY.equals(logPoint)) {
+//                break;
+//            }
+//        }
         try {
             filterChain.doFilter(wrapperRequest, wrapperResponse);
 
@@ -226,25 +235,30 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
      */
     private void dealRequestTags(HttpServletRequest request, MonitorLogParams logParams) {
         String[] oriTags = logParams.getTags();
+        Map<String, String> headersMap = HttpUtil.getHeaders(request);
         for (int i = 0; oriTags != null && i < oriTags.length; i++) {
             if (!oriTags[i].startsWith("{") || !oriTags[i].endsWith("}")) {
                 continue;
             }
             String parameterName = oriTags[i].substring(1, oriTags[i].length() - 1);
             String resultTagValue = request.getParameter(parameterName);
-//            if (StringUtils.isBlank(resultTagValue) && (request instanceof RequestWrapper)) {
-//                String bodyString = ((RequestWrapper) request).getBodyString();
-//                JSONObject bodyJson = JSONObject.parseObject(bodyString);
-//                resultTagValue = bodyJson == null ? resultTagValue : bodyJson.getString(parameterName);
-//            }
-            if (StringUtils.isBlank(resultTagValue)) {
+
+            // 先从参数取值
+            if (StringUtils.isNotBlank(resultTagValue)) {
+                swapTag(oriTags, i, resultTagValue);
                 continue;
             }
-            resultTagValue = StringUtils.isNotBlank(resultTagValue) ? resultTagValue : Constants.NO_VALUE_CODE;
-            oriTags[i] = resultTagValue;
+            // 再从header取值
+            resultTagValue = headersMap.get(parameterName);
+            swapTag(oriTags, i, resultTagValue);
+
         }
         logParams.setTags(oriTags);
-//        return oriTags;
+    }
+
+    private void swapTag(String[] oriTags, int index, String resultTagValue) {
+        resultTagValue = StringUtils.isNotBlank(resultTagValue) ? resultTagValue : Constants.NO_VALUE_CODE;
+        oriTags[index] = resultTagValue;
     }
 
 

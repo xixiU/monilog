@@ -1,7 +1,11 @@
 package com.jiduauto.log.web.config;
 
+import com.jiduauto.log.core.MonitorLogPrinter;
+import com.jiduauto.log.core.service.DefaultMonitorLogPrinter;
 import com.jiduauto.log.core.util.SpringUtils;
 import com.jiduauto.log.web.filter.LogMonitorHandlerFilter;
+import com.jiduauto.log.web.service.DefaultHttpRequestValidator;
+import com.jiduauto.log.web.service.HttpRequestValidator;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -29,5 +33,11 @@ public class WebMonitorFilterConfig {
         filterRegBean.setName("log monitor filter");
         filterRegBean.setAsyncSupported(Boolean.TRUE);
         return filterRegBean;
+    }
+
+    @ConditionalOnMissingBean(HttpRequestValidator.class)
+    @Bean
+    public HttpRequestValidator monitorLogPrinter() {
+        return new DefaultHttpRequestValidator();
     }
 }
