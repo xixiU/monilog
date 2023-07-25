@@ -77,12 +77,19 @@
             <dependency>
                 <groupId>com.jiduauto.log</groupId>
                 <artifactId>feign-log-spring-boot-starter</artifactId>
-                <version>1.0.5-SNAPSHOT</version>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.jiduauto.log</groupId>
+                <artifactId>xxljob-log-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>com.jiduauto.log</groupId>
                 <artifactId>all-log-spring-boot-start</artifactId>
+                <version>${project.version}</version>
             </dependency>
 
             <!-- metric监控 -->

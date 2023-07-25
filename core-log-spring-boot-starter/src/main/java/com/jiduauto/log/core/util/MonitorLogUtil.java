@@ -14,8 +14,8 @@ import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @description: 日志工具类
  * @author rongjie.yuan
+ * @description: 日志工具类
  * @date 2023/7/17 16:42
  */
 @Slf4j
@@ -24,10 +24,10 @@ public class MonitorLogUtil {
 
     private static final String applicationName = SpringUtils.getApplicationName();
 
-    public static void log(MonitorLogParams logParams){
-        try{
+    public static void log(MonitorLogParams logParams) {
+        try {
             realLog(logParams);
-        }catch (Exception e){
+        } catch (Exception e) {
             log.error("log error", e);
         }
     }
@@ -39,34 +39,35 @@ public class MonitorLogUtil {
         if (logPoint == null) {
             logPoint = LogPoint.UNKNOWN_ENTRY;
         }
-        String name = Constants.BUSINESS_NAME_PREFIX +Constants.UNDERLINE  + logPoint.name();
+        String name = Constants.BUSINESS_NAME_PREFIX + Constants.UNDERLINE + logPoint.name();
         // 默认打一个record记录
-        MetricMonitor.record(name +  MonitorType.RECORD.getMark(), tags);
+        MetricMonitor.record(name + MonitorType.RECORD.getMark(), tags);
         // 对返回值添加累加记录
-        MetricMonitor.cumulation(name +  MonitorType.CUMULATION.getMark(), 1, tags);
-        if (logParams.getCost()> 0L) {
-            MetricMonitor.eventDruation(name +  MonitorType.TIMER.getMark(), tags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
+        MetricMonitor.cumulation(name + MonitorType.CUMULATION.getMark(), 1, tags);
+        if (logParams.getCost() > 0L) {
+            MetricMonitor.eventDruation(name + MonitorType.TIMER.getMark(), tags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
         }
     }
 
     /**
      * 统一打上环境标、应用名、打标类型、处理结果
+     *
      * @param logParams
      * @return
      */
 
-    private static String[] processTags(MonitorLogParams logParams){
+    private static String[] processTags(MonitorLogParams logParams) {
         String[] tags = logParams.getTags();
         ArrayList<String> tagList = new ArrayList<>();
 
-        if (tags!= null && tags.length>0) {
+        if (tags != null && tags.length > 0) {
             tagList = new ArrayList<>(Arrays.asList(tags));
         }
         tagList.add(Constants.RESULT);
         boolean success = logParams.isSuccess();
         if (!success || logParams.getException() != null) {
             tagList.add(Constants.ERROR);
-        }else{
+        } else {
             tagList.add(Constants.SUCCESS);
         }
         if (StringUtils.isNotBlank(logParams.getMsgCode())) {
@@ -97,7 +98,7 @@ public class MonitorLogUtil {
             tagList.add(Constants.ACTION_NAME);
             tagList.add(logParams.getAction());
         }
-        if (logParams.getCost()> 0L) {
+        if (logParams.getCost() > 0L) {
             tagList.add(Constants.COST);
             tagList.add(String.valueOf(logParams.getCost()));
         }
