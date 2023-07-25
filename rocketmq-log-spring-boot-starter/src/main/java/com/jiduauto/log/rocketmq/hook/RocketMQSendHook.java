@@ -5,6 +5,7 @@ import com.jiduauto.log.core.enums.LogPoint;
 import com.jiduauto.log.core.model.MonitorLogParams;
 import com.jiduauto.log.rocketmq.constant.RocketMQLogConstant;
 import com.jiduauto.log.core.util.MonitorLogUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.MapUtils;
 import org.apache.rocketmq.client.hook.SendMessageContext;
 import org.apache.rocketmq.client.hook.SendMessageHook;
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+@Slf4j
 public class RocketMQSendHook implements SendMessageHook {
 
     @Override
@@ -38,16 +40,14 @@ public class RocketMQSendHook implements SendMessageHook {
         logParams.setAction("produceMq");
 
         try {
-
             List<String> tagList = processTag(context);
-
             long startTime = Long.parseLong(context.getProps().get("startTime"));
             logParams.setCost(System.currentTimeMillis() - startTime);
             logParams.setException(context.getException());
             logParams.setTags(tagList.toArray(new String[0]));
             MonitorLogUtil.log(logParams);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("sendMessageAfter error", e);
         }
     }
 

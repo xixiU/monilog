@@ -18,9 +18,8 @@ import org.springframework.core.Ordered;
 
 @Configuration
 @ConditionalOnProperty(prefix = "monitor.log.rocketmq", name = "enable", havingValue = "true", matchIfMissing = true)
-@AutoConfigureAfter(RocketMQAutoConfiguration.class)
-@Import(ListenerContainerConfiguration.class)
 public class RocketMQProducerInterceptorAutoConfiguration {
+    // aop的注解是可以使用的，但是会对业务有要求，先注释掉
 //    @Bean
 //    @ConditionalOnBean(RocketMQTemplate.class)
 //    @ConditionalOnProperty(prefix = "monitor.log.rocketmq.producer", name = "enable", havingValue = "true", matchIfMissing = true)
@@ -35,76 +34,17 @@ public class RocketMQProducerInterceptorAutoConfiguration {
 //        return new RocketMQConsumerAop();
 //    }
 
-//
-//    @Bean
-//    @ConditionalOnProperty(prefix = "monitor.log.rocketmq.producer", name = "enable", havingValue = "true", matchIfMissing = true)
-//    @ConditionalOnClass({DefaultMQProducer.class})
-//    public DefaultMQProducer registerProducerHook(DefaultMQProducer defaultMQProducer) {
-//        defaultMQProducer.getDefaultMQProducerImpl().registerSendMessageHook(new RocketMQSendHook());
-//        return defaultMQProducer;
-//    }
-
-    @Bean
-    @ConditionalOnProperty(prefix = "monitor.log.rocketmq.consumer", name = "enable", havingValue = "true", matchIfMissing = true)
-    @ConditionalOnClass({DefaultMQPushConsumer.class})
-    public DefaultMQPushConsumer registerProducerHook(DefaultMQPushConsumer defaultMQPushConsumer) {
-        defaultMQPushConsumer.getDefaultMQPushConsumerImpl().registerConsumeMessageHook(new RocketMqConsumerHook());
-        return defaultMQPushConsumer;
-    }
-//
-
-    @Bean
-    @ConditionalOnProperty(prefix = "monitor.log.rocketmq.consumer", name = "enable", havingValue = "true", matchIfMissing = true)
-    @ConditionalOnClass({RocketMQMessageListener.class})
-    public DefaultRocketMQListenerContainer registerProducerHook(DefaultRocketMQListenerContainer defaultRocketMQListenerContainer) {
-        defaultRocketMQListenerContainer.getConsumer().getDefaultMQPushConsumerImpl().registerConsumeMessageHook(new RocketMqConsumerHook());
-        return defaultRocketMQListenerContainer;
-    }
-
-//    @PostConstruct
-//    public void registerProducerHook() {
-//        Map<String, DefaultRocketMQListenerContainer> beansOfTypeMap = SpringUtils.getBeansOfType(DefaultRocketMQListenerContainer.class);
-//        if (MapUtils.isEmpty(beansOfTypeMap)) {
-//            return;
-//        }
-//        for (Map.Entry<String, DefaultRocketMQListenerContainer> containerEntry : beansOfTypeMap.entrySet()) {
-//            DefaultRocketMQListenerContainer value = containerEntry.getValue();
-//            value.getConsumer().getDefaultMQPushConsumerImpl().registerConsumeMessageHook(new RocketMqConsumerHook());
-//        }
-//    }
-
     //
     @Bean
     @ConditionalOnProperty(prefix = "monitor.log.rocketmq.consumer", name = "enable", havingValue = "true", matchIfMissing = true)
-    public ConsumerEnhanceProcessor consumerEnhanceProcessor() {
-        return new ConsumerEnhanceProcessor();
+    public RocketMQConsumerPostProcessor rocketMQConsumerPostProcessor() {
+        return new RocketMQConsumerPostProcessor();
     }
 
-
-    static class ConsumerEnhanceProcessor implements BeanPostProcessor, Ordered {
-        @Override
-        public int getOrder() {
-            return Integer.MAX_VALUE;
-        }
-
-        @Override
-        public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
-            if ((bean instanceof DefaultRocketMQListenerContainer) && !(bean instanceof EnhancedListenerContainer)) {
-                System.out.println("found target bean before init");
-            }
-            return BeanPostProcessor.super.postProcessBeforeInitialization(bean, beanName);
-        }
-
-        @Override
-        public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-            if ((bean instanceof DefaultRocketMQListenerContainer) && !(bean instanceof EnhancedListenerContainer)) {
-                System.out.println("found target bean after init");
-            }
-            return BeanPostProcessor.super.postProcessAfterInitialization(bean, beanName);
-        }
+    @Bean
+    @ConditionalOnProperty(prefix = "monitor.log.rocketmq.producer", name = "enable", havingValue = "true", matchIfMissing = true)
+    public RocketMQProducerPostProcessor rocketMQProducerPostProcessor() {
+        return new RocketMQProducerPostProcessor();
     }
 
-    static class EnhancedListenerContainer extends DefaultRocketMQListenerContainer {
-
-    }
 }
