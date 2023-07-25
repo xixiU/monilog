@@ -25,7 +25,7 @@ public class XxlJobLogMonitorExecuteInterceptor {
     public XxlJobLogMonitorExecuteInterceptor(MonitorLogPrinter logPrinter) {
         this.logPrinter = logPrinter;
     }
-    @Around("execution(* com.xxl.job.core.handler.IJobHandler.execute(..))")
+    @Around("execution(* com.xxl.job.core.handler.IJobHandler+.execute(..))")
     public Object interceptXxlJob(ProceedingJoinPoint pjp) throws Throwable {
         return processAround(pjp);
     }
