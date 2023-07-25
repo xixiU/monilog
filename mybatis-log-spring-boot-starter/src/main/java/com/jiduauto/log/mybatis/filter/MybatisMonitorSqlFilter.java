@@ -98,7 +98,7 @@ public class MybatisMonitorSqlFilter implements Interceptor {
             Collection values = paramMap.values();
             for (Object entry : paramMap.values()) {
                 // TODO rongjie.yuan  2023/7/25 23:29
-                // 测试发现这里要从LambdaQueryWrapper中取出对应参数，LambdaQueryWrapper是mybatis-plus中的,myabtis取参数要看下
+                // 测试发现这里要从LambdaQueryWrapper中取出对应参数，LambdaQueryWrapper是mybatis-plus中的,mybatis
 //                if (entry instanceof LambdaQueryWrapper) {
 //
 //                }
