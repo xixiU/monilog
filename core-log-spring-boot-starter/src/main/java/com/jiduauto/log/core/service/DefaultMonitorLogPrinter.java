@@ -40,11 +40,11 @@ public class DefaultMonitorLogPrinter implements MonitorLogPrinter {
         Throwable ex = logParams.getException();
 
         if (!logParams.isSuccess()) {
-            logger.error("monitorlog[{}]-{}.{} {}-{}-{} {}ms input:{}, output:{}", logPoint, service, action, success, code, msg, rt, input, output, ex);
+            logger.error("monitorlog[{}]-{}.{} {}-{}-{} {} input:{}, output:{}", logPoint, service, action, success, code, msg, rt, input, output, ex);
             return;
         }
         String tags = JSON.toJSONString(MonitorLogUtil.processTags(logParams));
-        logger.error("monitorlog[{}]-{}.{} {}-{}-{} {}ms input:{}, output:{}, tags:{}", logPoint, service, action, success, code, msg, rt, input, output, tags);
+        logger.error("monitorlog[{}]-{}.{} {}-{}-{} {} input:{}, output:{}, tags:{}", logPoint, service, action, success, code, msg, rt, input, output, tags);
     }
 
     private String formatLongText(Object o) {
