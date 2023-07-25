@@ -62,7 +62,7 @@ public class MybatisMonitorSqlFilter implements Interceptor {
         logParams.setService(mappedStatement.getId());
         logParams.setServiceCls(statementHandler.getClass());
         logParams.setAction(invocation.getMethod().getName());
-        logParams.setInput(invocation.getArgs());
+//        logParams.setInput(invocation.getArgs());
         List<String> tags  = new ArrayList<>();
         try {
             Object obj = invocation.proceed();
