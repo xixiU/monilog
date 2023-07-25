@@ -23,7 +23,7 @@ import org.springframework.core.Ordered;
 @ConditionalOnProperty(prefix = "monitor.log.feign", name = "enable", havingValue = "true", matchIfMissing = true)
 @ConditionalOnClass(Feign.class)
 @Slf4j
-public class FeignMonitorLogConfiguration {
+class FeignMonitorLogConfiguration {
     @Value("${monitor.log.feign.bool.expr.default:$.code==0,$.code==200}")
     private String defaultBoolExpr;
 

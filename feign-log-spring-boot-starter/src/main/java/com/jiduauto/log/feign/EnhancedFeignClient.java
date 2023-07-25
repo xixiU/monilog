@@ -30,7 +30,7 @@ import java.util.Map;
  * @author yp
  * @date 2023/07/25
  */
-public class EnhancedFeignClient implements Client {
+class EnhancedFeignClient implements Client {
     private final Client realClient;
     private final String defaultBoolExpr;
 
