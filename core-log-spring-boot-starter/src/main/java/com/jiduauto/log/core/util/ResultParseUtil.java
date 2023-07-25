@@ -38,11 +38,13 @@ public final class ResultParseUtil {
 
         boolean succ = true;
         ErrorEnum errorEnum = ErrorEnum.SUCCESS;
+        boolean asSuccessWhenParseFailed = true;//TODO 当boolean结果解析失败，采取乐观态度，认为是成功
         switch (strategy) {
             case IfSuccess:
                 String msgCode = ResultParser.parseErrCode(returnObj, codeExpr);
                 String msgInfo = ResultParser.parseErrMsg(returnObj, msgExpr);
-                return new ParsedResult(parsedSucc != null && parsedSucc, msgCode, msgInfo);
+                succ = parsedSucc == null ? asSuccessWhenParseFailed : parsedSucc;
+                return new ParsedResult(succ, msgCode, msgInfo);
             case IfNotException:
                 return new ParsedResult(succ, errorEnum.name(), errorEnum.getMsg());
             case IfNotNull:

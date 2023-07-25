@@ -2,8 +2,10 @@ package com.jiduauto.log.feign;
 
 import feign.Client;
 import feign.Feign;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -22,17 +24,23 @@ import org.springframework.core.Ordered;
 @ConditionalOnClass(Feign.class)
 @Slf4j
 public class FeignMonitorLogConfiguration {
+    @Value("${monitor.log.feign.bool.expr.default:$.code==0,$.code==200}")
+    private String defaultBoolExpr;
 
     @Bean
     public FeignClientEnhanceProcessor feignClientEnhanceProcessor() {
-        return new FeignClientEnhanceProcessor();
+        return new FeignClientEnhanceProcessor(defaultBoolExpr);
     }
 
+    @AllArgsConstructor
+
     static class FeignClientEnhanceProcessor implements BeanPostProcessor, Ordered {
+        private final String defaultBoolExpr;
+
         @Override
         public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
             if (bean instanceof Client && !(bean instanceof EnhancedFeignClient)) {
-                return new EnhancedFeignClient((Client) bean);
+                return new EnhancedFeignClient((Client) bean, defaultBoolExpr);
             }
             return BeanPostProcessor.super.postProcessBeforeInitialization(bean, beanName);
         }

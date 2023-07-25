@@ -10,7 +10,10 @@ import com.jiduauto.log.core.model.MonitorLogParams;
 import com.jiduauto.log.core.parse.ParsedResult;
 import com.jiduauto.log.core.parse.ResultParseStrategy;
 import com.jiduauto.log.core.util.*;
-import feign.*;
+import feign.Client;
+import feign.MethodMetadata;
+import feign.Request;
+import feign.Response;
 import lombok.SneakyThrows;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -29,9 +32,11 @@ import java.util.Map;
  */
 public class EnhancedFeignClient implements Client {
     private final Client realClient;
+    private final String defaultBoolExpr;
 
-    public EnhancedFeignClient(Client realClient) {
+    public EnhancedFeignClient(Client realClient, String defaultBoolExpr) {
         this.realClient = realClient;
+        this.defaultBoolExpr = defaultBoolExpr;
     }
 
     @SneakyThrows
@@ -102,7 +107,7 @@ public class EnhancedFeignClient implements Client {
                     if (rps == null) {
                         rps = ResultParseStrategy.IfSuccess;
                     }
-                    String boolExpr = cl == null ? null : cl.boolExpr();
+                    String boolExpr = cl == null ? StringUtils.trimToNull(defaultBoolExpr) : cl.boolExpr();
                     String codeExpr = cl == null ? null : cl.errorCodeExpr();
                     String msgExpr = cl == null ? null : cl.errorMsgExpr();
                     ParsedResult parsedResult = ResultParseUtil.parseResult(json, rps, null, boolExpr, codeExpr, msgExpr);
