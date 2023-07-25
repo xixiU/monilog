@@ -27,6 +27,7 @@ public class DefaultMonitorLogPrinter implements MonitorLogPrinter {
         if (!logParams.isSuccess() || logParams.getException() != null) {
             logger.error("logPoint:{} service:{} action:{} input:{} has error", logParams.getLogPoint(),
                     logParams.getService(), logParams.getAction(), logParams.getInput(), logParams.getException());
+            return;
         }
         String[] tags = MonitorLogUtil.processTags(logParams);
         logger.info("logPoint:{} service:{} action:{} input:{} tag:{}",
