@@ -50,7 +50,7 @@ import java.util.*;
 public class LogMonitorHandlerFilter extends OncePerRequestFilter {
 
     /**
-     * 黑名单，不打印日志
+     * 不监控的日url清单，支持模糊路径如a/*
      */
     @Value("${monitor.web.blackList}")
     private List<String> BLACK_LIST;

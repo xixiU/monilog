@@ -1,0 +1,19 @@
+{
+  "properties": [
+    {
+      "name": "monitor.log.feign.enable",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.jiduauto.log.feign.FeignMonitorLogConfiguration",
+      "defaultValue": true,
+      "description": "开启feign监控"
+    },
+
+    {
+      "name": "monitor.log.feign.bool.expr.default",
+      "type": "java.lang.String",
+      "sourceType": "com.jiduauto.log.feign.FeignMonitorLogConfiguration",
+      "defaultValue": "$.code==0,$.code==200",
+      "description": "解析feign调用结果的默认表达式，默认校验返回编码是否等于0或者200有一个匹配即认为调用成功,多个表达式直接逗号分割"
+    }
+  ]
+}

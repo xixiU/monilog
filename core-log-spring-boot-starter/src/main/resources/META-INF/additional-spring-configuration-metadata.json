@@ -1,0 +1,19 @@
+{
+  "groups": [
+    {
+      "name": "monitor.log",
+      "type": "com.jiduauto.log.core.model.MonitorLogProperties",
+      "sourceType": "com.jiduauto.log.core.model.MonitorLogProperties",
+      "description": "prometheus监控与日志打点统一工具"
+    }
+  ],
+  "properties": [
+    {
+      "name": "monitor.log.enable",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.jiduauto.log.core.MonitorLogConfiguration",
+      "defaultValue": true,
+      "description": "开启核心监控，提供统一日志参数收集与aop参数收集"
+    }
+  ]
+}

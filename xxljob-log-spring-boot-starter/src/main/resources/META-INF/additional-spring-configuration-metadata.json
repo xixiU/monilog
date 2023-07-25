@@ -1,0 +1,11 @@
+{
+  "properties": [
+    {
+      "name": "monitor.log.xxljob.enable",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.jiduauto.log.xxljob.XxlJobLogMonitorConfiguration",
+      "defaultValue": true,
+      "description": "开启xxljob监控"
+    }
+  ]
+}

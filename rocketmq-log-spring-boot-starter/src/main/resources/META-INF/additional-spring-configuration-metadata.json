@@ -1,0 +1,25 @@
+{
+  "properties": [
+    {
+      "name": "monitor.log.rocketmq.enable",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.jiduauto.log.rocketmq.RocketMQProducerInterceptorAutoConfiguration",
+      "defaultValue": true,
+      "description": "开启rocketmq监控,默认会开启consumer与producer"
+    },
+    {
+      "name": "monitor.log.rocketmq.consumer.enable",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.jiduauto.log.rocketmq.RocketMQConsumerPostProcessor",
+      "defaultValue": true,
+      "description": "开启rocketmq的consumer监控"
+    },
+    {
+      "name": "monitor.log.rocketmq.producer.enable",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.jiduauto.log.rocketmq.RocketMQProducerPostProcessor",
+      "defaultValue": true,
+      "description": "开启rocketmq的producer监控"
+    }
+  ]
+}

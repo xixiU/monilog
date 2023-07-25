@@ -1,0 +1,18 @@
+{
+  "properties": [
+    {
+      "name": "monitor.log.web.enable",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.jiduauto.log.web.config.WebMonitorFilterConfig",
+      "defaultValue": true,
+      "description": "开启web监控"
+    },
+    {
+      "name": "monitor.web.blackList",
+      "type": "java.lang.String",
+      "sourceType": "com.jiduauto.log.web.filter.LogMonitorHandlerFilter",
+      "defaultValue": true,
+      "description": "开启rocketmq的consumer监控"
+    }
+  ]
+}

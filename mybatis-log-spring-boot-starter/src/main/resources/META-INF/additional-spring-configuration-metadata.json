@@ -1,0 +1,11 @@
+{
+  "properties": [
+    {
+      "name": "monitor.log.mybatis.enable",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.jiduauto.log.mybatis.MybatisSqlFilterAutoConfiguration",
+      "defaultValue": true,
+      "description": "开启mybatis监控"
+    }
+  ]
+}
