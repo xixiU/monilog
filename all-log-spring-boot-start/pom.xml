@@ -8,9 +8,10 @@
         <artifactId>monitor-log-spring-boot-starter</artifactId>
         <version>1.0.5-SNAPSHOT</version>
     </parent>
+    <version>1.0.5-SNAPSHOT</version>
 
     <artifactId>all-log-spring-boot-start</artifactId>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
 
    <dependencies>
        <dependency>
