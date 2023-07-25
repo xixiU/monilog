@@ -26,6 +26,9 @@ public class DefaultHttpRequestValidator implements HttpRequestValidator {
             return LogPoint.RPC_ENTRY;
         }
         String userAgent = getUserAgent(headerMap);
+        if (StringUtils.isBlank(userAgent)) {
+            return LogPoint.UNKNOWN_ENTRY;
+        }
         UserAgentType userAgentType = UaUtil.parseUserAgentType(userAgent);
         if (UserAgentType.LIBRARY.equals(userAgentType)) {
             return LogPoint.RPC_ENTRY;
