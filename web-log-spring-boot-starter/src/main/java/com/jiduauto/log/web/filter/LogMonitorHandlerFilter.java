@@ -226,25 +226,30 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
      */
     private void dealRequestTags(HttpServletRequest request, MonitorLogParams logParams) {
         String[] oriTags = logParams.getTags();
+        Map<String, String> headersMap = HttpUtil.getHeaders(request);
         for (int i = 0; oriTags != null && i < oriTags.length; i++) {
             if (!oriTags[i].startsWith("{") || !oriTags[i].endsWith("}")) {
                 continue;
             }
             String parameterName = oriTags[i].substring(1, oriTags[i].length() - 1);
             String resultTagValue = request.getParameter(parameterName);
-//            if (StringUtils.isBlank(resultTagValue) && (request instanceof RequestWrapper)) {
-//                String bodyString = ((RequestWrapper) request).getBodyString();
-//                JSONObject bodyJson = JSONObject.parseObject(bodyString);
-//                resultTagValue = bodyJson == null ? resultTagValue : bodyJson.getString(parameterName);
-//            }
-            if (StringUtils.isBlank(resultTagValue)) {
+
+            // 先从参数取值
+            if (StringUtils.isNotBlank(resultTagValue)) {
+                swapTag(oriTags, i , resultTagValue);
                 continue;
             }
-            resultTagValue = StringUtils.isNotBlank(resultTagValue) ? resultTagValue : Constants.NO_VALUE_CODE;
-            oriTags[i] = resultTagValue;
+            // 再从header取值
+            resultTagValue = headersMap.get(parameterName);
+            swapTag(oriTags, i , resultTagValue);
+
         }
         logParams.setTags(oriTags);
-//        return oriTags;
+    }
+
+    private void swapTag(String[] oriTags ,int index, String resultTagValue){
+        resultTagValue = StringUtils.isNotBlank(resultTagValue) ? resultTagValue : Constants.NO_VALUE_CODE;
+        oriTags[index] = resultTagValue;
     }
 
 
