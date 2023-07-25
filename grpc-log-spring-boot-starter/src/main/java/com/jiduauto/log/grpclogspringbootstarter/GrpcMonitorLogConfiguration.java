@@ -2,6 +2,8 @@ package com.jiduauto.log.grpclogspringbootstarter;
 
 import com.jiduauto.log.grpclogspringbootstarter.filter.GrpcLogPrintClientInterceptor;
 import com.jiduauto.log.grpclogspringbootstarter.filter.GrpcLogPrintServerInterceptor;
+import io.grpc.stub.AbstractStub;
+import io.grpc.stub.ServerCalls;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import net.devh.boot.grpc.client.interceptor.GrpcGlobalClientInterceptor;
 import net.devh.boot.grpc.server.interceptor.GrpcGlobalServerInterceptor;
@@ -17,18 +19,16 @@ import org.springframework.core.annotation.Order;
  * @date 2022/8/16
  */
 @Configuration
-@ConditionalOnClass(GrpcClient.class)
+@ConditionalOnClass({AbstractStub.class, ServerCalls.class})
 public class GrpcMonitorLogConfiguration {
 
 
-    @ConditionalOnMissingBean
     @GrpcGlobalServerInterceptor
     @Order(-100)
     GrpcLogPrintServerInterceptor grpcLogPrintServerInterceptor() {
         return new GrpcLogPrintServerInterceptor();
     }
 
-    @ConditionalOnMissingBean
     @GrpcGlobalClientInterceptor
     @Order(-101)
     GrpcLogPrintClientInterceptor grpcLogPrintClientInterceptor() {

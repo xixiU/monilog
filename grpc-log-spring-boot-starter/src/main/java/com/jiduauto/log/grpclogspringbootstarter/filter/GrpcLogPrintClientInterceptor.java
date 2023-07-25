@@ -5,8 +5,10 @@ import com.google.protobuf.MessageOrBuilder;
 import com.google.protobuf.util.JsonFormat;
 import com.google.protobuf.util.JsonFormat.Printer;
 import com.jiduauto.log.enums.LogPoint;
+import com.jiduauto.log.grpclogspringbootstarter.GrpcMonitorLogClientCall;
 import com.jiduauto.log.model.MonitorLogParams;
 import com.jiduauto.log.util.MonitorLogUtil;
+import com.jiduauto.log.util.SpringUtils;
 import io.grpc.CallOptions;
 import io.grpc.Channel;
 import io.grpc.ClientCall;
@@ -24,6 +26,7 @@ import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -32,12 +35,10 @@ import java.util.Map;
  */
 @Slf4j
 public class GrpcLogPrintClientInterceptor implements ClientInterceptor {
-    InheritableThreadLocal<Map<String, Object>> threadLocal = new InheritableThreadLocal<Map<String, Object>>();
-
     @Override
     public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> method,
             CallOptions callOptions, Channel next) {
-        return new SimpleForwardingClientCall<ReqT, RespT>(next.newCall(method, callOptions)) {
+        return new GrpcMonitorLogClientCall<ReqT, RespT>(next.newCall(method, callOptions), new HashMap<>()) {
             MonitorLogParams params = new MonitorLogParams();
 
             @Override
@@ -51,7 +52,7 @@ public class GrpcLogPrintClientInterceptor implements ClientInterceptor {
                 params.setSuccess(true);
                 params.setMsgCode("0");
                 params.setMsgInfo("success");
-
+                Map<String, Object> context = this.getContext();
 
                 super.start(new SimpleForwardingClientCallListener<RespT>(responseListener) {
                     @Override
@@ -63,6 +64,7 @@ public class GrpcLogPrintClientInterceptor implements ClientInterceptor {
                             } catch (InvalidProtocolBufferException e) {
                                 log.error("rpc onMessage序列化成json错误", e);
                             } finally {
+                                params.setCost(System.currentTimeMillis() - Long.parseLong(String.valueOf(context.get("nowTime"))));
                                 MonitorLogUtil.log(params);
                             }
                         }
@@ -83,7 +85,7 @@ public class GrpcLogPrintClientInterceptor implements ClientInterceptor {
                         log.error("rpc sendMessage序列化成json错误", e);
                     }
                 }
-                long nowTime = System.currentTimeMillis();
+                this.getContext().put("nowTime", System.currentTimeMillis());
                 try {
                     super.sendMessage(message);
                 } catch (Throwable t) {
@@ -91,8 +93,7 @@ public class GrpcLogPrintClientInterceptor implements ClientInterceptor {
                     params.setException(t);
                     params.setMsgCode("1");
                     params.setMsgInfo("fail");
-                } finally {
-                    params.setCost(System.currentTimeMillis() - nowTime);
+                    params.setCost(System.currentTimeMillis() - Long.parseLong(String.valueOf(this.getContext().get("nowTime"))));
                 }
 
             }
