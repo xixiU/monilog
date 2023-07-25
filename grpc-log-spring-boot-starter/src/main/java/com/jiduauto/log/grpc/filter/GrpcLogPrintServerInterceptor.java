@@ -1,7 +1,12 @@
 package com.jiduauto.log.grpc.filter;
 
+import com.google.common.collect.Maps;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.MessageOrBuilder;
+import com.google.protobuf.util.JsonFormat;
 import com.jiduauto.log.core.enums.LogPoint;
 import com.jiduauto.log.core.model.MonitorLogParams;
+import com.jiduauto.log.grpc.GrpcMonitorLogServerCall;
 import io.grpc.ForwardingServerCallListener;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
@@ -11,6 +16,9 @@ import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
+import net.devh.boot.grpc.server.service.GrpcService;
+
+import java.util.Map;
 
 /**
  * @author fan.zhang02
@@ -28,28 +36,39 @@ public class GrpcLogPrintServerInterceptor implements ServerInterceptor {
         MethodDescriptor<ReqT, RespT> methodDescriptor = call.getMethodDescriptor();
         String methodName = methodDescriptor.getFullMethodName();
 
+
         // 获取入参
         ServerCall.Listener<ReqT> listener = next.startCall(call, metadata);
 
         MonitorLogParams params = new MonitorLogParams();
 
-        params.setServiceCls(GrpcClient.class);
+        params.setServiceCls(GrpcService.class);
         params.setLogPoint(LogPoint.RPC_ENTRY);
         params.setTags(null);
-//        params.setService(next.);
+        params.setService(call.getAuthority());
         params.setAction(methodName);
         params.setSuccess(true);
         params.setMsgCode("0");
         params.setMsgInfo("success");
-
         // 拦截响应
-        ServerCall.Listener<ReqT> responseListener = new ForwardingServerCallListener.SimpleForwardingServerCallListener<ReqT>(listener) {
-
+        ServerCall.Listener<ReqT> responseListener = new GrpcMonitorLogServerCall.SimpleForwardingServerCallListener<ReqT>(listener,
+                Maps.newHashMap()) {
             @Override
             public void onMessage(ReqT message) {
+                if (message instanceof MessageOrBuilder) {
+                    //json序列化打印
+                    try {
+                        params.setInput(new Object[]{JsonFormat.printer().omittingInsignificantWhitespace()
+                                .print((MessageOrBuilder) message)});
+                    } catch (InvalidProtocolBufferException e) {
+                        log.error("rpc sendMessage序列化成json错误", e);
+                    }
+                }
                 // 这里可以对请求入参进行处理
                 super.onMessage(message);
             }
+
+
 
             @Override
             public void onComplete() {
@@ -62,6 +81,7 @@ public class GrpcLogPrintServerInterceptor implements ServerInterceptor {
                 log.info("Method: " + methodName + " took " + elapsedTime + " nanoseconds");
             }
         };
+
 
         return responseListener;
     }
