@@ -1,29 +1,17 @@
 package com.jiduauto.log.grpc.filter;
+
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageOrBuilder;
 import com.google.protobuf.util.JsonFormat;
-import com.google.protobuf.util.JsonFormat.Printer;
 import com.jiduauto.log.core.enums.LogPoint;
 import com.jiduauto.log.core.model.MonitorLogParams;
 import com.jiduauto.log.core.util.MonitorLogUtil;
 import com.jiduauto.log.grpc.GrpcMonitorLogClientCall;
-import io.grpc.CallOptions;
-import io.grpc.Channel;
-import io.grpc.ClientCall;
-import io.grpc.ClientInterceptor;
-import io.grpc.ForwardingClientCall.SimpleForwardingClientCall;
+import io.grpc.*;
 import io.grpc.ForwardingClientCallListener.SimpleForwardingClientCallListener;
-import io.grpc.Metadata;
-import io.grpc.MethodDescriptor;
-import io.grpc.ServerCall;
-import io.grpc.ServerCall.Listener;
-import io.grpc.ServerCallHandler;
-import io.grpc.ServerInterceptor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
-import org.springframework.stereotype.Component;
 
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,14 +22,14 @@ import java.util.Map;
 @Slf4j
 public class GrpcLogPrintClientInterceptor implements ClientInterceptor {
     @Override
-    public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> method,
-            CallOptions callOptions, Channel next) {
+    public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> method, CallOptions callOptions, Channel next) {
+        log.info("GrpcLogPrintClientInterceptor call...");
         return new GrpcMonitorLogClientCall<ReqT, RespT>(next.newCall(method, callOptions), new HashMap<>()) {
             MonitorLogParams params = new MonitorLogParams();
 
             @Override
             public void start(Listener<RespT> responseListener, Metadata headers) {
-
+                log.info("GrpcLogPrintClientInterceptor start...");
                 params.setServiceCls(GrpcClient.class);
                 params.setLogPoint(LogPoint.RPC_ENTRY);
                 params.setTags(null);
@@ -74,6 +62,7 @@ public class GrpcLogPrintClientInterceptor implements ClientInterceptor {
 
             @Override
             public void sendMessage(ReqT message) {
+                log.info("GrpcLogPrintClientInterceptor sendMessage...");
                 if (message instanceof MessageOrBuilder) {
                     //json序列化打印
                     try {
