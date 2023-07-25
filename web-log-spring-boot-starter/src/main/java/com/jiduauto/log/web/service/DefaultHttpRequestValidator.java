@@ -6,6 +6,7 @@ import com.jiduauto.log.web.util.HttpUtil;
 import com.jiduauto.log.web.util.UaUtil;
 import net.sf.uadetector.UserAgentType;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequestWrapper;
 import java.util.Map;
@@ -25,6 +26,9 @@ public class DefaultHttpRequestValidator implements HttpRequestValidator {
             return LogPoint.REMOTE_CLIENT;
         }
         String userAgent = headerMap.get(WebLogConstant.USER_AGENT);
+        if (StringUtils.isBlank(userAgent)) {
+            return LogPoint.UNKNOWN_ENTRY;
+        }
         UserAgentType userAgentType = UaUtil.parseUserAgentType(userAgent);
         if (UserAgentType.LIBRARY.equals(userAgentType)) {
             return LogPoint.REMOTE_CLIENT;
