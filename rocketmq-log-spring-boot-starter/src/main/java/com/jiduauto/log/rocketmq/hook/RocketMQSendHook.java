@@ -44,6 +44,7 @@ public class RocketMQSendHook implements SendMessageHook {
             long startTime = Long.parseLong(context.getProps().get("startTime"));
             logParams.setCost(System.currentTimeMillis() - startTime);
             logParams.setException(context.getException());
+            logParams.setSuccess(context.getException() != null);
             logParams.setTags(tagList.toArray(new String[0]));
             MonitorLogUtil.log(logParams);
         } catch (Exception e) {
