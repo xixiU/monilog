@@ -50,17 +50,7 @@ class GrpcLogPrintServerInterceptor extends InterceptorHelper implements ServerI
         }
 
         @Override
-        public void sendHeaders(Metadata headers) {
-            log.info("GrpcLogPrintServerInterceptor sendHeaders...");
-            if (!context.containsKey(TIME_KEY)) {
-                context.put(TIME_KEY, System.currentTimeMillis());
-            }
-            super.sendHeaders(headers);
-        }
-
-        @Override
         public void sendMessage(RespT message) {
-            log.info("GrpcLogPrintServerInterceptor sendMessage...");
             if (message instanceof MessageOrBuilder) {
                 //TODO 这里要解析响应码
                 params.setOutput(print2Json((MessageOrBuilder) message));
@@ -82,7 +72,6 @@ class GrpcLogPrintServerInterceptor extends InterceptorHelper implements ServerI
 
         @Override
         public void onMessage(ReqT message) {
-            log.info("GrpcLogPrintServerInterceptor onMessage...");
             context.put(TIME_KEY, System.currentTimeMillis());
             if (message instanceof MessageOrBuilder) {
                 params.setInput(new Object[]{print2Json((MessageOrBuilder) message)});
@@ -90,31 +79,11 @@ class GrpcLogPrintServerInterceptor extends InterceptorHelper implements ServerI
             super.onMessage(message);
         }
 
-
         @Override
         public void onComplete() {
-            log.info("GrpcLogPrintServerInterceptor onComplete...");
             super.onComplete();
             params.setCost(parseCostTime(context));
             MonitorLogUtil.log(params);
-        }
-
-        @Override
-        public void onHalfClose() {
-            log.info("GrpcLogPrintServerInterceptor onHalfClose...");
-            super.onHalfClose();
-        }
-
-        @Override
-        public void onCancel() {
-            log.info("GrpcLogPrintServerInterceptor onCancel...");
-            super.onCancel();
-        }
-
-        @Override
-        public void onReady() {
-            log.info("GrpcLogPrintServerInterceptor onReady...");
-            super.onReady();
         }
     }
 }
