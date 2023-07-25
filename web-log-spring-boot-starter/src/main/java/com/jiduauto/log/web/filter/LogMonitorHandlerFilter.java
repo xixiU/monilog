@@ -11,7 +11,6 @@ import com.jiduauto.log.core.util.MonitorLogUtil;
 import com.jiduauto.log.core.util.ReflectUtil;
 import com.jiduauto.log.core.util.SpringUtils;
 import com.jiduauto.log.web.constant.WebLogConstant;
-import com.jiduauto.log.web.model.DataResponse;
 import com.jiduauto.log.web.service.HttpRequestValidator;
 import com.jiduauto.log.web.util.HttpUtil;
 import com.jiduauto.log.web.util.UrlMatcherUtils;
@@ -52,7 +51,7 @@ import java.util.*;
 @Slf4j
 public class LogMonitorHandlerFilter extends OncePerRequestFilter {
 
-    private static List<HttpRequestValidator> httpRequestValidatorList = SpringFactoriesLoader.loadFactories(HttpRequestValidator.class,
+    private static final List<HttpRequestValidator> HTTP_REQUEST_VALIDATORS = SpringFactoriesLoader.loadFactories(HttpRequestValidator.class,
             Thread.currentThread().getContextClassLoader());
 
 
@@ -107,47 +106,34 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
         dealRequestTags(request, logParams);
 
         Map<String, String> headerMap = HttpUtil.getHeaders(request);
-        try {
-            boolean isMultipart = ServletFileUpload.isMultipartContent(request);
-            ContentCachingRequestWrapper wrapperRequest = isMultipart ? null : new ContentCachingRequestWrapper(request);
-            ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(response);
-            for (HttpRequestValidator validator : httpRequestValidatorList) {
-                LogPoint logPoint = validator.validateRequest(wrapperRequest);
-                logParams.setLogPoint(logPoint);
-                if (!LogPoint.UNKNOWN_ENTRY.equals(logPoint)) {
-                    break;
-                }
+        boolean isMultipart = ServletFileUpload.isMultipartContent(request);
+        ContentCachingRequestWrapper wrapperRequest = isMultipart ? null : new ContentCachingRequestWrapper(request);
+        ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(response);
+        for (HttpRequestValidator validator : HTTP_REQUEST_VALIDATORS) {
+            LogPoint logPoint = validator.validateRequest(wrapperRequest);
+            logParams.setLogPoint(logPoint);
+            if (!LogPoint.UNKNOWN_ENTRY.equals(logPoint)) {
+                break;
             }
-            String requestParams = isMultipart ? "{}" : JSON.toJSONString(wrapperRequest.getParameterMap());
-            // 记录下请求内容,响应时间
-            log.info("REQUEST:URI={},METHOD={},P={},HEADERS={},PARAMS={}", wrapperRequest.getRequestURI(),
-                    wrapperRequest.getMethod(), wrapperRequest.getRemoteAddr(), JSON.toJSONString(headerMap), requestParams);
+        }
+        try {
             filterChain.doFilter(wrapperRequest, wrapperResponse);
-            String requestBodyStr = getRequestBody(wrapperRequest);
-//            logParams.setInput(Arrays.asList(requestBodyStr));
 
-            log.info("REQUEST:URI={},METHOD={}, body = {}", wrapperRequest.getRequestURI(),
-                    wrapperRequest.getMethod(), requestBodyStr);
             responseBodyStr = getResponseBody(wrapperResponse);
             wrapperResponse.copyBodyToResponse();
             logParams.setOutput(responseBodyStr);
             logParams.setSuccess(true);
         } catch (Exception e) {
-            log.warn("RESPONSE:ERROR:URI:{},FilterChainException:" + e.getMessage(), requestURI);
-            log.warn("caught Exception: quit filter chain, send out response.", e);
-            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            DataResponse<String> errorResponse = new DataResponse<>().setData(
-                    StringUtils.defaultIfBlank(e.getMessage(), "Internal Server Error")).fail();
-            response.getWriter().write(JSON.toJSONString(errorResponse));
             logParams.setSuccess(false);
             logParams.setException(e);
+            throw e;
         } finally {
             if (logParams.isSuccess() && StringUtils.isNotBlank(responseBodyStr) && isJson(headerMap)) {
                 dealResponseTags(responseBodyStr, logParams);
             }
+
             long cost = System.currentTimeMillis() - startTime;
             logParams.setCost(cost);
-            log.info("RESPONSE:URI={} cost {} ms, result={}", requestURI, cost, responseBodyStr);
             MonitorLogUtil.log(logParams);
         }
     }

@@ -93,7 +93,11 @@ public class MonitorLogAop {
         params.setException(ctx.getException());
         params.setInput(ctx.getArgs());
         params.setOutput(ctx.getResult());
-        logPrinter.log(params);
+        try{
+            logPrinter.log(params);
+        }catch (Exception e){
+            log.error("logPrinter.log error", e);
+        }
     }
 
     private void beforeReturn(MonitorLogAspectCtx ctx) {

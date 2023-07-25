@@ -1,5 +1,6 @@
 package com.jiduauto.log.core.util;
 
+import com.jiduauto.log.core.MonitorLogPrinter;
 import com.jiduauto.log.core.constant.Constants;
 import com.jiduauto.log.core.enums.LogPoint;
 import com.jiduauto.log.core.enums.MonitorType;
@@ -7,10 +8,12 @@ import com.jiduauto.log.core.model.MonitorLogParams;
 import com.metric.MetricMonitor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.core.io.support.SpringFactoriesLoader;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -19,20 +22,24 @@ import java.util.concurrent.TimeUnit;
  * @date 2023/7/17 16:42
  */
 @Slf4j
-@Component
-public class MonitorLogUtil {
+public class MonitorLogUtil{
+    private static final List<MonitorLogPrinter> MONITOR_LOG_PRINTERS = SpringFactoriesLoader.loadFactories(MonitorLogPrinter.class,
+            Thread.currentThread().getContextClassLoader());
 
     private static final String applicationName = SpringUtils.getApplicationName();
 
     public static void log(MonitorLogParams logParams) {
         try {
-            realLog(logParams);
+            doMonitor(logParams);
+            for (MonitorLogPrinter printer : MONITOR_LOG_PRINTERS) {
+                printer.log(logParams);
+            }
         } catch (Exception e) {
             log.error("log error", e);
         }
     }
 
-    private static void realLog(MonitorLogParams logParams) {
+    private static void doMonitor(MonitorLogParams logParams) {
         String[] tags = processTags(logParams);
 
         LogPoint logPoint = logParams.getLogPoint();
@@ -56,7 +63,7 @@ public class MonitorLogUtil {
      * @return
      */
 
-    private static String[] processTags(MonitorLogParams logParams) {
+    public static String[] processTags(MonitorLogParams logParams) {
         String[] tags = logParams.getTags();
         ArrayList<String> tagList = new ArrayList<>();
 
@@ -105,5 +112,4 @@ public class MonitorLogUtil {
         tags = tagList.toArray(new String[0]);
         return tags;
     }
-
 }

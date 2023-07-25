@@ -18,7 +18,7 @@ import org.springframework.context.annotation.Import;
 @Configuration
 @EnableConfigurationProperties(MonitorLogProperties.class)
 @ConditionalOnProperty(prefix = "monitor.log", name = "enable", matchIfMissing = true)
-@Import({MonitorLogUtil.class, SpringUtils.class})
+@Import({SpringUtils.class})
 public class MonitorLogConfiguration {
     @Bean
     @ConditionalOnBean(MonitorLogPrinter.class)
