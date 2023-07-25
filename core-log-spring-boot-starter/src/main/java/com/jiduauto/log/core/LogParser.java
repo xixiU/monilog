@@ -28,7 +28,7 @@ public @interface LogParser {
 
     /**
      * 自定义结果判定规则表达式， 默认值为："$.success,$.succeeded,$.succeed,$.succ,$.code=SUCCESS,$.isOk(),$.isSuccess(),$.getSuccess(),"
-     * + "$.isSucceed(),$.getSucceed(),$.isSucceeded(),$.getSucceeded(),$.isSucc(),$.getResult()
+     * + "$.isSucceed(),$.getSucceed(),$.isSucceeded(),$.getSucceeded(),$.isSucc(),$.getResult()"
      * @return
      */
     String boolExpr() default ResultParser.Default_Bool_Expr;

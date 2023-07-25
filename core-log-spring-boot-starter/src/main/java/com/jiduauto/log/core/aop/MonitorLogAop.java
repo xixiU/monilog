@@ -25,7 +25,7 @@ public class MonitorLogAop {
     /**
      * 声明HSF服务接口的实现类的公共方法为切点
      */
-    @Pointcut("@within(com.jiduauto.log.core.MonitorLog)")
+    @Pointcut("@within(com.jiduauto.log.core.annotation.MonitorLog)")
     private void monitorLogPointCut() {
     }
 
