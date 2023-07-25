@@ -7,18 +7,10 @@ import com.google.protobuf.util.JsonFormat;
 import com.jiduauto.log.core.enums.LogPoint;
 import com.jiduauto.log.core.model.MonitorLogParams;
 import com.jiduauto.log.grpc.GrpcMonitorLogServerCall;
-import io.grpc.ForwardingServerCallListener;
-import io.grpc.Metadata;
-import io.grpc.MethodDescriptor;
-import io.grpc.ServerCall;
+import io.grpc.*;
 import io.grpc.ServerCall.Listener;
-import io.grpc.ServerCallHandler;
-import io.grpc.ServerInterceptor;
 import lombok.extern.slf4j.Slf4j;
-import net.devh.boot.grpc.client.inject.GrpcClient;
 import net.devh.boot.grpc.server.service.GrpcService;
-
-import java.util.Map;
 
 /**
  * @author fan.zhang02
@@ -28,14 +20,13 @@ import java.util.Map;
 public class GrpcLogPrintServerInterceptor implements ServerInterceptor {
 
     @Override
-    public <ReqT, RespT> Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call, Metadata metadata,
-            ServerCallHandler<ReqT, RespT> next) {
+    public <ReqT, RespT> Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call, Metadata metadata, ServerCallHandler<ReqT, RespT> next) {
+        log.info("GrpcLogPrintServerInterceptor call...");
         long startTime = System.nanoTime();
 
         // 获取方法名
         MethodDescriptor<ReqT, RespT> methodDescriptor = call.getMethodDescriptor();
         String methodName = methodDescriptor.getFullMethodName();
-
 
         // 获取入参
         ServerCall.Listener<ReqT> listener = next.startCall(call, metadata);
@@ -55,6 +46,7 @@ public class GrpcLogPrintServerInterceptor implements ServerInterceptor {
                 Maps.newHashMap()) {
             @Override
             public void onMessage(ReqT message) {
+                log.info("GrpcLogPrintServerInterceptor onMessage...");
                 if (message instanceof MessageOrBuilder) {
                     //json序列化打印
                     try {
@@ -72,6 +64,7 @@ public class GrpcLogPrintServerInterceptor implements ServerInterceptor {
 
             @Override
             public void onComplete() {
+                log.info("GrpcLogPrintServerInterceptor onComplete...");
                 // 请求完成时调用
                 super.onComplete();
                 long endTime = System.nanoTime();
