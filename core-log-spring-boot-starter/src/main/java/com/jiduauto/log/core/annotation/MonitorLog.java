@@ -1,4 +1,4 @@
-package com.jiduauto.log.core;
+package com.jiduauto.log.core.annotation;
 
 import com.jiduauto.log.core.enums.LogPoint;
 
@@ -16,9 +16,4 @@ import java.lang.annotation.Target;
 public @interface MonitorLog {
     LogPoint value();
 
-    /**
-     * 指标tag
-     *
-     */
-    String[] tags() default { "" };
 }

@@ -24,6 +24,7 @@ public class GrpcMonitorLogConfiguration {
     @ConditionalOnMissingBean
     @GrpcGlobalServerInterceptor
     @Order(-100)
+    @ConditionalOnProperty(prefix = "monitor.log.grpc.server", name = "enable", havingValue = "true", matchIfMissing = true)
     GrpcLogPrintServerInterceptor grpcLogPrintServerInterceptor() {
         return new GrpcLogPrintServerInterceptor();
     }
@@ -31,6 +32,7 @@ public class GrpcMonitorLogConfiguration {
     @ConditionalOnMissingBean
     @GrpcGlobalClientInterceptor
     @Order(-101)
+    @ConditionalOnProperty(prefix = "monitor.log.grpc.client", name = "enable", havingValue = "true", matchIfMissing = true)
     GrpcLogPrintClientInterceptor grpcLogPrintClientInterceptor() {
         return new GrpcLogPrintClientInterceptor();
     }
