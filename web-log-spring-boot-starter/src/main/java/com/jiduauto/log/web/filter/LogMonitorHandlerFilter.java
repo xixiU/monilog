@@ -236,18 +236,18 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
 
             // 先从参数取值
             if (StringUtils.isNotBlank(resultTagValue)) {
-                swapTag(oriTags, i , resultTagValue);
+                swapTag(oriTags, i, resultTagValue);
                 continue;
             }
             // 再从header取值
             resultTagValue = headersMap.get(parameterName);
-            swapTag(oriTags, i , resultTagValue);
+            swapTag(oriTags, i, resultTagValue);
 
         }
         logParams.setTags(oriTags);
     }
 
-    private void swapTag(String[] oriTags ,int index, String resultTagValue){
+    private void swapTag(String[] oriTags, int index, String resultTagValue) {
         resultTagValue = StringUtils.isNotBlank(resultTagValue) ? resultTagValue : Constants.NO_VALUE_CODE;
         oriTags[index] = resultTagValue;
     }
