@@ -104,9 +104,6 @@ public class EnhancedFeignClient implements Client {
                     LogParser cl = ReflectUtil.getAnnotation(LogParser.class, mlp.getServiceCls(), m);
                     //尝试更精确的提取业务失败信息
                     ResultParseStrategy rps = cl == null ? null : cl.resultParseStrategy();
-                    if (rps == null) {
-                        rps = ResultParseStrategy.IfSuccess;
-                    }
                     String boolExpr = cl == null ? StringUtils.trimToNull(defaultBoolExpr) : cl.boolExpr();
                     String codeExpr = cl == null ? null : cl.errorCodeExpr();
                     String msgExpr = cl == null ? null : cl.errorMsgExpr();
