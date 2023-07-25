@@ -1,7 +1,9 @@
 package com.jiduauto.log.grpc;
 
+import com.alibaba.fastjson.JSON;
 import com.google.protobuf.MessageOrBuilder;
 import com.google.protobuf.util.JsonFormat;
+import io.grpc.MethodDescriptor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -33,7 +35,52 @@ abstract class InterceptorHelper {
         }
     }
 
+    protected static Object tryConvert2Json(MessageOrBuilder message) {
+        try {
+            String json = JsonFormat.printer().omittingInsignificantWhitespace().print(message);
+            try {
+                return JSON.parse(json);
+            } catch (Exception ignore) {
+                return json;
+            }
+        } catch (Exception e) {
+            log.error("rpc message序列化成json错误", e);
+            return message.toString();
+        }
+    }
+
     protected static String buildActionName(String fullMethodName, String serviceName) {
         return StringUtils.remove(StringUtils.removeStart(fullMethodName, serviceName), "/");
+    }
+
+    protected static Class<?> getCurrentProtoClass(MethodDescriptor<?, ?> method) {
+        Class<?> cls = null;
+        if (method.getSchemaDescriptor() != null) {
+            cls = method.getSchemaDescriptor().getClass();
+        }
+        if (cls != null && cls.isMemberClass()) {
+            cls = cls.getDeclaringClass();
+        }
+        return cls;
+    }
+
+    protected static StackTraceElement getNextClassFromStack(Class<?> currentCls) {
+        if (currentCls == null) {
+            return null;
+        }
+        String clsName = currentCls.getCanonicalName();
+        StackTraceElement[] st = Thread.currentThread().getStackTrace();
+        StackTraceElement target = null;
+        for (int i = 0; i < st.length - 1; i++) {
+            String name = st[i].getClassName();
+            if (name.contains("$")) {
+                name = name.split("\\$")[0];
+            }
+            if (clsName.equals(name)) {
+                target = st[i + 1];
+                break;
+            }
+        }
+        return target == null ? null : new StackTraceElement(target.getClassName(), target.getMethodName(), target.getFileName(), target.getLineNumber());
     }
 }

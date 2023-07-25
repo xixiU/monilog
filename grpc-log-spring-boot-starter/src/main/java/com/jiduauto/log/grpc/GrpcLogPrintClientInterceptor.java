@@ -1,16 +1,25 @@
 package com.jiduauto.log.grpc;
 
+import com.alibaba.fastjson.JSON;
 import com.google.protobuf.MessageOrBuilder;
+import com.jiduauto.log.core.LogParser;
 import com.jiduauto.log.core.enums.ErrorEnum;
 import com.jiduauto.log.core.enums.LogPoint;
 import com.jiduauto.log.core.model.MonitorLogParams;
+import com.jiduauto.log.core.parse.ParsedResult;
 import com.jiduauto.log.core.util.ExceptionUtil;
 import com.jiduauto.log.core.util.MonitorLogUtil;
+import com.jiduauto.log.core.util.ReflectUtil;
+import com.jiduauto.log.core.util.ResultParseUtil;
 import io.grpc.*;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * @author yp
@@ -19,30 +28,46 @@ import java.util.concurrent.ConcurrentHashMap;
 class GrpcLogPrintClientInterceptor extends InterceptorHelper implements ClientInterceptor {
     @Override
     public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> method, CallOptions callOptions, Channel channel) {
-        return new GrpcMonitorLogClientCall<>(channel.newCall(method, callOptions), new ConcurrentHashMap<>(), method.getServiceName(), method.getFullMethodName());
+        return new GrpcMonitorLogClientCall<>(channel.newCall(method, callOptions), new ConcurrentHashMap<>(), method);
     }
 
     @Slf4j
     static class GrpcMonitorLogClientCall<ReqT, RespT> extends ForwardingClientCall.SimpleForwardingClientCall<ReqT, RespT> {
         private final ConcurrentHashMap<String, Object> context;
         private final MonitorLogParams params;
-        private final String serviceName;
-        private final String fullMethodName;
+        private final MethodDescriptor<ReqT, RespT> method;
 
-        public GrpcMonitorLogClientCall(ClientCall<ReqT, RespT> delegate, ConcurrentHashMap<String, Object> context, String serviceName, String fullMethodName) {
+        public GrpcMonitorLogClientCall(ClientCall<ReqT, RespT> delegate, ConcurrentHashMap<String, Object> context, MethodDescriptor<ReqT, RespT> method) {
             super(delegate);
             this.context = context == null ? new ConcurrentHashMap<>() : context;
             this.params = new MonitorLogParams();
-            this.serviceName = serviceName;
-            this.fullMethodName = fullMethodName;
+            this.method = method;
         }
 
         @Override
         public void start(Listener<RespT> responseListener, Metadata metadata) {
-            params.setServiceCls(GrpcClient.class);//TODO
+            Class<?> cls = getCurrentProtoClass(method);
+            StackTraceElement ste = getNextClassFromStack(cls);
+            Class<?> serviceCls = GrpcClient.class;
+            String serviceName = method.getServiceName();
+            String methodName = buildActionName(method.getFullMethodName(), serviceName);
+            try {
+                if (ste != null) {
+                    serviceCls = Class.forName(ste.getClassName());
+                    serviceName = serviceCls.getSimpleName();
+                    methodName = ste.getMethodName();
+                    List<Method> list = Arrays.stream(serviceCls.getMethods()).filter(e -> ste.getMethodName().equals(e.getName())).collect(Collectors.toList());
+                    Method[] array = list.toArray(new Method[]{});
+                    LogParser logParser = ReflectUtil.getAnnotation(LogParser.class, serviceCls, array);
+                    context.put("logParser", logParser);
+                }
+            } catch (Exception e) {
+            }
+
+            params.setServiceCls(serviceCls);
             params.setLogPoint(LogPoint.REMOTE_CLIENT);
             params.setService(serviceName);
-            params.setAction(buildActionName(fullMethodName, serviceName));
+            params.setAction(methodName);
             params.setSuccess(true);
             params.setMsgCode(ErrorEnum.SUCCESS.name());
             params.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
@@ -56,7 +81,7 @@ class GrpcLogPrintClientInterceptor extends InterceptorHelper implements ClientI
                 context.put(TIME_KEY, System.currentTimeMillis());
             }
             if (message instanceof MessageOrBuilder) {
-                params.setInput(new Object[]{print2Json((MessageOrBuilder) message)});
+                params.setInput(new Object[]{tryConvert2Json((MessageOrBuilder) message)});
             }
             try {
                 super.sendMessage(message);
@@ -93,9 +118,16 @@ class GrpcLogPrintClientInterceptor extends InterceptorHelper implements ClientI
         public void onMessage(RespT message) {
             try {
                 if (message instanceof MessageOrBuilder) {
-                    String json = print2Json((MessageOrBuilder) message);
+                    Object json = tryConvert2Json((MessageOrBuilder) message);
                     params.setOutput(json);
-                    //TODO 这里要解析响应码
+                    LogParser cl = (LogParser) context.get("logParser");
+                    if (json instanceof JSON && cl != null) {
+                        //尝试更精确的提取业务失败信息
+                        ParsedResult pr = ResultParseUtil.parseResult(json, cl.resultParseStrategy(), null, cl.boolExpr(), cl.errorCodeExpr(), cl.errorMsgExpr());
+                        params.setSuccess(pr.isSuccess());
+                        params.setMsgCode(pr.getMsgCode());
+                        params.setMsgInfo(pr.getMsgInfo());
+                    }
                 }
                 super.onMessage(message);
             } catch (Exception e) {
