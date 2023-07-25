@@ -121,8 +121,8 @@ class GrpcLogPrintClientInterceptor extends InterceptorHelper implements ClientI
                 params.setMsgInfo(status.getDescription());
                 params.setMsgCode(status.getCode().name());
             }
-            MonitorLogUtil.log(params);
             super.onClose(status, trailers);
+            MonitorLogUtil.log(params);
         }
     }
 }
