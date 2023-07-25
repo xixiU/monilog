@@ -32,26 +32,52 @@ public class GrpcLogPrintServerInterceptor extends InterceptorHelper implements 
         params.setSuccess(true);
         params.setMsgCode(ErrorEnum.SUCCESS.name());
         params.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
-        // 拦截响应
         Map<String, Object> context = new ConcurrentHashMap<>();
-        return new GrpcMonitorLogServerCall<>(next.startCall(call, metadata), params, context);
+        ServerCall<ReqT, RespT> wrappedCall = new WrappedServerCall<>(call, params, context);
+        Listener<ReqT> listener = next.startCall(wrappedCall, metadata);
+        return new GrpcMonitorLogServerListener<>(listener, params, context);
     }
 
 
-    static class GrpcMonitorLogServerCall<ReqT> extends ForwardingServerCallListener<ReqT> {
+    static class WrappedServerCall<ReqT, RespT> extends ForwardingServerCall.SimpleForwardingServerCall<ReqT, RespT> {
         private final MonitorLogParams params;
         private final Map<String, Object> context;
-        private final ServerCall.Listener<ReqT> delegate;
 
-        protected GrpcMonitorLogServerCall(ServerCall.Listener<ReqT> delegate, MonitorLogParams params, Map<String, Object> context) {
-            this.delegate = delegate;
+        public WrappedServerCall(ServerCall<ReqT, RespT> delegate, MonitorLogParams params, Map<String, Object> context) {
+            super(delegate);
             this.params = params;
-            this.context = context == null ? new ConcurrentHashMap<>() : context;
+            this.context = context;
         }
 
         @Override
-        protected Listener<ReqT> delegate() {
-            return delegate;
+        public void sendHeaders(Metadata headers) {
+            log.info("GrpcLogPrintServerInterceptor sendHeaders...");
+            if (!context.containsKey(TIME_KEY)) {
+                context.put(TIME_KEY, System.currentTimeMillis());
+            }
+            super.sendHeaders(headers);
+        }
+
+        @Override
+        public void sendMessage(RespT message) {
+            log.info("GrpcLogPrintServerInterceptor sendMessage...");
+            if (message instanceof MessageOrBuilder) {
+                //TODO 这里要解析响应码
+                params.setOutput(print2Json((MessageOrBuilder) message));
+            }
+            super.sendMessage(message);
+        }
+    }
+
+
+    static class GrpcMonitorLogServerListener<ReqT> extends ForwardingServerCallListener.SimpleForwardingServerCallListener<ReqT> {
+        private final MonitorLogParams params;
+        private final Map<String, Object> context;
+
+        protected GrpcMonitorLogServerListener(ServerCall.Listener<ReqT> delegate, MonitorLogParams params, Map<String, Object> context) {
+            super(delegate);
+            this.params = params;
+            this.context = context == null ? new ConcurrentHashMap<>() : context;
         }
 
         @Override

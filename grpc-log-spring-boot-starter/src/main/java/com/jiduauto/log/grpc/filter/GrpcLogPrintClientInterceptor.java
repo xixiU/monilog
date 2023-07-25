@@ -9,7 +9,6 @@ import com.jiduauto.log.core.util.MonitorLogUtil;
 import io.grpc.*;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -51,10 +50,11 @@ public class GrpcLogPrintClientInterceptor extends InterceptorHelper implements 
             super.start(new ForwardingClientCallListener.SimpleForwardingClientCallListener<RespT>(responseListener) {
                 @Override
                 public void onMessage(RespT message) {
-                    System.out.println("GrpcLogPrintClientInterceptor onMessage...");
                     try {
                         if (message instanceof MessageOrBuilder) {
-                            params.setOutput(print2Json((MessageOrBuilder) message));
+                            String json = print2Json((MessageOrBuilder) message);
+                            params.setOutput(json);
+                            //TODO 这里要解析响应码
                         }
                         super.onMessage(message);
                     } catch (Exception e) {
@@ -76,30 +76,18 @@ public class GrpcLogPrintClientInterceptor extends InterceptorHelper implements 
                     if (params.getCost() == 0) {
                         params.setCost(parseCostTime(context));
                     }
-                    System.out.println("GrpcLogPrintClientInterceptor onClose...");
-                }
-
-                @Override
-                public void onHeaders(Metadata headers) {
-                    super.onHeaders(headers);
-                    System.out.println("GrpcLogPrintClientInterceptor onHeaders...");
-                }
-
-                @Override
-                public void onReady() {
-                    super.onReady();
-                    System.out.println("GrpcLogPrintClientInterceptor onReady...");
                 }
             }, headers);
         }
 
         @Override
         public void sendMessage(ReqT message) {
-            System.out.println("GrpcLogPrintClientInterceptor sendMessage...");
             if (message instanceof MessageOrBuilder) {
                 params.setInput(new Object[]{print2Json((MessageOrBuilder) message)});
             }
-            context.put(TIME_KEY, System.currentTimeMillis());
+            if (!context.containsKey(TIME_KEY)) {
+                context.put(TIME_KEY, System.currentTimeMillis());
+            }
             try {
                 super.sendMessage(message);
             } catch (Throwable t) {
@@ -113,19 +101,7 @@ public class GrpcLogPrintClientInterceptor extends InterceptorHelper implements 
         @Override
         public void request(int numMessages) {
             super.request(numMessages);
-            System.out.println("GrpcLogPrintClientInterceptor request...");
-        }
-
-        @Override
-        public void cancel(@Nullable String message, @Nullable Throwable cause) {
-            super.cancel(message, cause);
-            System.out.println("GrpcLogPrintClientInterceptor cancel...");
-        }
-
-        @Override
-        public void halfClose() {
-            super.halfClose();
-            System.out.println("GrpcLogPrintClientInterceptor halfClose...");
+            context.put(TIME_KEY, System.currentTimeMillis());
         }
     }
 }
