@@ -51,8 +51,8 @@ import java.util.*;
 @Slf4j
 public class LogMonitorHandlerFilter extends OncePerRequestFilter {
 
-    private static final List<HttpRequestValidator> HTTP_REQUEST_VALIDATORS = SpringFactoriesLoader.loadFactories(HttpRequestValidator.class,
-            Thread.currentThread().getContextClassLoader());
+//    private static final List<HttpRequestValidator> HTTP_REQUEST_VALIDATORS = SpringFactoriesLoader.loadFactories(HttpRequestValidator.class,
+//            Thread.currentThread().getContextClassLoader());
 
 
     /**
@@ -109,13 +109,22 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
         boolean isMultipart = ServletFileUpload.isMultipartContent(request);
         ContentCachingRequestWrapper wrapperRequest = isMultipart ? null : new ContentCachingRequestWrapper(request);
         ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(response);
-        for (HttpRequestValidator validator : HTTP_REQUEST_VALIDATORS) {
-            LogPoint logPoint = validator.validateRequest(wrapperRequest);
-            logParams.setLogPoint(logPoint);
-            if (!LogPoint.UNKNOWN_ENTRY.equals(logPoint)) {
-                break;
-            }
+        HttpRequestValidator validator = null;
+        try{
+            validator = SpringUtils.getBean(HttpRequestValidator.class);
+        }catch (Exception e){
+            log.error("no HttpRequestValidator instance found");
         }
+        if (validator != null) {
+            logParams.setLogPoint(validator.validateRequest(wrapperRequest));
+        }
+//        for (HttpRequestValidator validator : HTTP_REQUEST_VALIDATORS) {
+//            LogPoint logPoint = validator.validateRequest(wrapperRequest);
+//            logParams.setLogPoint(logPoint);
+//            if (!LogPoint.UNKNOWN_ENTRY.equals(logPoint)) {
+//                break;
+//            }
+//        }
         try {
             filterChain.doFilter(wrapperRequest, wrapperResponse);
 

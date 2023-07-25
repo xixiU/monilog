@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 public class MonitorLogUtil {
-    private static final List<MonitorLogPrinter> MONITOR_LOG_PRINTERS = SpringFactoriesLoader.loadFactories(MonitorLogPrinter.class, Thread.currentThread().getContextClassLoader());
+//    private static final List<MonitorLogPrinter> MONITOR_LOG_PRINTERS = SpringFactoriesLoader.loadFactories(MonitorLogPrinter.class, Thread.currentThread().getContextClassLoader());
 
     private static final String applicationName = SpringUtils.getApplicationName();
 
