@@ -48,8 +48,8 @@ public class DefaultMonitorLogPrinter implements MonitorLogPrinter {
     }
 
     private String formatLongText(Object o) {
-        if (o == null) {
-            return null;
+        if (o == null || o instanceof String) {
+            return (String) o;
         }
         String str = JSON.toJSONString(o);
         if (str.length() > maxTextLen) {
