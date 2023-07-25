@@ -10,6 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -62,7 +63,7 @@ public final class ResultParser {
             jsonpaths = Default_ErrCode_Expr;
         }
         ParsedInfo<String> parsed = parseByPaths(obj, jsonpaths, String.class);
-        return parsed == null ? null : parsed.getResult();
+        return parsed == null || !parsed.isExpectValid() ? null : parsed.getResult();
     }
 
     public static Integer parseIntCode(Object obj, @Nullable String jsonpaths) {
@@ -70,7 +71,7 @@ public final class ResultParser {
             jsonpaths = Default_ErrCode_Expr;
         }
         ParsedInfo<Integer> parsed = parseByPaths(obj, jsonpaths, Integer.class);
-        return parsed == null ? null : parsed.getResult();
+        return parsed == null || !parsed.isExpectValid() ? null : parsed.getResult();
     }
 
     public static String parseErrMsg(Object obj, @Nullable String jsonpaths) {
@@ -81,7 +82,7 @@ public final class ResultParser {
             jsonpaths = Default_ErrMsg_Expr;
         }
         ParsedInfo<String> parsed = parseByPaths(obj, jsonpaths, String.class);
-        return parsed == null ? null : parsed.getResult();
+        return parsed == null || !parsed.isExpectValid() ? null : parsed.getResult();
     }
 
     public static boolean parseBoolVal(Object obj, @Nullable String jsonpaths, boolean defaultVal) {
@@ -100,7 +101,7 @@ public final class ResultParser {
             jsonpaths = Default_Bool_Expr;
         }
         ParsedInfo<Boolean> parsed = parseByPaths(obj, jsonpaths, Boolean.class);
-        return parsed == null ? null : parsed.getResult();
+        return parsed == null ? null : parsed.isExpectValid() ? parsed.getResult() : false;
     }
 
     public static <T> ParsedInfo<T> parseByPaths(Object obj, @NotNull String jsonpaths, @NotNull Class<T> resultCls) {
@@ -110,24 +111,30 @@ public final class ResultParser {
     /**
      * 从多个备选路径中依次解析结果，返回第一个找到的结果
      */
-    public static <T> ParsedInfo<T> parseByPaths(Object obj, @NotNull List<String> jsonpaths, @NotNull Class<T> resultCls) {
+    private static <T> ParsedInfo<T> parseByPaths(Object obj, @NotNull List<String> jsonpaths, @NotNull Class<T> resultCls) {
         if (obj == null) {
             return null;
         }
         Preconditions.checkArgument(CollectionUtils.isNotEmpty(jsonpaths), "解析路径不能为空");
+        List<ParsedInfo<T>> parsedList = new ArrayList<>();
         for (String path : jsonpaths) {
             ParsedInfo<T> ret = parse(obj, path, resultCls);
             if (ret != null) {
-                return ret;
+                if (ret.isExpectValid()) {
+                    return ret;
+                } else {
+                    parsedList.add(ret);
+                }
             }
         }
-        return null;
+        //如果均未找到符合期望的，但有字段被成功匹配，则返回匹配到的第一个
+        return parsedList.isEmpty() ? null : parsedList.get(0);
     }
 
     /**
      * 从指定的路径中解析结果
      */
-    public static <T> ParsedInfo<T> parse(Object obj, String jsonpath, Class<T> resultCls) {
+    private static <T> ParsedInfo<T> parse(Object obj, String jsonpath, Class<T> resultCls) {
         if (obj == null) {
             return null;
         }
@@ -153,29 +160,10 @@ public final class ResultParser {
             ParsedInfo<T> p = new ParsedInfo<>(resultCls);
             p.setValue(val);
             p.setExpect(expect);
-            if (!p.isExpectValid()) {
-                return null;
-            }
             return p;
         } catch (Exception e) {
             return null;
         }
-    }
-
-
-    public static <T> T parseVal(Object obj, String jsonpaths, Class<T> resultCls) {
-        List<String> paths = SplitterUtil.splitByComma(jsonpaths);
-        for (String path : paths) {
-            ParsedInfo<T> r = parse(obj, path, resultCls);
-            if (r == null) {
-                continue;
-            }
-            T val = r.getResult();
-            if (val != null) {
-                return val;
-            }
-        }
-        return null;
     }
 
     private static Object parseObjVal(Object obj, String path) {
