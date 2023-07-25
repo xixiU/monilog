@@ -33,7 +33,6 @@ public class FeignMonitorLogConfiguration {
     }
 
     @AllArgsConstructor
-
     static class FeignClientEnhanceProcessor implements BeanPostProcessor, Ordered {
         private final String defaultBoolExpr;
 
