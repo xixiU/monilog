@@ -76,6 +76,11 @@ public class GrpcLogPrintClientInterceptor extends InterceptorHelper implements 
                     if (params.getCost() == 0) {
                         params.setCost(parseCostTime(context));
                     }
+                    if (!status.isOk()) {
+                        params.setSuccess(false);
+                        params.setMsgInfo(status.getDescription());
+                        params.setMsgCode(status.getCode().name());
+                    }
                 }
             }, headers);
         }
