@@ -9,8 +9,8 @@
         <version>1.0.5-SNAPSHOT</version>
     </parent>
 
-    <artifactId>all-log-spring-boot-start</artifactId>
-    <packaging>jar</packaging>
+    <artifactId>all-log-spring-boot-starter</artifactId>
+    <packaging>pom</packaging>
 
    <dependencies>
        <dependency>

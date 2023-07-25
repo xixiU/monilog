@@ -1,4 +1,4 @@
-package com.jiduauto.log.rocketmq.interceptor;
+package com.jiduauto.log.rocketmq.hook;
 
 import com.jiduauto.log.core.enums.LogPoint;
 import com.jiduauto.log.core.model.MonitorLogParams;

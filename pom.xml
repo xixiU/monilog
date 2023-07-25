@@ -22,7 +22,7 @@
         <module>rocketmq-log-spring-boot-starter</module>
         <module>web-log-spring-boot-starter</module>
         <module>grpc-log-spring-boot-starter</module>
-        <module>all-log-spring-boot-start</module>
+        <module>all-log-spring-boot-starter</module>
         <module>feign-log-spring-boot-starter</module>
         <module>xxljob-log-spring-boot-starter</module>
     </modules>
@@ -88,7 +88,7 @@
 
             <dependency>
                 <groupId>com.jiduauto.log</groupId>
-                <artifactId>all-log-spring-boot-start</artifactId>
+                <artifactId>all-log-spring-boot-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
