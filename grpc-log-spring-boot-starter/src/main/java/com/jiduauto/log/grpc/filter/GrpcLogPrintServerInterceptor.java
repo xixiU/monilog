@@ -4,6 +4,7 @@ import com.google.protobuf.MessageOrBuilder;
 import com.jiduauto.log.core.enums.ErrorEnum;
 import com.jiduauto.log.core.enums.LogPoint;
 import com.jiduauto.log.core.model.MonitorLogParams;
+import com.jiduauto.log.core.util.MonitorLogUtil;
 import io.grpc.*;
 import io.grpc.ServerCall.Listener;
 import lombok.extern.slf4j.Slf4j;
@@ -69,6 +70,7 @@ public class GrpcLogPrintServerInterceptor extends InterceptorHelper implements 
             log.info("GrpcLogPrintServerInterceptor onComplete...");
             super.onComplete();
             params.setCost(parseCostTime(context));
+            MonitorLogUtil.log(params);
         }
 
         @Override
