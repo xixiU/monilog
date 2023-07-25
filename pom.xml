@@ -77,12 +77,19 @@
             <dependency>
                 <groupId>com.jiduauto.log</groupId>
                 <artifactId>feign-log-spring-boot-starter</artifactId>
-                <version>1.0.5-SNAPSHOT</version>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.jiduauto.log</groupId>
+                <artifactId>xxljob-log-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>com.jiduauto.log</groupId>
                 <artifactId>all-log-spring-boot-start</artifactId>
+                <version>${project.version}</version>
             </dependency>
 
             <!-- metric监控 -->
@@ -116,6 +123,11 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>3.6</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>1.3.2</version>
             </dependency>
             <dependency>
                 <groupId>org.jetbrains</groupId>

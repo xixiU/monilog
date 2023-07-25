@@ -22,6 +22,7 @@
             <artifactId>feign-core</artifactId>
             <groupId>io.github.openfeign</groupId>
             <version>10.10.1</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 

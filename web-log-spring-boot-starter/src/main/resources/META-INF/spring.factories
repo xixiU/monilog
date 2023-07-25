@@ -1,2 +1,2 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.jiduauto.log.weblogspringbootstarter.config.WebIdTraceFilterConfig,\
-  com.jiduauto.log.weblogspringbootstarter.config.WebMonitorFilterConfig
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.jiduauto.log.web.config.WebIdTraceFilterConfig,\
+  com.jiduauto.log.web.config.WebMonitorFilterConfig

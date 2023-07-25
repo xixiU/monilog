@@ -1,1 +1,1 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.jiduauto.log.MonitorLogConfiguration
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.jiduauto.log.core.MonitorLogConfiguration
