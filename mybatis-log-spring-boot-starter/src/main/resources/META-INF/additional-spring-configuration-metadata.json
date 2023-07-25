@@ -6,6 +6,13 @@
       "sourceType": "com.jiduauto.log.mybatis.MybatisSqlFilterAutoConfiguration",
       "defaultValue": true,
       "description": "开启mybatis监控"
+    },
+    {
+      "name": "monitor.log.mybatis.long.query.time",
+      "type": "java.lang.Long",
+      "sourceType": "com.jiduauto.log.mybatis.MybatisSqlFilterAutoConfiguration",
+      "defaultValue": 2000,
+      "description": "mybatis慢sql阈值，单位毫秒"
     }
   ]
 }

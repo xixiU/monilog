@@ -8,11 +8,11 @@
       "description": "开启web监控"
     },
     {
-      "name": "monitor.web.blackList",
+      "name": "monitor.log.web.blackList",
       "type": "java.lang.String",
       "sourceType": "com.jiduauto.log.web.filter.LogMonitorHandlerFilter",
-      "defaultValue": true,
-      "description": "开启rocketmq的consumer监控"
+      "defaultValue": "/misc/ping",
+      "description": "web不记录url信息的接口清单"
     }
   ]
 }

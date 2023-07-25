@@ -5,7 +5,7 @@
       "type": "java.lang.Boolean",
       "sourceType": "com.jiduauto.log.grpc.GrpcMonitorLogConfiguration",
       "defaultValue": true,
-      "description": "开启grpc监控,默认会开启server与client"
+      "description": "开启grpc监控"
     },
     {
       "name": "monitor.log.grpc.server.enable",

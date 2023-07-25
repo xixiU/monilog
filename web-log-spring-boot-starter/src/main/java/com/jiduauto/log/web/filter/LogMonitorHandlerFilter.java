@@ -52,7 +52,7 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
     /**
      * 不监控的日url清单，支持模糊路径如a/*
      */
-    @Value("${monitor.web.blackList}")
+    @Value("${monitor.log.web.blackList}")
     private List<String> BLACK_LIST;
 
 
