@@ -13,9 +13,10 @@ import java.util.Map;
  */
 @Slf4j
 public abstract class InterceptorHelper {
+    static final String TIME_KEY = "nowTime";
 
     static long parseCostTime(Map<String, Object> context) {
-        Long nowTime = (Long) context.get("nowTime");
+        Long nowTime = (Long) context.get(TIME_KEY);
         long cost = 0;
         if (nowTime != null) {
             cost = System.currentTimeMillis() - nowTime;

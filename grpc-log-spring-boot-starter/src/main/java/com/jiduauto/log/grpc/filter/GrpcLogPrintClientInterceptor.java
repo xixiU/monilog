@@ -1,7 +1,6 @@
 package com.jiduauto.log.grpc.filter;
 
 import com.google.protobuf.MessageOrBuilder;
-import com.google.protobuf.util.JsonFormat;
 import com.jiduauto.log.core.enums.ErrorEnum;
 import com.jiduauto.log.core.enums.LogPoint;
 import com.jiduauto.log.core.model.MonitorLogParams;
@@ -10,10 +9,8 @@ import com.jiduauto.log.core.util.MonitorLogUtil;
 import io.grpc.*;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -64,6 +61,9 @@ public class GrpcLogPrintClientInterceptor extends InterceptorHelper implements 
                         if (params.getException() == null) {
                             params.setException(e);
                         }
+                        params.setSuccess(false);
+                        params.setMsgCode(ErrorEnum.SYSTEM_ERROR.name());
+                        params.setMsgInfo("Rpc响应异常:" + ExceptionUtil.getErrorMsg(e));
                         throw e;
                     } finally {
                         params.setCost(parseCostTime(context));
@@ -99,13 +99,13 @@ public class GrpcLogPrintClientInterceptor extends InterceptorHelper implements 
             if (message instanceof MessageOrBuilder) {
                 params.setInput(new Object[]{print2Json((MessageOrBuilder) message)});
             }
-            context.put("nowTime", System.currentTimeMillis());
+            context.put(TIME_KEY, System.currentTimeMillis());
             try {
                 super.sendMessage(message);
             } catch (Throwable t) {
                 params.setSuccess(false);
                 params.setException(t);
-                params.setMsgCode(ErrorEnum.FAILED.name());
+                params.setMsgCode(ErrorEnum.SYSTEM_ERROR.name());
                 params.setMsgInfo("Rpc调用异常:" + ExceptionUtil.getErrorMsg(t));
             }
         }
@@ -126,28 +126,6 @@ public class GrpcLogPrintClientInterceptor extends InterceptorHelper implements 
         public void halfClose() {
             super.halfClose();
             System.out.println("GrpcLogPrintClientInterceptor halfClose...");
-        }
-
-        private static long parseCostTime(Map<String, Object> context) {
-            Long nowTime = (Long) context.get("nowTime");
-            long cost = 0;
-            if (nowTime != null) {
-                cost = System.currentTimeMillis() - nowTime;
-            }
-            return cost;
-        }
-
-        private static String print2Json(MessageOrBuilder message) {
-            try {
-                return JsonFormat.printer().omittingInsignificantWhitespace().print(message);
-            } catch (Exception e) {
-                log.error("rpc message序列化成json错误", e);
-                return message.toString();
-            }
-        }
-
-        private static String buildActionName(String fullMethodName, String serviceName) {
-            return StringUtils.remove(StringUtils.removeStart(fullMethodName, serviceName), "/");
         }
     }
 }

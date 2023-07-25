@@ -56,7 +56,7 @@ public class GrpcLogPrintServerInterceptor extends InterceptorHelper implements 
         @Override
         public void onMessage(ReqT message) {
             log.info("GrpcLogPrintServerInterceptor onMessage...");
-            context.put("nowTime", System.currentTimeMillis());
+            context.put(TIME_KEY, System.currentTimeMillis());
             if (message instanceof MessageOrBuilder) {
                 params.setInput(new Object[]{print2Json((MessageOrBuilder) message)});
             }
@@ -68,9 +68,7 @@ public class GrpcLogPrintServerInterceptor extends InterceptorHelper implements 
         public void onComplete() {
             log.info("GrpcLogPrintServerInterceptor onComplete...");
             super.onComplete();
-            long startTime = (Long) context.get("nowTime");
-            long cost = System.currentTimeMillis() - startTime;
-            params.setCost(cost);
+            params.setCost(parseCostTime(context));
         }
 
         @Override
