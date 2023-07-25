@@ -9,7 +9,9 @@ import com.metric.MetricMonitor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.ibatis.binding.MapperMethod;
 import org.apache.ibatis.executor.statement.StatementHandler;
+import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.plugin.*;
 import org.apache.ibatis.reflection.MetaObject;
@@ -20,9 +22,7 @@ import org.springframework.beans.factory.annotation.Value;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * @author ：xiaoxu.bao
@@ -66,7 +66,8 @@ public class MybatisMonitorSqlFilter implements Interceptor {
         List<String> tags  = new ArrayList<>();
         try {
             Object obj = invocation.proceed();
-            String sql = statementHandler.getBoundSql().getSql();
+            BoundSql boundSql = statementHandler.getBoundSql();
+            String sql = boundSql.getSql();
             long costTime = System.currentTimeMillis() - nowTime;
             logParams.setCost(costTime);
             tags.add(MybatisLogConstant.SQL);
@@ -88,6 +89,21 @@ public class MybatisMonitorSqlFilter implements Interceptor {
             MonitorLogUtil.log(logParams);
         }
         return null;
+    }
+
+    private void getSQLParams(BoundSql boundSql){
+        Object parameterObject = boundSql.getParameterObject();
+        if (parameterObject instanceof MapperMethod.ParamMap) {
+            MapperMethod.ParamMap paramMap = (MapperMethod.ParamMap) parameterObject;
+            Collection values = paramMap.values();
+            for (Object entry : paramMap.values()) {
+                // TODO rongjie.yuan  2023/7/25 23:29
+                // 测试发现这里要从LambdaQueryWrapper中取出对应参数，LambdaQueryWrapper是mybatis-plus中的,mybatis
+//                if (entry instanceof LambdaQueryWrapper) {
+//
+//                }
+            }
+        }
     }
 
     @Override
