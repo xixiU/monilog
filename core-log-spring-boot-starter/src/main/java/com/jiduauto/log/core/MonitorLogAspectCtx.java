@@ -1,12 +1,15 @@
 package com.jiduauto.log.core;
 
 import com.google.common.base.Preconditions;
+import com.jiduauto.log.core.annotation.MonitorLog;
+import com.jiduauto.log.core.annotation.MonitorLogTags;
 import com.jiduauto.log.core.enums.LogPoint;
 import com.jiduauto.log.core.parse.ParsedResult;
 import com.jiduauto.log.core.parse.ResultParseStrategy;
 import com.jiduauto.log.core.util.ReflectUtil;
 import com.jiduauto.log.core.util.ResultParseUtil;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
@@ -22,6 +25,7 @@ import java.util.Map;
  * @author yp
  */
 @Getter
+@Slf4j
 public class MonitorLogAspectCtx {
     private static final Map<Class<?>, Logger> LOGGERS = new HashMap<>();
     private static final Map<Method, Class<?>> METHOD_CLS_CACHE = new HashMap<>();
@@ -62,8 +66,15 @@ public class MonitorLogAspectCtx {
         //找到方法上的注解，如果找不到则向上找类上的，如果还找不到，则再向上找接口上的
         this.logParserAnnotation = ReflectUtil.getAnnotation(LogParser.class, methodOwnedClass, targetMethod, method);
         MonitorLog anno = ReflectUtil.getAnnotation(MonitorLog.class, methodOwnedClass, targetMethod, method);
+        MonitorLogTags logTags = ReflectUtil.getAnnotation(MonitorLogTags.class, methodOwnedClass, targetMethod, method);
         this.logPoint = anno == null ? LogPoint.UNKNOWN_ENTRY : anno.value();
-        this.tags = anno == null ? null : anno.tags();
+        if (logTags.tags() != null && logTags.tags().length %2 ==0) {
+            this.tags = anno == null ? null : logTags.tags();
+        }else{
+            // 非偶数tag prometheus上报会报错，这里只打一行日志提醒
+            log.error("tags length must be double，method：{}", method.getName());
+            this.tags = null;
+        }
     }
 
     public MonitorLogAspectCtx buildResult(long cost, Object result, Throwable exception) {

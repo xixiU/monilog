@@ -15,7 +15,17 @@ public final class WebLogConstant {
     public static final String METHOD ="method";
 
     /**
+     * 请求头
+     */
+    public static final String HEADER ="header";
+
+    public static final String APPLICATION_JSON = "application/json";
+
+
+    /**
      * 健康检查地址
      */
     public static final String MISC_PING_URL = "/misc/ping";
+
+
 }
