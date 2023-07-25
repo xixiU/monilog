@@ -84,7 +84,7 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
         MonitorLogTags logTags = ReflectUtil.getAnnotation(MonitorLogTags.class, method.getBeanType(), method.getMethod());
         if (logTags != null && logTags.tags() != null) {
             if (logTags.tags().length % 2 == 0) {
-                tagList = Arrays.asList(logTags.tags());
+                tagList = new ArrayList<>(Arrays.asList(logTags.tags()));
             } else {
                 // 非偶数tag prometheus上报会报错，这里只打一行日志提醒
                 log.error("tags length must be double，method：{}", method.getMethod().getName());
