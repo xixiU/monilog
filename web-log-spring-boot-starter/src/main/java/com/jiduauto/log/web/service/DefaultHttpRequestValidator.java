@@ -4,7 +4,6 @@ import com.jiduauto.log.core.enums.LogPoint;
 import com.jiduauto.log.web.constant.WebLogConstant;
 import com.jiduauto.log.web.util.HttpUtil;
 import com.jiduauto.log.web.util.UaUtil;
-import net.sf.uadetector.ReadableUserAgent;
 import net.sf.uadetector.UserAgentType;
 import org.apache.commons.collections4.MapUtils;
 

@@ -52,7 +52,7 @@ import java.util.*;
 @Slf4j
 public class LogMonitorHandlerFilter extends OncePerRequestFilter {
 
-    List<HttpRequestValidator> httpRequestValidatorList = SpringFactoriesLoader.loadFactories(HttpRequestValidator.class,
+    private static List<HttpRequestValidator> httpRequestValidatorList = SpringFactoriesLoader.loadFactories(HttpRequestValidator.class,
             Thread.currentThread().getContextClassLoader());
 
 
@@ -111,7 +111,13 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
             boolean isMultipart = ServletFileUpload.isMultipartContent(request);
             ContentCachingRequestWrapper wrapperRequest = isMultipart ? null : new ContentCachingRequestWrapper(request);
             ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(response);
-
+            for (HttpRequestValidator validator : httpRequestValidatorList) {
+                LogPoint logPoint = validator.validateRequest(wrapperRequest);
+                logParams.setLogPoint(logPoint);
+                if (!LogPoint.UNKNOWN_ENTRY.equals(logPoint)) {
+                    break;
+                }
+            }
             String requestParams = isMultipart ? "{}" : JSON.toJSONString(wrapperRequest.getParameterMap());
             // 记录下请求内容,响应时间
             log.info("REQUEST:URI={},METHOD={},P={},HEADERS={},PARAMS={}", wrapperRequest.getRequestURI(),
