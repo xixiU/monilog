@@ -1,4 +1,4 @@
-package com.jiduauto.log.grpc.filter;
+package com.jiduauto.log.grpc;
 
 import com.google.protobuf.MessageOrBuilder;
 import com.jiduauto.log.core.enums.ErrorEnum;
@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @date 2023/07/21/15:29
  */
 @Slf4j
-public class GrpcLogPrintServerInterceptor extends InterceptorHelper implements ServerInterceptor {
+class GrpcLogPrintServerInterceptor extends InterceptorHelper implements ServerInterceptor {
 
     @Override
     public <ReqT, RespT> Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call, Metadata metadata, ServerCallHandler<ReqT, RespT> next) {

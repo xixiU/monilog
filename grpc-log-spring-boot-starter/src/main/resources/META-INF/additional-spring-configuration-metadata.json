@@ -10,14 +10,14 @@
     {
       "name": "monitor.log.grpc.server.enable",
       "type": "java.lang.Boolean",
-      "sourceType": "com.jiduauto.log.grpc.filter.GrpcLogPrintServerInterceptor",
+      "sourceType": "com.jiduauto.log.grpc.GrpcLogPrintServerInterceptor",
       "defaultValue": true,
       "description": "开启grpc服务端监控"
     },
     {
       "name": "monitor.log.grpc.client.enable",
       "type": "java.lang.Boolean",
-      "sourceType": "com.jiduauto.log.grpc.filter.GrpcLogPrintClientInterceptor",
+      "sourceType": "com.jiduauto.log.grpc.GrpcLogPrintClientInterceptor",
       "defaultValue": true,
       "description": "开启grpc客户端监控"
     }

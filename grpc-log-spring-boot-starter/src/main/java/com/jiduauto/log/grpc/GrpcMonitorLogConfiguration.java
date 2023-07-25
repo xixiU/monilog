@@ -1,7 +1,5 @@
 package com.jiduauto.log.grpc;
 
-import com.jiduauto.log.grpc.filter.GrpcLogPrintClientInterceptor;
-import com.jiduauto.log.grpc.filter.GrpcLogPrintServerInterceptor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.interceptor.GrpcGlobalClientInterceptor;
 import net.devh.boot.grpc.server.interceptor.GrpcGlobalServerInterceptor;
@@ -18,7 +16,7 @@ import org.springframework.core.annotation.Order;
 @ConditionalOnProperty(prefix = "monitor.log.grpc", name = "enable", havingValue = "true", matchIfMissing = true)
 @ConditionalOnClass(name = {"io.grpc.stub.AbstractStub", "io.grpc.stub.ServerCalls"})
 @Slf4j
-public class GrpcMonitorLogConfiguration {
+class GrpcMonitorLogConfiguration {
 
 
     @GrpcGlobalServerInterceptor
