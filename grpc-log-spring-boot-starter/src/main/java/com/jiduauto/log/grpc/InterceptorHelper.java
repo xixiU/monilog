@@ -1,4 +1,4 @@
-package com.jiduauto.log.grpc.filter;
+package com.jiduauto.log.grpc;
 
 import com.google.protobuf.MessageOrBuilder;
 import com.google.protobuf.util.JsonFormat;
@@ -12,10 +12,10 @@ import java.util.Map;
  * @date 2023/07/25
  */
 @Slf4j
-public abstract class InterceptorHelper {
-    static final String TIME_KEY = "nowTime";
+abstract class InterceptorHelper {
+    protected static final String TIME_KEY = "nowTime";
 
-    static long parseCostTime(Map<String, Object> context) {
+    protected static long parseCostTime(Map<String, Object> context) {
         Long nowTime = (Long) context.get(TIME_KEY);
         long cost = 0;
         if (nowTime != null) {
@@ -24,7 +24,7 @@ public abstract class InterceptorHelper {
         return cost;
     }
 
-    static String print2Json(MessageOrBuilder message) {
+    protected static String print2Json(MessageOrBuilder message) {
         try {
             return JsonFormat.printer().omittingInsignificantWhitespace().print(message);
         } catch (Exception e) {
@@ -33,7 +33,7 @@ public abstract class InterceptorHelper {
         }
     }
 
-    static String buildActionName(String fullMethodName, String serviceName) {
+    protected static String buildActionName(String fullMethodName, String serviceName) {
         return StringUtils.remove(StringUtils.removeStart(fullMethodName, serviceName), "/");
     }
 }

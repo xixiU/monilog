@@ -1,4 +1,4 @@
-package com.jiduauto.log.grpc.filter;
+package com.jiduauto.log.grpc;
 
 import com.google.protobuf.MessageOrBuilder;
 import com.jiduauto.log.core.enums.ErrorEnum;
@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author yp
  * @date 2023/07/25
  */
-public class GrpcLogPrintClientInterceptor extends InterceptorHelper implements ClientInterceptor {
+class GrpcLogPrintClientInterceptor extends InterceptorHelper implements ClientInterceptor {
     @Override
     public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> method, CallOptions callOptions, Channel next) {
         return new GrpcMonitorLogClientCall<>(next.newCall(method, callOptions), new ConcurrentHashMap<>(), method.getServiceName(), method.getFullMethodName());
