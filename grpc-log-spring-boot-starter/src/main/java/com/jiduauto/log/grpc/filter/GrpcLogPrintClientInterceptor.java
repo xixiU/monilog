@@ -1,14 +1,12 @@
-package com.jiduauto.log.grpclogspringbootstarter.filter;
-
+package com.jiduauto.log.grpc.filter;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageOrBuilder;
 import com.google.protobuf.util.JsonFormat;
 import com.google.protobuf.util.JsonFormat.Printer;
-import com.jiduauto.log.enums.LogPoint;
-import com.jiduauto.log.grpclogspringbootstarter.GrpcMonitorLogClientCall;
-import com.jiduauto.log.model.MonitorLogParams;
-import com.jiduauto.log.util.MonitorLogUtil;
-import com.jiduauto.log.util.SpringUtils;
+import com.jiduauto.log.core.enums.LogPoint;
+import com.jiduauto.log.core.model.MonitorLogParams;
+import com.jiduauto.log.core.util.MonitorLogUtil;
+import com.jiduauto.log.grpc.GrpcMonitorLogClientCall;
 import io.grpc.CallOptions;
 import io.grpc.Channel;
 import io.grpc.ClientCall;

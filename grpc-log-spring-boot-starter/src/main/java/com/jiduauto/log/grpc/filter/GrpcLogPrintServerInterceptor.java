@@ -1,7 +1,7 @@
-package com.jiduauto.log.grpclogspringbootstarter.filter;
+package com.jiduauto.log.grpc.filter;
 
-import com.jiduauto.log.enums.LogPoint;
-import com.jiduauto.log.model.MonitorLogParams;
+import com.jiduauto.log.core.enums.LogPoint;
+import com.jiduauto.log.core.model.MonitorLogParams;
 import io.grpc.ForwardingServerCallListener;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;

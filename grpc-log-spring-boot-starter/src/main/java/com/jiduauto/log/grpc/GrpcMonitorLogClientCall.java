@@ -1,6 +1,5 @@
-package com.jiduauto.log.grpclogspringbootstarter;
+package com.jiduauto.log.grpc;
 
-import com.google.common.collect.Maps;
 import io.grpc.ClientCall;
 import io.grpc.ForwardingClientCall.SimpleForwardingClientCall;
 
