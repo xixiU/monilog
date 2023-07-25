@@ -1,4 +1,1 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.jiduauto.log.core.MonitorLogConfiguration
-
-
-com.jiduauto.log.core.MonitorLogPrinter=com.jiduauto.log.core.service.DefaultMonitorLogPrinter
