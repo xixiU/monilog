@@ -18,7 +18,6 @@ import org.springframework.stereotype.Component;
  */
 @Aspect
 @Slf4j
-@Component
 public class XxlJobLogMonitorExecuteInterceptor {
     private final MonitorLogPrinter logPrinter;
 
