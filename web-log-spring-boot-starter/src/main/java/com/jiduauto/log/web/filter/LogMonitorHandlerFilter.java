@@ -10,8 +10,10 @@ import com.jiduauto.log.core.model.MonitorLogParams;
 import com.jiduauto.log.core.util.MonitorLogUtil;
 import com.jiduauto.log.core.util.ReflectUtil;
 import com.jiduauto.log.core.util.SpringUtils;
-import com.jiduauto.log.web.WebLogConstant;
+import com.jiduauto.log.web.constant.WebLogConstant;
 import com.jiduauto.log.web.model.DataResponse;
+import com.jiduauto.log.web.service.HttpRequestValidator;
+import com.jiduauto.log.web.util.HttpUtil;
 import com.jiduauto.log.web.util.UrlMatcherUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -20,6 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.util.http.fileupload.servlet.ServletFileUpload;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.support.SpringFactoriesLoader;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
@@ -49,12 +52,15 @@ import java.util.*;
 @Slf4j
 public class LogMonitorHandlerFilter extends OncePerRequestFilter {
 
+    List<HttpRequestValidator> httpRequestValidatorList = SpringFactoriesLoader.loadFactories(HttpRequestValidator.class,
+            Thread.currentThread().getContextClassLoader());
+
+
     /**
      * 不监控的日url清单，支持模糊路径如a/*
      */
     @Value("${monitor.log.web.blackList}")
     private List<String> BLACK_LIST;
-
 
     @Override
     public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
@@ -100,7 +106,7 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
         logParams.setTags(tagList.toArray(new String[0]));
         dealRequestTags(request, logParams);
 
-        Map<String, String> headerMap = getHeaders(request);
+        Map<String, String> headerMap = HttpUtil.getHeaders(request);
         try {
             boolean isMultipart = ServletFileUpload.isMultipartContent(request);
             ContentCachingRequestWrapper wrapperRequest = isMultipart ? null : new ContentCachingRequestWrapper(request);
@@ -249,22 +255,6 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
 //        return oriTags;
     }
 
-
-    private String getMethodName(HttpServletRequest request) {
-        return request.getMethod();
-    }
-
-
-    private Map<String, String> getHeaders(HttpServletRequest request) {
-        Map<String, String> map = new HashMap<>(32);
-        Enumeration<String> headerNames = request.getHeaderNames();
-        while (headerNames.hasMoreElements()) {
-            String key = headerNames.nextElement();
-            String value = request.getHeader(key);
-            map.put(key, value);
-        }
-        return map;
-    }
 
     private String getRequestBody(ContentCachingRequestWrapper request) {
         ContentCachingRequestWrapper wrapper = WebUtils.getNativeRequest(request, ContentCachingRequestWrapper.class);

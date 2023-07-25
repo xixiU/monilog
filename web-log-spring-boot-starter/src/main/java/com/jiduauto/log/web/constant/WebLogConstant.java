@@ -1,4 +1,4 @@
-package com.jiduauto.log.web;
+package com.jiduauto.log.web.constant;
 
 /**
  * @description: web侧常量
@@ -26,6 +26,13 @@ public final class WebLogConstant {
      * 健康检查地址
      */
     public static final String MISC_PING_URL = "/misc/ping";
+
+    /**
+     * 集度JNS请求时header中会带X-JIDU-SERVICENAME
+     */
+    public static final String JIDU_JNS_HEADER ="X-JIDU-SERVICENAME";
+
+    public static final String USER_AGENT ="User-Agent";
 
 
 }

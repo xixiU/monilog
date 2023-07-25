@@ -1,3 +1,6 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   com.jiduauto.log.web.config.WebIdTraceFilterConfig,\
   com.jiduauto.log.web.config.WebMonitorFilterConfig
+
+com.jiduauto.log.web.service.HttpRequestValidator=\
+  com.jiduauto.log.web.service.DefaultHttpRequestValidator
