@@ -1,81 +1,94 @@
 package com.jiduauto.log.grpc.filter;
 
-import com.google.common.collect.Maps;
-import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageOrBuilder;
-import com.google.protobuf.util.JsonFormat;
+import com.jiduauto.log.core.enums.ErrorEnum;
 import com.jiduauto.log.core.enums.LogPoint;
 import com.jiduauto.log.core.model.MonitorLogParams;
-import com.jiduauto.log.grpc.GrpcMonitorLogServerCall;
+import com.jiduauto.log.core.util.MonitorLogUtil;
 import io.grpc.*;
 import io.grpc.ServerCall.Listener;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author fan.zhang02
  * @date 2023/07/21/15:29
  */
 @Slf4j
-public class GrpcLogPrintServerInterceptor implements ServerInterceptor {
+public class GrpcLogPrintServerInterceptor extends InterceptorHelper implements ServerInterceptor {
 
     @Override
     public <ReqT, RespT> Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call, Metadata metadata, ServerCallHandler<ReqT, RespT> next) {
-        log.info("GrpcLogPrintServerInterceptor call...");
-        long startTime = System.nanoTime();
-
-        // 获取方法名
         MethodDescriptor<ReqT, RespT> methodDescriptor = call.getMethodDescriptor();
-        String methodName = methodDescriptor.getFullMethodName();
-
-        // 获取入参
-        ServerCall.Listener<ReqT> listener = next.startCall(call, metadata);
-
         MonitorLogParams params = new MonitorLogParams();
-
         params.setServiceCls(GrpcService.class);
         params.setLogPoint(LogPoint.RPC_ENTRY);
         params.setTags(null);
-        params.setService(call.getAuthority());
-        params.setAction(methodName);
+        params.setService(methodDescriptor.getServiceName());
+        params.setAction(buildActionName(methodDescriptor.getFullMethodName(), methodDescriptor.getServiceName()));
         params.setSuccess(true);
-        params.setMsgCode("0");
-        params.setMsgInfo("success");
+        params.setMsgCode(ErrorEnum.SUCCESS.name());
+        params.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
         // 拦截响应
-        ServerCall.Listener<ReqT> responseListener = new GrpcMonitorLogServerCall.SimpleForwardingServerCallListener<ReqT>(listener,
-                Maps.newHashMap()) {
-            @Override
-            public void onMessage(ReqT message) {
-                log.info("GrpcLogPrintServerInterceptor onMessage...");
-                if (message instanceof MessageOrBuilder) {
-                    //json序列化打印
-                    try {
-                        params.setInput(new Object[]{JsonFormat.printer().omittingInsignificantWhitespace()
-                                .print((MessageOrBuilder) message)});
-                    } catch (InvalidProtocolBufferException e) {
-                        log.error("rpc sendMessage序列化成json错误", e);
-                    }
-                }
-                // 这里可以对请求入参进行处理
-                super.onMessage(message);
+        Map<String, Object> context = new ConcurrentHashMap<>();
+        return new GrpcMonitorLogServerCall<>(next.startCall(call, metadata), params, context);
+    }
+
+
+    static class GrpcMonitorLogServerCall<ReqT> extends ForwardingServerCallListener<ReqT> {
+        private final MonitorLogParams params;
+        private final Map<String, Object> context;
+        private final ServerCall.Listener<ReqT> delegate;
+
+        protected GrpcMonitorLogServerCall(ServerCall.Listener<ReqT> delegate, MonitorLogParams params, Map<String, Object> context) {
+            this.delegate = delegate;
+            this.params = params;
+            this.context = context == null ? new ConcurrentHashMap<>() : context;
+        }
+
+        @Override
+        protected Listener<ReqT> delegate() {
+            return delegate;
+        }
+
+        @Override
+        public void onMessage(ReqT message) {
+            log.info("GrpcLogPrintServerInterceptor onMessage...");
+            context.put(TIME_KEY, System.currentTimeMillis());
+            if (message instanceof MessageOrBuilder) {
+                params.setInput(new Object[]{print2Json((MessageOrBuilder) message)});
             }
+            super.onMessage(message);
+        }
 
 
+        @Override
+        public void onComplete() {
+            log.info("GrpcLogPrintServerInterceptor onComplete...");
+            super.onComplete();
+            params.setCost(parseCostTime(context));
+            MonitorLogUtil.log(params);
+        }
 
-            @Override
-            public void onComplete() {
-                log.info("GrpcLogPrintServerInterceptor onComplete...");
-                // 请求完成时调用
-                super.onComplete();
-                long endTime = System.nanoTime();
-                long elapsedTime = endTime - startTime;
+        @Override
+        public void onHalfClose() {
+            log.info("GrpcLogPrintServerInterceptor onHalfClose...");
+            super.onHalfClose();
+        }
 
-                // 这里可以对执行耗时进行处理
-                log.info("Method: " + methodName + " took " + elapsedTime + " nanoseconds");
-            }
-        };
+        @Override
+        public void onCancel() {
+            log.info("GrpcLogPrintServerInterceptor onCancel...");
+            super.onCancel();
+        }
 
-
-        return responseListener;
+        @Override
+        public void onReady() {
+            log.info("GrpcLogPrintServerInterceptor onReady...");
+            super.onReady();
+        }
     }
 }
