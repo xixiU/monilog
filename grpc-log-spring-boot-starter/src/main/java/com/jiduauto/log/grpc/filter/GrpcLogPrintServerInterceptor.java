@@ -36,6 +36,7 @@ public class GrpcLogPrintServerInterceptor implements ServerInterceptor {
         MethodDescriptor<ReqT, RespT> methodDescriptor = call.getMethodDescriptor();
         String methodName = methodDescriptor.getFullMethodName();
 
+
         // 获取入参
         ServerCall.Listener<ReqT> listener = next.startCall(call, metadata);
 
@@ -44,7 +45,7 @@ public class GrpcLogPrintServerInterceptor implements ServerInterceptor {
         params.setServiceCls(GrpcService.class);
         params.setLogPoint(LogPoint.RPC_ENTRY);
         params.setTags(null);
-//        params.setService(next.);
+        params.setService(call.getAuthority());
         params.setAction(methodName);
         params.setSuccess(true);
         params.setMsgCode("0");
@@ -52,7 +53,6 @@ public class GrpcLogPrintServerInterceptor implements ServerInterceptor {
         // 拦截响应
         ServerCall.Listener<ReqT> responseListener = new GrpcMonitorLogServerCall.SimpleForwardingServerCallListener<ReqT>(listener,
                 Maps.newHashMap()) {
-
             @Override
             public void onMessage(ReqT message) {
                 if (message instanceof MessageOrBuilder) {

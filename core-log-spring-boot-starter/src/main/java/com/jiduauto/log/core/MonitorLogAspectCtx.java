@@ -68,7 +68,7 @@ public class MonitorLogAspectCtx {
         MonitorLog anno = ReflectUtil.getAnnotation(MonitorLog.class, methodOwnedClass, targetMethod, method);
         MonitorLogTags logTags = ReflectUtil.getAnnotation(MonitorLogTags.class, methodOwnedClass, targetMethod, method);
         this.logPoint = anno == null ? LogPoint.UNKNOWN_ENTRY : anno.value();
-        if (logTags.tags() != null && logTags.tags().length %2 ==0) {
+        if (logTags != null && logTags.tags() != null && logTags.tags().length %2 ==0) {
             this.tags = anno == null ? null : logTags.tags();
         }else{
             // 非偶数tag prometheus上报会报错，这里只打一行日志提醒
