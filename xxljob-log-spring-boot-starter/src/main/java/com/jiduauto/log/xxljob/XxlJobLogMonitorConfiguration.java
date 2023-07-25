@@ -1,7 +1,6 @@
 
 package com.jiduauto.log.xxljob;
 
-import com.jiduauto.log.core.MonitorLogPrinter;
 import com.jiduauto.log.xxljob.interceptor.XxlJobLogMonitorExecuteInterceptor;
 import com.xxl.job.core.handler.IJobHandler;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -15,7 +14,7 @@ import org.springframework.context.annotation.Configuration;
 public class XxlJobLogMonitorConfiguration {
 
     @Bean
-    public XxlJobLogMonitorExecuteInterceptor xxlJobExecuteInterceptor(MonitorLogPrinter processor) {
-        return new XxlJobLogMonitorExecuteInterceptor(processor);
+    public XxlJobLogMonitorExecuteInterceptor xxlJobExecuteInterceptor() {
+        return new XxlJobLogMonitorExecuteInterceptor();
     }
 }

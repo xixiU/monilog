@@ -9,7 +9,6 @@ import com.metric.MetricMonitor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.io.support.SpringFactoriesLoader;
-import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,18 +21,27 @@ import java.util.concurrent.TimeUnit;
  * @date 2023/7/17 16:42
  */
 @Slf4j
-public class MonitorLogUtil{
-    private static final List<MonitorLogPrinter> MONITOR_LOG_PRINTERS = SpringFactoriesLoader.loadFactories(MonitorLogPrinter.class,
-            Thread.currentThread().getContextClassLoader());
+public class MonitorLogUtil {
+    private static final List<MonitorLogPrinter> MONITOR_LOG_PRINTERS = SpringFactoriesLoader.loadFactories(MonitorLogPrinter.class, Thread.currentThread().getContextClassLoader());
 
     private static final String applicationName = SpringUtils.getApplicationName();
 
     public static void log(MonitorLogParams logParams) {
+        MonitorLogPrinter printer = null;
+        try {
+            printer = SpringUtils.getBean(MonitorLogPrinter.class);
+        } catch (Exception e) {
+            log.error("no MonitorLogPrinter instance found");
+        }
+
         try {
             doMonitor(logParams);
-            for (MonitorLogPrinter printer : MONITOR_LOG_PRINTERS) {
+            if (printer != null) {
                 printer.log(logParams);
             }
+//            for (MonitorLogPrinter printer : MONITOR_LOG_PRINTERS) {
+//                printer.log(logParams);
+//            }
         } catch (Exception e) {
             log.error("log error", e);
         }
@@ -41,7 +49,6 @@ public class MonitorLogUtil{
 
     private static void doMonitor(MonitorLogParams logParams) {
         String[] tags = processTags(logParams);
-
         LogPoint logPoint = logParams.getLogPoint();
         if (logPoint == null) {
             logPoint = LogPoint.UNKNOWN_ENTRY;

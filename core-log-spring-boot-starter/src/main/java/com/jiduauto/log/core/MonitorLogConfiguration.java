@@ -4,7 +4,6 @@ import com.jiduauto.log.core.aop.MonitorLogAop;
 import com.jiduauto.log.core.model.MonitorLogProperties;
 import com.jiduauto.log.core.service.DefaultMonitorLogPrinter;
 import com.jiduauto.log.core.util.SpringUtils;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -23,12 +22,12 @@ import org.springframework.context.annotation.Import;
 public class MonitorLogConfiguration {
 
     @Bean
-    @ConditionalOnBean(MonitorLogPrinter.class)
-    public MonitorLogAop aspectProcessor(MonitorLogPrinter monitorLogPrinter) {
-        return new MonitorLogAop(monitorLogPrinter);
+    public MonitorLogAop aspectProcessor() {
+        return new MonitorLogAop();
     }
 
     @ConditionalOnMissingBean(MonitorLogPrinter.class)
+    @Bean
     public MonitorLogPrinter monitorLogPrinter() {
         return new DefaultMonitorLogPrinter();
     }

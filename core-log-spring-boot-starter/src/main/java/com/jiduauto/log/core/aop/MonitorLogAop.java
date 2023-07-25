@@ -1,9 +1,9 @@
 package com.jiduauto.log.core.aop;
 
 import com.jiduauto.log.core.MonitorLogAspectCtx;
-import com.jiduauto.log.core.MonitorLogPrinter;
-import com.jiduauto.log.core.parse.ParsedResult;
 import com.jiduauto.log.core.model.MonitorLogParams;
+import com.jiduauto.log.core.parse.ParsedResult;
+import com.jiduauto.log.core.util.MonitorLogUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -16,15 +16,6 @@ import org.aspectj.lang.annotation.Pointcut;
 @Slf4j
 @Aspect
 public class MonitorLogAop {
-    private final MonitorLogPrinter logPrinter;
-
-    public MonitorLogAop(MonitorLogPrinter logPrinter) {
-        this.logPrinter = logPrinter;
-    }
-
-    /**
-     * 声明HSF服务接口的实现类的公共方法为切点
-     */
     @Pointcut("@within(com.jiduauto.log.core.annotation.MonitorLog)")
     private void monitorLogPointCut() {
     }
@@ -34,7 +25,7 @@ public class MonitorLogAop {
         return processAround(pjp);
     }
 
-    private Object processAround(ProceedingJoinPoint pjp) throws Throwable {
+    public static Object processAround(ProceedingJoinPoint pjp) throws Throwable {
         MonitorLogAspectCtx ctx = null;
         Throwable tx = null;
         try {
@@ -54,7 +45,7 @@ public class MonitorLogAop {
             if (tx != null && e == tx) {
                 throw e;
             }
-            log.error("AspectProcessor processAround error", e);
+            log.error("MonitorLogAop processAround error", e);
             if (ctx != null && ctx.isHasExecuted()) {
                 return ctx.getResult();
             }
@@ -62,11 +53,11 @@ public class MonitorLogAop {
         }
     }
 
-    private MonitorLogAspectCtx beforeProcess(ProceedingJoinPoint pjp) {
+    private static MonitorLogAspectCtx beforeProcess(ProceedingJoinPoint pjp) {
         return new MonitorLogAspectCtx(pjp, pjp.getArgs());
     }
 
-    private void doProcess(ProceedingJoinPoint pjp, MonitorLogAspectCtx ctx) {
+    private static void doProcess(ProceedingJoinPoint pjp, MonitorLogAspectCtx ctx) {
         Object result = null;
         Throwable ex = null;
         long start = System.currentTimeMillis();
@@ -78,7 +69,7 @@ public class MonitorLogAop {
         ctx.buildResult(System.currentTimeMillis() - start, result, ex);
     }
 
-    private void afterProcess(MonitorLogAspectCtx ctx) {
+    private static void afterProcess(MonitorLogAspectCtx ctx) {
         MonitorLogParams params = new MonitorLogParams();
         ParsedResult parsedResult = ctx.getParsedResult();
         params.setServiceCls(ctx.getMethodOwnedClass());
@@ -93,14 +84,14 @@ public class MonitorLogAop {
         params.setException(ctx.getException());
         params.setInput(ctx.getArgs());
         params.setOutput(ctx.getResult());
-        try{
-            logPrinter.log(params);
-        }catch (Exception e){
+        try {
+            MonitorLogUtil.log(params);
+        } catch (Exception e) {
             log.error("logPrinter.log error", e);
         }
     }
 
-    private void beforeReturn(MonitorLogAspectCtx ctx) {
+    private static void beforeReturn(MonitorLogAspectCtx ctx) {
         //...
     }
 }
