@@ -254,13 +254,20 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
             }
             // 再从header取值
             resultTagValue = UaUtil.getMapValueIgnoreCase(headersMap, parameterName);
-            swapTag(oriTags, i, resultTagValue);
-
+            if (StringUtils.isNotBlank(resultTagValue)) {
+                swapTag(oriTags, i, resultTagValue);
+            }
         }
         logParams.setTags(oriTags);
     }
 
-    private static void swapTag(String[] oriTags, int index, String resultTagValue) {
+    private static void swapTag(String[] oriTags, int index, String resultTagValue){
+        swapTag(oriTags, index, resultTagValue, false);
+    }
+    private static void swapTag(String[] oriTags, int index, String resultTagValue, boolean valueEmptySkip) {
+        if (valueEmptySkip && StringUtils.isBlank(resultTagValue)) {
+            return;
+        }
         resultTagValue = StringUtils.isNotBlank(resultTagValue) ? resultTagValue : Constants.NO_VALUE_CODE;
         oriTags[index] = resultTagValue;
     }
