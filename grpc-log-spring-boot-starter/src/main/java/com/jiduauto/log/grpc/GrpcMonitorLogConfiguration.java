@@ -16,7 +16,7 @@ import org.springframework.core.annotation.Order;
 @Configuration
 @ConditionalOnProperty(prefix = "monitor.log.grpc", name = "enable", havingValue = "true", matchIfMissing = true)
 @ConditionalOnExpression("('${monitor.log.component.include:*}'.equals('*') or '${monitor.log.component.include}'.contains('grpc')) and !('${monitor.log.component.exclude:}'.equals('*') or '${monitor.log.component.exclude:}'.contains('grpc'))")
-@ConditionalOnClass(name = {"io.grpc.stub.AbstractStub", "io.grpc.stub.ServerCalls"})
+@ConditionalOnClass(name = {"io.grpc.stub.AbstractStub", "io.grpc.stub.ServerCalls","com.jiduauto.log.core.MonitorLogConfiguration"})
 @Slf4j
 class GrpcMonitorLogConfiguration {
 

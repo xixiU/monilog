@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnProperty(prefix = "monitor.log.rocketmq", name = "enable", havingValue = "true", matchIfMissing = true)
 @ConditionalOnExpression("('${monitor.log.component.include:*}'.equals('*') or '${monitor.log.component.include}'.contains('rocketmq')) and !('${monitor.log.component.exclude:}'.equals('*') or '${monitor.log.component.exclude:}'.contains('rocketmq'))")
-@ConditionalOnClass(name = "org.apache.rocketmq.client.MQAdmin")
+@ConditionalOnClass(name = {"org.apache.rocketmq.client.MQAdmin", "com.jiduauto.log.core.MonitorLogConfiguration"})
 class RocketMQProducerInterceptorAutoConfiguration {
 
     @Bean
