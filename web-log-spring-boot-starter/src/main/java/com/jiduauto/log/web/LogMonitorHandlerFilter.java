@@ -1,5 +1,7 @@
 package com.jiduauto.log.web;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.jiduauto.log.core.annotation.MonitorLogTags;
 import com.jiduauto.log.core.constant.Constants;
 import com.jiduauto.log.core.enums.LogPoint;
@@ -33,6 +35,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 请求处理过滤器
@@ -96,6 +99,7 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
         ContentCachingRequestWrapper wrapperRequest = isMultipart ? null : new ContentCachingRequestWrapper(request);
         ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(response);
         logParams.setLogPoint(UaUtil.validateRequest(headerMap));
+        logParams.setInput(new Object[]{formatRequestInfo(request)});
         //TODO 写input信息、增加LogParser注解
 
         try{
@@ -105,7 +109,7 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
         }
         try {
             filterChain.doFilter(wrapperRequest, wrapperResponse);
-            responseBodyStr = getResponseBody(wrapperResponse); //TODO 对于下载，可能有问题
+            responseBodyStr = getResponseBody(wrapperResponse);
             wrapperResponse.copyBodyToResponse();
             logParams.setOutput(responseBodyStr);
             logParams.setSuccess(true);
@@ -124,7 +128,7 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
         }
     }
 
-    private  Map<String, String> getRequestHeaders(HttpServletRequest request) {
+    private static Map<String, String> getRequestHeaders(HttpServletRequest request) {
         Map<String, String> map = new HashMap<>(32);
         Enumeration<String> headerNames = request.getHeaderNames();
         while (headerNames.hasMoreElements()) {
@@ -135,7 +139,7 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
         return map;
     }
 
-    private  Map<String, String> getResponseHeaders(HttpServletResponse response) {
+    private static Map<String, String> getResponseHeaders(HttpServletResponse response) {
         Map<String, String> map = new HashMap<>(32);
         Collection<String> headerNames = response.getHeaderNames();
         for (String key : headerNames) {
@@ -145,7 +149,7 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
         return map;
     }
 
-    private boolean isJson(Map<String, String> headerMap) {
+    private static boolean isJson(Map<String, String> headerMap) {
         if (MapUtils.isEmpty(headerMap)) {
             return false;
         }
@@ -157,14 +161,14 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
         return StringUtils.containsIgnoreCase(header, MediaType.APPLICATION_JSON_VALUE);
     }
 
-    private boolean isDownstream(Map<String, String> headerMap) {
+    private static boolean isDownstream(Map<String, String> headerMap) {
         String header = UaUtil.getMapValueIgnoreCase(headerMap, HttpHeaders.CONTENT_DISPOSITION);
         return StringUtils.containsIgnoreCase(header, "attachment")
                 || StringUtils.containsIgnoreCase(header, "filename");
     }
 
 
-    private HandlerMethod getHandlerMethod(HttpServletRequest request) {
+    private static HandlerMethod getHandlerMethod(HttpServletRequest request) {
         Map<String, HandlerMapping> matchingBeans =
                 BeanFactoryUtils.beansOfTypeIncludingAncestors(SpringUtils.getApplicationContext(),
                         HandlerMapping.class, true, false);
@@ -197,7 +201,7 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
      * @param responseBodyStr
      * @param logParams
      */
-    private void dealResponseTags(String responseBodyStr, MonitorLogParams logParams) {
+    private static void dealResponseTags(String responseBodyStr, MonitorLogParams logParams) {
         String[] oriTags = logParams.getTags();
 
         HashMap<String, String> jsonMap = StringUtil.tryConvert2Map(responseBodyStr);
@@ -224,7 +228,7 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
      * @param request
      * @param logParams
      */
-    private void dealRequestTags(ContentCachingRequestWrapper request, MonitorLogParams logParams) {
+    private static void dealRequestTags(ContentCachingRequestWrapper request, MonitorLogParams logParams) {
         String[] oriTags = logParams.getTags();
         Map<String, String> headersMap = getRequestHeaders(request);
 
@@ -256,13 +260,13 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
         logParams.setTags(oriTags);
     }
 
-    private void swapTag(String[] oriTags, int index, String resultTagValue) {
+    private static void swapTag(String[] oriTags, int index, String resultTagValue) {
         resultTagValue = StringUtils.isNotBlank(resultTagValue) ? resultTagValue : Constants.NO_VALUE_CODE;
         oriTags[index] = resultTagValue;
     }
 
 
-    private String getRequestBody(ContentCachingRequestWrapper request) {
+    private static String getRequestBody(HttpServletRequest request) {
         ContentCachingRequestWrapper wrapper = WebUtils.getNativeRequest(request, ContentCachingRequestWrapper.class);
         if (wrapper != null) {
             byte[] buf = wrapper.getContentAsByteArray();
@@ -279,7 +283,27 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
         return "";
     }
 
-    private String getResponseBody(ContentCachingResponseWrapper response) {
+    private static JSONObject formatRequestInfo(HttpServletRequest request) {
+        Map<String, String> headers = getRequestHeaders(request);
+        String bodyParams =  isDownstream(headers)? "Binary data" : getRequestBody(request);
+        Map<String, String[]> parameterMap = request.getParameterMap();
+        JSONObject obj = new JSONObject();
+        if (StringUtils.isNotBlank(bodyParams)) {
+            JSON json = StringUtil.tryConvert2Json(bodyParams);
+            obj.put("body", json != null ? json : bodyParams);
+        }
+        if (MapUtils.isNotEmpty(parameterMap)) {
+            Map<String, Collection<String>> collected = parameterMap.entrySet().stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, item -> Arrays.asList(item.getValue())));
+            obj.put("query", StringUtil.encodeQueryString(collected));
+        }
+        if (MapUtils.isNotEmpty(headers)) {
+            obj.put("headers", headers);
+        }
+        return obj;
+    }
+
+    private static String getResponseBody(ContentCachingResponseWrapper response) {
         Map<String, String> responseHeaders = getResponseHeaders(response);
         if (isDownstream(responseHeaders)) {
             return "Binary data";
