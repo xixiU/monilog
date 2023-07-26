@@ -24,7 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 
 @Slf4j
-class RocketMQConsumerPostProcessor implements BeanPostProcessor {
+class RocketMQConsumerInterceptor implements BeanPostProcessor {
 
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {

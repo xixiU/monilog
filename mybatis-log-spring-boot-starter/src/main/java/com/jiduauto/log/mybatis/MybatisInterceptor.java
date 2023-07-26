@@ -37,7 +37,7 @@ import java.util.List;
         @Signature(type = StatementHandler.class, method = "update", args = {Statement.class})
 })
 @Slf4j
-class MybatisMonitorSqlFilter implements Interceptor {
+class MybatisInterceptor implements Interceptor {
 
     /**
      * sql耗时过长
