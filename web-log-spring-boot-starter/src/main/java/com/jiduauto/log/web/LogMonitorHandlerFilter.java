@@ -92,7 +92,7 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
         tagList.add(request.getMethod());
         logParams.setTags(tagList.toArray(new String[0]));
 
-        Map<String, String> headerMap = getHeaders(request);
+        Map<String, String> headerMap = getRequestHeaders(request);
         boolean isMultipart = ServletFileUpload.isMultipartContent(request);
         ContentCachingRequestWrapper wrapperRequest = isMultipart ? null : new ContentCachingRequestWrapper(request);
         ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(response);
@@ -125,7 +125,7 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
         }
     }
 
-    private  Map<String, String> getHeaders(HttpServletRequest request) {
+    private  Map<String, String> getRequestHeaders(HttpServletRequest request) {
         Map<String, String> map = new HashMap<>(32);
         Enumeration<String> headerNames = request.getHeaderNames();
         while (headerNames.hasMoreElements()) {
@@ -135,6 +135,17 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
         }
         return map;
     }
+
+    private  Map<String, String> getResponseHeaders(HttpServletResponse response) {
+        Map<String, String> map = new HashMap<>(32);
+        Collection<String> headerNames = response.getHeaderNames();
+        for (String key : headerNames) {
+            String value = response.getHeader(key);
+            map.put(key, value);
+        }
+        return map;
+    }
+
     private boolean isJson(Map<String, String> headerMap) {
         if (MapUtils.isEmpty(headerMap)) {
             return false;
@@ -181,7 +192,6 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
     }
 
 
-
     /**
      * 处理返回的tag
      *
@@ -217,7 +227,7 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
      */
     private void dealRequestTags(ContentCachingRequestWrapper request, MonitorLogParams logParams) {
         String[] oriTags = logParams.getTags();
-        Map<String, String> headersMap = getHeaders(request);
+        Map<String, String> headersMap = getRequestHeaders(request);
 
         HashMap<String, String> requestBody = StringUtil.tryConvert2Map(getRequestBody(request));
 
@@ -271,6 +281,10 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
     }
 
     private String getResponseBody(ContentCachingResponseWrapper response) {
+        Map<String, String> responseHeaders = getResponseHeaders(response);
+        if (isDownstream(responseHeaders)) {
+            return "Binary data";
+        }
         ContentCachingResponseWrapper wrapper = WebUtils.getNativeResponse(response,
                 ContentCachingResponseWrapper.class);
         if (wrapper != null) {
