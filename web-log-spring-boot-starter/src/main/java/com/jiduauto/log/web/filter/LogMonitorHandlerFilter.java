@@ -11,8 +11,7 @@ import com.jiduauto.log.core.util.MonitorLogUtil;
 import com.jiduauto.log.core.util.ReflectUtil;
 import com.jiduauto.log.core.util.SpringUtils;
 import com.jiduauto.log.web.constant.WebLogConstant;
-import com.jiduauto.log.web.service.HttpRequestValidator;
-import com.jiduauto.log.web.util.HttpUtil;
+import com.jiduauto.log.web.util.UaUtil;
 import com.jiduauto.log.web.util.UrlMatcherUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -21,7 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.util.http.fileupload.servlet.ServletFileUpload;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.support.SpringFactoriesLoader;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
@@ -105,19 +103,12 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
         logParams.setTags(tagList.toArray(new String[0]));
         dealRequestTags(request, logParams);
 
-        Map<String, String> headerMap = HttpUtil.getHeaders(request);
+        Map<String, String> headerMap = getHeaders(request);
         boolean isMultipart = ServletFileUpload.isMultipartContent(request);
         ContentCachingRequestWrapper wrapperRequest = isMultipart ? null : new ContentCachingRequestWrapper(request);
         ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(response);
-        HttpRequestValidator validator = null;
-        try{
-            validator = SpringUtils.getBean(HttpRequestValidator.class);
-        }catch (Exception e){
-            log.error("no HttpRequestValidator instance found");
-        }
-        if (validator != null) {
-            logParams.setLogPoint(validator.validateRequest(wrapperRequest));
-        }
+        logParams.setLogPoint(UaUtil.validateRequest(headerMap));
+
 //        for (HttpRequestValidator validator : HTTP_REQUEST_VALIDATORS) {
 //            LogPoint logPoint = validator.validateRequest(wrapperRequest);
 //            logParams.setLogPoint(logPoint);
@@ -147,6 +138,16 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
         }
     }
 
+    private  Map<String, String> getHeaders(HttpServletRequest request) {
+        Map<String, String> map = new HashMap<>(32);
+        Enumeration<String> headerNames = request.getHeaderNames();
+        while (headerNames.hasMoreElements()) {
+            String key = headerNames.nextElement();
+            String value = request.getHeader(key);
+            map.put(key, value);
+        }
+        return map;
+    }
     private boolean isJson(Map<String, String> headerMap) {
         if (MapUtils.isEmpty(headerMap)) {
             return false;
@@ -235,7 +236,7 @@ public class LogMonitorHandlerFilter extends OncePerRequestFilter {
      */
     private void dealRequestTags(HttpServletRequest request, MonitorLogParams logParams) {
         String[] oriTags = logParams.getTags();
-        Map<String, String> headersMap = HttpUtil.getHeaders(request);
+        Map<String, String> headersMap = getHeaders(request);
         for (int i = 0; oriTags != null && i < oriTags.length; i++) {
             if (!oriTags[i].startsWith("{") || !oriTags[i].endsWith("}")) {
                 continue;
