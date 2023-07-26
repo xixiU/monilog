@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnExpression("('${monitor.log.component.include:*}'.equals('*') or '${monitor.log.component.include}'.contains('mybatis')) and !('${monitor.log.component.exclude:}'.equals('*') or '${monitor.log.component.exclude:}'.contains('mybatis'))")
 @ConditionalOnClass(MonitorLogConfiguration.class)
 @Configuration
-public class MybatisSqlFilterAutoConfiguration {
+class MybatisSqlFilterAutoConfiguration {
     @Bean
     public MybatisMonitorSqlFilter mybatisMonitorSqlFilter() {
         return new MybatisMonitorSqlFilter();
