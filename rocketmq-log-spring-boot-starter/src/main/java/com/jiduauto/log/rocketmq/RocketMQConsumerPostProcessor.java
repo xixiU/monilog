@@ -76,10 +76,14 @@ class RocketMQConsumerPostProcessor implements BeanPostProcessor {
             }
 
             List<String> tagList = processTag(context);
-            logParams.setTags(tagList.toArray(new String[0]));
 
             List<MessageExt> msgList = context.getMsgList();
             for (MessageExt messageExt : msgList) {
+                List<String> newTagList = new ArrayList<>(tagList);
+                newTagList.add(RocketMQLogConstant.TOPIC);
+                newTagList.add(messageExt.getTopic());
+                logParams.setTags(newTagList.toArray(new String[0]));
+
                 MonitorLogParams newLogParams = new MonitorLogParams();
                 BeanUtils.copyProperties(logParams, newLogParams);
                 newLogParams.setInput(new String[]{new String(messageExt.getBody(), StandardCharsets.UTF_8)});
@@ -89,9 +93,6 @@ class RocketMQConsumerPostProcessor implements BeanPostProcessor {
 
         private List<String> processTag(ConsumeMessageContext context) {
             List<String> tagList = new ArrayList<>();
-
-            tagList.add(RocketMQLogConstant.TOPIC);
-            tagList.add(context.getMsgList().get(0).getTopic());
 
             tagList.add(RocketMQLogConstant.GROUP);
             tagList.add(context.getConsumerGroup());
