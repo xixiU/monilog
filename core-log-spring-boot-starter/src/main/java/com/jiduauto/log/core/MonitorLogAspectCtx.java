@@ -9,6 +9,7 @@ import com.jiduauto.log.core.parse.ResultParseStrategy;
 import com.jiduauto.log.core.util.ReflectUtil;
 import com.jiduauto.log.core.util.ResultParseUtil;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -32,8 +33,9 @@ public class MonitorLogAspectCtx {
     private final Method method;
     private final Object[] args;
     private final LogPoint logPoint;
-    private final LogParser logParserAnnotation;
     private final Class<?> methodOwnedClass;
+    @Setter
+    private LogParser logParserAnnotation;
     private boolean hasExecuted;
     private long cost;
     private Object result;

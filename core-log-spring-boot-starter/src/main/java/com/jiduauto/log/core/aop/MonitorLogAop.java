@@ -1,5 +1,6 @@
 package com.jiduauto.log.core.aop;
 
+import com.jiduauto.log.core.LogParser;
 import com.jiduauto.log.core.MonitorLogAspectCtx;
 import com.jiduauto.log.core.model.MonitorLogParams;
 import com.jiduauto.log.core.parse.ParsedResult;
@@ -25,12 +26,12 @@ public class MonitorLogAop {
         return processAround(pjp);
     }
 
-    public static Object processAround(ProceedingJoinPoint pjp) throws Throwable {
+    public static Object processAround(ProceedingJoinPoint pjp, LogParser logParser) throws Throwable {
         MonitorLogAspectCtx ctx = null;
         Throwable tx = null;
         try {
             try {
-                ctx = beforeProcess(pjp);
+                ctx = beforeProcess(pjp, logParser);
                 doProcess(pjp, ctx);
                 afterProcess(ctx);
                 tx = ctx.getException();
@@ -53,8 +54,16 @@ public class MonitorLogAop {
         }
     }
 
-    private static MonitorLogAspectCtx beforeProcess(ProceedingJoinPoint pjp) {
-        return new MonitorLogAspectCtx(pjp, pjp.getArgs());
+    public static Object processAround(ProceedingJoinPoint pjp) throws Throwable {
+        return processAround(pjp, null);
+    }
+
+    private static MonitorLogAspectCtx beforeProcess(ProceedingJoinPoint pjp, LogParser logParser) {
+        MonitorLogAspectCtx ctx = new MonitorLogAspectCtx(pjp, pjp.getArgs());
+        if (logParser != null) {
+            ctx.setLogParserAnnotation(logParser);
+        }
+        return ctx;
     }
 
     private static void doProcess(ProceedingJoinPoint pjp, MonitorLogAspectCtx ctx) {
