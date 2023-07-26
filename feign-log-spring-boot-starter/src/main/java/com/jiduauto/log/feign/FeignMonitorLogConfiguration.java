@@ -4,7 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.jiduauto.log.core.ErrorInfo;
 import com.jiduauto.log.core.LogParser;
-import com.jiduauto.log.core.MonitorLogConfiguration;
+import com.jiduauto.log.core.CoreMonitorLogConfiguration;
 import com.jiduauto.log.core.enums.ErrorEnum;
 import com.jiduauto.log.core.enums.LogPoint;
 import com.jiduauto.log.core.model.MonitorLogParams;
@@ -47,7 +47,7 @@ import java.util.Map;
 @EnableConfigurationProperties
 @ConditionalOnProperty(prefix = "monitor.log.feign", name = "enable", havingValue = "true", matchIfMissing = true)
 @ConditionalOnExpression("('${monitor.log.component.include:*}'.equals('*') or '${monitor.log.component.include}'.contains('feign')) and !('${monitor.log.component.exclude:}'.equals('*') or '${monitor.log.component.exclude:}'.contains('feign'))")
-@ConditionalOnClass({Feign.class, MonitorLogConfiguration.class})
+@ConditionalOnClass({Feign.class, CoreMonitorLogConfiguration.class})
 @Slf4j
 class FeignMonitorLogConfiguration {
     @Value("${monitor.log.feign.bool.expr.default:$.code==0,$.code==200}")

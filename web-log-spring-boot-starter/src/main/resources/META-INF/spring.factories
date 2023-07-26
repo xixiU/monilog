@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  com.jiduauto.log.web.WebMonitorFilterConfig
+  com.jiduauto.log.web.WebMonitorLogConfiguration

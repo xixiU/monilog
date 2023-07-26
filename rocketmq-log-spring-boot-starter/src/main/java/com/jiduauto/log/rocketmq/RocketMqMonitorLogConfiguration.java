@@ -44,8 +44,8 @@ import java.util.function.BiFunction;
 @Configuration
 @ConditionalOnProperty(prefix = "monitor.log.rocketmq", name = "enable", havingValue = "true", matchIfMissing = true)
 @ConditionalOnExpression("('${monitor.log.component.include:*}'.equals('*') or '${monitor.log.component.include}'.contains('rocketmq')) and !('${monitor.log.component.exclude:}'.equals('*') or '${monitor.log.component.exclude:}'.contains('rocketmq'))")
-@ConditionalOnClass(name = {"org.apache.rocketmq.client.MQAdmin", "com.jiduauto.log.core.MonitorLogConfiguration"})
-class RocketMQProducerInterceptorAutoConfiguration {
+@ConditionalOnClass(name = {"org.apache.rocketmq.client.MQAdmin", "com.jiduauto.log.core.CoreMonitorLogConfiguration"})
+class RocketMqMonitorLogConfiguration {
     @Bean
     @ConditionalOnProperty(prefix = "monitor.log.rocketmq.consumer", name = "enable", havingValue = "true", matchIfMissing = true)
     public RocketMQConsumerInterceptor rocketMQConsumerPostProcessor() {

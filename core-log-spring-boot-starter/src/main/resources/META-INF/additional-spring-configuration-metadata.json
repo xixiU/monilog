@@ -11,21 +11,21 @@
     {
       "name": "monitor.log.enable",
       "type": "java.lang.Boolean",
-      "sourceType": "com.jiduauto.log.core.MonitorLogConfiguration",
+      "sourceType": "com.jiduauto.log.core.CoreMonitorLogConfiguration",
       "defaultValue": true,
       "description": "开启核心监控，提供统一日志参数收集与aop参数收集"
     },
     {
       "name": "monitor.log.component.include",
       "type": "java.lang.String",
-      "sourceType": "com.jiduauto.log.core.MonitorLogConfiguration",
+      "sourceType": "com.jiduauto.log.core.CoreMonitorLogConfiguration",
       "defaultValue": "*",
       "description": "监控开启组件清单，默认为*，目前支持feign,grpc,mybatis,rocketmq,web,xxljob，可以一键设置开启"
     },
     {
       "name": "monitor.log.component.exclude",
       "type": "java.lang.String",
-      "sourceType": "com.jiduauto.log.core.MonitorLogConfiguration",
+      "sourceType": "com.jiduauto.log.core.CoreMonitorLogConfiguration",
       "defaultValue": "",
       "description": "监控不开启组件清单，默认为为空，目前支持feign,grpc,mybatis,rocketmq,web,xxljob，可以一键设置不开启"
     }

@@ -1,7 +1,7 @@
 package com.jiduauto.log.mybatis;
 
 import com.jiduauto.log.core.ErrorInfo;
-import com.jiduauto.log.core.MonitorLogConfiguration;
+import com.jiduauto.log.core.CoreMonitorLogConfiguration;
 import com.jiduauto.log.core.enums.ErrorEnum;
 import com.jiduauto.log.core.enums.LogPoint;
 import com.jiduauto.log.core.enums.MonitorType;
@@ -38,9 +38,9 @@ import java.util.List;
 @EnableConfigurationProperties
 @ConditionalOnProperty(prefix = "monitor.log.mybatis", name = "enable", havingValue = "true", matchIfMissing = true)
 @ConditionalOnExpression("('${monitor.log.component.include:*}'.equals('*') or '${monitor.log.component.include}'.contains('mybatis')) and !('${monitor.log.component.exclude:}'.equals('*') or '${monitor.log.component.exclude:}'.contains('mybatis'))")
-@ConditionalOnClass(MonitorLogConfiguration.class)
+@ConditionalOnClass(CoreMonitorLogConfiguration.class)
 @Configuration
-class MybatisSqlFilterAutoConfiguration {
+class MybatisMonitorLogConfiguration {
     @Bean
     public MybatisInterceptor mybatisMonitorSqlFilter() {
         return new MybatisInterceptor();
