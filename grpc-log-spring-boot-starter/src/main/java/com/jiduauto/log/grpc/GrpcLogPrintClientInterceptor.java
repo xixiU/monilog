@@ -8,10 +8,7 @@ import com.jiduauto.log.core.enums.LogPoint;
 import com.jiduauto.log.core.model.MonitorLogParams;
 import com.jiduauto.log.core.parse.ParsedResult;
 import com.jiduauto.log.core.parse.ResultParseStrategy;
-import com.jiduauto.log.core.util.ExceptionUtil;
-import com.jiduauto.log.core.util.MonitorLogUtil;
-import com.jiduauto.log.core.util.ReflectUtil;
-import com.jiduauto.log.core.util.ResultParseUtil;
+import com.jiduauto.log.core.util.*;
 import io.grpc.*;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
@@ -48,7 +45,7 @@ class GrpcLogPrintClientInterceptor extends InterceptorHelper implements ClientI
         @Override
         public void start(Listener<RespT> responseListener, Metadata metadata) {
             Class<?> cls = getCurrentProtoClass(method);
-            StackTraceElement ste = getNextClassFromStack(cls);
+            StackTraceElement ste = ThreadUtil.getNextClassFromStack(cls);
             Class<?> serviceCls = GrpcClient.class;
             String serviceName = method.getServiceName();
             String methodName = buildActionName(method.getFullMethodName(), serviceName);

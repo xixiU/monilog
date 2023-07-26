@@ -63,24 +63,4 @@ abstract class InterceptorHelper {
         }
         return cls;
     }
-
-    protected static StackTraceElement getNextClassFromStack(Class<?> currentCls) {
-        if (currentCls == null) {
-            return null;
-        }
-        String clsName = currentCls.getCanonicalName();
-        StackTraceElement[] st = Thread.currentThread().getStackTrace();
-        StackTraceElement target = null;
-        for (int i = 0; i < st.length - 1; i++) {
-            String name = st[i].getClassName();
-            if (name.contains("$")) {
-                name = name.split("\\$")[0];
-            }
-            if (clsName.equals(name)) {
-                target = st[i + 1];
-                break;
-            }
-        }
-        return target == null ? null : new StackTraceElement(target.getClassName(), target.getMethodName(), target.getFileName(), target.getLineNumber());
-    }
 }

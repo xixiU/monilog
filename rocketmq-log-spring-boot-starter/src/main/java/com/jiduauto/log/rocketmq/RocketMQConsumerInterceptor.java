@@ -37,7 +37,7 @@ class RocketMQConsumerInterceptor implements BeanPostProcessor {
             if (consumer instanceof DefaultMQPushConsumer) {
                 enhanceListener((DefaultMQPushConsumer) consumer, ((DefaultMQPushConsumer) consumer).getMessageListener().getClass());
             } else if (consumer instanceof DefaultMQPullConsumer) {
-                //TODO 该模型下暂不支持增强
+                //TODO 该模式下暂不支持增强
             }
         } else if (bean instanceof DefaultRocketMQListenerContainer) {//使用了rocketmq-starter
             DefaultRocketMQListenerContainer container = (DefaultRocketMQListenerContainer) bean;
@@ -64,46 +64,6 @@ class RocketMQConsumerInterceptor implements BeanPostProcessor {
     }
 
     @AllArgsConstructor
-    static class ConsumerHook<C, R> implements BiFunction<List<MessageExt>, C, R> {
-        private final BiFunction<List<MessageExt>, C, R> delegate;
-        private final Class<?> cls;
-        private final String consumerGroup;
-
-        @Override
-        public R apply(List<MessageExt> msgs, C c) {
-            MonitorLogParams params = new MonitorLogParams();
-            params.setServiceCls(cls);
-            params.setAction("onMessage");
-            params.setService(cls.getSimpleName());
-            params.setLogPoint(LogPoint.MSG_ENTRY);
-            R result;
-            long start = System.currentTimeMillis();
-            try {
-                params.setInput(formatInputMsgs(msgs));
-                MessageExt messageExt = msgs.get(0);
-                String[] tags = TagBuilder.of(RocketMQLogConstant.GROUP, consumerGroup, RocketMQLogConstant.TOPIC, messageExt.getTopic(), RocketMQLogConstant.TAG, messageExt.getTags()).toArray();
-                params.setTags(tags);
-                result = delegate.apply(msgs, c);
-                params.setSuccess(Objects.equals(result, ConsumeConcurrentlyStatus.CONSUME_SUCCESS) || Objects.equals(result, ConsumeOrderlyStatus.SUCCESS));
-                params.setMsgCode(result.toString());
-                params.setMsgInfo(params.isSuccess() ? "成功" : "失败");
-                params.setOutput(result);
-                return result;
-            } catch (Throwable e) {
-                params.setException(e);
-                ErrorInfo errorInfo = ExceptionUtil.parseException(e);
-                params.setSuccess(false);
-                params.setMsgCode(errorInfo.getErrorCode());
-                params.setMsgInfo(errorInfo.getErrorMsg());
-                throw e;
-            } finally {
-                params.setCost(System.currentTimeMillis() - start);
-                MonitorLogUtil.log(params);
-            }
-        }
-    }
-
-    @AllArgsConstructor
     static class EnhancedRocketMqListener<T> implements RocketMQListener<T> {
         private final RocketMQListener<T> delegate;
         private final Class<?> cls;
@@ -125,7 +85,6 @@ class RocketMQConsumerInterceptor implements BeanPostProcessor {
             }
             String topic = anno.topic();
             String tag = message instanceof MessageExt ? ((MessageExt) message).getTags() : anno.selectorExpression();
-            String group = anno.consumerGroup();
             try {
                 params.setInput(formatInputMsg(message));
                 String[] tags = TagBuilder.of(RocketMQLogConstant.GROUP, consumerGroup, RocketMQLogConstant.TOPIC, topic, RocketMQLogConstant.TAG, tag).toArray();
@@ -169,6 +128,46 @@ class RocketMQConsumerInterceptor implements BeanPostProcessor {
         @Override
         public ConsumeOrderlyStatus consumeMessage(List<MessageExt> msgs, ConsumeOrderlyContext context) {
             return new ConsumerHook<>(delegate::consumeMessage, cls, consumerGroup).apply(msgs, context);
+        }
+    }
+
+    @AllArgsConstructor
+    static class ConsumerHook<C, R> implements BiFunction<List<MessageExt>, C, R> {
+        private final BiFunction<List<MessageExt>, C, R> delegate;
+        private final Class<?> cls;
+        private final String consumerGroup;
+
+        @Override
+        public R apply(List<MessageExt> msgs, C c) {
+            MonitorLogParams params = new MonitorLogParams();
+            params.setServiceCls(cls);
+            params.setAction("onMessage");
+            params.setService(cls.getSimpleName());
+            params.setLogPoint(LogPoint.MSG_ENTRY);
+            R result;
+            long start = System.currentTimeMillis();
+            try {
+                params.setInput(formatInputMsgs(msgs));
+                MessageExt messageExt = msgs.get(0);
+                String[] tags = TagBuilder.of(RocketMQLogConstant.GROUP, consumerGroup, RocketMQLogConstant.TOPIC, messageExt.getTopic(), RocketMQLogConstant.TAG, messageExt.getTags()).toArray();
+                params.setTags(tags);
+                result = delegate.apply(msgs, c);
+                params.setSuccess(Objects.equals(result, ConsumeConcurrentlyStatus.CONSUME_SUCCESS) || Objects.equals(result, ConsumeOrderlyStatus.SUCCESS));
+                params.setMsgCode(result.toString());
+                params.setMsgInfo(params.isSuccess() ? "成功" : "失败");
+                params.setOutput(result);
+                return result;
+            } catch (Throwable e) {
+                params.setException(e);
+                ErrorInfo errorInfo = ExceptionUtil.parseException(e);
+                params.setSuccess(false);
+                params.setMsgCode(errorInfo.getErrorCode());
+                params.setMsgInfo(errorInfo.getErrorMsg());
+                throw e;
+            } finally {
+                params.setCost(System.currentTimeMillis() - start);
+                MonitorLogUtil.log(params);
+            }
         }
     }
 

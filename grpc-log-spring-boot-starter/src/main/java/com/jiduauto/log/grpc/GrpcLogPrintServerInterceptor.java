@@ -11,6 +11,7 @@ import com.jiduauto.log.core.parse.ResultParseStrategy;
 import com.jiduauto.log.core.util.MonitorLogUtil;
 import com.jiduauto.log.core.util.ReflectUtil;
 import com.jiduauto.log.core.util.ResultParseUtil;
+import com.jiduauto.log.core.util.ThreadUtil;
 import io.grpc.*;
 import io.grpc.ServerCall.Listener;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +36,7 @@ class GrpcLogPrintServerInterceptor extends InterceptorHelper implements ServerI
         MethodDescriptor<ReqT, RespT> method = call.getMethodDescriptor();
         Map<String, Object> context = new ConcurrentHashMap<>();
         Class<?> cls = getCurrentProtoClass(method);
-        StackTraceElement ste = getNextClassFromStack(cls);
+        StackTraceElement ste = ThreadUtil.getNextClassFromStack(cls);
         Class<?> serviceCls = GrpcService.class;
         String serviceName = method.getServiceName();
         String methodName = buildActionName(method.getFullMethodName(), serviceName);
