@@ -69,7 +69,7 @@ class RocketMQProducerInterceptor implements BeanPostProcessor {
                 logParams.setMsgCode(status == null ? ErrorEnum.FAILED.name() : status.name());
                 Message message = context.getMessage();
                 logParams.setInput(new Object[]{new String(message.getBody(), StandardCharsets.UTF_8)});
-                logParams.setTags(TagBuilder.of(RocketMQLogConstant.TOPIC, message.getTopic(), RocketMQLogConstant.GROUP, context.getProducerGroup(), RocketMQLogConstant.TAG, message.getTags()).toArray());
+                logParams.setTags(TagBuilder.of("topic", message.getTopic(), "group", context.getProducerGroup(), "tag", message.getTags()).toArray());
                 MonitorLogUtil.log(logParams);
             } catch (Exception e) {
                 log.error("sendMessageAfter error", e);

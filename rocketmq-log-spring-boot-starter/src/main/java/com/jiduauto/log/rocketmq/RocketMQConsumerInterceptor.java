@@ -87,7 +87,7 @@ class RocketMQConsumerInterceptor implements BeanPostProcessor {
             String tag = message instanceof MessageExt ? ((MessageExt) message).getTags() : anno.selectorExpression();
             try {
                 params.setInput(formatInputMsg(message));
-                String[] tags = TagBuilder.of(RocketMQLogConstant.GROUP, consumerGroup, RocketMQLogConstant.TOPIC, topic, RocketMQLogConstant.TAG, tag).toArray();
+                String[] tags = TagBuilder.of("group", consumerGroup, "topic", topic, "tag", tag).toArray();
                 params.setTags(tags);
                 delegate.onMessage(message);
                 params.setSuccess(true);
@@ -149,7 +149,7 @@ class RocketMQConsumerInterceptor implements BeanPostProcessor {
             try {
                 params.setInput(formatInputMsgs(msgs));
                 MessageExt messageExt = msgs.get(0);
-                String[] tags = TagBuilder.of(RocketMQLogConstant.GROUP, consumerGroup, RocketMQLogConstant.TOPIC, messageExt.getTopic(), RocketMQLogConstant.TAG, messageExt.getTags()).toArray();
+                String[] tags = TagBuilder.of("group", consumerGroup, "topic", messageExt.getTopic(), "tag", messageExt.getTags()).toArray();
                 params.setTags(tags);
                 result = delegate.apply(msgs, c);
                 params.setSuccess(Objects.equals(result, ConsumeConcurrentlyStatus.CONSUME_SUCCESS) || Objects.equals(result, ConsumeOrderlyStatus.SUCCESS));
