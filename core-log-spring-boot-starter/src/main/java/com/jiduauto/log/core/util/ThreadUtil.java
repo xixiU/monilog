@@ -1,5 +1,7 @@
 package com.jiduauto.log.core.util;
 
+import com.jiduauto.log.core.annotation.MonitorLogTags;
+
 /**
  * @author yp
  * @date 2023/07/26
@@ -9,6 +11,44 @@ public class ThreadUtil {
         return getNextClassFromStack(currentCls, null);
     }
 
+    /**
+     * 从当前线程栈中，按先后顺序找到MonitorLogTag出现的第一个栈帧，找不到则返回null
+     *
+     * @param excludePkgPrefixs
+     * @return
+     */
+    public static StackTraceElement getFirstAnnotationStMonitorTag(String... excludePkgPrefixs) {
+        StackTraceElement[] st = Thread.currentThread().getStackTrace();
+        Class<?> serviceCls = null;
+
+        for (int i = 0; i < st.length - 1; i++) {
+            StackTraceElement currentSte = st[i];
+            String name = currentSte.getClassName();
+            if (name.contains("$")) {
+                name = name.split("\\$")[0];
+            }
+            if (excludePkgPrefixs != null) {
+                for (String excludePkgPrefix : excludePkgPrefixs) {
+                    if (name.startsWith(excludePkgPrefix)) {
+                        break;
+                    }
+                }
+            }
+            try {
+                serviceCls = Class.forName(currentSte.getClassName());
+                if (serviceCls != null) {
+                    MonitorLogTags monitorLogTags= ReflectUtil.getAnnotation(MonitorLogTags.class, serviceCls, serviceCls.getMethods());
+                    if (monitorLogTags != null) {
+                        new StackTraceElement(currentSte.getClassName(), currentSte.getMethodName(), currentSte.getFileName(), currentSte.getLineNumber());
+                    }
+                }
+            } catch (Exception e) {
+
+            }
+
+        }
+        return null;
+    }
     /**
      * 从当前线程栈中，按先后顺序找到指定类的下一个类对应的栈帧，返回找到的第一个栈帧
      *
