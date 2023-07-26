@@ -10,7 +10,6 @@ import com.jiduauto.log.core.model.MonitorLogParams;
 import com.jiduauto.log.core.util.MonitorLogUtil;
 import com.jiduauto.log.core.util.ReflectUtil;
 import com.jiduauto.log.core.util.SpringUtils;
-import com.jiduauto.log.web.WebLogConstant;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -46,11 +45,6 @@ import java.util.*;
  */
 @Slf4j
 class LogMonitorHandlerFilter extends OncePerRequestFilter {
-
-//    private static final List<HttpRequestValidator> HTTP_REQUEST_VALIDATORS = SpringFactoriesLoader.loadFactories(HttpRequestValidator.class,
-//            Thread.currentThread().getContextClassLoader());
-
-
     /**
      * 不监控的日url清单，支持模糊路径如a/*
      */
@@ -107,13 +101,6 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
         ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(response);
         logParams.setLogPoint(UaUtil.validateRequest(headerMap));
 
-//        for (HttpRequestValidator validator : HTTP_REQUEST_VALIDATORS) {
-//            LogPoint logPoint = validator.validateRequest(wrapperRequest);
-//            logParams.setLogPoint(logPoint);
-//            if (!LogPoint.UNKNOWN_ENTRY.equals(logPoint)) {
-//                break;
-//            }
-//        }
         try {
             filterChain.doFilter(wrapperRequest, wrapperResponse);
 
