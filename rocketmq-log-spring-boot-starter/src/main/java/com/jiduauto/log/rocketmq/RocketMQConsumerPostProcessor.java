@@ -5,13 +5,18 @@ import com.jiduauto.log.core.model.MonitorLogParams;
 import com.jiduauto.log.core.util.MonitorLogUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.rocketmq.client.consumer.listener.ConsumeReturnType;
 import org.apache.rocketmq.client.hook.ConsumeMessageContext;
 import org.apache.rocketmq.client.hook.ConsumeMessageHook;
+import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,7 +35,7 @@ class RocketMQConsumerPostProcessor implements BeanPostProcessor {
     }
 
 
-    class RocketMqConsumerHook implements ConsumeMessageHook {
+    static class RocketMqConsumerHook implements ConsumeMessageHook {
         @Override
         public String hookName() {
             return RocketMqConsumerHook.class.getName();
@@ -46,18 +51,35 @@ class RocketMQConsumerPostProcessor implements BeanPostProcessor {
 
         @Override
         public void consumeMessageAfter(ConsumeMessageContext context) {
+            String startTimeProp = context.getProps().get("startTime");
+            String returnType = context.getProps().get(MixAll.CONSUME_CONTEXT_TYPE);
+            boolean hasException = ConsumeReturnType.EXCEPTION.name().equals(returnType);
+            long startTime = NumberUtils.isCreatable(startTimeProp) ? Long.parseLong(startTimeProp) : 0L;
+
             MonitorLogParams logParams = new MonitorLogParams();
             logParams.setLogPoint(LogPoint.MSG_ENTRY);
-            logParams.setAction("consumeMq");
-            long startTime = Long.parseLong(context.getProps().get("startTime"));
+
+            //TODO 以下几项待补充
+            logParams.setServiceCls(null);
+            logParams.setService("");
+            logParams.setAction("consumeMessage");
+            logParams.setInput(null);
+            logParams.setOutput(null);
 
             logParams.setCost(System.currentTimeMillis() - startTime);
-            List<String> tagList = processTag(context);
+            logParams.setSuccess(!hasException && context.isSuccess());
+            logParams.setMsgCode(context.getStatus());
+            logParams.setMsgInfo(StringUtils.isBlank(returnType) ? context.getStatus() : returnType);
+            if (hasException) {
+                logParams.setException(new Exception(returnType));
+            }
 
+            List<String> tagList = processTag(context);
             List<MessageExt> msgList = context.getMsgList();
-            for (MessageExt messageExt: msgList) {
+            for (MessageExt messageExt : msgList) {
+                //TODO 放到output中去， 另外需要new一个对象
                 tagList.add(RocketMQLogConstant.MQ_BODY);
-                tagList.add(new String(messageExt.getBody()));
+                tagList.add(new String(messageExt.getBody(), StandardCharsets.UTF_8));
                 logParams.setTags(tagList.toArray(new String[0]));
                 MonitorLogUtil.log(logParams);
             }
