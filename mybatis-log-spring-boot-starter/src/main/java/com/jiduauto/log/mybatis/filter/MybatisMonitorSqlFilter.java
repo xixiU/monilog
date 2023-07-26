@@ -1,10 +1,13 @@
 package com.jiduauto.log.mybatis.filter;
 
+import com.jiduauto.log.core.ErrorInfo;
+import com.jiduauto.log.core.enums.ErrorEnum;
 import com.jiduauto.log.core.enums.LogPoint;
 import com.jiduauto.log.core.enums.MonitorType;
 import com.jiduauto.log.core.model.MonitorLogParams;
-import com.jiduauto.log.mybatis.constant.MybatisLogConstant;
+import com.jiduauto.log.core.util.ExceptionUtil;
 import com.jiduauto.log.core.util.MonitorLogUtil;
+import com.jiduauto.log.mybatis.constant.MybatisLogConstant;
 import com.metric.MetricMonitor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -19,10 +22,12 @@ import org.apache.ibatis.reflection.SystemMetaObject;
 import org.apache.ibatis.session.ResultHandler;
 import org.springframework.beans.factory.annotation.Value;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.sql.Statement;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * @author ：xiaoxu.bao
@@ -43,7 +48,7 @@ public class MybatisMonitorSqlFilter implements Interceptor {
 
     @SneakyThrows
     @Override
-    public Object intercept(Invocation invocation) throws InvocationTargetException, IllegalAccessException {
+    public Object intercept(Invocation invocation) {
         long nowTime = System.currentTimeMillis();
 
         MonitorLogParams logParams = new MonitorLogParams();
@@ -62,19 +67,23 @@ public class MybatisMonitorSqlFilter implements Interceptor {
         logParams.setService(mappedStatement.getId());
         logParams.setServiceCls(statementHandler.getClass());
         logParams.setAction(invocation.getMethod().getName());
-//        logParams.setInput(invocation.getArgs());
-        List<String> tags  = new ArrayList<>();
+        logParams.setMsgCode(ErrorEnum.SUCCESS.name());
+        logParams.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
+        List<String> tags = new ArrayList<>();
+        long costTime = 0;
         try {
             Object obj = invocation.proceed();
             BoundSql boundSql = statementHandler.getBoundSql();
             String sql = boundSql.getSql();
-            long costTime = System.currentTimeMillis() - nowTime;
+            logParams.setInput(new String[]{sql});
+            logParams.setOutput(obj);
+            costTime = System.currentTimeMillis() - nowTime;
             logParams.setCost(costTime);
             tags.add(MybatisLogConstant.SQL);
             tags.add(sql);
             // 超过两秒的，打印错误日志
             if (costTime > longQueryTime) {
-                MetricMonitor.record(MybatisLogConstant.SQL_COST_TOO_LONG +  MonitorType.RECORD.getMark(), tags.toArray(new String[0]));
+                MetricMonitor.record(MybatisLogConstant.SQL_COST_TOO_LONG + MonitorType.RECORD.getMark(), tags.toArray(new String[0]));
                 log.error("sql cost time too long, sql{}, time:{}", sql, costTime);
             }
             logParams.setSuccess(true);
@@ -83,12 +92,17 @@ public class MybatisMonitorSqlFilter implements Interceptor {
             log.error("intercept process error", e);
             logParams.setSuccess(false);
             logParams.setException(e);
-        }finally {
+            ErrorInfo errorInfo = ExceptionUtil.parseException(e);
+            if (errorInfo != null) {
+                logParams.setMsgCode(errorInfo.getErrorCode());
+                logParams.setMsgInfo(errorInfo.getErrorMsg());
+            }
+            throw e;
+        } finally {
             logParams.setTags(tags.toArray(new String[0]));
-            logParams.setCost(System.currentTimeMillis() - nowTime);
+            logParams.setCost(costTime);
             MonitorLogUtil.log(logParams);
         }
-        return null;
     }
 
     private void getSQLParams(BoundSql boundSql){
@@ -121,14 +135,14 @@ public class MybatisMonitorSqlFilter implements Interceptor {
             MetaObject metaObject = SystemMetaObject.forObject(expectedStatementHandler);
             //fastReturn
             if (BooleanUtils.isNotTrue(metaObject.hasGetter("h.target"))) {
-                log.error("cant find mappedStatement h.get method");
+                log.error("can't find mappedStatement h.get method");
                 break;
             }
             expectedStatementHandler = metaObject.getValue("h.target");
         }
         //failFast
         if (!(expectedStatementHandler instanceof StatementHandler)) {
-            log.error("sorry,expectedStatementHandler not instanceof StatementHandler!");
+            log.error("sorry, expectedStatementHandler not instanceof StatementHandler!");
             return null;
         }
         return expectedStatementHandler;
