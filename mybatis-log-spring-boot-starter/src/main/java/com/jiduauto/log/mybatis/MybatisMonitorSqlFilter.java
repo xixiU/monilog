@@ -95,7 +95,7 @@ class MybatisMonitorSqlFilter implements Interceptor {
             logParams.setSuccess(true);
             return obj;
         } catch (Throwable e) {
-            log.error("intercept process error", e);
+            log.error("mysqlInterceptor process error", e);
             logParams.setSuccess(false);
             logParams.setException(e);
             ErrorInfo errorInfo = ExceptionUtil.parseException(e);
