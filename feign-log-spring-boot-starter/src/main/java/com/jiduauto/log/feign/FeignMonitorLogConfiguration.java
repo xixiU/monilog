@@ -1,5 +1,6 @@
 package com.jiduauto.log.feign;
 
+import com.jiduauto.log.core.MonitorLogConfiguration;
 import feign.Client;
 import feign.Feign;
 import lombok.AllArgsConstructor;
@@ -22,8 +23,8 @@ import org.springframework.core.Ordered;
 @Configuration
 @EnableConfigurationProperties
 @ConditionalOnProperty(prefix = "monitor.log.feign", name = "enable", havingValue = "true", matchIfMissing = true)
-@ConditionalOnExpression("('${monitor.log.endpoints.include:*}'.equals('*') or '${monitor.log.endpoints.include}'.contains('feign')) and !('${monitor.log.endpoints.exclude:}'.equals('*') or '${monitor.log.endpoints.exclude:}'.contains('feign'))")
-@ConditionalOnClass(Feign.class)
+@ConditionalOnExpression("('${monitor.log.component.include:*}'.equals('*') or '${monitor.log.component.include}'.contains('feign')) and !('${monitor.log.component.exclude:}'.equals('*') or '${monitor.log.component.exclude:}'.contains('feign'))")
+@ConditionalOnClass({Feign.class, MonitorLogConfiguration.class})
 @Slf4j
 class FeignMonitorLogConfiguration {
     @Value("${monitor.log.feign.bool.expr.default:$.code==0,$.code==200}")

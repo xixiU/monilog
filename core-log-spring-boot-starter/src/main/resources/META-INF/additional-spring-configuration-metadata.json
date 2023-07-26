@@ -16,14 +16,14 @@
       "description": "开启核心监控，提供统一日志参数收集与aop参数收集"
     },
     {
-      "name": "monitor.log.endpoints.include",
+      "name": "monitor.log.component.include",
       "type": "java.lang.String",
       "sourceType": "com.jiduauto.log.core.MonitorLogConfiguration",
       "defaultValue": "*",
       "description": "监控开启组件清单，默认为*，目前支持feign,grpc,mybatis,rocketmq,web,xxljob，可以一键设置开启"
     },
     {
-      "name": "monitor.log.endpoints.exclude",
+      "name": "monitor.log.component.exclude",
       "type": "java.lang.String",
       "sourceType": "com.jiduauto.log.core.MonitorLogConfiguration",
       "defaultValue": "",

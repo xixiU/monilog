@@ -1,11 +1,11 @@
-package com.jiduauto.log.web.util;
+package com.jiduauto.log.web;
 
 import org.springframework.util.AntPathMatcher;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class UrlMatcherUtils {
+class UrlMatcherUtils {
 
     public static boolean checkUrlMatch(List<String> urls, String url) {
         AntPathMatcher antPathMatcher = new AntPathMatcher();

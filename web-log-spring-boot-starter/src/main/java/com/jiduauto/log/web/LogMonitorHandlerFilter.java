@@ -1,4 +1,4 @@
-package com.jiduauto.log.web.filter;
+package com.jiduauto.log.web;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONValidator;
@@ -10,9 +10,7 @@ import com.jiduauto.log.core.model.MonitorLogParams;
 import com.jiduauto.log.core.util.MonitorLogUtil;
 import com.jiduauto.log.core.util.ReflectUtil;
 import com.jiduauto.log.core.util.SpringUtils;
-import com.jiduauto.log.web.constant.WebLogConstant;
-import com.jiduauto.log.web.util.UaUtil;
-import com.jiduauto.log.web.util.UrlMatcherUtils;
+import com.jiduauto.log.web.WebLogConstant;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -47,7 +45,7 @@ import java.util.*;
  * @since 2022/7/26
  */
 @Slf4j
-public class LogMonitorHandlerFilter extends OncePerRequestFilter {
+class LogMonitorHandlerFilter extends OncePerRequestFilter {
 
 //    private static final List<HttpRequestValidator> HTTP_REQUEST_VALIDATORS = SpringFactoriesLoader.loadFactories(HttpRequestValidator.class,
 //            Thread.currentThread().getContextClassLoader());

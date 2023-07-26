@@ -1,6 +1,7 @@
 
 package com.jiduauto.log.xxljob;
 
+import com.jiduauto.log.core.MonitorLogConfiguration;
 import com.jiduauto.log.core.aop.MonitorLogAop;
 import com.xxl.job.core.handler.IJobHandler;
 import lombok.extern.slf4j.Slf4j;
@@ -14,9 +15,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ConditionalOnClass(IJobHandler.class)
+@ConditionalOnClass({IJobHandler.class, MonitorLogConfiguration.class})
 @ConditionalOnProperty(prefix = "monitor.log.xxljob", name = "enable", havingValue = "true", matchIfMissing = true)
-@ConditionalOnExpression("('${monitor.log.endpoints.include:*}'.equals('*') or '${monitor.log.endpoints.include}'.contains('xxljob')) and !('${monitor.log.endpoints.exclude:}'.equals('*') or '${monitor.log.endpoints.exclude:}'.contains('xxljob'))")
+@ConditionalOnExpression("('${monitor.log.component.include:*}'.equals('*') or '${monitor.log.component.include}'.contains('xxljob')) and !('${monitor.log.component.exclude:}'.equals('*') or '${monitor.log.component.exclude:}'.contains('xxljob'))")
 class XxlJobLogMonitorConfiguration {
     @Bean
     public XxlJobLogMonitorExecuteInterceptor xxlJobExecuteInterceptor() {

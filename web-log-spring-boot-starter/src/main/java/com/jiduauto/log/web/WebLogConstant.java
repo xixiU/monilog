@@ -1,11 +1,11 @@
-package com.jiduauto.log.web.constant;
+package com.jiduauto.log.web;
 
 /**
  * @description: web侧常量
  * @author rongjie.yuan
  * @date 2023/7/19 15:41
  */
-public final class WebLogConstant {
+final class WebLogConstant {
     // web相关常量
     public static final String URI = "uri";
 

@@ -1,4 +1,4 @@
-package com.jiduauto.log.mybatis.filter;
+package com.jiduauto.log.mybatis;
 
 import com.jiduauto.log.core.ErrorInfo;
 import com.jiduauto.log.core.enums.ErrorEnum;
@@ -7,7 +7,6 @@ import com.jiduauto.log.core.enums.MonitorType;
 import com.jiduauto.log.core.model.MonitorLogParams;
 import com.jiduauto.log.core.util.ExceptionUtil;
 import com.jiduauto.log.core.util.MonitorLogUtil;
-import com.jiduauto.log.mybatis.constant.MybatisLogConstant;
 import com.metric.MetricMonitor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +36,14 @@ import java.util.stream.Collectors;
 
 })
 @Slf4j
-public class MybatisMonitorSqlFilter implements Interceptor {
+class MybatisMonitorSqlFilter implements Interceptor {
+
+    /**
+     * sql耗时过长
+     */
+    private static final String SQL = "sql";
+
+    private static final String SQL_COST_TOO_LONG = "sqlCostTooLang";
     /**
      * 超时时间，单位毫秒，默认2000毫秒
      */
@@ -88,11 +94,11 @@ public class MybatisMonitorSqlFilter implements Interceptor {
             logParams.setOutput(obj);
             costTime = System.currentTimeMillis() - nowTime;
             logParams.setCost(costTime);
-            tags.add(MybatisLogConstant.SQL);
+            tags.add(SQL);
             tags.add(sql);
             // 超过两秒的，打印错误日志
             if (costTime > longQueryTime) {
-                MetricMonitor.record(MybatisLogConstant.SQL_COST_TOO_LONG + MonitorType.RECORD.getMark(), tags.toArray(new String[0]));
+                MetricMonitor.record(SQL_COST_TOO_LONG +  MonitorType.RECORD.getMark(), tags.toArray(new String[0]));
                 log.error("sql cost time too long, sql{}, time:{}", sql, costTime);
             }
             logParams.setSuccess(true);
