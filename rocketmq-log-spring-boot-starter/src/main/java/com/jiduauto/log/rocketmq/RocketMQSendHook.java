@@ -1,9 +1,8 @@
-package com.jiduauto.log.rocketmq.hook;
+package com.jiduauto.log.rocketmq;
 
 import com.alibaba.fastjson.JSON;
 import com.jiduauto.log.core.enums.LogPoint;
 import com.jiduauto.log.core.model.MonitorLogParams;
-import com.jiduauto.log.rocketmq.constant.RocketMQLogConstant;
 import com.jiduauto.log.core.util.MonitorLogUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.MapUtils;
@@ -16,7 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 
 @Slf4j
-public class RocketMQSendHook implements SendMessageHook {
+class RocketMQSendHook implements SendMessageHook {
 
     @Override
     public String hookName() {

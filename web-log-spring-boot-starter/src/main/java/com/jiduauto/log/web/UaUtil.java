@@ -1,7 +1,6 @@
-package com.jiduauto.log.web.util;
+package com.jiduauto.log.web;
 
 import com.jiduauto.log.core.enums.LogPoint;
-import com.jiduauto.log.web.constant.WebLogConstant;
 import net.sf.uadetector.ReadableUserAgent;
 import net.sf.uadetector.UserAgentStringParser;
 import net.sf.uadetector.UserAgentType;
@@ -11,7 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.Map;
 
-public class UaUtil {
+class UaUtil {
     private static final UserAgentStringParser parser = UADetectorServiceFactory.getResourceModuleParser();
 
     public static ReadableUserAgent parseUserAgent(String userAgent) { return parser.parse (userAgent);}

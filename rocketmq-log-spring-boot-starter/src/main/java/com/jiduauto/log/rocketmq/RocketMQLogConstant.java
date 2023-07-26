@@ -1,6 +1,6 @@
-package com.jiduauto.log.rocketmq.constant;
+package com.jiduauto.log.rocketmq;
 
-public final class RocketMQLogConstant {
+final class RocketMQLogConstant {
     public static final String TOPIC = "topic";
 
     public static final String GROUP = "group";

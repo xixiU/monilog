@@ -1,6 +1,5 @@
 package com.jiduauto.log.mybatis;
 
-import com.jiduauto.log.mybatis.filter.MybatisMonitorSqlFilter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
