@@ -46,6 +46,9 @@ public @interface LogParser {
      */
     String errorMsgExpr() default ResultParser.Default_ErrMsg_Expr;
 
+    /**
+     * 用于手动构建注解实例，通常用作参数传递
+     */
     @LogParser
     interface Default {
         static LogParser buildInstance() {
@@ -57,8 +60,18 @@ public @interface LogParser {
         }
 
         static LogParser buildInstance(String boolExpr, String errorCodeExpr, String errorMsgExpr) {
+            return buildInstance(null, boolExpr, errorCodeExpr, errorMsgExpr);
+        }
+
+        static LogParser buildInstance(ResultParseStrategy resultParseStrategy, String boolExpr, String errorCodeExpr, String errorMsgExpr) {
+            return buildInstance(null, resultParseStrategy, boolExpr, errorCodeExpr, errorMsgExpr);
+        }
+
+        static LogParser buildInstance(String serviceName, ResultParseStrategy resultParseStrategy, String boolExpr, String errorCodeExpr, String errorMsgExpr) {
             LogParser origin = Default.class.getAnnotation(LogParser.class);
             Map<String, Object> newValues = new HashMap<>();
+            newValues.put("serviceName", serviceName);
+            newValues.put("resultParseStrategy", resultParseStrategy);
             newValues.put("boolExpr", boolExpr);
             newValues.put("errorCodeExpr", errorCodeExpr);
             newValues.put("errorMsgExpr", errorMsgExpr);
