@@ -24,7 +24,6 @@ import org.springframework.beans.factory.annotation.Value;
 import java.lang.reflect.Proxy;
 import java.sql.Statement;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * @author ：xiaoxu.bao
@@ -98,7 +97,7 @@ class MybatisMonitorSqlFilter implements Interceptor {
             tags.add(sql);
             // 超过两秒的，打印错误日志
             if (costTime > longQueryTime) {
-                MetricMonitor.record(SQL_COST_TOO_LONG +  MonitorType.RECORD.getMark(), tags.toArray(new String[0]));
+                MetricMonitor.record(SQL_COST_TOO_LONG + MonitorType.RECORD.getMark(), tags.toArray(new String[0]));
                 log.error("sql cost time too long, sql{}, time:{}", sql, costTime);
             }
             logParams.setSuccess(true);
@@ -126,7 +125,15 @@ class MybatisMonitorSqlFilter implements Interceptor {
         MAPPER_CLASS_SET = new HashSet<>(mappers);
 
         Collection<MappedStatement> mappedStatements = mappedStatement.getConfiguration().getMappedStatements();
-        FULL_MAPPER_IDS = mappedStatements.stream().map(MappedStatement::getId).collect(Collectors.toSet());
+        try {
+            Set<String> set = new HashSet<>();
+            for (MappedStatement ms : mappedStatements) {
+                set.add(ms.getId());
+            }
+            FULL_MAPPER_IDS = set;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -138,7 +145,7 @@ class MybatisMonitorSqlFilter implements Interceptor {
     public void setProperties(Properties properties) {
     }
 
-    private Object getStatementHandlerObject(Invocation invocation){
+    private Object getStatementHandlerObject(Invocation invocation) {
         Object expectedStatementHandler = invocation.getTarget();
         while (Proxy.isProxyClass(expectedStatementHandler.getClass())) {
             MetaObject metaObject = SystemMetaObject.forObject(expectedStatementHandler);
