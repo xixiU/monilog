@@ -100,7 +100,7 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
         ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(response);
         logParams.setLogPoint(UaUtil.validateRequest(headerMap));
         logParams.setInput(new Object[]{formatRequestInfo(request)});
-        //TODO 写input信息、增加LogParser注解
+        //TODO 增加LogParser注解
 
         try{
             dealRequestTags(wrapperRequest, logParams);
