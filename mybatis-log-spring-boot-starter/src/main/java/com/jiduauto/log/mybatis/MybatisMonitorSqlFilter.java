@@ -124,11 +124,13 @@ class MybatisMonitorSqlFilter implements Interceptor {
         Collection<Class<?>> mappers = mappedStatement.getConfiguration().getMapperRegistry().getMappers();
         MAPPER_CLASS_SET = new HashSet<>(mappers);
 
-        Collection<MappedStatement> mappedStatements = mappedStatement.getConfiguration().getMappedStatements();
+        Collection<?> mappedStatements = mappedStatement.getConfiguration().getMappedStatements();
         try {
             Set<String> set = new HashSet<>();
-            for (MappedStatement ms : mappedStatements) {
-                set.add(ms.getId());
+            for (Object ms : mappedStatements) {
+                if (ms instanceof MappedStatement) {
+                    set.add(((MappedStatement) ms).getId());
+                }
             }
             FULL_MAPPER_IDS = set;
         } catch (Exception e) {
