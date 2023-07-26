@@ -19,7 +19,7 @@ import org.springframework.context.annotation.Import;
 @EnableConfigurationProperties(MonitorLogProperties.class)
 @ConditionalOnProperty(prefix = "monitor.log", name = "enable", matchIfMissing = true)
 @Import({SpringUtils.class})
-public class MonitorLogConfiguration {
+public class CoreMonitorLogConfiguration {
 
     @Bean
     public MonitorLogAop aspectProcessor() {

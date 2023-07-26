@@ -1,6 +1,6 @@
 package com.jiduauto.log.web;
 
-import com.jiduauto.log.core.MonitorLogConfiguration;
+import com.jiduauto.log.core.CoreMonitorLogConfiguration;
 import com.jiduauto.log.core.util.SpringUtils;
 import org.springframework.boot.autoconfigure.condition.*;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -12,8 +12,8 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnWebApplication
 @ConditionalOnProperty(prefix = "monitor.log.web", name = "enable", havingValue = "true", matchIfMissing = true)
 @ConditionalOnExpression("('${monitor.log.component.include:*}'.equals('*') or '${monitor.log.component.include}'.contains('web')) and !('${monitor.log.component.exclude:}'.equals('*') or '${monitor.log.component.exclude:}'.contains('web'))")
-@ConditionalOnClass({MonitorLogConfiguration.class})
-class WebMonitorFilterConfig {
+@ConditionalOnClass({CoreMonitorLogConfiguration.class})
+class WebMonitorLogConfiguration {
     @Bean
     @ConditionalOnMissingBean(name ="springUtils")
     public SpringUtils springUtils(){
