@@ -13,9 +13,9 @@ import java.util.Map;
 class UaUtil {
     private static final UserAgentStringParser parser = UADetectorServiceFactory.getResourceModuleParser();
 
-    public static ReadableUserAgent parseUserAgent(String userAgent) { return parser.parse (userAgent);}
+    private static ReadableUserAgent parseUserAgent(String userAgent) { return parser.parse (userAgent);}
 
-    public static UserAgentType parseUserAgentType(String userAgent) { return parser.parse (userAgent).getType();}
+    private static UserAgentType parseUserAgentType(String userAgent) { return parser.parse (userAgent).getType();}
 
     public static LogPoint validateRequest(Map<String, String> headerMap) {
         // 为空返回不知道
@@ -28,7 +28,7 @@ class UaUtil {
         if (headerMap.containsKey(WebLogConstant.JIDU_JNS_HEADER)) {
             return LogPoint.RPC_ENTRY;
         }
-        String userAgent = getUserAgent(headerMap);
+        String userAgent = getMapValueIgnoreCase(headerMap, WebLogConstant.USER_AGENT);
         if (StringUtils.isBlank(userAgent)) {
             return LogPoint.UNKNOWN_ENTRY;
         }
@@ -40,18 +40,23 @@ class UaUtil {
         return LogPoint.WEB_ENTRY;
     }
 
-    private static String getUserAgent(Map<String, String> headerMap){
-        String userAgent = headerMap.get(WebLogConstant.USER_AGENT);
+
+
+    public static String getMapValueIgnoreCase(Map<String, String> headerMap , String headerKey){
+        if (MapUtils.isEmpty(headerMap) || StringUtils.isBlank(headerKey)) {
+            return null;
+        }
+        String userAgent = headerMap.get(headerKey);
         if (StringUtils.isNotBlank(userAgent)) {
             return userAgent;
         }
         // 全小写
-        userAgent = headerMap.get(WebLogConstant.USER_AGENT.toLowerCase());
+        userAgent = headerMap.get(headerKey.toLowerCase());
         if (StringUtils.isNotBlank(userAgent)) {
             return userAgent;
         }
         // 全大写
-        return headerMap.get(WebLogConstant.USER_AGENT.toUpperCase());
+        return headerMap.get(headerKey.toUpperCase());
     }
 
     private static void checkUa(String ua){
