@@ -8,6 +8,7 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.rocketmq.client.consumer.listener.ConsumeReturnType;
+import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.hook.ConsumeMessageContext;
 import org.apache.rocketmq.client.hook.ConsumeMessageHook;
 import org.apache.rocketmq.common.MixAll;
@@ -71,7 +72,7 @@ class RocketMQConsumerPostProcessor implements BeanPostProcessor {
             logParams.setMsgCode(context.getStatus());
             logParams.setMsgInfo(StringUtils.isBlank(returnType) ? context.getStatus() : returnType);
             if (hasException) {
-                logParams.setException(new Exception(returnType));
+                logParams.setException(new MQClientException(returnType, null));
             }
 
             List<String> tagList = processTag(context);
