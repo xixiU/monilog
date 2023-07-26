@@ -1,27 +1,29 @@
 package com.jiduauto.log.rocketmq;
 
+import com.alibaba.fastjson.JSON;
+import com.jiduauto.log.core.ErrorInfo;
 import com.jiduauto.log.core.enums.LogPoint;
 import com.jiduauto.log.core.model.MonitorLogParams;
+import com.jiduauto.log.core.util.ExceptionUtil;
 import com.jiduauto.log.core.util.MonitorLogUtil;
+import com.jiduauto.log.core.util.StringUtil;
+import com.jiduauto.log.core.util.TagBuilder;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.rocketmq.client.consumer.listener.ConsumeReturnType;
-import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.client.hook.ConsumeMessageContext;
-import org.apache.rocketmq.client.hook.ConsumeMessageHook;
-import org.apache.rocketmq.common.MixAll;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
+import org.apache.rocketmq.client.consumer.listener.*;
 import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.spring.core.RocketMQListener;
 import org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
+import java.util.function.BiFunction;
 
 @Slf4j
 class RocketMQConsumerInterceptor implements BeanPostProcessor {
@@ -30,76 +32,93 @@ class RocketMQConsumerInterceptor implements BeanPostProcessor {
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
         if (bean instanceof DefaultRocketMQListenerContainer) {
             DefaultRocketMQListenerContainer container = (DefaultRocketMQListenerContainer) bean;
-            // 进行属性填充
-            container.getConsumer().getDefaultMQPushConsumerImpl().registerConsumeMessageHook(new RocketMqConsumerHook());
+            Class<? extends RocketMQListener> cls = container.getRocketMQListener().getClass();
+            DefaultMQPushConsumer consumer = container.getConsumer();
+            MessageListener messageListener = consumer.getMessageListener();
+            String consumerGroup = consumer.getConsumerGroup();
+            if (messageListener instanceof MessageListenerConcurrently) {
+                consumer.setMessageListener(new EnhancedListenerConcurrently((MessageListenerConcurrently) messageListener, cls, consumerGroup));
+            } else if (messageListener instanceof MessageListenerOrderly) {
+                consumer.setMessageListener(new EnhancedListenerOrderly((MessageListenerOrderly) messageListener, cls, consumerGroup));
+            }
         }
         return bean;
     }
 
-
-    static class RocketMqConsumerHook implements ConsumeMessageHook {
-        @Override
-        public String hookName() {
-            return RocketMqConsumerHook.class.getName();
-        }
-
-        @Override
-        public void consumeMessageBefore(ConsumeMessageContext context) {
-            if (MapUtils.isEmpty(context.getProps())) {
-                context.setProps(new HashMap<>());
-            }
-            context.getProps().put("startTime", String.valueOf(System.currentTimeMillis()));
-        }
+    @AllArgsConstructor
+    static class ConsumerHook<C, R> implements BiFunction<List<MessageExt>, C, R> {
+        private final BiFunction<List<MessageExt>, C, R> delegate;
+        private final Class<? extends RocketMQListener> cls;
+        private final String consumerGroup;
 
         @Override
-        public void consumeMessageAfter(ConsumeMessageContext context) {
-            String startTimeProp = context.getProps().get("startTime");
-            String returnType = context.getProps().get(MixAll.CONSUME_CONTEXT_TYPE);
-            boolean hasException = ConsumeReturnType.EXCEPTION.name().equals(returnType);
-            long startTime = NumberUtils.isCreatable(startTimeProp) ? Long.parseLong(startTimeProp) : 0L;
-
-            MonitorLogParams logParams = new MonitorLogParams();
-            logParams.setLogPoint(LogPoint.MSG_ENTRY);
-
-            //TODO 以下几项待补充
-            logParams.setServiceCls(null);
-            logParams.setService("");
-            logParams.setAction("consumeMessage");
-            logParams.setOutput(context.getStatus());
-
-            logParams.setCost(System.currentTimeMillis() - startTime);
-            logParams.setSuccess(!hasException && context.isSuccess());
-            logParams.setMsgCode(context.getStatus());
-            logParams.setMsgInfo(StringUtils.isBlank(returnType) ? context.getStatus() : returnType);
-            if (hasException) {
-                logParams.setException(new MQClientException(returnType, null));
-            }
-
-            List<String> tagList = processTag(context);
-
-            List<MessageExt> msgList = context.getMsgList();
-            for (MessageExt messageExt : msgList) {
-                List<String> newTagList = new ArrayList<>(tagList);
-                newTagList.add(RocketMQLogConstant.TOPIC);
-                newTagList.add(messageExt.getTopic());
-                logParams.setTags(newTagList.toArray(new String[0]));
-
-                MonitorLogParams newLogParams = new MonitorLogParams();
-                BeanUtils.copyProperties(logParams, newLogParams);
-                newLogParams.setInput(new String[]{new String(messageExt.getBody(), StandardCharsets.UTF_8)});
-                MonitorLogUtil.log(newLogParams);
+        public R apply(List<MessageExt> msgs, C c) {
+            MonitorLogParams params = new MonitorLogParams();
+            params.setServiceCls(cls);
+            params.setAction("onMessage");
+            params.setService(cls.getSimpleName());
+            params.setLogPoint(LogPoint.MSG_ENTRY);
+            R result;
+            long start = System.currentTimeMillis();
+            try {
+                params.setInput(formatInputMsgs(msgs));
+                MessageExt messageExt = msgs.get(0);
+                String[] tags = TagBuilder.of(RocketMQLogConstant.GROUP, consumerGroup, RocketMQLogConstant.TOPIC, messageExt.getTopic(), RocketMQLogConstant.TAG, messageExt.getTags()).toArray();
+                params.setTags(tags);
+                result = delegate.apply(msgs, c);
+                params.setSuccess(Objects.equals(result, ConsumeConcurrentlyStatus.CONSUME_SUCCESS) || Objects.equals(result, ConsumeOrderlyStatus.SUCCESS));
+                params.setMsgCode(result.toString());
+                params.setMsgInfo(params.isSuccess() ? "成功" : "失败");
+                params.setOutput(result);
+                return result;
+            } catch (Throwable e) {
+                params.setException(e);
+                ErrorInfo errorInfo = ExceptionUtil.parseException(e);
+                params.setSuccess(false);
+                params.setMsgCode(errorInfo.getErrorCode());
+                params.setMsgInfo(errorInfo.getErrorMsg());
+                throw e;
+            } finally {
+                params.setCost(System.currentTimeMillis() - start);
+                MonitorLogUtil.log(params);
             }
         }
+    }
 
-        private List<String> processTag(ConsumeMessageContext context) {
-            List<String> tagList = new ArrayList<>();
+    @AllArgsConstructor
+    static class EnhancedListenerConcurrently implements MessageListenerConcurrently {
+        private final MessageListenerConcurrently delegate;
+        private final Class<? extends RocketMQListener> cls;
+        private final String consumerGroup;
 
-            tagList.add(RocketMQLogConstant.GROUP);
-            tagList.add(context.getConsumerGroup());
-
-            tagList.add(RocketMQLogConstant.STATUS);
-            tagList.add(context.getStatus());
-            return tagList;
+        @Override
+        public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs, ConsumeConcurrentlyContext context) {
+            return new ConsumerHook<>(delegate::consumeMessage, cls, consumerGroup).apply(msgs, context);
         }
+    }
+
+    @AllArgsConstructor
+    static class EnhancedListenerOrderly implements MessageListenerOrderly {
+        private final MessageListenerOrderly delegate;
+        private Class<? extends RocketMQListener> cls;
+        private final String consumerGroup;
+
+        @Override
+        public ConsumeOrderlyStatus consumeMessage(List<MessageExt> msgs, ConsumeOrderlyContext context) {
+            return new ConsumerHook<>(delegate::consumeMessage, cls, consumerGroup).apply(msgs, context);
+        }
+    }
+
+    private static Object[] formatInputMsgs(List<MessageExt> msgs) {
+        if (CollectionUtils.isEmpty(msgs)) {
+            return null;
+        }
+        List<Object> obj = new ArrayList<>();
+        for (MessageExt msg : msgs) {
+            String str = new String(msg.getBody(), StandardCharsets.UTF_8);
+            JSON json = StringUtil.tryConvert2Json(str);
+            obj.add(json == null ? str : json);
+        }
+        return obj.toArray(new Object[0]);
     }
 }
