@@ -1,9 +1,12 @@
 package com.jiduauto.log.core.util;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONValidator;
+import com.alibaba.fastjson.TypeReference;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -12,6 +15,11 @@ import java.util.Map;
  */
 public class StringUtil {
 
+    /**
+     * 尝试转换成json，转换不了异常吞掉
+     * @param str
+     * @return
+     */
     public static JSON tryConvert2Json(String str) {
         if (str == null) {
             return null;
@@ -28,6 +36,30 @@ public class StringUtil {
             return maybeObj ? JSON.parseObject(str) : JSON.parseArray(str);
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    /**
+     * 尝试转换成jsonObject，转换不了异常吞掉
+     * @param str
+     * @return
+     */
+    public static HashMap<String, String> tryConvert2Map(String str) {
+        if (str == null) {
+            return new HashMap<>();
+        }
+        if (str.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        try {
+            boolean validate = JSONValidator.from(str).validate();
+            if (!validate) {
+                return new HashMap<>();
+            }
+            return JSON.parseObject(str, new TypeReference<HashMap<String, String>>() {});
+        } catch (Exception e) {
+            return new HashMap<>();
         }
     }
 

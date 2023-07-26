@@ -14,6 +14,7 @@ import org.apache.rocketmq.client.hook.ConsumeMessageHook;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 
@@ -64,8 +65,7 @@ class RocketMQConsumerPostProcessor implements BeanPostProcessor {
             logParams.setServiceCls(null);
             logParams.setService("");
             logParams.setAction("consumeMessage");
-            logParams.setInput(null);
-            logParams.setOutput(null);
+            logParams.setOutput(context.getStatus());
 
             logParams.setCost(System.currentTimeMillis() - startTime);
             logParams.setSuccess(!hasException && context.isSuccess());
@@ -76,13 +76,14 @@ class RocketMQConsumerPostProcessor implements BeanPostProcessor {
             }
 
             List<String> tagList = processTag(context);
+            logParams.setTags(tagList.toArray(new String[0]));
+
             List<MessageExt> msgList = context.getMsgList();
             for (MessageExt messageExt : msgList) {
-                //TODO 放到output中去， 另外需要new一个对象
-                tagList.add(RocketMQLogConstant.MQ_BODY);
-                tagList.add(new String(messageExt.getBody(), StandardCharsets.UTF_8));
-                logParams.setTags(tagList.toArray(new String[0]));
-                MonitorLogUtil.log(logParams);
+                MonitorLogParams newLogParams = new MonitorLogParams();
+                BeanUtils.copyProperties(logParams, newLogParams);
+                newLogParams.setInput(new String[]{new String(messageExt.getBody(), StandardCharsets.UTF_8)});
+                MonitorLogUtil.log(newLogParams);
             }
         }
 

@@ -1,8 +1,5 @@
 package com.jiduauto.log.web;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONValidator;
-import com.alibaba.fastjson.TypeReference;
 import com.jiduauto.log.core.annotation.MonitorLogTags;
 import com.jiduauto.log.core.constant.Constants;
 import com.jiduauto.log.core.enums.LogPoint;
@@ -10,7 +7,7 @@ import com.jiduauto.log.core.model.MonitorLogParams;
 import com.jiduauto.log.core.util.MonitorLogUtil;
 import com.jiduauto.log.core.util.ReflectUtil;
 import com.jiduauto.log.core.util.SpringUtils;
-import com.jiduauto.log.web.WebLogConstant;
+import com.jiduauto.log.core.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -46,11 +43,6 @@ import java.util.*;
  */
 @Slf4j
 class LogMonitorHandlerFilter extends OncePerRequestFilter {
-
-//    private static final List<HttpRequestValidator> HTTP_REQUEST_VALIDATORS = SpringFactoriesLoader.loadFactories(HttpRequestValidator.class,
-//            Thread.currentThread().getContextClassLoader());
-
-
     /**
      * 不监控的日url清单，支持模糊路径如a/*
      */
@@ -99,7 +91,6 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
         tagList.add(WebLogConstant.METHOD);
         tagList.add(request.getMethod());
         logParams.setTags(tagList.toArray(new String[0]));
-        dealRequestTags(request, logParams);
 
         Map<String, String> headerMap = getHeaders(request);
         boolean isMultipart = ServletFileUpload.isMultipartContent(request);
@@ -107,13 +98,11 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
         ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(response);
         logParams.setLogPoint(UaUtil.validateRequest(headerMap));
 
-//        for (HttpRequestValidator validator : HTTP_REQUEST_VALIDATORS) {
-//            LogPoint logPoint = validator.validateRequest(wrapperRequest);
-//            logParams.setLogPoint(logPoint);
-//            if (!LogPoint.UNKNOWN_ENTRY.equals(logPoint)) {
-//                break;
-//            }
-//        }
+        try{
+            dealRequestTags(wrapperRequest, logParams);
+        }catch (Exception e){
+            log.error("dealRequestTags error", e);
+        }
         try {
             filterChain.doFilter(wrapperRequest, wrapperResponse);
 
@@ -154,21 +143,14 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
         if (isDownstream(headerMap)) {
             return false;
         }
-        String header = getHeaderValue(headerMap, HttpHeaders.CONTENT_TYPE);
+        String header = UaUtil.getMapValueIgnoreCase(headerMap, HttpHeaders.CONTENT_TYPE);
         return StringUtils.containsIgnoreCase(header, MediaType.APPLICATION_JSON_VALUE);
     }
 
     private boolean isDownstream(Map<String, String> headerMap) {
-        String header = getHeaderValue(headerMap, HttpHeaders.CONTENT_DISPOSITION);
+        String header = UaUtil.getMapValueIgnoreCase(headerMap, HttpHeaders.CONTENT_DISPOSITION);
         return StringUtils.containsIgnoreCase(header, "attachment")
                 || StringUtils.containsIgnoreCase(header, "filename");
-    }
-
-    private String getHeaderValue(Map<String, String> headerMap, String headerKey) {
-        if (MapUtils.isEmpty(headerMap) || StringUtils.isBlank(headerKey)) {
-            return null;
-        }
-        return headerMap.get(headerKey);
     }
 
 
@@ -198,6 +180,8 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
         return null;
     }
 
+
+
     /**
      * 处理返回的tag
      *
@@ -206,12 +190,11 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
      */
     private void dealResponseTags(String responseBodyStr, MonitorLogParams logParams) {
         String[] oriTags = logParams.getTags();
-        boolean validate = JSONValidator.from(responseBodyStr).validate();
-        if (!validate) {
+
+        HashMap<String, String> jsonMap = StringUtil.tryConvert2Map(responseBodyStr);
+        if (MapUtils.isEmpty(jsonMap)) {
             return;
         }
-        HashMap<String, String> jsonMap = JSON.parseObject(responseBodyStr, new TypeReference<HashMap<String, String>>() {
-        });
         for (int i = 0; oriTags != null && i < oriTags.length; i++) {
             if (!oriTags[i].startsWith("{") || !oriTags[i].endsWith("}")) {
                 continue;
@@ -232,23 +215,32 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
      * @param request
      * @param logParams
      */
-    private void dealRequestTags(HttpServletRequest request, MonitorLogParams logParams) {
+    private void dealRequestTags(ContentCachingRequestWrapper request, MonitorLogParams logParams) {
         String[] oriTags = logParams.getTags();
         Map<String, String> headersMap = getHeaders(request);
+
+        HashMap<String, String> requestBody = StringUtil.tryConvert2Map(getRequestBody(request));
+
         for (int i = 0; oriTags != null && i < oriTags.length; i++) {
             if (!oriTags[i].startsWith("{") || !oriTags[i].endsWith("}")) {
                 continue;
             }
             String parameterName = oriTags[i].substring(1, oriTags[i].length() - 1);
+            // 先从url参数取值
             String resultTagValue = request.getParameter(parameterName);
 
-            // 先从参数取值
+            if (StringUtils.isNotBlank(resultTagValue)) {
+                swapTag(oriTags, i, resultTagValue);
+                continue;
+            }
+            // 再从body中取值
+            resultTagValue = UaUtil.getMapValueIgnoreCase(requestBody, parameterName);
             if (StringUtils.isNotBlank(resultTagValue)) {
                 swapTag(oriTags, i, resultTagValue);
                 continue;
             }
             // 再从header取值
-            resultTagValue = headersMap.get(parameterName);
+            resultTagValue = UaUtil.getMapValueIgnoreCase(headersMap, parameterName);
             swapTag(oriTags, i, resultTagValue);
 
         }
