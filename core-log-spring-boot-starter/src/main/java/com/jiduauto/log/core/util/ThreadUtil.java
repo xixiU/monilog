@@ -14,7 +14,6 @@ public class ThreadUtil {
     /**
      * 从当前线程栈中，按先后顺序找到MonitorLogTag出现的第一个栈帧，找不到则返回null
      *
-     * @param currentCls
      * @param excludePkgPrefixs
      * @return
      */
