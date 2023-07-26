@@ -50,8 +50,7 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
     private List<String> BLACK_LIST;
 
     @Override
-    public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
-                                 @NonNull FilterChain filterChain) throws IOException, ServletException {
+    public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,  @NonNull FilterChain filterChain) throws IOException, ServletException {
         String requestURI = request.getRequestURI();
         if (CollectionUtils.isEmpty(BLACK_LIST)) {
             BLACK_LIST = Collections.singletonList(WebLogConstant.MISC_PING_URL);
@@ -97,6 +96,7 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
         ContentCachingRequestWrapper wrapperRequest = isMultipart ? null : new ContentCachingRequestWrapper(request);
         ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(response);
         logParams.setLogPoint(UaUtil.validateRequest(headerMap));
+        //TODO 写input信息、增加LogParser注解
 
         try{
             dealRequestTags(wrapperRequest, logParams);
@@ -105,8 +105,7 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
         }
         try {
             filterChain.doFilter(wrapperRequest, wrapperResponse);
-
-            responseBodyStr = getResponseBody(wrapperResponse);
+            responseBodyStr = getResponseBody(wrapperResponse); //TODO 对于下载，可能有问题
             wrapperResponse.copyBodyToResponse();
             logParams.setOutput(responseBodyStr);
             logParams.setSuccess(true);
@@ -271,14 +270,13 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
     }
 
     private String getResponseBody(ContentCachingResponseWrapper response) {
-        ContentCachingResponseWrapper wrapper = WebUtils.getNativeResponse(response,
-                ContentCachingResponseWrapper.class);
+        ContentCachingResponseWrapper wrapper = WebUtils.getNativeResponse(response, ContentCachingResponseWrapper.class);
         if (wrapper != null) {
             byte[] buf = wrapper.getContentAsByteArray();
             if (buf.length > 0) {
                 String payload;
                 try {
-                    payload = new String(buf, 0, buf.length, wrapper.getCharacterEncoding());
+                    payload = new String(buf, wrapper.getCharacterEncoding());
                 } catch (UnsupportedEncodingException e) {
                     payload = "[unknown]";
                 }
