@@ -23,7 +23,6 @@ class XxlJobLogMonitorConfiguration {
     public XxlJobLogMonitorExecuteInterceptor xxlJobExecuteInterceptor() {
         return new XxlJobLogMonitorExecuteInterceptor();
     }
-
     @Aspect
     @Slf4j
     static class XxlJobLogMonitorExecuteInterceptor {

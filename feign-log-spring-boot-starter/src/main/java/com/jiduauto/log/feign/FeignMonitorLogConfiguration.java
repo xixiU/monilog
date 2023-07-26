@@ -200,7 +200,7 @@ class FeignMonitorLogConfiguration {
 
 
     static class BufferingFeignClientResponse implements Closeable {
-        private Response response;
+        private final Response response;
         private byte[] body;
 
         BufferingFeignClientResponse(Response response) {
