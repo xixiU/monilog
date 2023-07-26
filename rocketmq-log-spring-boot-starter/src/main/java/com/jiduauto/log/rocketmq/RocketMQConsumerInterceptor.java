@@ -26,7 +26,7 @@ import java.util.Objects;
 import java.util.function.BiFunction;
 
 @Slf4j
-class RocketMQConsumerPostProcessor implements BeanPostProcessor {
+class RocketMQConsumerInterceptor implements BeanPostProcessor {
 
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {

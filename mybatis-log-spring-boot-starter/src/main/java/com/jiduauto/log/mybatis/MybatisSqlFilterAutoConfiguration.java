@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 class MybatisSqlFilterAutoConfiguration {
     @Bean
-    public MybatisMonitorSqlFilter mybatisMonitorSqlFilter() {
-        return new MybatisMonitorSqlFilter();
+    public MybatisInterceptor mybatisMonitorSqlFilter() {
+        return new MybatisInterceptor();
     }
 }

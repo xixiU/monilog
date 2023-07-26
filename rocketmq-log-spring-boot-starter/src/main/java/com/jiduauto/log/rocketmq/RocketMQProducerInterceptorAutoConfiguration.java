@@ -14,14 +14,14 @@ class RocketMQProducerInterceptorAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(prefix = "monitor.log.rocketmq.consumer", name = "enable", havingValue = "true", matchIfMissing = true)
-    public RocketMQConsumerPostProcessor rocketMQConsumerPostProcessor() {
-        return new RocketMQConsumerPostProcessor();
+    public RocketMQConsumerInterceptor rocketMQConsumerPostProcessor() {
+        return new RocketMQConsumerInterceptor();
     }
 
     @Bean
     @ConditionalOnProperty(prefix = "monitor.log.rocketmq.producer", name = "enable", havingValue = "true", matchIfMissing = true)
-    public RocketMQProducerPostProcessor rocketMQProducerPostProcessor() {
-        return new RocketMQProducerPostProcessor();
+    public RocketMQProducerInterceptor rocketMQProducerPostProcessor() {
+        return new RocketMQProducerInterceptor();
     }
 
 }
