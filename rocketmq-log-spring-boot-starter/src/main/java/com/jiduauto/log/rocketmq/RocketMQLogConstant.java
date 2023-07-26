@@ -2,6 +2,7 @@ package com.jiduauto.log.rocketmq;
 
 final class RocketMQLogConstant {
     public static final String TOPIC = "topic";
+    public static final String TAG = "tag";
 
     public static final String GROUP = "group";
 

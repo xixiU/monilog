@@ -23,7 +23,6 @@ class RocketMQProducerPostProcessor implements BeanPostProcessor {
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
         if (bean instanceof DefaultMQProducer) {
             DefaultMQProducer producer = (DefaultMQProducer) bean;
-            // 进行属性填充
             producer.getDefaultMQProducerImpl().registerSendMessageHook(new RocketMQSendHook());
         }
         return bean;
