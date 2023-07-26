@@ -11,8 +11,8 @@ import com.jiduauto.log.mybatis.constant.MybatisLogConstant;
 import com.metric.MetricMonitor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.ibatis.binding.MapperMethod;
 import org.apache.ibatis.executor.statement.StatementHandler;
 import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.MappedStatement;
@@ -24,10 +24,8 @@ import org.springframework.beans.factory.annotation.Value;
 
 import java.lang.reflect.Proxy;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author ：xiaoxu.bao
@@ -46,6 +44,10 @@ public class MybatisMonitorSqlFilter implements Interceptor {
     @Value("${monitor.log.mybatis.long.query.time:2000}")
     private Long longQueryTime;
 
+    private static Set<Class<?>> MAPPER_CLASS_SET = null;
+
+    private static Set<String> FULL_MAPPER_IDS = null;
+
     @SneakyThrows
     @Override
     public Object intercept(Invocation invocation) {
@@ -62,13 +64,20 @@ public class MybatisMonitorSqlFilter implements Interceptor {
         MetaObject metaObject = SystemMetaObject.forObject(statementHandler);
 
         MappedStatement mappedStatement = (MappedStatement) metaObject.getValue("delegate.mappedStatement");
-
+        if (CollectionUtils.isEmpty(FULL_MAPPER_IDS) || CollectionUtils.isEmpty(MAPPER_CLASS_SET)) {
+            buildMapperInfos(mappedStatement);
+        }
+        String mapperId = mappedStatement.getId();
+        Class<?> serviceCls = Class.forName(mapperId.substring(0, mapperId.lastIndexOf('.')));
+        String methodName = mapperId.substring(mapperId.lastIndexOf('.') + 1);
         logParams.setLogPoint(LogPoint.DAL_CLIENT);
-        logParams.setService(mappedStatement.getId());
-        logParams.setServiceCls(statementHandler.getClass());
-        logParams.setAction(invocation.getMethod().getName());
+        logParams.setService(serviceCls.getSimpleName());
+        logParams.setServiceCls(serviceCls);
+        logParams.setAction(methodName);
         logParams.setMsgCode(ErrorEnum.SUCCESS.name());
         logParams.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
+
+        //TODO 取logParser
         List<String> tags = new ArrayList<>();
         long costTime = 0;
         try {
@@ -105,19 +114,13 @@ public class MybatisMonitorSqlFilter implements Interceptor {
         }
     }
 
-    private void getSQLParams(BoundSql boundSql){
-        Object parameterObject = boundSql.getParameterObject();
-        if (parameterObject instanceof MapperMethod.ParamMap) {
-            MapperMethod.ParamMap paramMap = (MapperMethod.ParamMap) parameterObject;
-            Collection values = paramMap.values();
-            for (Object entry : paramMap.values()) {
-                // TODO rongjie.yuan  2023/7/25 23:29
-                // 测试发现这里要从LambdaQueryWrapper中取出对应参数，LambdaQueryWrapper是mybatis-plus中的,mybatis
-//                if (entry instanceof LambdaQueryWrapper) {
-//
-//                }
-            }
-        }
+    private void buildMapperInfos(MappedStatement mappedStatement) {
+        //临时调用用
+        Collection<Class<?>> mappers = mappedStatement.getConfiguration().getMapperRegistry().getMappers();
+        MAPPER_CLASS_SET = new HashSet<>(mappers);
+
+        Collection<MappedStatement> mappedStatements = mappedStatement.getConfiguration().getMappedStatements();
+        FULL_MAPPER_IDS = mappedStatements.stream().map(MappedStatement::getId).collect(Collectors.toSet());
     }
 
     @Override
