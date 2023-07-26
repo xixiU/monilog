@@ -8,6 +8,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -21,6 +22,7 @@ import org.springframework.core.Ordered;
 @Configuration
 @EnableConfigurationProperties
 @ConditionalOnProperty(prefix = "monitor.log.feign", name = "enable", havingValue = "true", matchIfMissing = true)
+@ConditionalOnExpression("('${monitor.log.endpoints.include:*}'.equals('*') or '${monitor.log.endpoints.include}'.contains('feign')) and !('${monitor.log.endpoints.exclude:}'.equals('*') or '${monitor.log.endpoints.exclude:}'.contains('feign'))")
 @ConditionalOnClass(Feign.class)
 @Slf4j
 class FeignMonitorLogConfiguration {

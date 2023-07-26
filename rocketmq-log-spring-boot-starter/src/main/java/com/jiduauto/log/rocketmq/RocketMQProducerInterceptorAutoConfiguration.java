@@ -1,12 +1,14 @@
 package com.jiduauto.log.rocketmq;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @ConditionalOnProperty(prefix = "monitor.log.rocketmq", name = "enable", havingValue = "true", matchIfMissing = true)
+@ConditionalOnExpression("('${monitor.log.endpoints.include:*}'.equals('*') or '${monitor.log.endpoints.include}'.contains('rocketmq')) and !('${monitor.log.endpoints.exclude:}'.equals('*') or '${monitor.log.endpoints.exclude:}'.contains('rocketmq'))")
 @ConditionalOnClass(name = "org.apache.rocketmq.client.MQAdmin")
 public class RocketMQProducerInterceptorAutoConfiguration {
     // aop的注解是可以使用的，但是会对业务有要求，先注释掉
