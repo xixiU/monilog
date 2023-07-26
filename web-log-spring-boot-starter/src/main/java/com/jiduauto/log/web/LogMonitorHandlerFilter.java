@@ -143,21 +143,14 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
         if (isDownstream(headerMap)) {
             return false;
         }
-        String header = getHeaderValue(headerMap, HttpHeaders.CONTENT_TYPE);
+        String header = UaUtil.getMapValueIgnoreCase(headerMap, HttpHeaders.CONTENT_TYPE);
         return StringUtils.containsIgnoreCase(header, MediaType.APPLICATION_JSON_VALUE);
     }
 
     private boolean isDownstream(Map<String, String> headerMap) {
-        String header = getHeaderValue(headerMap, HttpHeaders.CONTENT_DISPOSITION);
+        String header = UaUtil.getMapValueIgnoreCase(headerMap, HttpHeaders.CONTENT_DISPOSITION);
         return StringUtils.containsIgnoreCase(header, "attachment")
                 || StringUtils.containsIgnoreCase(header, "filename");
-    }
-
-    private String getHeaderValue(Map<String, String> headerMap, String headerKey) {
-        if (MapUtils.isEmpty(headerMap) || StringUtils.isBlank(headerKey)) {
-            return null;
-        }
-        return UaUtil.getMapValueIgnoreCase(headerMap,headerKey);
     }
 
 
