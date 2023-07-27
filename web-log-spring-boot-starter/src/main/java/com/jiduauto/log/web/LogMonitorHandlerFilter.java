@@ -50,29 +50,10 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
     @Value("${monitor.log.web.blackList}")
     private List<String> blackList;
 
-    /**
-     * 请求header
-     */
-    private Map<String, String> requestHeaderMap;
-
-    /**
-     * 请求body
-     */
-    private HashMap<String, String> requestBodyMap;
-
-    /**
-     * 输出字符串
-     */
-    private String responseBodyStr;
-
-    /**
-     * 请求url
-     */
-    private String requestURI;
 
     @Override
     public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws IOException, ServletException {
-        requestURI = request.getRequestURI();
+        String requestURI = request.getRequestURI();
         if (CollectionUtils.isEmpty(blackList)) {
             blackList = Collections.singletonList(WebLogConstant.MISC_PING_URL);
         }
@@ -99,7 +80,7 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
         }
 
         long startTime = System.currentTimeMillis();
-        responseBodyStr = "";
+        String responseBodyStr = "";
         MonitorLogParams logParams = new MonitorLogParams();
         logParams.setLogPoint(LogPoint.WEB_ENTRY);
         logParams.setServiceCls(method.getBeanType());
@@ -108,16 +89,19 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
         TagBuilder tagBuilder = TagBuilder.of(tagList).add(WebLogConstant.URI, requestURI).add(WebLogConstant.METHOD, request.getMethod());
         logParams.setTags(tagBuilder.toArray());
 
-        requestHeaderMap = getRequestHeaders(request);
+        Map<String, String> requestHeaderMap = getRequestHeaders(request);
         boolean isMultipart = ServletFileUpload.isMultipartContent(request);
         ContentCachingRequestWrapper wrapperRequest = isMultipart ? null : new ContentCachingRequestWrapper(request);
         ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(response);
+
+        String requestBodyParams = getRequestBodyParams(wrapperRequest, requestHeaderMap);
+
         logParams.setLogPoint(UaUtil.validateRequest(requestHeaderMap));
-        logParams.setInput(new Object[]{formatRequestInfo(request)});
+        logParams.setInput(new Object[]{formatRequestInfo(request, requestHeaderMap, requestBodyParams)});
         //TODO 增加LogParser注解
 
         try {
-            dealRequestTags(wrapperRequest, logParams);
+            dealRequestTags(wrapperRequest, logParams, requestHeaderMap, requestBodyParams);
         } catch (Exception e) {
             log.error("dealRequestTags error", e);
         }
@@ -133,7 +117,7 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
             throw e;
         } finally {
             if (logParams.isSuccess() && StringUtils.isNotBlank(responseBodyStr) && isJson(requestHeaderMap)) {
-                dealResponseTags(logParams);
+                dealResponseTags(logParams, responseBodyStr);
             }
 
             long cost = System.currentTimeMillis() - startTime;
@@ -143,6 +127,9 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
     }
 
     private static Map<String, String> getRequestHeaders(HttpServletRequest request) {
+        if (request == null) {
+            return new HashMap<>();
+        }
         Map<String, String> map = new HashMap<>(32);
         Enumeration<String> headerNames = request.getHeaderNames();
         while (headerNames.hasMoreElements()) {
@@ -211,7 +198,7 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
      *
      * @param logParams
      */
-    private void dealResponseTags(MonitorLogParams logParams) {
+    private void dealResponseTags(MonitorLogParams logParams, String responseBodyStr) {
         String[] oriTags = logParams.getTags();
 
         HashMap<String, String> jsonMap = StringUtil.tryConvert2Map(responseBodyStr);
@@ -238,9 +225,10 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
      * @param request
      * @param logParams
      */
-    private void dealRequestTags(ContentCachingRequestWrapper request, MonitorLogParams logParams) {
+    private void dealRequestTags(ContentCachingRequestWrapper request, MonitorLogParams logParams, Map<String, String> requestHeaderMap, String requestBodyParams) {
         String[] oriTags = logParams.getTags();
         Map<String, String> headersMap = MapUtils.isNotEmpty(requestHeaderMap) ? requestHeaderMap : new HashMap<>();
+        HashMap<String, String> requestBodyMap = StringUtil.tryConvert2Map(requestBodyParams);
 
         HashMap<String, String> requestBody = MapUtils.isNotEmpty(requestBodyMap) ? requestBodyMap : new HashMap<>();
 
@@ -301,13 +289,15 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
         return "";
     }
 
-    private JSONObject formatRequestInfo(HttpServletRequest request) {
-        String bodyParams = isDownstream(requestHeaderMap) ? "Binary data" : getRequestBody(request);
+    private String getRequestBodyParams(HttpServletRequest request, Map<String, String> requestHeaderMap){
+        return isDownstream(requestHeaderMap) ? "Binary data" : getRequestBody(request);
+    }
+    private JSONObject formatRequestInfo(HttpServletRequest request, Map<String, String> requestHeaderMap, String requestBodyParams) {
         Map<String, String[]> parameterMap = request.getParameterMap();
         JSONObject obj = new JSONObject();
-        if (StringUtils.isNotBlank(bodyParams)) {
-            requestBodyMap = StringUtil.tryConvert2Map(bodyParams);
-            obj.put("body", requestBodyMap != null ? requestBodyMap : bodyParams);
+        if (StringUtils.isNotBlank(requestBodyParams)) {
+            HashMap<String, String> requestBodyMap = StringUtil.tryConvert2Map(requestBodyParams);
+            obj.put("body", requestBodyMap != null ? requestBodyMap : requestBodyParams);
         }
         if (MapUtils.isNotEmpty(parameterMap)) {
             Map<String, Collection<String>> collected = parameterMap.entrySet().stream()
