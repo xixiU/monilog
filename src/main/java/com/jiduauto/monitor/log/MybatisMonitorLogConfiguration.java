@@ -41,9 +41,11 @@ import java.util.List;
 @ConditionalOnClass(CoreMonitorLogConfiguration.class)
 @Configuration
 class MybatisMonitorLogConfiguration {
+    @Resource
+    private MonitorLogProperties monitorLogProperties;
     @Bean
     public MybatisInterceptor mybatisMonitorSqlFilter() {
-        return new MybatisInterceptor();
+        return new MybatisInterceptor(monitorLogProperties.getMybatis());
     }
 
     /**
@@ -60,6 +62,10 @@ class MybatisMonitorLogConfiguration {
         private MonitorLogProperties.MybatisProperties mybatisProperties;
         private static final String SQL = "sql";
         private static final String SQL_COST_TOO_LONG = "sqlCostTooLang";
+
+        public MybatisInterceptor(MonitorLogProperties.MybatisProperties mybatisProperties) {
+            this.mybatisProperties = mybatisProperties;
+        }
 
         @SneakyThrows
         @Override

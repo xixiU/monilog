@@ -48,11 +48,11 @@ import java.util.Map;
 @Slf4j
 class FeignMonitorLogConfiguration {
     @Resource
-    private MonitorLogProperties.FeignProperties feignProperties;
+    private MonitorLogProperties monitorLogProperties;
 
     @Bean
     public FeignClientEnhanceProcessor feignClientEnhanceProcessor() {
-        return new FeignClientEnhanceProcessor(feignProperties);
+        return new FeignClientEnhanceProcessor(monitorLogProperties.getFeign());
     }
 
     static class FeignClientEnhanceProcessor implements BeanPostProcessor, Ordered {

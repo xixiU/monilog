@@ -38,13 +38,19 @@ public class CoreMonitorLogConfiguration {
     @Bean
     @ConditionalOnMissingBean(MonitorLogPrinter.class)
     public MonitorLogPrinter monitorLogPrinter() {
-        return new DefaultMonitorLogPrinter();
+        return new DefaultMonitorLogPrinter(monitorLogProperties.getPrinter());
     }
 
     /**
      * 默认日志打印方式
      */
     class DefaultMonitorLogPrinter implements MonitorLogPrinter {
+        private MonitorLogProperties.PrinterProperties printerProperties;
+
+        public DefaultMonitorLogPrinter(MonitorLogProperties.PrinterProperties printerProperties) {
+            this.printerProperties = printerProperties;
+        }
+
         @Override
         public void log(MonitorLogParams logParams) {
             if (logParams == null) {
@@ -79,21 +85,20 @@ public class CoreMonitorLogConfiguration {
         }
 
         private boolean needLog(String logPoint, String service, String action) {
-            MonitorLogProperties.PrinterProperties printer = monitorLogProperties.getPrinter();
-            if (MonitorStringUtil.checkPathMatch(printer.getInfoExcludeComponents(), logPoint)) {
+            if (MonitorStringUtil.checkPathMatch(printerProperties.getInfoExcludeComponents(), logPoint)) {
                 return false;
             }
-            if (MonitorStringUtil.checkPathMatch(printer.getInfoExcludeServices(), service)) {
+            if (MonitorStringUtil.checkPathMatch(printerProperties.getInfoExcludeServices(), service)) {
                 return false;
             }
-            if (MonitorStringUtil.checkPathMatch(printer.getInfoExcludeActions(), action)) {
+            if (MonitorStringUtil.checkPathMatch(printerProperties.getInfoExcludeActions(), action)) {
                 return false;
             }
             return true;
         }
 
         private String formatLongText(Object o) {
-            int maxTextLen = monitorLogProperties.getPrinter().getMaxTextLen();
+            int maxTextLen = printerProperties.getMaxTextLen();
             if (o == null || o instanceof String) {
                 return (String) o;
             }

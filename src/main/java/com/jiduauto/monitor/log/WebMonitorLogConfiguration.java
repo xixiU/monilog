@@ -63,7 +63,7 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
     private static final String JIDU_JNS_HEADER = "X-JIDU-SERVICENAME";
     private static final String USER_AGENT = "User-Agent";
     @Resource
-    private MonitorLogProperties.WebProperties webProperties;
+    private MonitorLogProperties monitorLogProperties;
 
     @Bean
     FilterRegistrationBean<WebMonitorLogConfiguration> logMonitorFilterBean() {
@@ -81,7 +81,7 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
         boolean isMultipart = ServletFileUpload.isMultipartContent(request);
         RequestWrapper wrapperRequest = isMultipart ? null : new RequestWrapper(request);
         String requestURI = request.getRequestURI();
-        Set<String> urlBlackList = webProperties.getUrlBlackList();
+        Set<String> urlBlackList = monitorLogProperties.getWeb().getUrlBlackList();
         if (CollectionUtils.isEmpty(urlBlackList)) {
             urlBlackList = new HashSet<>();
         }

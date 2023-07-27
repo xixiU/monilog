@@ -26,11 +26,11 @@ import javax.annotation.Resource;
 @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('xxljob')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('xxljob'))")
 class XxlJobMonitorLogConfiguration {
     @Resource
-    private MonitorLogProperties.XxljobProperties xxljobProperties;
+    private MonitorLogProperties monitorLogProperties;
 
     @Bean
     public XxlJobLogMonitorExecuteInterceptor xxlJobExecuteInterceptor() {
-        return new XxlJobLogMonitorExecuteInterceptor(xxljobProperties);
+        return new XxlJobLogMonitorExecuteInterceptor(monitorLogProperties.getXxljob());
     }
 
     @Aspect
