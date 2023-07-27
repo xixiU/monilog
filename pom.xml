@@ -31,7 +31,7 @@
         <xxl.job.version>2.2.0</xxl.job.version>
         <rocketmq.starter.version>2.2.0</rocketmq.starter.version>
         <mybatis.starter.version>3.0.2</mybatis.starter.version>
-        <grpc.starter.version>2.10.3</grpc.starter.version>
+        <grpc.starter.version>2.14.0</grpc.starter.version>
         <openfeign.version>10.10.1</openfeign.version>
     </properties>
 
