@@ -101,7 +101,7 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
         long startTime = System.currentTimeMillis();
         String responseBodyStr = "";
         MonitorLogParams logParams = new MonitorLogParams();
-        logParams.setLogPoint(LogPoint.WEB_ENTRY);
+        logParams.setLogPoint(LogPoint.http_server);
         logParams.setServiceCls(method.getBeanType());
         logParams.setService(method.getBeanType().getSimpleName());
         logParams.setAction(method.getMethod().getName());
@@ -356,20 +356,20 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
     private static LogPoint validateRequest(Map<String, String> headerMap) {
         // 为空返回不知道
         if (MapUtils.isEmpty(headerMap)) {
-            return LogPoint.UNKNOWN_ENTRY;
+            return LogPoint.unknown;
         }
         if (headerMap.containsKey(JIDU_JNS_HEADER)) {
-            return LogPoint.RPC_ENTRY;
+            return LogPoint.feign_server;
         }
         String userAgent = getMapValueIgnoreCase(headerMap, USER_AGENT);
         if (StringUtils.isBlank(userAgent)) {
-            return LogPoint.UNKNOWN_ENTRY;
+            return LogPoint.unknown;
         }
         UserAgentType userAgentType = UaUtil.parseUserAgentType(userAgent);
         if (UserAgentType.LIBRARY.equals(userAgentType)) {
-            return LogPoint.RPC_ENTRY;
+            return LogPoint.http_server;
         }
-        return LogPoint.WEB_ENTRY;
+        return LogPoint.http_server;
     }
 
 

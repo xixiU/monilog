@@ -122,7 +122,7 @@ class RocketMqMonitorLogConfiguration {
                 params.setServiceCls(cls);
                 params.setAction("onMessage");
                 params.setService(cls.getSimpleName());
-                params.setLogPoint(LogPoint.MSG_ENTRY);
+                params.setLogPoint(LogPoint.rocketmq_consumer);
                 R result;
                 long start = System.currentTimeMillis();
                 try {
@@ -161,7 +161,7 @@ class RocketMqMonitorLogConfiguration {
                 params.setServiceCls(cls);
                 params.setAction("onMessage");
                 params.setService(cls.getSimpleName());
-                params.setLogPoint(LogPoint.MSG_ENTRY);
+                params.setLogPoint(LogPoint.rocketmq_consumer);
                 long start = System.currentTimeMillis();
                 RocketMQMessageListener anno = cls.getAnnotation(RocketMQMessageListener.class);
                 if (anno == null) {
@@ -250,7 +250,7 @@ class RocketMqMonitorLogConfiguration {
                 StackTraceElement st = ThreadUtil.getNextClassFromStack(DefaultMQProducerImpl.class, "org.apache.rocketmq", "org.springframework");
                 String clsName = st.getClassName();
                 MonitorLogParams logParams = new MonitorLogParams();
-                logParams.setLogPoint(LogPoint.MSG_PRODUCER);
+                logParams.setLogPoint(LogPoint.rocketmq_producer);
                 logParams.setAction(st.getMethodName());
                 try {
                     logParams.setServiceCls(Class.forName(clsName));

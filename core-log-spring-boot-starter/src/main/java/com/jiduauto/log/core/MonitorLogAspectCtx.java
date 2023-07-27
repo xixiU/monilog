@@ -33,10 +33,11 @@ public class MonitorLogAspectCtx {
     private static final Map<Method, Class<?>> METHOD_CLS_CACHE = new HashMap<>();
     private final Method method;
     private final Object[] args;
-    private final LogPoint logPoint;
     private final Class<?> methodOwnedClass;
     @Setter
     private LogParser logParserAnnotation;
+    @Setter
+    private LogPoint logPoint;
     private boolean hasExecuted;
     private long cost;
     private Object result;
@@ -70,7 +71,7 @@ public class MonitorLogAspectCtx {
         this.logParserAnnotation = ReflectUtil.getAnnotation(LogParser.class, methodOwnedClass, targetMethod, method);
         MonitorLog anno = ReflectUtil.getAnnotation(MonitorLog.class, methodOwnedClass, targetMethod, method);
         MonitorLogTags logTags = ReflectUtil.getAnnotation(MonitorLogTags.class, methodOwnedClass, targetMethod, method);
-        this.logPoint = anno == null ? LogPoint.UNKNOWN_ENTRY : anno.value();
+        this.logPoint = anno == null ? LogPoint.unknown : anno.value();
         this.tags = MonitorStringUtil.getTagArray(logTags);
 
     }

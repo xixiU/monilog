@@ -10,23 +10,26 @@ public enum LogPoint {
     /**
      * 切点类型
      */
-    RPC_ENTRY("RPC服务入口"),
-    WEB_ENTRY("Web服务入口"),
-    TASK_ENTRY("任务入口"),
-    MSG_ENTRY("消息入口"),
-    REMOTE_CLIENT("下游依赖", false),
-    DAL_CLIENT("数据存储依赖", false),
-    MSG_PRODUCER("消息发送出口", false),
-    UNKNOWN_ENTRY("未知入口");
-    private final String desc;
+    http_server(true),
+    feign_server(true),
+    grpc_server(true),
+    rocketmq_consumer(true),
+    xxljob(true),
+    http_client,
+    feign_client,
+    grpc_client,
+    rocketmq_producer,
+    mybatis,
+    redis,
+    unknown;
+
     private final boolean entrance;
 
-    LogPoint(String desc, boolean entrance) {
-        this.desc = desc;
+    LogPoint(boolean entrance) {
         this.entrance = entrance;
     }
 
-    LogPoint(String desc) {
-        this(desc, true);
+    LogPoint() {
+        this(false);
     }
 }

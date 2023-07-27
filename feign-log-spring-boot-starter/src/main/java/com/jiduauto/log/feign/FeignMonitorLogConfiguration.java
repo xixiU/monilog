@@ -108,7 +108,7 @@ class FeignMonitorLogConfiguration {
             mlp.setCost(cost);
             mlp.setException(ex);
             mlp.setSuccess(ex == null);
-            mlp.setLogPoint(LogPoint.REMOTE_CLIENT);
+            mlp.setLogPoint(LogPoint.feign_client);
             mlp.setInput(new Object[]{formatRequestInfo(request)});
             mlp.setMsgCode(ErrorEnum.SUCCESS.name());
             mlp.setMsgInfo(ErrorEnum.SUCCESS.getMsg());

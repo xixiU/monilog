@@ -98,7 +98,7 @@ class GrpcMonitorLogConfiguration {
                 }
 
                 params.setServiceCls(serviceCls);
-                params.setLogPoint(LogPoint.REMOTE_CLIENT);
+                params.setLogPoint(LogPoint.grpc_client);
                 params.setService(serviceName);
                 params.setAction(methodName);
                 params.setSuccess(true);
@@ -224,7 +224,7 @@ class GrpcMonitorLogConfiguration {
 
             MonitorLogParams params = new MonitorLogParams();
             params.setServiceCls(serviceCls);
-            params.setLogPoint(LogPoint.RPC_ENTRY);
+            params.setLogPoint(LogPoint.grpc_server);
             params.setTags(null);
             params.setService(serviceName);
             params.setAction(methodName);

@@ -2,6 +2,7 @@ package com.jiduauto.log.core.aop;
 
 import com.jiduauto.log.core.LogParser;
 import com.jiduauto.log.core.MonitorLogAspectCtx;
+import com.jiduauto.log.core.enums.LogPoint;
 import com.jiduauto.log.core.model.MonitorLogParams;
 import com.jiduauto.log.core.parse.ParsedResult;
 import com.jiduauto.log.core.util.MonitorLogUtil;
@@ -18,15 +19,15 @@ import org.aspectj.lang.annotation.Aspect;
 public class MonitorLogAop {
     @Around("@within(com.jiduauto.log.core.annotation.MonitorLog)")
     Object doAround(ProceedingJoinPoint pjp) throws Throwable {
-        return processAround(pjp);
+        return processAround(pjp, null, null);
     }
 
-    public static Object processAround(ProceedingJoinPoint pjp, LogParser logParser) throws Throwable {
+    public static Object processAround(ProceedingJoinPoint pjp, LogParser logParser, LogPoint logPoint) throws Throwable {
         MonitorLogAspectCtx ctx = null;
         Throwable tx = null;
         try {
             try {
-                ctx = beforeProcess(pjp, logParser);
+                ctx = beforeProcess(pjp, logParser, logPoint);
                 doProcess(pjp, ctx);
                 afterProcess(ctx);
                 tx = ctx.getException();
@@ -48,15 +49,13 @@ public class MonitorLogAop {
             return pjp.proceed();
         }
     }
-
-    public static Object processAround(ProceedingJoinPoint pjp) throws Throwable {
-        return processAround(pjp, null);
-    }
-
-    private static MonitorLogAspectCtx beforeProcess(ProceedingJoinPoint pjp, LogParser logParser) {
+    private static MonitorLogAspectCtx beforeProcess(ProceedingJoinPoint pjp, LogParser logParser, LogPoint logPoint) {
         MonitorLogAspectCtx ctx = new MonitorLogAspectCtx(pjp, pjp.getArgs());
         if (logParser != null) {
             ctx.setLogParserAnnotation(logParser);
+        }
+        if (logPoint != null) {
+            ctx.setLogPoint(logPoint);
         }
         return ctx;
     }

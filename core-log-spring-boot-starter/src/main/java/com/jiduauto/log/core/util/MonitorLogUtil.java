@@ -39,7 +39,7 @@ public class MonitorLogUtil {
         String[] tags = processTags(logParams);
         LogPoint logPoint = logParams.getLogPoint();
         if (logPoint == null) {
-            logPoint = LogPoint.UNKNOWN_ENTRY;
+            logPoint = LogPoint.unknown;
         }
         String name = Constants.BUSINESS_NAME_PREFIX + Constants.UNDERLINE + logPoint.name();
         // 默认打一个record记录

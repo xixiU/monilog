@@ -90,7 +90,7 @@ class MybatisMonitorLogConfiguration {
                 Class<?> serviceCls = Class.forName(mapperId.substring(0, mapperId.lastIndexOf('.')));
                 String methodName = mapperId.substring(mapperId.lastIndexOf('.') + 1);
 
-                logParams.setLogPoint(LogPoint.DAL_CLIENT);
+                logParams.setLogPoint(LogPoint.mybatis);
                 logParams.setService(serviceCls.getSimpleName());
                 logParams.setServiceCls(serviceCls);
                 logParams.setAction(methodName);
