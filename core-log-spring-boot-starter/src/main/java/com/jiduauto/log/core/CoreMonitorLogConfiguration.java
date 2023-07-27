@@ -5,7 +5,7 @@ import com.jiduauto.log.core.aop.MonitorLogAop;
 import com.jiduauto.log.core.model.MonitorLogParams;
 import com.jiduauto.log.core.model.MonitorLogProperties;
 import com.jiduauto.log.core.util.MonitorLogUtil;
-import com.jiduauto.log.core.util.SpringUtils;
+import com.jiduauto.log.core.util.MonitorSpringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,7 +23,7 @@ import org.springframework.context.annotation.Import;
 @Configuration
 @EnableConfigurationProperties(MonitorLogProperties.class)
 @ConditionalOnProperty(prefix = "monitor.log", name = "enable", matchIfMissing = true)
-@Import({SpringUtils.class})
+@Import({MonitorSpringUtils.class})
 public class CoreMonitorLogConfiguration {
 
     @Bean

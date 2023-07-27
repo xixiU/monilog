@@ -26,7 +26,7 @@ import java.util.Map;
  * @since 5.1.0
  */
 @Component
-public class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
+public class MonitorSpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
 
     /**
      * "@PostConstruct"注解标记的类中，由于ApplicationContext还未加载，导致空指针<br>
@@ -41,13 +41,13 @@ public class SpringUtils implements BeanFactoryPostProcessor, ApplicationContext
     @SuppressWarnings("NullableProblems")
     @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
-        SpringUtils.beanFactory = beanFactory;
+        MonitorSpringUtils.beanFactory = beanFactory;
     }
 
     @SuppressWarnings("NullableProblems")
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) {
-        SpringUtils.applicationContext = applicationContext;
+        MonitorSpringUtils.applicationContext = applicationContext;
     }
 
     /**

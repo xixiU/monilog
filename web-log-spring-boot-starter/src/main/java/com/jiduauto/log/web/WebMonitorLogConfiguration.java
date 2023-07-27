@@ -188,7 +188,7 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
 
 
     private static HandlerMethod getHandlerMethod(HttpServletRequest request) {
-        Map<String, HandlerMapping> matchingBeans = BeanFactoryUtils.beansOfTypeIncludingAncestors(SpringUtils.getApplicationContext(), HandlerMapping.class, true, false);
+        Map<String, HandlerMapping> matchingBeans = BeanFactoryUtils.beansOfTypeIncludingAncestors(MonitorSpringUtils.getApplicationContext(), HandlerMapping.class, true, false);
         List<HandlerMapping> handlerMappings = new ArrayList<>(matchingBeans.values());
         for (HandlerMapping mapping : handlerMappings) {
             HandlerExecutionChain handlerExecutionChain;
