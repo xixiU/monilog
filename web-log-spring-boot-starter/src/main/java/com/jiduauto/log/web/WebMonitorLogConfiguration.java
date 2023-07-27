@@ -1,6 +1,7 @@
 package com.jiduauto.log.web;
 
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Lists;
 import com.jiduauto.log.core.CoreMonitorLogConfiguration;
 import com.jiduauto.log.core.annotation.MonitorLogTags;
 import com.jiduauto.log.core.constant.Constants;
@@ -8,6 +9,7 @@ import com.jiduauto.log.core.enums.LogPoint;
 import com.jiduauto.log.core.model.MonitorLogParams;
 import com.jiduauto.log.core.util.*;
 import lombok.extern.slf4j.Slf4j;
+import net.sf.uadetector.UserAgentType;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -47,6 +49,12 @@ import java.util.stream.Collectors;
 @ConditionalOnClass({CoreMonitorLogConfiguration.class})
 @Slf4j
 class WebMonitorLogConfiguration extends OncePerRequestFilter {
+    /**
+     * 集度JNS请求时header中会带X-JIDU-SERVICENAME
+     */
+    public static final String JIDU_JNS_HEADER = "X-JIDU-SERVICENAME";
+
+    public static final String USER_AGENT = "User-Agent";
     private static final AntPathMatcher antPathMatcher = new AntPathMatcher();
     /**
      * 不监控的日url清单，支持模糊路径如a/*
@@ -76,7 +84,7 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
     public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws IOException, ServletException {
         String requestURI = request.getRequestURI();
         if (CollectionUtils.isEmpty(blackList)) {
-            blackList = Collections.singletonList(WebLogConstant.MISC_PING_URL);
+            blackList = Lists.newArrayList("/actuator/health", "/misc/ping", "/actuator/prometheus");
         }
         if (checkUrlMatch(blackList, requestURI)) {
             filterChain.doFilter(request, response);
@@ -104,7 +112,7 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
         logParams.setServiceCls(method.getBeanType());
         logParams.setService(method.getBeanType().getSimpleName());
         logParams.setAction(method.getMethod().getName());
-        TagBuilder tagBuilder = TagBuilder.of(tagList).add(WebLogConstant.URI, requestURI).add(WebLogConstant.METHOD, request.getMethod());
+        TagBuilder tagBuilder = TagBuilder.of(tagList).add("uri", requestURI).add("method", request.getMethod());
         logParams.setTags(tagBuilder.toArray());
 
         Map<String, String> requestHeaderMap = getRequestHeaders(request);
@@ -114,7 +122,7 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
 
         String requestBodyParams = getRequestBodyParams(wrapperRequest, requestHeaderMap);
 
-        logParams.setLogPoint(UaUtil.validateRequest(requestHeaderMap));
+        logParams.setLogPoint(validateRequest(requestHeaderMap));
         logParams.setInput(new Object[]{formatRequestInfo(request, requestHeaderMap, requestBodyParams)});
         //TODO 增加LogParser注解
 
@@ -176,12 +184,12 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
         if (isDownstream(headerMap)) {
             return false;
         }
-        String header = UaUtil.getMapValueIgnoreCase(headerMap, HttpHeaders.CONTENT_TYPE);
+        String header = getMapValueIgnoreCase(headerMap, HttpHeaders.CONTENT_TYPE);
         return StringUtils.containsIgnoreCase(header, MediaType.APPLICATION_JSON_VALUE);
     }
 
     private static boolean isDownstream(Map<String, String> headerMap) {
-        String header = UaUtil.getMapValueIgnoreCase(headerMap, HttpHeaders.CONTENT_DISPOSITION);
+        String header = getMapValueIgnoreCase(headerMap, HttpHeaders.CONTENT_DISPOSITION);
         return StringUtils.containsIgnoreCase(header, "attachment")
                 || StringUtils.containsIgnoreCase(header, "filename");
     }
@@ -262,13 +270,13 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
                 continue;
             }
             // 再从body中取值
-            resultTagValue = UaUtil.getMapValueIgnoreCase(requestBody, parameterName);
+            resultTagValue = getMapValueIgnoreCase(requestBody, parameterName);
             if (StringUtils.isNotBlank(resultTagValue)) {
                 swapTag(oriTags, i, resultTagValue);
                 continue;
             }
             // 再从header取值
-            resultTagValue = UaUtil.getMapValueIgnoreCase(headersMap, parameterName);
+            resultTagValue = getMapValueIgnoreCase(headersMap, parameterName);
             if (StringUtils.isNotBlank(resultTagValue)) {
                 swapTag(oriTags, i, resultTagValue);
             }
@@ -357,5 +365,43 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
             }
         }
         return false;
+    }
+
+
+    private static LogPoint validateRequest(Map<String, String> headerMap) {
+        // 为空返回不知道
+        if (MapUtils.isEmpty(headerMap)) {
+            return LogPoint.UNKNOWN_ENTRY;
+        }
+        if (headerMap.containsKey(JIDU_JNS_HEADER)) {
+            return LogPoint.RPC_ENTRY;
+        }
+        String userAgent = getMapValueIgnoreCase(headerMap, USER_AGENT);
+        if (StringUtils.isBlank(userAgent)) {
+            return LogPoint.UNKNOWN_ENTRY;
+        }
+        UserAgentType userAgentType = UaUtil.parseUserAgentType(userAgent);
+        if (UserAgentType.LIBRARY.equals(userAgentType)) {
+            return LogPoint.RPC_ENTRY;
+        }
+        return LogPoint.WEB_ENTRY; // 在这里写入具体的HTTP请求校验逻辑
+    }
+
+
+    private static String getMapValueIgnoreCase(Map<String, String> headerMap, String headerKey) {
+        if (MapUtils.isEmpty(headerMap) || StringUtils.isBlank(headerKey)) {
+            return null;
+        }
+        String userAgent = headerMap.get(headerKey);
+        if (StringUtils.isNotBlank(userAgent)) {
+            return userAgent;
+        }
+        // 全小写
+        userAgent = headerMap.get(headerKey.toLowerCase());
+        if (StringUtils.isNotBlank(userAgent)) {
+            return userAgent;
+        }
+        // 全大写
+        return headerMap.get(headerKey.toUpperCase());
     }
 }

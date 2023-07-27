@@ -41,13 +41,6 @@
 			<artifactId>jidu-opentelemetry-log</artifactId>
 			<version>${opentelemetry.log.version}</version>
 		</dependency>
-
-		<dependency>
-			<groupId>net.sf.uadetector</groupId>
-			<artifactId>uadetector-resources</artifactId>
-			<version>2014.04</version>
-<!--			<scope>runtime</scope>-->
-		</dependency>
     </dependencies>
 
 </project>
