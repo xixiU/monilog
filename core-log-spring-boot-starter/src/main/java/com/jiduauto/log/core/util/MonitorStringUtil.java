@@ -17,8 +17,6 @@ public class MonitorStringUtil {
 
     /**
      * 尝试转换成json，转换不了异常吞掉
-     * @param str
-     * @return
      */
     public static JSON tryConvert2Json(String str) {
         if (str == null) {
@@ -41,14 +39,9 @@ public class MonitorStringUtil {
 
     /**
      * 尝试转换成jsonObject，转换不了异常吞掉
-     * @param str
-     * @return
      */
-    public static HashMap<String, String> tryConvert2Map(String str) {
-        if (str == null) {
-            return new HashMap<>();
-        }
-        if (str.isEmpty()) {
+    public static Map<String, String> tryConvert2Map(String str) {
+        if (str == null || str.isEmpty()) {
             return new HashMap<>();
         }
 
@@ -57,7 +50,8 @@ public class MonitorStringUtil {
             if (!validate) {
                 return new HashMap<>();
             }
-            return JSON.parseObject(str, new TypeReference<HashMap<String, String>>() {});
+            return JSON.parseObject(str, new TypeReference<Map<String, String>>() {
+            });
         } catch (Exception e) {
             return new HashMap<>();
         }

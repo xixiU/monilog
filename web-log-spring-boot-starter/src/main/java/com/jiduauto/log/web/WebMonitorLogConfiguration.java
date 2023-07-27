@@ -1,12 +1,18 @@
 package com.jiduauto.log.web;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.jiduauto.log.core.CoreMonitorLogConfiguration;
+import com.jiduauto.log.core.ErrorInfo;
+import com.jiduauto.log.core.LogParser;
 import com.jiduauto.log.core.annotation.MonitorLogTags;
 import com.jiduauto.log.core.constant.Constants;
+import com.jiduauto.log.core.enums.ErrorEnum;
 import com.jiduauto.log.core.enums.LogPoint;
 import com.jiduauto.log.core.model.MonitorLogParams;
+import com.jiduauto.log.core.parse.ParsedResult;
+import com.jiduauto.log.core.parse.ResultParseStrategy;
 import com.jiduauto.log.core.util.*;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.uadetector.UserAgentType;
@@ -16,7 +22,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.util.http.fileupload.servlet.ServletFileUpload;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.*;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -112,34 +121,54 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
         ContentCachingRequestWrapper wrapperRequest = isMultipart ? null : new ContentCachingRequestWrapper(request);
         ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(response);
 
-        String requestBodyParams = getRequestBodyParams(wrapperRequest, requestHeaderMap);
+        String requestBodyParams = isMultipart ? "Binary data" : getRequestBody(wrapperRequest);
 
         logParams.setLogPoint(validateRequest(requestHeaderMap));
         logParams.setInput(new Object[]{formatRequestInfo(request, requestHeaderMap, requestBodyParams)});
-        //TODO 增加LogParser注解
+        logParams.setMsgCode(ErrorEnum.SUCCESS.name());
+        logParams.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
+        logParams.setSuccess(true);
 
         try {
-            dealRequestTags(wrapperRequest, logParams, requestHeaderMap, requestBodyParams);
+            dealRequestTags(isMultipart ? request : wrapperRequest, logParams, requestHeaderMap, requestBodyParams);
         } catch (Exception e) {
             log.error("dealRequestTags error", e);
         }
+
         try {
-            filterChain.doFilter(wrapperRequest, wrapperResponse);
+            filterChain.doFilter(isMultipart ? request : wrapperRequest, wrapperResponse);
             responseBodyStr = getResponseBody(wrapperResponse);
             wrapperResponse.copyBodyToResponse();
-            logParams.setOutput(responseBodyStr);
-            logParams.setSuccess(true);
+            JSON json = MonitorStringUtil.tryConvert2Json(responseBodyStr);
+            if (json instanceof JSONObject) {
+                LogParser cl = ReflectUtil.getAnnotation(LogParser.class, method.getBeanType(), method.getMethod());
+                //尝试更精确的提取业务失败信息
+                ResultParseStrategy rps = cl == null ? null : cl.resultParseStrategy();//默认使用IfSuccess策略
+                String boolExpr = cl == null ? null : cl.boolExpr();
+                String codeExpr = cl == null ? null : cl.errorCodeExpr();
+                String msgExpr = cl == null ? null : cl.errorMsgExpr();
+                ParsedResult pr = ResultParseUtil.parseResult(json, rps, null, boolExpr, codeExpr, msgExpr);
+                logParams.setSuccess(pr.isSuccess());
+                logParams.setMsgCode(pr.getMsgCode());
+                logParams.setMsgInfo(pr.getMsgInfo());
+                logParams.setOutput(json);
+            } else {
+                logParams.setOutput(responseBodyStr);
+                logParams.setSuccess(true);
+            }
         } catch (Exception e) {
             logParams.setSuccess(false);
             logParams.setException(e);
+            ErrorInfo errorInfo = ExceptionUtil.parseException(e);
+            logParams.setMsgCode(errorInfo.getErrorCode());
+            logParams.setMsgInfo(errorInfo.getErrorMsg());
             throw e;
         } finally {
             if (logParams.isSuccess() && StringUtils.isNotBlank(responseBodyStr) && isJson(requestHeaderMap)) {
                 dealResponseTags(logParams, responseBodyStr);
             }
 
-            long cost = System.currentTimeMillis() - startTime;
-            logParams.setCost(cost);
+            logParams.setCost(System.currentTimeMillis() - startTime);
             MonitorLogUtil.log(logParams);
         }
     }
@@ -218,7 +247,7 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
     private void dealResponseTags(MonitorLogParams logParams, String responseBodyStr) {
         String[] oriTags = logParams.getTags();
 
-        HashMap<String, String> jsonMap = MonitorStringUtil.tryConvert2Map(responseBodyStr);
+        Map<String, String> jsonMap = MonitorStringUtil.tryConvert2Map(responseBodyStr);
         if (MapUtils.isEmpty(jsonMap)) {
             return;
         }
@@ -242,12 +271,10 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
      * @param request
      * @param logParams
      */
-    private void dealRequestTags(ContentCachingRequestWrapper request, MonitorLogParams logParams, Map<String, String> requestHeaderMap, String requestBodyParams) {
+    private void dealRequestTags(HttpServletRequest request, MonitorLogParams logParams, Map<String, String> requestHeaderMap, String requestBodyParams) {
         String[] oriTags = logParams.getTags();
         Map<String, String> headersMap = MapUtils.isNotEmpty(requestHeaderMap) ? requestHeaderMap : new HashMap<>();
-        HashMap<String, String> requestBodyMap = MonitorStringUtil.tryConvert2Map(requestBodyParams);
-
-        HashMap<String, String> requestBody = MapUtils.isNotEmpty(requestBodyMap) ? requestBodyMap : new HashMap<>();
+        Map<String, String> requestBodyMap = MonitorStringUtil.tryConvert2Map(requestBodyParams);
 
         for (int i = 0; oriTags != null && i < oriTags.length; i++) {
             if (!oriTags[i].startsWith("{") || !oriTags[i].endsWith("}")) {
@@ -262,7 +289,7 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
                 continue;
             }
             // 再从body中取值
-            resultTagValue = getMapValueIgnoreCase(requestBody, parameterName);
+            resultTagValue = getMapValueIgnoreCase(requestBodyMap, parameterName);
             if (StringUtils.isNotBlank(resultTagValue)) {
                 swapTag(oriTags, i, resultTagValue);
                 continue;
@@ -296,7 +323,7 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
             if (buf.length > 0) {
                 String payload;
                 try {
-                    payload = new String(buf, 0, buf.length, wrapper.getCharacterEncoding());
+                    payload = new String(buf, wrapper.getCharacterEncoding());
                 } catch (UnsupportedEncodingException e) {
                     payload = "[unknown]";
                 }
@@ -305,16 +332,11 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
         }
         return "";
     }
-
-    private String getRequestBodyParams(HttpServletRequest request, Map<String, String> requestHeaderMap) {
-        return isDownstream(requestHeaderMap) ? "Binary data" : getRequestBody(request);
-    }
-
     private JSONObject formatRequestInfo(HttpServletRequest request, Map<String, String> requestHeaderMap, String requestBodyParams) {
         Map<String, String[]> parameterMap = request.getParameterMap();
         JSONObject obj = new JSONObject();
         if (StringUtils.isNotBlank(requestBodyParams)) {
-            HashMap<String, String> requestBodyMap = MonitorStringUtil.tryConvert2Map(requestBodyParams);
+            Map<String, String> requestBodyMap = MonitorStringUtil.tryConvert2Map(requestBodyParams);
             obj.put("body", requestBodyMap != null ? requestBodyMap : requestBodyParams);
         }
         if (MapUtils.isNotEmpty(parameterMap)) {
@@ -333,7 +355,6 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
         if (isDownstream(responseHeaders)) {
             return "Binary data";
         }
-
         ContentCachingResponseWrapper wrapper = WebUtils.getNativeResponse(response, ContentCachingResponseWrapper.class);
         if (wrapper != null) {
             byte[] buf = wrapper.getContentAsByteArray();
