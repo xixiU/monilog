@@ -1,4 +1,3 @@
-
 package com.jiduauto.monitor.log;
 
 
@@ -11,8 +10,12 @@ import com.jiduauto.monitor.log.util.MonitorLogUtil;
 import com.xxl.job.core.biz.model.ReturnT;
 import com.xxl.job.core.handler.IJobHandler;
 import lombok.AllArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -23,6 +26,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
+
+import java.lang.reflect.Method;
 
 @Configuration
 @ConditionalOnProperty(prefix = "monitor.log.xxljob", name = "enable", havingValue = "true", matchIfMissing = true)
@@ -36,9 +41,18 @@ class XxlJobMonitorLogConfiguration {
         return new XxlJobLogMonitorExecuteInterceptor();
     }
 
-    @Aspect
     @Slf4j
+    @Aspect
     static class XxlJobLogMonitorExecuteInterceptor implements BeanPostProcessor, Ordered {
+        //处理基于@XxlJob注解的形式
+        @Around("@annotation(com.xxl.job.core.handler.annotation.XxlJob)")
+        Object doAround(ProceedingJoinPoint pjp) throws Throwable {
+            Object[] args = pjp.getArgs();
+            Object target = pjp.getTarget();
+            Method method = ((MethodSignature) pjp.getSignature()).getMethod();
+            return new TaskProxy<>(target.getClass(), method.getName(), args).doAround(e -> (ReturnT<Object>) pjp.proceed(e));
+        }
+
         @Override
         public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
             if (bean instanceof IJobHandler && !(bean instanceof EnhancedJobHandler)) {
@@ -58,20 +72,34 @@ class XxlJobMonitorLogConfiguration {
     static class EnhancedJobHandler extends IJobHandler {
         private final IJobHandler handler;
 
+        //处理基于实现IJobHandler父类的形式
+        @SneakyThrows
         @Override
         public ReturnT<String> execute(String param) throws Exception {
+            TaskInvoker<String> invoker = args -> handler.execute(args != null && args.length > 0 ? (String) args[0] : null);
+            return new TaskProxy<String>(handler.getClass(), "execute", new Object[]{param}).doAround(invoker);
+        }
+    }
+
+    @AllArgsConstructor
+    static class TaskProxy<T> {
+        private Class<?> cls;
+        private String method;
+        private Object[] args;
+
+        ReturnT<T> doAround(TaskInvoker<T> invoker) throws Throwable {
             long start = System.currentTimeMillis();
             MonitorLogParams params = new MonitorLogParams();
             params.setLogPoint(LogPoint.xxljob);
-            params.setServiceCls(handler.getClass());
-            params.setService(handler.getClass().getSimpleName());
-            params.setAction("execute");
-            params.setInput(new Object[]{param});
+            params.setServiceCls(cls);
+            params.setService(cls.getSimpleName());
+            params.setAction(method);
+            params.setInput(args);
             params.setSuccess(true);
             params.setMsgCode(ErrorEnum.SUCCESS.name());
             params.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
             try {
-                ReturnT<String> ret = handler.execute(param);
+                ReturnT<T> ret = invoker.invoke(args);
                 params.setSuccess(ret.getCode() == ReturnT.SUCCESS_CODE);
                 params.setMsgCode(String.valueOf(ret.getCode()));
                 params.setMsgInfo(ret.getMsg());
@@ -89,5 +117,10 @@ class XxlJobMonitorLogConfiguration {
                 MonitorLogUtil.log(params);
             }
         }
+    }
+
+    @FunctionalInterface
+    interface TaskInvoker<T> {
+        ReturnT<T> invoke(Object[] args) throws Throwable;
     }
 }
