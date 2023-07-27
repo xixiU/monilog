@@ -1,8 +1,6 @@
-package com.jiduauto.monitor.log;
+package com.jiduauto.monitor.log.parse;
 
 
-import com.jiduauto.monitor.log.parse.ResultParseStrategy;
-import com.jiduauto.monitor.log.parse.ResultParser;
 import com.jiduauto.monitor.log.util.ReflectUtil;
 
 import java.lang.annotation.ElementType;

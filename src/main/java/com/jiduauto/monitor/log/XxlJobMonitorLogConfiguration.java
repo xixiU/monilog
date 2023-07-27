@@ -2,10 +2,12 @@
 package com.jiduauto.monitor.log;
 
 
+import com.jiduauto.monitor.log.parse.LogParser;
 import com.jiduauto.monitor.log.aop.MonitorLogAop;
 import com.jiduauto.monitor.log.enums.LogPoint;
 import com.jiduauto.monitor.log.model.MonitorLogProperties;
 import com.xxl.job.core.handler.IJobHandler;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -24,19 +26,22 @@ import javax.annotation.Resource;
 @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('xxljob')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('xxljob'))")
 class XxlJobMonitorLogConfiguration {
     @Resource
-    private MonitorLogProperties monitorLogProperties;
+    private MonitorLogProperties.XxljobProperties xxljobProperties;
 
     @Bean
     public XxlJobLogMonitorExecuteInterceptor xxlJobExecuteInterceptor() {
-        return new XxlJobLogMonitorExecuteInterceptor();
+        return new XxlJobLogMonitorExecuteInterceptor(xxljobProperties);
     }
 
     @Aspect
     @Slf4j
-    class XxlJobLogMonitorExecuteInterceptor {
+    @AllArgsConstructor
+    static class XxlJobLogMonitorExecuteInterceptor {
+        private MonitorLogProperties.XxljobProperties xxljobProperties;
+
         @Around("execution(* com.xxl.job.core.handler.IJobHandler+.execute(..))")
         public Object interceptXxlJob(ProceedingJoinPoint pjp) throws Throwable {
-            return MonitorLogAop.processAround(pjp, LogParser.Default.buildInstance(monitorLogProperties.getXxljob().getBoolExprDefault()), LogPoint.xxljob);
+            return MonitorLogAop.processAround(pjp, LogParser.Default.buildInstance(xxljobProperties.getBoolExprDefault()), LogPoint.xxljob);
         }
     }
 }

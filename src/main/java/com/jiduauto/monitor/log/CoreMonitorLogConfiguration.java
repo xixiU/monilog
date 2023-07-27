@@ -35,8 +35,8 @@ public class CoreMonitorLogConfiguration {
         return new MonitorLogAop();
     }
 
-    @ConditionalOnMissingBean(MonitorLogPrinter.class)
     @Bean
+    @ConditionalOnMissingBean(MonitorLogPrinter.class)
     public MonitorLogPrinter monitorLogPrinter() {
         return new DefaultMonitorLogPrinter();
     }

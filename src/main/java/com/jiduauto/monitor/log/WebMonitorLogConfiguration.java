@@ -2,6 +2,7 @@ package com.jiduauto.monitor.log;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.jiduauto.monitor.log.parse.LogParser;
 import com.jiduauto.monitor.log.annotation.MonitorLogTags;
 import com.jiduauto.monitor.log.constant.Constants;
 import com.jiduauto.monitor.log.enums.ErrorEnum;
@@ -63,7 +64,7 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
     private static final String JIDU_JNS_HEADER = "X-JIDU-SERVICENAME";
     private static final String USER_AGENT = "User-Agent";
     @Resource
-    private MonitorLogProperties monitorLogProperties;
+    private MonitorLogProperties.WebProperties webProperties;
 
     @Bean
     FilterRegistrationBean<WebMonitorLogConfiguration> logMonitorFilterBean() {
@@ -79,7 +80,7 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
     @Override
     public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws IOException, ServletException {
         String requestURI = request.getRequestURI();
-        Set<String> urlBlackList = monitorLogProperties.getWeb().getUrlBlackList();
+        Set<String> urlBlackList = webProperties.getUrlBlackList();
         if (CollectionUtils.isEmpty(urlBlackList)) {
             urlBlackList = new HashSet<>();
         }

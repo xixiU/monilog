@@ -3,6 +3,7 @@ package com.jiduauto.monitor.log;
 import com.alibaba.fastjson.JSON;
 import com.google.protobuf.MessageOrBuilder;
 import com.google.protobuf.util.JsonFormat;
+import com.jiduauto.monitor.log.parse.LogParser;
 import com.jiduauto.monitor.log.enums.ErrorEnum;
 import com.jiduauto.monitor.log.enums.LogPoint;
 import com.jiduauto.monitor.log.model.MonitorLogParams;
@@ -41,15 +42,15 @@ import java.util.stream.Collectors;
 class GrpcMonitorLogConfiguration {
     private static final String TIME_KEY = "nowTime";
 
-    @GrpcGlobalServerInterceptor
     @Order(-100)
+    @GrpcGlobalServerInterceptor
     @ConditionalOnProperty(prefix = "monitor.log.grpc.server", name = "enable", havingValue = "true", matchIfMissing = true)
     GrpcLogPrintServerInterceptor grpcLogPrintServerInterceptor() {
         return new GrpcLogPrintServerInterceptor();
     }
 
-    @GrpcGlobalClientInterceptor
     @Order(-101)
+    @GrpcGlobalClientInterceptor
     @ConditionalOnClass(name = "io.grpc.ClientInterceptor")
     @ConditionalOnProperty(prefix = "monitor.log.grpc.client", name = "enable", havingValue = "true", matchIfMissing = true)
     GrpcLogPrintClientInterceptor grpcLogPrintClientInterceptor() {

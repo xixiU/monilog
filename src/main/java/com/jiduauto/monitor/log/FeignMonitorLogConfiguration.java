@@ -7,6 +7,7 @@ import com.jiduauto.monitor.log.enums.LogPoint;
 import com.jiduauto.monitor.log.model.ErrorInfo;
 import com.jiduauto.monitor.log.model.MonitorLogParams;
 import com.jiduauto.monitor.log.model.MonitorLogProperties;
+import com.jiduauto.monitor.log.parse.LogParser;
 import com.jiduauto.monitor.log.parse.ParsedResult;
 import com.jiduauto.monitor.log.parse.ResultParseStrategy;
 import com.jiduauto.monitor.log.util.*;
@@ -20,7 +21,6 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
@@ -42,7 +42,6 @@ import java.util.Map;
  * @date 2023/07/24
  */
 @Configuration
-@EnableConfigurationProperties
 @ConditionalOnProperty(prefix = "monitor.log.feign", name = "enable", havingValue = "true", matchIfMissing = true)
 @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('feign')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('feign'))")
 @ConditionalOnClass({Feign.class, CoreMonitorLogConfiguration.class})

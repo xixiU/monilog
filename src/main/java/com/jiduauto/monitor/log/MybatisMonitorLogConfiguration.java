@@ -57,7 +57,7 @@ class MybatisMonitorLogConfiguration {
     @Slf4j
     static class MybatisInterceptor implements Interceptor {
         @Resource
-        private MonitorLogProperties monitorLogProperties;
+        private MonitorLogProperties.MybatisProperties mybatisProperties;
         private static final String SQL = "sql";
         private static final String SQL_COST_TOO_LONG = "sqlCostTooLang";
 
@@ -99,7 +99,7 @@ class MybatisMonitorLogConfiguration {
                 tags.add(SQL);
                 tags.add(sql);
                 // 超过两秒的，打印错误日志
-                if (costTime > monitorLogProperties.getMybatis().getLongQueryTime()) {
+                if (costTime > mybatisProperties.getLongQueryTime()) {
                     MetricMonitor.record(SQL_COST_TOO_LONG + MonitorType.RECORD.getMark(), tags.toArray(new String[0]));
                     log.error("sql cost time too long, sql{}, time:{}", sql, costTime);
                 }

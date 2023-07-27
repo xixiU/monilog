@@ -1,8 +1,7 @@
 package com.jiduauto.monitor.log.aop;
 
 
-import com.jiduauto.monitor.log.LogParser;
-import com.jiduauto.monitor.log.MonitorLogAspectCtx;
+import com.jiduauto.monitor.log.parse.LogParser;
 import com.jiduauto.monitor.log.enums.LogPoint;
 import com.jiduauto.monitor.log.model.MonitorLogParams;
 import com.jiduauto.monitor.log.parse.ParsedResult;
