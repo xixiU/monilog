@@ -5,10 +5,7 @@ import com.jiduauto.log.core.annotation.MonitorLogTags;
 import com.jiduauto.log.core.constant.Constants;
 import com.jiduauto.log.core.enums.LogPoint;
 import com.jiduauto.log.core.model.MonitorLogParams;
-import com.jiduauto.log.core.util.MonitorLogUtil;
-import com.jiduauto.log.core.util.ReflectUtil;
-import com.jiduauto.log.core.util.SpringUtils;
-import com.jiduauto.log.core.util.StringUtil;
+import com.jiduauto.log.core.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -19,6 +16,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerExecutionChain;
@@ -45,11 +43,12 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 class LogMonitorHandlerFilter extends OncePerRequestFilter {
+    private static final AntPathMatcher antPathMatcher = new AntPathMatcher();
     /**
      * 不监控的日url清单，支持模糊路径如a/*
      */
     @Value("${monitor.log.web.blackList}")
-    private List<String> BLACK_LIST;
+    private List<String> blackList;
 
     /**
      * 请求header
@@ -59,7 +58,7 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
     /**
      * 请求body
      */
-    private HashMap<String, String> requestBodyMap ;
+    private HashMap<String, String> requestBodyMap;
 
     /**
      * 输出字符串
@@ -72,13 +71,13 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
     private String requestURI;
 
     @Override
-    public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,  @NonNull FilterChain filterChain) throws IOException, ServletException {
+    public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws IOException, ServletException {
         requestURI = request.getRequestURI();
-        if (CollectionUtils.isEmpty(BLACK_LIST)) {
-            BLACK_LIST = Collections.singletonList(WebLogConstant.MISC_PING_URL);
+        if (CollectionUtils.isEmpty(blackList)) {
+            blackList = Collections.singletonList(WebLogConstant.MISC_PING_URL);
         }
 
-        if (UrlMatcherUtils.checkUrlMatch(BLACK_LIST, requestURI)) {
+        if (checkUrlMatch(blackList, requestURI)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -89,7 +88,6 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
             return;
         }
         List<String> tagList = new ArrayList<>();
-
         MonitorLogTags logTags = ReflectUtil.getAnnotation(MonitorLogTags.class, method.getBeanType(), method.getMethod());
         if (logTags != null && logTags.tags() != null) {
             if (logTags.tags().length % 2 == 0) {
@@ -107,11 +105,8 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
         logParams.setServiceCls(method.getBeanType());
         logParams.setService(method.getBeanType().getSimpleName());
         logParams.setAction(method.getMethod().getName());
-        tagList.add(WebLogConstant.URI);
-        tagList.add(requestURI);
-        tagList.add(WebLogConstant.METHOD);
-        tagList.add(request.getMethod());
-        logParams.setTags(tagList.toArray(new String[0]));
+        TagBuilder tagBuilder = TagBuilder.of(tagList).add(WebLogConstant.URI, requestURI).add(WebLogConstant.METHOD, request.getMethod());
+        logParams.setTags(tagBuilder.toArray());
 
         requestHeaderMap = getRequestHeaders(request);
         boolean isMultipart = ServletFileUpload.isMultipartContent(request);
@@ -121,9 +116,9 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
         logParams.setInput(new Object[]{formatRequestInfo(request)});
         //TODO 增加LogParser注解
 
-        try{
+        try {
             dealRequestTags(wrapperRequest, logParams);
-        }catch (Exception e){
+        } catch (Exception e) {
             log.error("dealRequestTags error", e);
         }
         try {
@@ -188,12 +183,10 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
 
 
     private static HandlerMethod getHandlerMethod(HttpServletRequest request) {
-        Map<String, HandlerMapping> matchingBeans =
-                BeanFactoryUtils.beansOfTypeIncludingAncestors(SpringUtils.getApplicationContext(),
-                        HandlerMapping.class, true, false);
+        Map<String, HandlerMapping> matchingBeans = BeanFactoryUtils.beansOfTypeIncludingAncestors(SpringUtils.getApplicationContext(), HandlerMapping.class, true, false);
         List<HandlerMapping> handlerMappings = new ArrayList<>(matchingBeans.values());
         for (HandlerMapping mapping : handlerMappings) {
-            HandlerExecutionChain handlerExecutionChain = null;
+            HandlerExecutionChain handlerExecutionChain;
             try {
                 handlerExecutionChain = mapping.getHandler(request);
             } catch (Exception e) {
@@ -203,7 +196,6 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
             if (handlerExecutionChain == null) {
                 continue;
             }
-
             if (!(handlerExecutionChain.getHandler() instanceof HandlerMethod)) {
                 continue;
             }
@@ -250,7 +242,7 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
         String[] oriTags = logParams.getTags();
         Map<String, String> headersMap = MapUtils.isNotEmpty(requestHeaderMap) ? requestHeaderMap : new HashMap<>();
 
-        HashMap<String, String> requestBody = MapUtils.isNotEmpty(requestBodyMap)? requestBodyMap: new HashMap<>();
+        HashMap<String, String> requestBody = MapUtils.isNotEmpty(requestBodyMap) ? requestBodyMap : new HashMap<>();
 
         for (int i = 0; oriTags != null && i < oriTags.length; i++) {
             if (!oriTags[i].startsWith("{") || !oriTags[i].endsWith("}")) {
@@ -279,9 +271,10 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
         logParams.setTags(oriTags);
     }
 
-    private static void swapTag(String[] oriTags, int index, String resultTagValue){
+    private static void swapTag(String[] oriTags, int index, String resultTagValue) {
         swapTag(oriTags, index, resultTagValue, false);
     }
+
     private static void swapTag(String[] oriTags, int index, String resultTagValue, boolean valueEmptySkip) {
         if (valueEmptySkip && StringUtils.isBlank(resultTagValue)) {
             return;
@@ -309,7 +302,7 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
     }
 
     private JSONObject formatRequestInfo(HttpServletRequest request) {
-        String bodyParams =  isDownstream(requestHeaderMap)? "Binary data" : getRequestBody(request);
+        String bodyParams = isDownstream(requestHeaderMap) ? "Binary data" : getRequestBody(request);
         Map<String, String[]> parameterMap = request.getParameterMap();
         JSONObject obj = new JSONObject();
         if (StringUtils.isNotBlank(bodyParams)) {
@@ -347,5 +340,14 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
             }
         }
         return "";
+    }
+
+    private static boolean checkUrlMatch(List<String> urls, String url) {
+        for (String pattern : urls) {
+            if (antPathMatcher.match(pattern, url)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
