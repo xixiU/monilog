@@ -52,8 +52,8 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
     /**
      * 集度JNS请求时header中会带X-JIDU-SERVICENAME
      */
-    public static final String JIDU_JNS_HEADER = "X-JIDU-SERVICENAME";
-    public static final String USER_AGENT = "User-Agent";
+    private static final String JIDU_JNS_HEADER = "X-JIDU-SERVICENAME";
+    private static final String USER_AGENT = "User-Agent";
     private static final AntPathMatcher antPathMatcher = new AntPathMatcher();
     /**
      * 不监控的url清单，支持模糊路径如a/*
