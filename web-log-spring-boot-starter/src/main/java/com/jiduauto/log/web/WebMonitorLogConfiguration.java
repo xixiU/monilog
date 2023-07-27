@@ -56,7 +56,7 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
     public static final String USER_AGENT = "User-Agent";
     private static final AntPathMatcher antPathMatcher = new AntPathMatcher();
     /**
-     * 不监控的日url清单，支持模糊路径如a/*
+     * 不监控的url清单，支持模糊路径如a/*
      */
     @Value("${monitor.log.web.blackList:[/actuator/health, /misc/ping, /actuator/prometheus]}")
     private List<String> blackList;
