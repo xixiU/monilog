@@ -5,6 +5,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -23,15 +24,19 @@ public class TagBuilder {
         return new TagBuilder().add(tags);
     }
 
+    public static TagBuilder of(String[] tags) {
+        return of(Arrays.asList(tags));
+    }
+
     public static TagBuilder of(String key, String value) {
         return new TagBuilder().add(key, value);
     }
 
-    public static TagBuilder of(String k1, String v1, String k2,String v2) {
-        return new TagBuilder().add(k1,v1).add(k2,v2);
+    public static TagBuilder of(String k1, String v1, String k2, String v2) {
+        return new TagBuilder().add(k1, v1).add(k2, v2);
     }
 
-    public static TagBuilder of(String k1, String v1, String k2,String v2, String k3, String v3) {
+    public static TagBuilder of(String k1, String v1, String k2, String v2, String k3, String v3) {
         return new TagBuilder().add(k1, v1).add(k2, v2).add(k3, v3);
     }
 

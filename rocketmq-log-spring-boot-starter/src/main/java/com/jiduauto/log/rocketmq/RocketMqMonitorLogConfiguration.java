@@ -219,7 +219,7 @@ class RocketMqMonitorLogConfiguration {
             List<Object> obj = new ArrayList<>();
             for (MessageExt msg : msgs) {
                 String str = new String(msg.getBody(), StandardCharsets.UTF_8);
-                JSON json = StringUtil.tryConvert2Json(str);
+                JSON json = MonitorStringUtil.tryConvert2Json(str);
                 obj.add(json == null ? str : json);
             }
             return obj.toArray(new Object[0]);

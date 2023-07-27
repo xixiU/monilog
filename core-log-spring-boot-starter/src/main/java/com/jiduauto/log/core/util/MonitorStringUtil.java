@@ -13,7 +13,7 @@ import java.util.Map;
  * @author yp
  * @date 2023/07/25
  */
-public class StringUtil {
+public class MonitorStringUtil {
 
     /**
      * 尝试转换成json，转换不了异常吞掉

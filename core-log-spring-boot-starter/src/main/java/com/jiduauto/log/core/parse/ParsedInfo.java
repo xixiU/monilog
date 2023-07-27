@@ -10,7 +10,7 @@ import java.util.Collection;
 /**
  * 解析结果
  */
-public class ParsedInfo<T> {
+final class ParsedInfo<T> {
     private final Class<T> valueClass;
     /**
      * 通过jsonpath解析到的值

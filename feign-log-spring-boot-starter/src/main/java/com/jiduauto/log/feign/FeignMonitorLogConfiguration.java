@@ -177,11 +177,11 @@ class FeignMonitorLogConfiguration {
             Map<String, Collection<String>> headers = request.headers();
             JSONObject obj = new JSONObject();
             if (StringUtils.isNotBlank(bodyParams)) {
-                JSON json = StringUtil.tryConvert2Json(bodyParams);
+                JSON json = MonitorStringUtil.tryConvert2Json(bodyParams);
                 obj.put("body", json != null ? json : bodyParams);
             }
             if (MapUtils.isNotEmpty(queries)) {
-                obj.put("query", StringUtil.encodeQueryString(queries));
+                obj.put("query", MonitorStringUtil.encodeQueryString(queries));
             }
             if (MapUtils.isNotEmpty(headers)) {
                 Map<String, String> headerMap = new HashMap<>();

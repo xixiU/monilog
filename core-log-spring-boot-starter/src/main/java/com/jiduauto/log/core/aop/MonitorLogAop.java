@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.annotation.Pointcut;
 
 /**
  * @author yp
@@ -17,12 +16,8 @@ import org.aspectj.lang.annotation.Pointcut;
 @Slf4j
 @Aspect
 public class MonitorLogAop {
-    @Pointcut("@within(com.jiduauto.log.core.annotation.MonitorLog)")
-    private void monitorLogPointCut() {
-    }
-
-    @Around("monitorLogPointCut()")
-    public Object doAround(ProceedingJoinPoint pjp) throws Throwable {
+    @Around("@within(com.jiduauto.log.core.annotation.MonitorLog)")
+    Object doAround(ProceedingJoinPoint pjp) throws Throwable {
         return processAround(pjp);
     }
 

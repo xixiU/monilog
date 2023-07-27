@@ -214,7 +214,7 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
     private void dealResponseTags(MonitorLogParams logParams) {
         String[] oriTags = logParams.getTags();
 
-        HashMap<String, String> jsonMap = StringUtil.tryConvert2Map(responseBodyStr);
+        HashMap<String, String> jsonMap = MonitorStringUtil.tryConvert2Map(responseBodyStr);
         if (MapUtils.isEmpty(jsonMap)) {
             return;
         }
@@ -306,13 +306,13 @@ class LogMonitorHandlerFilter extends OncePerRequestFilter {
         Map<String, String[]> parameterMap = request.getParameterMap();
         JSONObject obj = new JSONObject();
         if (StringUtils.isNotBlank(bodyParams)) {
-            requestBodyMap = StringUtil.tryConvert2Map(bodyParams);
+            requestBodyMap = MonitorStringUtil.tryConvert2Map(bodyParams);
             obj.put("body", requestBodyMap != null ? requestBodyMap : bodyParams);
         }
         if (MapUtils.isNotEmpty(parameterMap)) {
             Map<String, Collection<String>> collected = parameterMap.entrySet().stream()
                     .collect(Collectors.toMap(Map.Entry::getKey, item -> Arrays.asList(item.getValue())));
-            obj.put("query", StringUtil.encodeQueryString(collected));
+            obj.put("query", MonitorStringUtil.encodeQueryString(collected));
         }
         if (MapUtils.isNotEmpty(requestHeaderMap)) {
             obj.put("headers", requestHeaderMap);

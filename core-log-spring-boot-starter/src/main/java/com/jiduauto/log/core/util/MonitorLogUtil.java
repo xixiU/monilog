@@ -7,12 +7,7 @@ import com.jiduauto.log.core.enums.MonitorType;
 import com.jiduauto.log.core.model.MonitorLogParams;
 import com.metric.MetricMonitor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.core.io.support.SpringFactoriesLoader;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -22,8 +17,6 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 public class MonitorLogUtil {
-//    private static final List<MonitorLogPrinter> MONITOR_LOG_PRINTERS = SpringFactoriesLoader.loadFactories(MonitorLogPrinter.class, Thread.currentThread().getContextClassLoader());
-
     private static final String applicationName = SpringUtils.getApplicationName();
 
     public static void log(MonitorLogParams logParams) {
@@ -39,9 +32,6 @@ public class MonitorLogUtil {
             if (printer != null) {
                 printer.log(logParams);
             }
-//            for (MonitorLogPrinter printer : MONITOR_LOG_PRINTERS) {
-//                printer.log(logParams);
-//            }
         } catch (Exception e) {
             log.error("log error", e);
         }
@@ -58,65 +48,27 @@ public class MonitorLogUtil {
         MetricMonitor.record(name + MonitorType.RECORD.getMark(), tags);
         // 对返回值添加累加记录
         MetricMonitor.cumulation(name + MonitorType.CUMULATION.getMark(), 1, tags);
-        if (logParams.getCost() > 0L) {
-            MetricMonitor.eventDruation(name + MonitorType.TIMER.getMark(), tags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
-        }
+        MetricMonitor.eventDruation(name + MonitorType.TIMER.getMark(), tags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
     }
 
     /**
      * 统一打上环境标、应用名、打标类型、处理结果
-     *
-     * @param logParams
-     * @return
      */
-
     public static String[] processTags(MonitorLogParams logParams) {
-        String[] tags = logParams.getTags();
-        ArrayList<String> tagList = new ArrayList<>();
-
-        if (tags != null && tags.length > 0) {
-            tagList = new ArrayList<>(Arrays.asList(tags));
-        }
-        tagList.add(Constants.RESULT);
-        boolean success = logParams.isSuccess();
-        if (!success || logParams.getException() != null) {
-            tagList.add(Constants.ERROR);
-        } else {
-            tagList.add(Constants.SUCCESS);
-        }
-        if (StringUtils.isNotBlank(logParams.getMsgCode())) {
-            tagList.add(Constants.MSG_CODE);
-            tagList.add(logParams.getMsgCode());
-        }
-        tagList.add(Constants.APPLICATION);
-        tagList.add(applicationName);
-        tagList.add(Constants.LOG_POINT);
-        tagList.add(logParams.getLogPoint().name());
-        tagList.add(Constants.ENV);
-        tagList.add(SpringUtils.getActiveProfile());
+        TagBuilder tb = TagBuilder.of(logParams.getTags());
+        boolean success = logParams.isSuccess() && logParams.getException() == null;
+        tb.add(Constants.RESULT, success ? Constants.SUCCESS : Constants.ERROR)
+                .add(Constants.APPLICATION, applicationName)
+                .add(Constants.LOG_POINT, logParams.getLogPoint().name())
+                .add(Constants.ENV, SpringUtils.getActiveProfile())
+                .add(Constants.SERVICE_NAME, logParams.getService())
+                .add(Constants.ACTION_NAME, logParams.getAction())
+                .add(Constants.MSG_CODE, logParams.getMsgCode())
+                .add(Constants.COST, String.valueOf(logParams.getCost()));
         if (logParams.getException() != null) {
             Throwable exception = logParams.getException();
-            tagList.add(Constants.EXCEPTION);
-            tagList.add(exception.getClass().getSimpleName());
-
-            tagList.add(Constants.EXCEPTION_MSG);
-            tagList.add(exception.getMessage());
+            tb.add(Constants.EXCEPTION, exception.getClass().getSimpleName()).add(Constants.EXCEPTION_MSG, exception.getMessage());
         }
-
-        if (StringUtils.isNotBlank(logParams.getService())) {
-            tagList.add(Constants.SERVICE_NAME);
-            tagList.add(logParams.getService());
-        }
-
-        if (StringUtils.isNotBlank(logParams.getAction())) {
-            tagList.add(Constants.ACTION_NAME);
-            tagList.add(logParams.getAction());
-        }
-        if (logParams.getCost() > 0L) {
-            tagList.add(Constants.COST);
-            tagList.add(String.valueOf(logParams.getCost()));
-        }
-        tags = tagList.toArray(new String[0]);
-        return tags;
+        return tb.toArray();
     }
 }
