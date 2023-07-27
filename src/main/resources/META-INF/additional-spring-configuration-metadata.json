@@ -18,13 +18,13 @@
     {
       "name": "monitor.log.component.includes",
       "type": "java.util.Set<java.lang.String>",
-      "sourceType": "com.jiduauto.monitor.log.model.MonitorLogProperties$ComponentProperties",
+      "sourceType": "com.jiduauto.monitor.log.model.MonitorLogProperties",
       "description": "监控开启组件清单，默认为*，目前支持feign,grpc,mybatis,rocketmq,web,xxljob，可以一键设置开启."
     },
     {
       "name": "monitor.log.component.excludes",
       "type": "java.util.Set<java.lang.String>",
-      "sourceType": "com.jiduauto.monitor.log.model.MonitorLogProperties$ComponentProperties",
+      "sourceType": "com.jiduauto.monitor.log.model.MonitorLogProperties",
       "description": "监控不开启组件清单，默认为为空，目前支持feign,grpc,mybatis,rocketmq,web,xxljob，可以一键设置不开启."
     },
     {
