@@ -58,7 +58,7 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
     /**
      * 不监控的日url清单，支持模糊路径如a/*
      */
-    @Value("${monitor.log.web.blackList}")
+    @Value("${monitor.log.web.blackList:[/actuator/health, /misc/ping, /actuator/prometheus]}")
     private List<String> blackList;
 
     @Bean
@@ -76,7 +76,7 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
     public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws IOException, ServletException {
         String requestURI = request.getRequestURI();
         if (CollectionUtils.isEmpty(blackList)) {
-            blackList = Lists.newArrayList("/actuator/health", "/misc/ping", "/actuator/prometheus");
+            blackList = Lists.newArrayList();
         }
         if (checkUrlMatch(blackList, requestURI)) {
             filterChain.doFilter(request, response);
