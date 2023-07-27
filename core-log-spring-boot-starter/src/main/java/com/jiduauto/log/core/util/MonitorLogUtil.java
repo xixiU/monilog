@@ -8,11 +8,9 @@ import com.jiduauto.log.core.model.MonitorLogParams;
 import com.metric.MetricMonitor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.core.io.support.SpringFactoriesLoader;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -23,8 +21,6 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class MonitorLogUtil {
 //    private static final List<MonitorLogPrinter> MONITOR_LOG_PRINTERS = SpringFactoriesLoader.loadFactories(MonitorLogPrinter.class, Thread.currentThread().getContextClassLoader());
-
-    private static final String applicationName = SpringUtils.getApplicationName();
 
     public static void log(MonitorLogParams logParams) {
         MonitorLogPrinter printer = null;
@@ -39,9 +35,6 @@ public class MonitorLogUtil {
             if (printer != null) {
                 printer.log(logParams);
             }
-//            for (MonitorLogPrinter printer : MONITOR_LOG_PRINTERS) {
-//                printer.log(logParams);
-//            }
         } catch (Exception e) {
             log.error("log error", e);
         }
@@ -58,9 +51,7 @@ public class MonitorLogUtil {
         MetricMonitor.record(name + MonitorType.RECORD.getMark(), tags);
         // 对返回值添加累加记录
         MetricMonitor.cumulation(name + MonitorType.CUMULATION.getMark(), 1, tags);
-        if (logParams.getCost() > 0L) {
-            MetricMonitor.eventDruation(name + MonitorType.TIMER.getMark(), tags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
-        }
+        MetricMonitor.eventDruation(name + MonitorType.TIMER.getMark(), tags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -89,7 +80,7 @@ public class MonitorLogUtil {
             tagList.add(logParams.getMsgCode());
         }
         tagList.add(Constants.APPLICATION);
-        tagList.add(applicationName);
+        tagList.add(SpringUtils.getApplicationName());
         tagList.add(Constants.LOG_POINT);
         tagList.add(logParams.getLogPoint().name());
         tagList.add(Constants.ENV);
