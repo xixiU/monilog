@@ -6,6 +6,7 @@ import com.alibaba.fastjson.TypeReference;
 import com.jiduauto.log.core.annotation.MonitorLogTags;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.util.AntPathMatcher;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -16,6 +17,19 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 public class MonitorStringUtil {
+    private static final AntPathMatcher antPathMatcher = new AntPathMatcher();
+
+    public static boolean checkPathMatch(Collection<String> pathList, String toCheckPath) {
+        if (CollectionUtils.isEmpty(pathList)) {
+            return false;
+        }
+        for (String pattern : pathList) {
+            if (antPathMatcher.match(pattern, toCheckPath)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /**
      * 从注解中获取tag列表

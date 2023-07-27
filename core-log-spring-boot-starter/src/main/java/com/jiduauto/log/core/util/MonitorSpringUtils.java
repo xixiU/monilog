@@ -174,7 +174,7 @@ public class MonitorSpringUtils implements BeanFactoryPostProcessor, Application
         if (StringUtils.isNotBlank(property)) {
             return property;
         }
-        return getProperty("monitor.log.app-name");
+        return getProperty("monitor.log.appname");
     }
 
     /**

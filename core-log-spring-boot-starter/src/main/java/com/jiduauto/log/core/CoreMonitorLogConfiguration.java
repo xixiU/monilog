@@ -6,15 +6,17 @@ import com.jiduauto.log.core.model.MonitorLogParams;
 import com.jiduauto.log.core.model.MonitorLogProperties;
 import com.jiduauto.log.core.util.MonitorLogUtil;
 import com.jiduauto.log.core.util.MonitorSpringUtils;
+import com.jiduauto.log.core.util.MonitorStringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+
+import javax.annotation.Resource;
 
 /**
  * @author yp
@@ -25,6 +27,8 @@ import org.springframework.context.annotation.Import;
 @ConditionalOnProperty(prefix = "monitor.log", name = "enable", matchIfMissing = true)
 @Import({MonitorSpringUtils.class})
 public class CoreMonitorLogConfiguration {
+    @Resource
+    private MonitorLogProperties monitorLogProperties;
 
     @Bean
     public MonitorLogAop aspectProcessor() {
@@ -42,11 +46,7 @@ public class CoreMonitorLogConfiguration {
      * @description: 默认日志打印方式
      * @date 2023/7/25 20:55
      */
-    static class DefaultMonitorLogPrinter implements MonitorLogPrinter {
-
-        @Value("${monitor.log.printer.text.len.max:5000}")
-        private int maxTextLen = 5000;
-
+    class DefaultMonitorLogPrinter implements MonitorLogPrinter {
         @Override
         public void log(MonitorLogParams logParams) {
             if (logParams == null) {
@@ -69,13 +69,33 @@ public class CoreMonitorLogConfiguration {
             Throwable ex = logParams.getException();
 
             if (!logParams.isSuccess()) {
-                logger.error("monitorlog[{}]-{}.{} {}-{}-{} {} input:{}, output:{}", logPoint, service, action, success, code, msg, rt, input, output, ex);
+                logger.error("monitor log[{}]-{}.{} {}-{}-{} {} input:{}, output:{}", logPoint, service, action, success, code, msg, rt, input, output, ex);
+                return;
+            }
+            boolean needLog = needLog(logPoint, service, action);
+            if (!needLog) {
                 return;
             }
             String tags = JSON.toJSONString(MonitorLogUtil.processTags(logParams));
-            logger.error("monitorlog[{}]-{}.{} {}-{}-{} {} input:{}, output:{}, tags:{}", logPoint, service, action, success, code, msg, rt, input, output, tags);
+            logger.info("monitor log[{}]-{}.{} {}-{}-{} {} input:{}, output:{}, tags:{}", logPoint, service, action, success, code, msg, rt, input, output, tags);
         }
+
+        private boolean needLog(String logPoint, String service, String action) {
+            MonitorLogProperties.PrinterLogProperties printer = monitorLogProperties.getPrinter();
+            if (MonitorStringUtil.checkPathMatch(printer.getInfoExcludeLogPoint(), logPoint)) {
+                return false;
+            }
+            if (MonitorStringUtil.checkPathMatch(printer.getInfoExcludeService(), service)) {
+                return false;
+            }
+            if (MonitorStringUtil.checkPathMatch(printer.getInfoExcludeAction(), action)) {
+                return false;
+            }
+            return true;
+        }
+
         private String formatLongText(Object o) {
+            int maxTextLen = monitorLogProperties.getPrinter().getTextLenMax();
             if (o == null || o instanceof String) {
                 return (String) o;
             }

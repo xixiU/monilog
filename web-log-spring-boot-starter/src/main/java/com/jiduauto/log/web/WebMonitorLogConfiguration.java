@@ -32,7 +32,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
-import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerExecutionChain;
@@ -50,6 +49,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.jiduauto.log.core.util.MonitorStringUtil.checkPathMatch;
+
 
 @Configuration
 @ConditionalOnWebApplication
@@ -63,7 +64,6 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
      */
     private static final String JIDU_JNS_HEADER = "X-JIDU-SERVICENAME";
     private static final String USER_AGENT = "User-Agent";
-    private static final AntPathMatcher antPathMatcher = new AntPathMatcher();
     /**
      * 不监控的url清单，支持模糊路径如a/*
      */
@@ -87,7 +87,7 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
         if (CollectionUtils.isEmpty(blackList)) {
             blackList = Lists.newArrayList();
         }
-        if (checkUrlMatch(blackList, requestURI)) {
+        if (checkPathMatch(blackList, requestURI)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -344,15 +344,6 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
             }
         }
         return "";
-    }
-
-    private static boolean checkUrlMatch(List<String> urls, String url) {
-        for (String pattern : urls) {
-            if (antPathMatcher.match(pattern, url)) {
-                return true;
-            }
-        }
-        return false;
     }
 
 

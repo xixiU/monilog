@@ -9,10 +9,10 @@
     },
     {
       "name": "monitor.log.web.blackList",
-      "type": "java.lang.String",
+      "type": "java.util.Set<java.lang.String>",
       "sourceType": "com.jiduauto.log.web.WebMonitorLogConfiguration",
-      "defaultValue": "/misc/ping",
-      "description": "web不记录url信息的接口清单"
+      "defaultValue": "/actuator/health,/misc/ping,/actuator/prometheus",
+      "description": "web不记录url信息的接口清单,支持模糊匹配"
     }
   ]
 }
