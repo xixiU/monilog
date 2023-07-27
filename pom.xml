@@ -6,7 +6,7 @@
 
     <groupId>com.jiduauto.log</groupId>
     <artifactId>monitor-log-spring-boot-starter</artifactId>
-    <version>1.0.5-SNAPSHOT</version>
+    <version>1.0.5-singleModule-SNAPSHOT</version>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
