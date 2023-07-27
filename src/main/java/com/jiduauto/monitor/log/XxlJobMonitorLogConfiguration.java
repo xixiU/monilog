@@ -2,16 +2,19 @@
 package com.jiduauto.monitor.log;
 
 
-import com.jiduauto.monitor.log.parse.LogParser;
-import com.jiduauto.monitor.log.aop.MonitorLogAop;
+import com.jiduauto.monitor.log.enums.ErrorEnum;
 import com.jiduauto.monitor.log.enums.LogPoint;
-import com.jiduauto.monitor.log.model.MonitorLogProperties;
+import com.jiduauto.monitor.log.model.ErrorInfo;
+import com.jiduauto.monitor.log.model.MonitorLogParams;
+import com.jiduauto.monitor.log.util.ExceptionUtil;
+import com.jiduauto.monitor.log.util.MonitorLogUtil;
+import com.xxl.job.core.biz.model.ReturnT;
 import com.xxl.job.core.handler.IJobHandler;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -19,8 +22,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import javax.annotation.Resource;
+import org.springframework.core.Ordered;
 
 @Configuration
 @ConditionalOnProperty(prefix = "monitor.log.xxljob", name = "enable", havingValue = "true", matchIfMissing = true)
@@ -29,23 +31,63 @@ import javax.annotation.Resource;
 @ConditionalOnBean(MonitorLogPrinter.class)
 @AutoConfigureAfter(CoreMonitorLogConfiguration.class)
 class XxlJobMonitorLogConfiguration {
-    @Resource
-    private MonitorLogProperties monitorLogProperties;
-
     @Bean
-    public XxlJobLogMonitorExecuteInterceptor xxlJobExecuteInterceptor() {
-        return new XxlJobLogMonitorExecuteInterceptor(monitorLogProperties.getXxljob());
+    XxlJobLogMonitorExecuteInterceptor xxlJobExecuteInterceptor() {
+        return new XxlJobLogMonitorExecuteInterceptor();
     }
 
     @Aspect
     @Slf4j
-    @AllArgsConstructor
-    static class XxlJobLogMonitorExecuteInterceptor {
-        private MonitorLogProperties.XxljobProperties xxljobProperties;
+    static class XxlJobLogMonitorExecuteInterceptor implements BeanPostProcessor, Ordered {
+        @Override
+        public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+            if (bean instanceof IJobHandler && !(bean instanceof EnhancedJobHandler)) {
+                return new EnhancedJobHandler((IJobHandler) bean);
+            }
+            return BeanPostProcessor.super.postProcessBeforeInitialization(bean, beanName);
+        }
 
-        @Around("execution(* com.xxl.job.core.handler.IJobHandler+.execute(..))")
-        public Object interceptXxlJob(ProceedingJoinPoint pjp) throws Throwable {
-            return MonitorLogAop.processAround(pjp, LogParser.Default.buildInstance(xxljobProperties.getBoolExprDefault()), LogPoint.xxljob);
+        @Override
+        public int getOrder() {
+            return Integer.MAX_VALUE;
+        }
+    }
+
+
+    @AllArgsConstructor
+    static class EnhancedJobHandler extends IJobHandler {
+        private final IJobHandler handler;
+
+        @Override
+        public ReturnT<String> execute(String param) throws Exception {
+            long start = System.currentTimeMillis();
+            MonitorLogParams params = new MonitorLogParams();
+            params.setLogPoint(LogPoint.xxljob);
+            params.setServiceCls(handler.getClass());
+            params.setService(handler.getClass().getSimpleName());
+            params.setAction("execute");
+            params.setInput(new Object[]{param});
+            params.setSuccess(true);
+            params.setMsgCode(ErrorEnum.SUCCESS.name());
+            params.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
+            try {
+                ReturnT<String> ret = handler.execute(param);
+                params.setSuccess(ret.getCode() == ReturnT.SUCCESS_CODE);
+                params.setMsgCode(String.valueOf(ret.getCode()));
+                params.setMsgInfo(ret.getMsg());
+                params.setOutput(ret.getContent());
+                return ret;
+            } catch (Exception ex) {
+                params.setException(ex);
+                ErrorInfo errorInfo = ExceptionUtil.parseException(ex);
+                params.setSuccess(false);
+                params.setMsgCode(errorInfo.getErrorCode());
+                params.setMsgInfo(errorInfo.getErrorMsg());
+                throw ex;
+            } finally {
+                params.setCost(System.currentTimeMillis() - start);
+                MonitorLogUtil.log(params);
+            }
         }
     }
 }
