@@ -65,7 +65,7 @@ class GrpcMonitorLogConfiguration {
         }
 
         @Slf4j
-        static class GrpcMonitorLogClientCall<ReqT, RespT> extends ForwardingClientCall.SimpleForwardingClientCall<ReqT, RespT> {
+        private static class GrpcMonitorLogClientCall<ReqT, RespT> extends ForwardingClientCall.SimpleForwardingClientCall<ReqT, RespT> {
             private final ConcurrentHashMap<String, Object> context;
             private final MonitorLogParams params;
             private final MethodDescriptor<ReqT, RespT> method;
@@ -136,7 +136,7 @@ class GrpcMonitorLogConfiguration {
         }
 
         @Slf4j
-        static class GrpcLogClientListener<RespT> extends ForwardingClientCallListener.SimpleForwardingClientCallListener<RespT> {
+        private static class GrpcLogClientListener<RespT> extends ForwardingClientCallListener.SimpleForwardingClientCallListener<RespT> {
             private final MonitorLogParams params;
 
             private final ConcurrentHashMap<String, Object> context;
@@ -237,7 +237,7 @@ class GrpcMonitorLogConfiguration {
         }
 
 
-        static class WrappedServerCall<ReqT, RespT> extends ForwardingServerCall.SimpleForwardingServerCall<ReqT, RespT> {
+        private static class WrappedServerCall<ReqT, RespT> extends ForwardingServerCall.SimpleForwardingServerCall<ReqT, RespT> {
             private final MonitorLogParams params;
             private final Map<String, Object> context;
 
@@ -270,7 +270,7 @@ class GrpcMonitorLogConfiguration {
         }
 
 
-        static class GrpcMonitorLogServerListener<ReqT> extends ForwardingServerCallListener.SimpleForwardingServerCallListener<ReqT> {
+        private static class GrpcMonitorLogServerListener<ReqT> extends ForwardingServerCallListener.SimpleForwardingServerCallListener<ReqT> {
             private final MonitorLogParams params;
             private final Map<String, Object> context;
 
@@ -299,7 +299,7 @@ class GrpcMonitorLogConfiguration {
     }
 
 
-    static long parseCostTime(Map<String, Object> context) {
+    private static long parseCostTime(Map<String, Object> context) {
         Long nowTime = (Long) context.get(TIME_KEY);
         long cost = 0;
         if (nowTime != null) {
@@ -308,7 +308,7 @@ class GrpcMonitorLogConfiguration {
         return cost;
     }
 
-    static String print2Json(MessageOrBuilder message) {
+    private static String print2Json(MessageOrBuilder message) {
         try {
             return JsonFormat.printer().omittingInsignificantWhitespace().print(message);
         } catch (Exception e) {
@@ -317,7 +317,7 @@ class GrpcMonitorLogConfiguration {
         }
     }
 
-    static Object tryConvert2Json(MessageOrBuilder message) {
+    private static Object tryConvert2Json(MessageOrBuilder message) {
         try {
             String json = JsonFormat.printer().omittingInsignificantWhitespace().print(message);
             try {
@@ -331,11 +331,11 @@ class GrpcMonitorLogConfiguration {
         }
     }
 
-    static String buildActionName(String fullMethodName, String serviceName) {
+    private static String buildActionName(String fullMethodName, String serviceName) {
         return StringUtils.remove(StringUtils.removeStart(fullMethodName, serviceName), "/");
     }
 
-    static Class<?> getCurrentProtoClass(MethodDescriptor<?, ?> method) {
+    private static Class<?> getCurrentProtoClass(MethodDescriptor<?, ?> method) {
         Class<?> cls = null;
         if (method.getSchemaDescriptor() != null) {
             cls = method.getSchemaDescriptor().getClass();

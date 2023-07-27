@@ -73,11 +73,11 @@ class FeignMonitorLogConfiguration {
     }
 
 
-    static class EnhancedFeignClient implements Client {
+    private static class EnhancedFeignClient implements Client {
         private final Client realClient;
         private final String defaultBoolExpr;
 
-        public EnhancedFeignClient(Client realClient, String defaultBoolExpr) {
+        private EnhancedFeignClient(Client realClient, String defaultBoolExpr) {
             this.realClient = realClient;
             this.defaultBoolExpr = defaultBoolExpr;
         }

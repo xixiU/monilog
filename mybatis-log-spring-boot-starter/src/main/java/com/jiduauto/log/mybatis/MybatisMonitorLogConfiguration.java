@@ -129,7 +129,7 @@ class MybatisMonitorLogConfiguration {
             }
         }
 
-        private Object getStatementHandlerObject(Invocation invocation) {
+        private static Object getStatementHandlerObject(Invocation invocation) {
             Object expectedStatementHandler = invocation.getTarget();
             while (Proxy.isProxyClass(expectedStatementHandler.getClass())) {
                 MetaObject metaObject = SystemMetaObject.forObject(expectedStatementHandler);

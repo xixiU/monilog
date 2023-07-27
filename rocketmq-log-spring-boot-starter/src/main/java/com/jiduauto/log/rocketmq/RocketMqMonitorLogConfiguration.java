@@ -48,17 +48,18 @@ import java.util.function.BiFunction;
 class RocketMqMonitorLogConfiguration {
     @Bean
     @ConditionalOnProperty(prefix = "monitor.log.rocketmq.consumer", name = "enable", havingValue = "true", matchIfMissing = true)
-    public RocketMQConsumerInterceptor rocketMQConsumerPostProcessor() {
+    RocketMQConsumerInterceptor rocketMQConsumerPostProcessor() {
         return new RocketMQConsumerInterceptor();
     }
 
     @Bean
     @ConditionalOnProperty(prefix = "monitor.log.rocketmq.producer", name = "enable", havingValue = "true", matchIfMissing = true)
-    public RocketMQProducerInterceptor rocketMQProducerPostProcessor() {
+    RocketMQProducerInterceptor rocketMQProducerPostProcessor() {
         return new RocketMQProducerInterceptor();
     }
 
-    static @Slf4j class RocketMQConsumerInterceptor implements BeanPostProcessor {
+    @Slf4j
+    static class RocketMQConsumerInterceptor implements BeanPostProcessor {
 
         @Override
         public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
@@ -94,7 +95,7 @@ class RocketMqMonitorLogConfiguration {
         }
 
         @AllArgsConstructor
-        static class EnhancedRocketMqListener<T> implements RocketMQListener<T> {
+        private static class EnhancedRocketMqListener<T> implements RocketMQListener<T> {
             private final RocketMQListener<T> delegate;
             private final Class<?> cls;
             private final String consumerGroup;
@@ -138,7 +139,7 @@ class RocketMqMonitorLogConfiguration {
         }
 
         @AllArgsConstructor
-        static class EnhancedListenerConcurrently implements MessageListenerConcurrently {
+        private static class EnhancedListenerConcurrently implements MessageListenerConcurrently {
             private final MessageListenerConcurrently delegate;
             private final Class<?> cls;
             private final String consumerGroup;
@@ -150,7 +151,7 @@ class RocketMqMonitorLogConfiguration {
         }
 
         @AllArgsConstructor
-        static class EnhancedListenerOrderly implements MessageListenerOrderly {
+        private static class EnhancedListenerOrderly implements MessageListenerOrderly {
             private final MessageListenerOrderly delegate;
             private Class<?> cls;
             private final String consumerGroup;
@@ -162,7 +163,7 @@ class RocketMqMonitorLogConfiguration {
         }
 
         @AllArgsConstructor
-        static class ConsumerHook<C, R> implements BiFunction<List<MessageExt>, C, R> {
+        private static class ConsumerHook<C, R> implements BiFunction<List<MessageExt>, C, R> {
             private final BiFunction<List<MessageExt>, C, R> delegate;
             private final Class<?> cls;
             private final String consumerGroup;
@@ -226,7 +227,8 @@ class RocketMqMonitorLogConfiguration {
     }
 
 
-    static @Slf4j class RocketMQProducerInterceptor implements BeanPostProcessor {
+    @Slf4j
+    static class RocketMQProducerInterceptor implements BeanPostProcessor {
         @Override
         public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
             if (bean instanceof DefaultMQProducer) {
@@ -237,7 +239,7 @@ class RocketMqMonitorLogConfiguration {
         }
 
 
-        static class RocketMQSendHook implements SendMessageHook {
+        private static class RocketMQSendHook implements SendMessageHook {
             @Override
             public String hookName() {
                 return RocketMQProducerInterceptor.RocketMQSendHook.class.getName();
