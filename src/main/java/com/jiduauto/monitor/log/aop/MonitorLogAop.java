@@ -17,7 +17,7 @@ import org.aspectj.lang.annotation.Aspect;
 @Slf4j
 @Aspect
 public class MonitorLogAop {
-    @Around("@within(com.jiduauto.log.core.annotation.MonitorLog)")
+    @Around("@within(com.jiduauto.monitor.log.annotation.MonitorLog)")
     Object doAround(ProceedingJoinPoint pjp) throws Throwable {
         return processAround(pjp, null, null);
     }
