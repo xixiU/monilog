@@ -3,14 +3,14 @@
     {
       "name": "monitor.log.web.enable",
       "type": "java.lang.Boolean",
-      "sourceType": "com.jiduauto.log.web.WebMonitorFilterConfig",
+      "sourceType": "com.jiduauto.log.web.WebMonitorLogConfiguration",
       "defaultValue": true,
       "description": "开启web监控"
     },
     {
       "name": "monitor.log.web.blackList",
       "type": "java.lang.String",
-      "sourceType": "com.jiduauto.log.web.LogMonitorHandlerFilter",
+      "sourceType": "com.jiduauto.log.web.WebMonitorLogConfiguration",
       "defaultValue": "/misc/ping",
       "description": "web不记录url信息的接口清单"
     }
