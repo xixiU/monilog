@@ -60,14 +60,20 @@ class RocketMqMonitorLogConfiguration {
 
     @Slf4j
     static class RocketMQConsumerInterceptor implements BeanPostProcessor {
-
         @Override
         public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
             if (bean instanceof MQConsumer) {//不使用rocketmq-starter时
-                MQConsumer consumer = (MQConsumer) bean;
-                if (consumer instanceof DefaultMQPushConsumer) {
-                    enhanceListener((DefaultMQPushConsumer) consumer, ((DefaultMQPushConsumer) consumer).getMessageListener().getClass());
-                } else if (consumer instanceof DefaultMQPullConsumer) {
+                if (bean instanceof DefaultMQPushConsumer) {
+                    DefaultMQPushConsumer consumer = (DefaultMQPushConsumer) bean;
+                    Class<?> bizCls = consumer.getMessageListener().getClass();
+                    MessageListener messageListener = consumer.getMessageListener();
+                    String consumerGroup = consumer.getConsumerGroup();
+                    if (messageListener instanceof MessageListenerConcurrently) {
+                        consumer.setMessageListener(new RocketMQConsumerInterceptor.EnhancedListenerConcurrently((MessageListenerConcurrently) messageListener, bizCls, consumerGroup));
+                    } else if (messageListener instanceof MessageListenerOrderly) {
+                        consumer.setMessageListener(new RocketMQConsumerInterceptor.EnhancedListenerOrderly((MessageListenerOrderly) messageListener, bizCls, consumerGroup));
+                    }
+                } else if (bean instanceof DefaultMQPullConsumer) {
                     //TODO 该模式下暂不支持增强
                 }
             } else if (bean instanceof DefaultRocketMQListenerContainer) {//使用了rocketmq-starter
@@ -83,14 +89,64 @@ class RocketMqMonitorLogConfiguration {
             return bean;
         }
 
+        @AllArgsConstructor
+        private static class EnhancedListenerConcurrently implements MessageListenerConcurrently {
+            private final MessageListenerConcurrently delegate;
+            private final Class<?> cls;
+            private final String consumerGroup;
+            @Override
+            public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs, ConsumeConcurrentlyContext context) {
+                return new RocketMQConsumerInterceptor.ConsumerHook<>(delegate::consumeMessage, cls, consumerGroup).apply(msgs, context);
+            }
+        }
 
-        private void enhanceListener(DefaultMQPushConsumer consumer, Class<?> bizCls) {
-            MessageListener messageListener = consumer.getMessageListener();
-            String consumerGroup = consumer.getConsumerGroup();
-            if (messageListener instanceof MessageListenerConcurrently) {
-                consumer.setMessageListener(new RocketMQConsumerInterceptor.EnhancedListenerConcurrently((MessageListenerConcurrently) messageListener, bizCls, consumerGroup));
-            } else if (messageListener instanceof MessageListenerOrderly) {
-                consumer.setMessageListener(new RocketMQConsumerInterceptor.EnhancedListenerOrderly((MessageListenerOrderly) messageListener, bizCls, consumerGroup));
+        @AllArgsConstructor
+        private static class EnhancedListenerOrderly implements MessageListenerOrderly {
+            private final MessageListenerOrderly delegate;
+            private Class<?> cls;
+            private final String consumerGroup;
+            @Override
+            public ConsumeOrderlyStatus consumeMessage(List<MessageExt> msgs, ConsumeOrderlyContext context) {
+                return new RocketMQConsumerInterceptor.ConsumerHook<>(delegate::consumeMessage, cls, consumerGroup).apply(msgs, context);
+            }
+        }
+
+        @AllArgsConstructor
+        private static class ConsumerHook<C, R> implements BiFunction<List<MessageExt>, C, R> {
+            private final BiFunction<List<MessageExt>, C, R> delegate;
+            private final Class<?> cls;
+            private final String consumerGroup;
+            @Override
+            public R apply(List<MessageExt> msgs, C c) {
+                MonitorLogParams params = new MonitorLogParams();
+                params.setServiceCls(cls);
+                params.setAction("onMessage");
+                params.setService(cls.getSimpleName());
+                params.setLogPoint(LogPoint.MSG_ENTRY);
+                R result;
+                long start = System.currentTimeMillis();
+                try {
+                    params.setInput(formatInputMsgs(msgs));
+                    MessageExt messageExt = msgs.get(0);
+                    String[] tags = TagBuilder.of("group", consumerGroup, "topic", messageExt.getTopic(), "tag", messageExt.getTags()).toArray();
+                    params.setTags(tags);
+                    result = delegate.apply(msgs, c);
+                    params.setSuccess(Objects.equals(result, ConsumeConcurrentlyStatus.CONSUME_SUCCESS) || Objects.equals(result, ConsumeOrderlyStatus.SUCCESS));
+                    params.setMsgCode(result.toString());
+                    params.setMsgInfo(params.isSuccess() ? "成功" : "失败");
+                    params.setOutput(result);
+                    return result;
+                } catch (Throwable e) {
+                    params.setException(e);
+                    ErrorInfo errorInfo = ExceptionUtil.parseException(e);
+                    params.setSuccess(false);
+                    params.setMsgCode(errorInfo.getErrorCode());
+                    params.setMsgInfo(errorInfo.getErrorMsg());
+                    throw e;
+                } finally {
+                    params.setCost(System.currentTimeMillis() - start);
+                    MonitorLogUtil.log(params);
+                }
             }
         }
 
@@ -99,7 +155,6 @@ class RocketMqMonitorLogConfiguration {
             private final RocketMQListener<T> delegate;
             private final Class<?> cls;
             private final String consumerGroup;
-
             @Override
             public void onMessage(T message) {
                 MonitorLogParams params = new MonitorLogParams();
@@ -124,70 +179,6 @@ class RocketMqMonitorLogConfiguration {
                     params.setSuccess(true);
                     params.setMsgCode(ErrorEnum.SUCCESS.name());
                     params.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
-                } catch (Throwable e) {
-                    params.setException(e);
-                    ErrorInfo errorInfo = ExceptionUtil.parseException(e);
-                    params.setSuccess(false);
-                    params.setMsgCode(errorInfo.getErrorCode());
-                    params.setMsgInfo(errorInfo.getErrorMsg());
-                    throw e;
-                } finally {
-                    params.setCost(System.currentTimeMillis() - start);
-                    MonitorLogUtil.log(params);
-                }
-            }
-        }
-
-        @AllArgsConstructor
-        private static class EnhancedListenerConcurrently implements MessageListenerConcurrently {
-            private final MessageListenerConcurrently delegate;
-            private final Class<?> cls;
-            private final String consumerGroup;
-
-            @Override
-            public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs, ConsumeConcurrentlyContext context) {
-                return new RocketMQConsumerInterceptor.ConsumerHook<>(delegate::consumeMessage, cls, consumerGroup).apply(msgs, context);
-            }
-        }
-
-        @AllArgsConstructor
-        private static class EnhancedListenerOrderly implements MessageListenerOrderly {
-            private final MessageListenerOrderly delegate;
-            private Class<?> cls;
-            private final String consumerGroup;
-
-            @Override
-            public ConsumeOrderlyStatus consumeMessage(List<MessageExt> msgs, ConsumeOrderlyContext context) {
-                return new RocketMQConsumerInterceptor.ConsumerHook<>(delegate::consumeMessage, cls, consumerGroup).apply(msgs, context);
-            }
-        }
-
-        @AllArgsConstructor
-        private static class ConsumerHook<C, R> implements BiFunction<List<MessageExt>, C, R> {
-            private final BiFunction<List<MessageExt>, C, R> delegate;
-            private final Class<?> cls;
-            private final String consumerGroup;
-
-            @Override
-            public R apply(List<MessageExt> msgs, C c) {
-                MonitorLogParams params = new MonitorLogParams();
-                params.setServiceCls(cls);
-                params.setAction("onMessage");
-                params.setService(cls.getSimpleName());
-                params.setLogPoint(LogPoint.MSG_ENTRY);
-                R result;
-                long start = System.currentTimeMillis();
-                try {
-                    params.setInput(formatInputMsgs(msgs));
-                    MessageExt messageExt = msgs.get(0);
-                    String[] tags = TagBuilder.of("group", consumerGroup, "topic", messageExt.getTopic(), "tag", messageExt.getTags()).toArray();
-                    params.setTags(tags);
-                    result = delegate.apply(msgs, c);
-                    params.setSuccess(Objects.equals(result, ConsumeConcurrentlyStatus.CONSUME_SUCCESS) || Objects.equals(result, ConsumeOrderlyStatus.SUCCESS));
-                    params.setMsgCode(result.toString());
-                    params.setMsgInfo(params.isSuccess() ? "成功" : "失败");
-                    params.setOutput(result);
-                    return result;
                 } catch (Throwable e) {
                     params.setException(e);
                     ErrorInfo errorInfo = ExceptionUtil.parseException(e);
