@@ -51,6 +51,7 @@ public class MonitorLogUtil {
 
     /**
      * 统一打上环境标、应用名、打标类型、处理结果
+     *
      */
     public static String[] processTags(MonitorLogParams logParams) {
         TagBuilder tb = TagBuilder.of(logParams.getTags());
