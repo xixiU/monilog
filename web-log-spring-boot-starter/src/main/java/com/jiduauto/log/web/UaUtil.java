@@ -22,9 +22,6 @@ class UaUtil {
         if (MapUtils.isEmpty(headerMap)) {
             return LogPoint.UNKNOWN_ENTRY;
         }
-        if (MapUtils.isEmpty(headerMap)) {
-            return LogPoint.UNKNOWN_ENTRY;
-        }
         if (headerMap.containsKey(WebLogConstant.JIDU_JNS_HEADER)) {
             return LogPoint.RPC_ENTRY;
         }
