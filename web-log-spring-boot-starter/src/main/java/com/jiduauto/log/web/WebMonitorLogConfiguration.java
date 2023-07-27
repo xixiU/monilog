@@ -53,7 +53,6 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
      * 集度JNS请求时header中会带X-JIDU-SERVICENAME
      */
     public static final String JIDU_JNS_HEADER = "X-JIDU-SERVICENAME";
-
     public static final String USER_AGENT = "User-Agent";
     private static final AntPathMatcher antPathMatcher = new AntPathMatcher();
     /**
@@ -62,10 +61,8 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
     @Value("${monitor.log.web.blackList}")
     private List<String> blackList;
 
-
     @Bean
-    @ConditionalOnMissingBean(name = "logMonitorFilterBean")
-    public FilterRegistrationBean<WebMonitorLogConfiguration> logMonitorFilterBean() {
+    FilterRegistrationBean<WebMonitorLogConfiguration> logMonitorFilterBean() {
         FilterRegistrationBean<WebMonitorLogConfiguration> filterRegBean = new FilterRegistrationBean<>();
         filterRegBean.setFilter(this);
         filterRegBean.setOrder(Integer.MAX_VALUE);
