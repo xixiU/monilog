@@ -27,11 +27,11 @@
         <opentelemetry.log.version>1.0.12</opentelemetry.log.version>
 
         <spring-boot-stater.version>2.3.12.RELEASE</spring-boot-stater.version>
-        <monitor-spring-boot-starter.version>1.1.0</monitor-spring-boot-starter.version>
+        <monitor-spring-boot-starter.version>0.0.6</monitor-spring-boot-starter.version>
         <xxl.job.version>2.2.0</xxl.job.version>
         <rocketmq.starter.version>2.2.0</rocketmq.starter.version>
         <mybatis.starter.version>3.0.2</mybatis.starter.version>
-        <grpc.starter.version>2.14.0</grpc.starter.version>
+        <grpc.starter.version>2.10.3</grpc.starter.version>
         <openfeign.version>10.10.1</openfeign.version>
     </properties>
 
@@ -47,6 +47,12 @@
             <groupId>com.jiduauto.common</groupId>
             <artifactId>jidu-opentelemetry-log</artifactId>
             <version>${opentelemetry.log.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.grpc</groupId>
+                    <artifactId>grpc-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- 三方工具 -->
         <dependency>
