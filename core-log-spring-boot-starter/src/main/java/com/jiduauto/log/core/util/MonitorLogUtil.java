@@ -7,7 +7,6 @@ import com.jiduauto.log.core.enums.MonitorType;
 import com.jiduauto.log.core.model.MonitorLogParams;
 import com.metric.MetricMonitor;
 import lombok.extern.slf4j.Slf4j;
-
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -17,8 +16,6 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 public class MonitorLogUtil {
-    private static final String applicationName = SpringUtils.getApplicationName();
-
     public static void log(MonitorLogParams logParams) {
         MonitorLogPrinter printer = null;
         try {
@@ -58,7 +55,7 @@ public class MonitorLogUtil {
         TagBuilder tb = TagBuilder.of(logParams.getTags());
         boolean success = logParams.isSuccess() && logParams.getException() == null;
         tb.add(Constants.RESULT, success ? Constants.SUCCESS : Constants.ERROR)
-                .add(Constants.APPLICATION, applicationName)
+                .add(Constants.APPLICATION, SpringUtils.getApplicationName())
                 .add(Constants.LOG_POINT, logParams.getLogPoint().name())
                 .add(Constants.ENV, SpringUtils.getActiveProfile())
                 .add(Constants.SERVICE_NAME, logParams.getService())

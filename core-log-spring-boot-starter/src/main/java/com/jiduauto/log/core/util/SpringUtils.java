@@ -1,5 +1,6 @@
 package com.jiduauto.log.core.util;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
@@ -169,7 +170,11 @@ public class SpringUtils implements BeanFactoryPostProcessor, ApplicationContext
      * @since 5.7.12
      */
     public static String getApplicationName() {
-        return getProperty("spring.application.name");
+        String property = getProperty("spring.application.name");
+        if (StringUtils.isNotBlank(property)) {
+            return property;
+        }
+        return getProperty("monitor.log.app-name");
     }
 
     /**
