@@ -1,0 +1,144 @@
+{
+  "groups": [
+    {
+      "name": "monitor.log",
+      "type": "com.jiduauto.monitor.log.model.MonitorLogProperties",
+      "sourceType": "com.jiduauto.monitor.log.model.MonitorLogProperties",
+      "description": "prometheus监控与日志打点统一工具."
+    }
+  ],
+  "properties": [
+    {
+      "name": "monitor.log.enable",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.jiduauto.monitor.log.model.MonitorLogProperties",
+      "defaultValue": true,
+      "description": "开启核心监控，提供统一日志参数收集与aop参数收集."
+    },
+    {
+      "name": "monitor.log.component.includes",
+      "type": "java.util.Set<java.lang.String>",
+      "sourceType": "com.jiduauto.monitor.log.model.MonitorLogProperties$ComponentProperties",
+      "description": "监控开启组件清单，默认为*，目前支持feign,grpc,mybatis,rocketmq,web,xxljob，可以一键设置开启."
+    },
+    {
+      "name": "monitor.log.component.excludes",
+      "type": "java.util.Set<java.lang.String>",
+      "sourceType": "com.jiduauto.monitor.log.model.MonitorLogProperties$ComponentProperties",
+      "description": "监控不开启组件清单，默认为为空，目前支持feign,grpc,mybatis,rocketmq,web,xxljob，可以一键设置不开启."
+    },
+    {
+      "name": "monitor.log.printer.max-text-len",
+      "type": "java.lang.Integer",
+      "sourceType": "com.jiduauto.monitor.log.model.MonitorLogProperties$PrinterProperties",
+      "defaultValue": 5000,
+      "description": "默认详情日志打印最长的长度，目前仅限制了收集参数中的input与output."
+    },
+    {
+      "name": "monitor.log.printer.info-exclude-components",
+      "type": "java.lang.Integer",
+      "sourceType": "com.jiduauto.monitor.log.model.MonitorLogProperties$PrinterProperties",
+      "defaultValue": null,
+      "description": "默认不打印详情日志的组件集合"
+    },
+    {
+      "name": "monitor.log.printer.info-exclude-services",
+      "type": "java.lang.Integer",
+      "sourceType": "com.jiduauto.monitor.log.model.MonitorLogProperties$PrinterProperties",
+      "defaultValue": null,
+      "description": "默认不打印详情日志的服务集合"
+    },
+    {
+      "name": "monitor.log.printer.info-exclude-actions",
+      "type": "java.lang.Integer",
+      "sourceType": "com.jiduauto.monitor.log.model.MonitorLogProperties$PrinterProperties",
+      "defaultValue": null,
+      "description": "默认不打印详情日志的方法集合"
+    },
+
+    {
+      "name": "monitor.log.grpc.enable",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.jiduauto.monitor.log.model.MonitorLogProperties$GrpcProperties",
+      "defaultValue": true,
+      "description": "开启grpc监控(默认开启)."
+    },
+    {
+      "name": "monitor.log.grpc.server.enable",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.jiduauto.monitor.log.model.MonitorLogProperties$GrpcProperties",
+      "defaultValue": true,
+      "description": "开启grpc服务端监控(默认开启)."
+    },
+    {
+      "name": "monitor.log.grpc.client.enable",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.jiduauto.monitor.log.model.MonitorLogProperties$GrpcProperties",
+      "defaultValue": true,
+      "description": "开启grpc客户端监控(默认开启)."
+    },
+    {
+      "name": "monitor.log.xxljob.enable",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.jiduauto.monitor.log.model.MonitorLogProperties",
+      "defaultValue": true,
+      "description": "开启xxljob监控."
+    },
+    {
+      "name": "monitor.log.feign.enable",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.jiduauto.monitor.log.model.MonitorLogProperties",
+      "defaultValue": true,
+      "description": "开启feign监控."
+    },
+    {
+      "name": "monitor.log.feign.bool.expr.default",
+      "type": "java.lang.String",
+      "sourceType": "com.jiduauto.monitor.log.model.MonitorLogProperties",
+      "defaultValue": "$.code==0,$.code==200",
+      "description": "解析feign调用结果的默认表达式，默认校验返回编码是否等于0或者200有一个匹配即认为调用成功,多个表达式直接逗号分割."
+    },
+    {
+      "name": "monitor.log.mybatis.enable",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.jiduauto.monitor.log.model.MonitorLogProperties",
+      "defaultValue": true,
+      "description": "开启mybatis监控."
+    },
+    {
+      "name": "monitor.log.mybatis.long.query.time",
+      "type": "java.lang.Long",
+      "sourceType": "com.jiduauto.monitor.log.model.MonitorLogProperties",
+      "defaultValue": 2000,
+      "description": "mybatis慢sql阈值，单位毫秒."
+    },
+    {
+      "name": "monitor.log.rocketmq.enable",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.jiduauto.monitor.log.model.MonitorLogProperties",
+      "defaultValue": true,
+      "description": "开启rocketmq监控,默认会开启consumer与producer."
+    },
+    {
+      "name": "monitor.log.rocketmq.consumer.enable",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.jiduauto.monitor.log.model.MonitorLogProperties",
+      "defaultValue": true,
+      "description": "开启rocketmq的consumer监控."
+    },
+    {
+      "name": "monitor.log.rocketmq.producer.enable",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.jiduauto.monitor.log.model.MonitorLogProperties",
+      "defaultValue": true,
+      "description": "开启rocketmq的producer监控."
+    },
+    {
+      "name": "monitor.log.web.enable",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.jiduauto.monitor.log.model.MonitorLogProperties",
+      "defaultValue": true,
+      "description": "开启web监控."
+    }
+  ]
+}

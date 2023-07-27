@@ -17,7 +17,9 @@
     </option>
     <option name="ignoredFiles">
       <set>
+        <option value="$PROJECT_DIR$/all-log-spring-boot-starter/pom.xml" />
         <option value="$PROJECT_DIR$/mybatis-plus-log-spring-boot-starter/pom.xml" />
+        <option value="$PROJECT_DIR$/web-log-spring-boot-starter/pom.xml" />
         <option value="$PROJECT_DIR$/web-minitor-spring-boot-starter/pom.xml" />
       </set>
     </option>
