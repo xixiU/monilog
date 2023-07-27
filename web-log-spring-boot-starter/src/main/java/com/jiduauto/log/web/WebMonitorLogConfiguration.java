@@ -109,7 +109,7 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
         logParams.setServiceCls(method.getBeanType());
         logParams.setService(method.getBeanType().getSimpleName());
         logParams.setAction(method.getMethod().getName());
-        TagBuilder tagBuilder = TagBuilder.of(tagList).add("uri", requestURI).add("method", wrapperRequest.getMethod());
+        TagBuilder tagBuilder = TagBuilder.of(tagList).add("url", requestURI).add("method", wrapperRequest.getMethod());
         logParams.setTags(tagBuilder.toArray());
 
         Map<String, String> requestHeaderMap = getRequestHeaders(wrapperRequest);
