@@ -37,7 +37,7 @@
         <spring-boot-stater.version>2.3.12.RELEASE</spring-boot-stater.version>
         <logback.version>1.2.3</logback.version>
         <slf4j-api>2.0.7</slf4j-api>
-        <monitor-spring-boot-starter.version>0.0.5</monitor-spring-boot-starter.version>
+        <monitor-spring-boot-starter.version>1.1.0</monitor-spring-boot-starter.version>
 
     </properties>
 
@@ -98,17 +98,7 @@
                 <artifactId>monitor-spring-boot-starter</artifactId>
                 <version>${monitor-spring-boot-starter.version}</version>
             </dependency>
-
-            <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-core</artifactId>
-                <version>${logback.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-classic</artifactId>
-                <version>${logback.version}</version>
-            </dependency>
+            
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>

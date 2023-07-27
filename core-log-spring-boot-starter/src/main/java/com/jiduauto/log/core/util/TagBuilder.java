@@ -25,6 +25,9 @@ public class TagBuilder {
     }
 
     public static TagBuilder of(String[] tags) {
+        if (tags == null || tags.length == 0) {
+            return new TagBuilder();
+        }
         return of(Arrays.asList(tags));
     }
 

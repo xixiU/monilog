@@ -113,16 +113,20 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
         ContentCachingRequestWrapper wrapperRequest = isMultipart ? null : new ContentCachingRequestWrapper(request);
         ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(response);
 
-        String requestBodyParams = isMultipart ? "Binary data" : getRequestBody(wrapperRequest);
-
+        Map<String, String> requestBodyMap = new HashMap<>();
         logParams.setLogPoint(validateRequest(requestHeaderMap));
-        logParams.setInput(new Object[]{formatRequestInfo(request, requestHeaderMap, requestBodyParams)});
+        JSONObject jsonObject = formatRequestInfo(isMultipart, request, requestHeaderMap);
+        Object o = jsonObject.get("body");
+        if (o instanceof Map) {
+            requestBodyMap = (Map<String, String>)o;
+        }
+        logParams.setInput(new Object[]{jsonObject});
         logParams.setMsgCode(ErrorEnum.SUCCESS.name());
         logParams.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
         logParams.setSuccess(true);
 
         try {
-            dealRequestTags(isMultipart ? request : wrapperRequest, logParams, requestHeaderMap, requestBodyParams);
+            dealRequestTags(isMultipart ? request : wrapperRequest, logParams, requestHeaderMap, requestBodyMap);
         } catch (Exception e) {
             log.error("dealRequestTags error", e);
         }
@@ -259,10 +263,10 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
      * @param request
      * @param logParams
      */
-    private void dealRequestTags(HttpServletRequest request, MonitorLogParams logParams, Map<String, String> requestHeaderMap, String requestBodyParams) {
+    private void dealRequestTags(HttpServletRequest request, MonitorLogParams logParams, Map<String, String> requestHeaderMap, Map<String, String> requestBodyMap) {
         String[] oriTags = logParams.getTags();
         Map<String, String> headersMap = MapUtils.isNotEmpty(requestHeaderMap) ? requestHeaderMap : new HashMap<>();
-        Map<String, String> requestBodyMap = MonitorStringUtil.tryConvert2Map(requestBodyParams);
+
 
         for (int i = 0; oriTags != null && i < oriTags.length; i++) {
             if (!oriTags[i].startsWith("{") || !oriTags[i].endsWith("}")) {
@@ -307,8 +311,10 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
         }
         return "";
     }
-    private JSONObject formatRequestInfo(HttpServletRequest request, Map<String, String> requestHeaderMap, String requestBodyParams) {
+    private JSONObject formatRequestInfo(boolean isMultipart, HttpServletRequest request, Map<String, String> requestHeaderMap) {
         Map<String, String[]> parameterMap = request.getParameterMap();
+        String requestBodyParams = isMultipart ? "Binary data" : getRequestBody(request);
+
         JSONObject obj = new JSONObject();
         if (StringUtils.isNotBlank(requestBodyParams)) {
             Map<String, String> requestBodyMap = MonitorStringUtil.tryConvert2Map(requestBodyParams);
