@@ -62,13 +62,6 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
     private List<String> blackList;
 
     @Bean
-    @ConditionalOnMissingBean(name = "springUtils")
-    public SpringUtils springUtils() {
-        return new SpringUtils();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean(name = "logMonitorFilterBean")
     FilterRegistrationBean<WebMonitorLogConfiguration> logMonitorFilterBean() {
         FilterRegistrationBean<WebMonitorLogConfiguration> filterRegBean = new FilterRegistrationBean<>();
         filterRegBean.setFilter(this);
