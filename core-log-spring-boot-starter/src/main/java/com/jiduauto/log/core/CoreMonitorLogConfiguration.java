@@ -81,7 +81,7 @@ public class CoreMonitorLogConfiguration {
         }
 
         private boolean needLog(String logPoint, String service, String action) {
-            MonitorLogProperties.PrinterLogProperties printer = monitorLogProperties.getPrinter();
+            MonitorLogProperties.PrinterProperties printer = monitorLogProperties.getPrinter();
             if (MonitorStringUtil.checkPathMatch(printer.getInfoExcludeLogPoint(), logPoint)) {
                 return false;
             }
