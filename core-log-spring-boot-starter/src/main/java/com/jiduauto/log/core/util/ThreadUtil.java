@@ -37,7 +37,7 @@ public class ThreadUtil {
             try {
                 serviceCls = Class.forName(currentSte.getClassName());
                 if (serviceCls != null) {
-                    MonitorLogTags monitorLogTags= ReflectUtil.getAnnotation(MonitorLogTags.class, serviceCls, serviceCls.getMethods());
+                    MonitorLogTags monitorLogTags = ReflectUtil.getAnnotation(MonitorLogTags.class, serviceCls, serviceCls.getMethods());
                     if (monitorLogTags != null) {
                         new StackTraceElement(currentSte.getClassName(), currentSte.getMethodName(), currentSte.getFileName(), currentSte.getLineNumber());
                     }
@@ -49,6 +49,7 @@ public class ThreadUtil {
         }
         return null;
     }
+
     /**
      * 从当前线程栈中，按先后顺序找到指定类的下一个类对应的栈帧，返回找到的第一个栈帧
      *
@@ -63,6 +64,7 @@ public class ThreadUtil {
         String clsName = currentCls.getCanonicalName();
         StackTraceElement[] st = Thread.currentThread().getStackTrace();
         StackTraceElement target = null;
+        boolean hasFoundTargetClass = false;
         out:
         for (int i = 0; i < st.length - 1; i++) {
             String name = st[i].getClassName();
@@ -70,6 +72,7 @@ public class ThreadUtil {
                 name = name.split("\\$")[0];
             }
             if (clsName.equals(name)) {
+                hasFoundTargetClass = true;
                 if (excludePkgPrefixs != null) {
                     for (String excludePkgPrefix : excludePkgPrefixs) {
                         if (clsName.startsWith(excludePkgPrefix)) {
@@ -78,6 +81,10 @@ public class ThreadUtil {
                     }
                 }
                 target = st[i + 1];
+                break;
+            }
+            if (hasFoundTargetClass) {
+                target = st[i];
                 break;
             }
         }
