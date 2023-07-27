@@ -23,10 +23,10 @@ public class MonitorLogProperties {
     /**
      * 日志打印
      */
-    private PrinterLogProperties printer;
+    private PrinterProperties printer;
 
     @Getter
-    public class PrinterLogProperties{
+    public class PrinterProperties{
         /**
          * 默认详情日志打印最长的长度，目前仅限制了收集参数中的input与output
          */
