@@ -2,7 +2,6 @@ package com.jiduauto.monitor.log;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.jiduauto.monitor.log.parse.LogParser;
 import com.jiduauto.monitor.log.annotation.MonitorLogTags;
 import com.jiduauto.monitor.log.constant.Constants;
 import com.jiduauto.monitor.log.enums.ErrorEnum;
@@ -10,6 +9,7 @@ import com.jiduauto.monitor.log.enums.LogPoint;
 import com.jiduauto.monitor.log.model.ErrorInfo;
 import com.jiduauto.monitor.log.model.MonitorLogParams;
 import com.jiduauto.monitor.log.model.MonitorLogProperties;
+import com.jiduauto.monitor.log.parse.LogParser;
 import com.jiduauto.monitor.log.parse.ParsedResult;
 import com.jiduauto.monitor.log.parse.ResultParseStrategy;
 import com.jiduauto.monitor.log.util.*;
@@ -34,7 +34,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerExecutionChain;
 import org.springframework.web.servlet.HandlerMapping;
-import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 import org.springframework.web.util.WebUtils;
 
@@ -79,6 +78,8 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
 
     @Override
     public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws IOException, ServletException {
+        boolean isMultipart = ServletFileUpload.isMultipartContent(request);
+        RequestWrapper wrapperRequest = isMultipart ? null : new RequestWrapper(request);
         String requestURI = request.getRequestURI();
         Set<String> urlBlackList = webProperties.getUrlBlackList();
         if (CollectionUtils.isEmpty(urlBlackList)) {
@@ -88,11 +89,13 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        HandlerMethod method = getHandlerMethod(request);
+        HandlerMethod method = getHandlerMethod(wrapperRequest);
         if (method == null) {
             filterChain.doFilter(request, response);
             return;
         }
+        ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(response);
+
         MonitorLogTags logTags = ReflectUtil.getAnnotation(MonitorLogTags.class, method.getBeanType(), method.getMethod());
         List<String> tagList = MonitorStringUtil.getTagList(logTags);
         long startTime = System.currentTimeMillis();
@@ -102,17 +105,14 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
         logParams.setServiceCls(method.getBeanType());
         logParams.setService(method.getBeanType().getSimpleName());
         logParams.setAction(method.getMethod().getName());
-        TagBuilder tagBuilder = TagBuilder.of(tagList).add("uri", requestURI).add("method", request.getMethod());
+        TagBuilder tagBuilder = TagBuilder.of(tagList).add("url", requestURI).add("method", wrapperRequest.getMethod());
         logParams.setTags(tagBuilder.toArray());
 
-        Map<String, String> requestHeaderMap = getRequestHeaders(request);
-        boolean isMultipart = ServletFileUpload.isMultipartContent(request);
-        ContentCachingRequestWrapper wrapperRequest = isMultipart ? null : new ContentCachingRequestWrapper(request);
-        ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(response);
+        Map<String, String> requestHeaderMap = getRequestHeaders(wrapperRequest);
 
         Map<String, String> requestBodyMap = new HashMap<>();
         logParams.setLogPoint(validateRequest(requestHeaderMap));
-        JSONObject jsonObject = formatRequestInfo(isMultipart, request, requestHeaderMap);
+        JSONObject jsonObject = formatRequestInfo(isMultipart, wrapperRequest, requestHeaderMap);
         Object o = jsonObject.get("body");
         if (o instanceof Map) {
             requestBodyMap = (Map<String, String>) o;
@@ -292,26 +292,9 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
         logParams.setTags(oriTags);
     }
 
-    private static String getRequestBody(HttpServletRequest request) {
-        ContentCachingRequestWrapper wrapper = WebUtils.getNativeRequest(request, ContentCachingRequestWrapper.class);
-        if (wrapper != null) {
-            byte[] buf = wrapper.getContentAsByteArray();
-            if (buf.length > 0) {
-                String payload;
-                try {
-                    payload = new String(buf, wrapper.getCharacterEncoding());
-                } catch (UnsupportedEncodingException e) {
-                    payload = "[unknown]";
-                }
-                return payload.replaceAll("\\n", "");
-            }
-        }
-        return "";
-    }
-
-    private JSONObject formatRequestInfo(boolean isMultipart, HttpServletRequest request, Map<String, String> requestHeaderMap) {
-        Map<String, String[]> parameterMap = request.getParameterMap();
-        String requestBodyParams = isMultipart ? "Binary data" : getRequestBody(request);
+    private JSONObject formatRequestInfo(boolean isMultipart, RequestWrapper requestWrapper, Map<String, String> requestHeaderMap) {
+        Map<String, String[]> parameterMap = requestWrapper.getParameterMap();
+        String requestBodyParams = isMultipart ? "Binary data" : requestWrapper.getBodyString();
 
         JSONObject obj = new JSONObject();
         if (StringUtils.isNotBlank(requestBodyParams)) {
