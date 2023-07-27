@@ -6,6 +6,7 @@ import com.jiduauto.log.core.annotation.MonitorLogTags;
 import com.jiduauto.log.core.enums.LogPoint;
 import com.jiduauto.log.core.parse.ParsedResult;
 import com.jiduauto.log.core.parse.ResultParseStrategy;
+import com.jiduauto.log.core.util.MonitorStringUtil;
 import com.jiduauto.log.core.util.ReflectUtil;
 import com.jiduauto.log.core.util.ResultParseUtil;
 import lombok.Getter;
@@ -70,13 +71,8 @@ public class MonitorLogAspectCtx {
         MonitorLog anno = ReflectUtil.getAnnotation(MonitorLog.class, methodOwnedClass, targetMethod, method);
         MonitorLogTags logTags = ReflectUtil.getAnnotation(MonitorLogTags.class, methodOwnedClass, targetMethod, method);
         this.logPoint = anno == null ? LogPoint.UNKNOWN_ENTRY : anno.value();
-        if (logTags != null && logTags.tags() != null && logTags.tags().length %2 ==0) {
-            this.tags = anno == null ? null : logTags.tags();
-        }else{
-            // 非偶数tag prometheus上报会报错，这里只打一行日志提醒
-            log.error("tags length must be double，method：{}", method.getName());
-            this.tags = null;
-        }
+        this.tags = MonitorStringUtil.getTagArray(logTags);
+
     }
 
     public MonitorLogAspectCtx buildResult(long cost, Object result, Throwable exception) {

@@ -96,16 +96,8 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        List<String> tagList = new ArrayList<>();
         MonitorLogTags logTags = ReflectUtil.getAnnotation(MonitorLogTags.class, method.getBeanType(), method.getMethod());
-        if (logTags != null && logTags.tags() != null) {
-            if (logTags.tags().length % 2 == 0) {
-                tagList = new ArrayList<>(Arrays.asList(logTags.tags()));
-            } else {
-                log.error("tags length must be double，method：{}", method.getMethod().getName());
-            }
-        }
-
+        List<String> tagList = MonitorStringUtil.getTagList(logTags);
         long startTime = System.currentTimeMillis();
         String responseBodyStr = "";
         MonitorLogParams logParams = new MonitorLogParams();
@@ -167,7 +159,6 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
             if (logParams.isSuccess() && StringUtils.isNotBlank(responseBodyStr) && isJson(requestHeaderMap)) {
                 dealResponseTags(logParams, responseBodyStr);
             }
-
             logParams.setCost(System.currentTimeMillis() - startTime);
             MonitorLogUtil.log(logParams);
         }
@@ -257,10 +248,7 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
             }
             String parameterName = oriTags[i].substring(1, oriTags[i].length() - 1);
             String resultTagValue = jsonMap.get(parameterName);
-            if (StringUtils.isBlank(resultTagValue)) {
-                continue;
-            }
-            oriTags[i] = resultTagValue;
+            oriTags[i] = StringUtils.isNotBlank(resultTagValue) ? resultTagValue : Constants.NO_VALUE_CODE;
         }
         logParams.setTags(oriTags);
     }
@@ -285,36 +273,23 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
             String resultTagValue = request.getParameter(parameterName);
 
             if (StringUtils.isNotBlank(resultTagValue)) {
-                swapTag(oriTags, i, resultTagValue);
+                oriTags[i] = resultTagValue;
                 continue;
             }
             // 再从body中取值
             resultTagValue = getMapValueIgnoreCase(requestBodyMap, parameterName);
             if (StringUtils.isNotBlank(resultTagValue)) {
-                swapTag(oriTags, i, resultTagValue);
+                oriTags[i] = resultTagValue;
                 continue;
             }
             // 再从header取值
             resultTagValue = getMapValueIgnoreCase(headersMap, parameterName);
             if (StringUtils.isNotBlank(resultTagValue)) {
-                swapTag(oriTags, i, resultTagValue);
+                oriTags[i] = resultTagValue;
             }
         }
         logParams.setTags(oriTags);
     }
-
-    private static void swapTag(String[] oriTags, int index, String resultTagValue) {
-        swapTag(oriTags, index, resultTagValue, false);
-    }
-
-    private static void swapTag(String[] oriTags, int index, String resultTagValue, boolean valueEmptySkip) {
-        if (valueEmptySkip && StringUtils.isBlank(resultTagValue)) {
-            return;
-        }
-        resultTagValue = StringUtils.isNotBlank(resultTagValue) ? resultTagValue : Constants.NO_VALUE_CODE;
-        oriTags[index] = resultTagValue;
-    }
-
 
     private static String getRequestBody(HttpServletRequest request) {
         ContentCachingRequestWrapper wrapper = WebUtils.getNativeRequest(request, ContentCachingRequestWrapper.class);
@@ -397,7 +372,7 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
         if (UserAgentType.LIBRARY.equals(userAgentType)) {
             return LogPoint.RPC_ENTRY;
         }
-        return LogPoint.WEB_ENTRY; // 在这里写入具体的HTTP请求校验逻辑
+        return LogPoint.WEB_ENTRY;
     }
 
 

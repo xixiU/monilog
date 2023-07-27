@@ -3,17 +3,45 @@ package com.jiduauto.log.core.util;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONValidator;
 import com.alibaba.fastjson.TypeReference;
+import com.jiduauto.log.core.annotation.MonitorLogTags;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author yp
  * @date 2023/07/25
  */
+@Slf4j
 public class MonitorStringUtil {
+
+    /**
+     * 从注解中获取tag列表
+     * @param logTags
+     * @return
+     */
+    public static List<String> getTagList(MonitorLogTags logTags){
+        if (logTags == null || logTags.tags() == null || logTags.tags().length == 0) {
+            return new ArrayList<>();
+        }
+        if (logTags.tags().length % 2 == 0) {
+            return Arrays.stream(logTags.tags()).map(String::trim).collect(Collectors.toList());
+        } else {
+            // prometheus tag是key,value结构，非偶数tag prometheus上报会报错，这里只打一行日志提醒
+            log.error("tags length must be double，tags：{}",JSON.toJSONString(logTags));
+        }
+        return new ArrayList<>();
+    }
+
+    public static String[] getTagArray(MonitorLogTags logTags){
+        List<String> tagList = getTagList(logTags);
+        if (CollectionUtils.isEmpty(tagList)) {
+           return null;
+        }
+        return tagList.toArray(new String[0]);
+    }
 
     /**
      * 尝试转换成json，转换不了异常吞掉
