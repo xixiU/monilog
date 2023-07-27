@@ -2,9 +2,9 @@ package com.jiduauto.log.feign;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.jiduauto.log.core.CoreMonitorLogConfiguration;
 import com.jiduauto.log.core.ErrorInfo;
 import com.jiduauto.log.core.LogParser;
-import com.jiduauto.log.core.CoreMonitorLogConfiguration;
 import com.jiduauto.log.core.enums.ErrorEnum;
 import com.jiduauto.log.core.enums.LogPoint;
 import com.jiduauto.log.core.model.MonitorLogParams;
@@ -12,7 +12,6 @@ import com.jiduauto.log.core.parse.ParsedResult;
 import com.jiduauto.log.core.parse.ResultParseStrategy;
 import com.jiduauto.log.core.util.*;
 import feign.*;
-import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
@@ -50,17 +49,14 @@ import java.util.Map;
 @ConditionalOnClass({Feign.class, CoreMonitorLogConfiguration.class})
 @Slf4j
 class FeignMonitorLogConfiguration {
-    @Value("${monitor.log.feign.bool.expr.default:$.code==0,$.code==200}")
-    private String defaultBoolExpr;
-
     @Bean
     public FeignClientEnhanceProcessor feignClientEnhanceProcessor() {
-        return new FeignClientEnhanceProcessor(defaultBoolExpr);
+        return new FeignClientEnhanceProcessor();
     }
 
-    @AllArgsConstructor
     static class FeignClientEnhanceProcessor implements BeanPostProcessor, Ordered {
-        private final String defaultBoolExpr;
+        @Value("${monitor.log.feign.bool.expr.default:$.code==0,$.code==200}")
+        private String defaultBoolExpr;
 
         @Override
         public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {

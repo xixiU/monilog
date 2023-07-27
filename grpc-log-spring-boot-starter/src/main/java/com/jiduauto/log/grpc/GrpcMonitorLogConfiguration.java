@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 @ConditionalOnClass(name = {"io.grpc.stub.AbstractStub", "io.grpc.stub.ServerCalls", "com.jiduauto.log.core.CoreMonitorLogConfiguration"})
 @Slf4j
 class GrpcMonitorLogConfiguration {
-    static final String TIME_KEY = "nowTime";
+    private static final String TIME_KEY = "nowTime";
 
     @GrpcGlobalServerInterceptor
     @Order(-100)
