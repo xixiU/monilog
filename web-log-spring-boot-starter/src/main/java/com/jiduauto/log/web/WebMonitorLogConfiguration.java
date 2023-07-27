@@ -58,7 +58,7 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
     /**
      * 不监控的url清单，支持模糊路径如a/*
      */
-    @Value("${monitor.log.web.blackList:[/actuator/health, /misc/ping, /actuator/prometheus]}")
+    @Value("${monitor.log.web.blackList:/actuator/health,/misc/ping,/actuator/prometheus}")
     private List<String> blackList;
 
     @Bean
