@@ -95,7 +95,7 @@ public class CoreMonitorLogConfiguration {
         }
 
         private String formatLongText(Object o) {
-            int maxTextLen = monitorLogProperties.getPrinter().getTextLenMax();
+            int maxTextLen = monitorLogProperties.getPrinter().getMaxTextLen();
             if (o == null || o instanceof String) {
                 return (String) o;
             }
