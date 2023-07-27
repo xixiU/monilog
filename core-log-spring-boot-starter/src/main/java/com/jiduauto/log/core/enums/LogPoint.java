@@ -15,6 +15,7 @@ public enum LogPoint {
     grpc_server(true),
     rocketmq_consumer(true),
     xxljob(true),
+
     http_client,
     feign_client,
     grpc_client,
