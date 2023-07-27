@@ -4,5 +4,5 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.jiduauto.moni
   com.jiduauto.monitor.log.GrpcMonitorLogConfiguration,\
   com.jiduauto.monitor.log.MybatisMonitorLogConfiguration,\
   com.jiduauto.monitor.log.RocketMqMonitorLogConfiguration,\
-  com.jiduauto.monitor.log.WebMonitorLogConfiguration\
+  com.jiduauto.monitor.log.WebMonitorLogConfiguration,\
   com.jiduauto.monitor.log.XxlJobMonitorLogConfiguration
