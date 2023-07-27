@@ -30,7 +30,7 @@ public class CoreMonitorLogConfiguration {
     @Resource
     private MonitorLogProperties monitorLogProperties;
 
-    @Bean
+    //@Bean
     public MonitorLogAop aspectProcessor() {
         return new MonitorLogAop();
     }
