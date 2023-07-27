@@ -1,6 +1,7 @@
 package com.jiduauto.log.core.model;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -23,9 +24,10 @@ public class MonitorLogProperties {
     /**
      * 日志打印
      */
-    private PrinterProperties printer;
+    private PrinterProperties printer = new PrinterProperties();
 
     @Getter
+    @Setter
     public class PrinterProperties{
         /**
          * 默认详情日志打印最长的长度，目前仅限制了收集参数中的input与output
