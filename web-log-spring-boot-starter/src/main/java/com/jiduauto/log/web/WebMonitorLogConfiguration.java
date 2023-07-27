@@ -2,7 +2,6 @@ package com.jiduauto.log.web;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.google.common.collect.Lists;
 import com.jiduauto.log.core.CoreMonitorLogConfiguration;
 import com.jiduauto.log.core.ErrorInfo;
 import com.jiduauto.log.core.LogParser;
@@ -64,11 +63,12 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
      */
     private static final String JIDU_JNS_HEADER = "X-JIDU-SERVICENAME";
     private static final String USER_AGENT = "User-Agent";
+
     /**
      * 不监控的url清单，支持模糊路径如a/*
      */
-    @Value("${monitor.log.web.blackList:/actuator/health,/misc/ping,/actuator/prometheus}")
-    private List<String> blackList;
+    @Value("${monitor.log.web.blackLists:/actuator/health,/misc/ping,/actuator/prometheus}")
+    private Set<String> blackList;
 
     @Bean
     FilterRegistrationBean<WebMonitorLogConfiguration> logMonitorFilterBean() {
@@ -85,7 +85,7 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
     public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws IOException, ServletException {
         String requestURI = request.getRequestURI();
         if (CollectionUtils.isEmpty(blackList)) {
-            blackList = Lists.newArrayList();
+            blackList = new HashSet<>();
         }
         if (checkPathMatch(blackList, requestURI)) {
             filterChain.doFilter(request, response);
