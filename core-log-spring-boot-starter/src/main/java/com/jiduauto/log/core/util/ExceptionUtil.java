@@ -87,7 +87,7 @@ public class ExceptionUtil {
             return true;
         }
         String msg = e.getClass().getSimpleName() + ":" + e.getLocalizedMessage();
-        return StringUtils.containsIgnoreCase(msg, "timeout");
+        return StringUtils.containsIgnoreCase(msg, "timeout") || StringUtils.containsIgnoreCase(msg, "timed out");
     }
 
     /**
