@@ -33,8 +33,6 @@ import org.springframework.context.annotation.Configuration;
 import javax.annotation.Resource;
 import java.lang.reflect.Proxy;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
 
 @EnableConfigurationProperties
 @ConditionalOnProperty(prefix = "monitor.log.mybatis", name = "enable", havingValue = "true", matchIfMissing = true)
@@ -74,8 +72,7 @@ class MybatisMonitorLogConfiguration {
             long nowTime = System.currentTimeMillis();
 
             MonitorLogParams logParams = new MonitorLogParams();
-            List<String> tags = new ArrayList<>();
-            long costTime = 0;
+            long costTime = -1;
             try {
                 // 获取调用的目标对象
                 Object expectedStatementHandler = getStatementHandlerObject(invocation);
@@ -94,23 +91,22 @@ class MybatisMonitorLogConfiguration {
                 logParams.setService(serviceCls.getSimpleName());
                 logParams.setServiceCls(serviceCls);
                 logParams.setAction(methodName);
+                logParams.setSuccess(true);
                 logParams.setMsgCode(ErrorEnum.SUCCESS.name());
                 logParams.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
-                Object obj = invocation.proceed();
                 BoundSql boundSql = statementHandler.getBoundSql();
                 String sql = boundSql.getSql().replace("\n|\r|\\s+", " ");
                 logParams.setInput(new String[]{sql});
+                //这句可能异常
+                Object obj = invocation.proceed();
                 logParams.setOutput(obj);
-                costTime = System.currentTimeMillis() - nowTime;
+                costTime = System.currentTimeMillis() - nowTime + 1;
                 logParams.setCost(costTime);
-                tags.add(SQL);
-                tags.add(sql);
                 // 超过两秒的，打印错误日志
                 if (costTime > mybatisProperties.getLongQueryTime()) {
-                    MetricMonitor.record(SQL_COST_TOO_LONG + MonitorType.RECORD.getMark(), tags.toArray(new String[0]));
-                    log.error("sql cost time too long, sql{}, time:{}", sql, costTime);
+                    MetricMonitor.record(SQL_COST_TOO_LONG + MonitorType.RECORD.getMark());
+                    log.error("sql_cost_time_too_long, sql{}, time:{}", sql, costTime);
                 }
-                logParams.setSuccess(true);
                 return obj;
             } catch (Throwable e) {
                 log.error("mysqlInterceptor process error", e);
@@ -123,8 +119,7 @@ class MybatisMonitorLogConfiguration {
                 }
                 throw e;
             } finally {
-                logParams.setTags(tags.toArray(new String[0]));
-                logParams.setCost(costTime);
+                logParams.setCost(costTime < 0 ? System.currentTimeMillis() - nowTime + 1 : costTime);
                 MonitorLogUtil.log(logParams);
             }
         }
