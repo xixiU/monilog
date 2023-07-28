@@ -10,6 +10,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
 
 import javax.annotation.Resource;
@@ -23,6 +24,7 @@ import javax.annotation.Resource;
 @EnableConfigurationProperties(MonitorLogProperties.class)
 @ConditionalOnProperty(prefix = "monitor.log", name = "enable", matchIfMissing = true)
 @Slf4j
+@Import({SpringUtils.class})
 class MonitorLogAutoConfiguration {
     @Resource
     private MonitorLogProperties monitorLogProperties;
