@@ -343,7 +343,7 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
         if (MapUtils.isEmpty(headerMap)) {
             return LogPoint.unknown;
         }
-        if (headerMap.containsKey(JIDU_JNS_HEADER)) {
+        if (headerMap.containsKey(JIDU_JNS_HEADER) || headerMap.containsKey(JIDU_JNS_HEADER.toLowerCase())) {
             return LogPoint.feign_server;
         }
         String userAgent = getMapValueIgnoreCase(headerMap, USER_AGENT);
