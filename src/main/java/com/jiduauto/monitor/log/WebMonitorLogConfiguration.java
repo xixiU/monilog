@@ -9,6 +9,7 @@ import com.jiduauto.monitor.log.enums.LogPoint;
 import com.jiduauto.monitor.log.model.ErrorInfo;
 import com.jiduauto.monitor.log.model.MonitorLogParams;
 import com.jiduauto.monitor.log.model.MonitorLogProperties;
+import com.jiduauto.monitor.log.model.RequestWrapper;
 import com.jiduauto.monitor.log.parse.LogParser;
 import com.jiduauto.monitor.log.parse.ParsedResult;
 import com.jiduauto.monitor.log.parse.ResultParseStrategy;

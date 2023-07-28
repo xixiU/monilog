@@ -1,4 +1,4 @@
-package com.jiduauto.monitor.log;
+package com.jiduauto.monitor.log.model;
 
 import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;

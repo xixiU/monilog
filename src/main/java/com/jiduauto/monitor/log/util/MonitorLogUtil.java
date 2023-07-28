@@ -1,6 +1,6 @@
 package com.jiduauto.monitor.log.util;
 
-import com.jiduauto.monitor.log.MonitorLogPrinter;
+import com.jiduauto.monitor.log.model.MonitorLogPrinter;
 import com.jiduauto.monitor.log.constant.Constants;
 import com.jiduauto.monitor.log.enums.LogPoint;
 import com.jiduauto.monitor.log.enums.MonitorType;

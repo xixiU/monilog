@@ -1,7 +1,5 @@
-package com.jiduauto.monitor.log;
+package com.jiduauto.monitor.log.model;
 
-
-import com.jiduauto.monitor.log.model.MonitorLogParams;
 
 /**
  * @author yp
