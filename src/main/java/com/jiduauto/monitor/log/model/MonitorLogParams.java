@@ -20,11 +20,12 @@ public class MonitorLogParams {
     private boolean success;
     private String msgCode;
     private String msgInfo;
-    private String[] tags;
     private long cost;
     private Throwable exception;
     private Object[] input;
     private Object output;
+
+    private String[] tags;
     private boolean hasUserTag;
 
     public String getMsgCode() {
