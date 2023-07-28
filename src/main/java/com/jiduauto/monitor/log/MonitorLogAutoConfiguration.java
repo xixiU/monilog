@@ -3,6 +3,7 @@ package com.jiduauto.monitor.log;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.interceptor.GrpcGlobalClientInterceptor;
 import net.devh.boot.grpc.server.interceptor.GrpcGlobalServerInterceptor;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.*;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -152,11 +153,16 @@ class MonitorLogAutoConfiguration {
         private MonitorLogProperties monitorLogProperties;
 
         /**
-         * 注意，只有当在Spring中注入了HttpClientBuilder对象，拦截器才会生效
-         *
-         * @return
+         * 注意，只有使用Spring容器中的HttpClientBuilder对象，拦截器才会生效
          */
         @Bean
+        @ConditionalOnMissingBean(HttpClientBuilder.class)
+        HttpClientBuilder httpClientBuilder() {
+            return HttpClientBuilder.create();
+        }
+
+        @Bean
+        @ConditionalOnBean(HttpClientBuilder.class)
         HttpClientLogMonitorInterceptor.HttpClientBuilderProcessor httpClientBuilderProcessor() {
             log.info("!!! httpclient monitor start ...");
             HttpClientLogMonitorInterceptor.RequestInterceptor requestInterceptor = new HttpClientLogMonitorInterceptor.RequestInterceptor();
