@@ -29,12 +29,12 @@ public final class ResultParser {
     /**
      * 默认的错误码解析路径，注意对于基于方法的解析方式，仅支持无参方法
      */
-    public static final String Default_ErrCode_Expr = "$.msgCode,$.resultCode,$.errorCode,$.responseCode,$.retCode,$.code," +
+    public static final String Default_ErrCode_Expr = "$.msgCode,$.resultCode,$.errorCode,$.responseCode,$.retCode,$.code,$.status," +
             "$.getMsgCode(),$.getResultCode(),$.getErrorCode(),$.getResponseCode(),$.getRetCode(),$.getCode()";
     /**
      * 默认的错误原因解析路径，注意对于基于方法的解析方式，仅支持无参方法
      */
-    public static final String Default_ErrMsg_Expr = "$.msgInfo,$.message,$.msg,$.resultMsg,$.errorMsg,$.errMsg,$.responseMsg,$.responseMessage,$.retMsg,$.subResultCode,$.errorDesc,$.error" +
+    public static final String Default_ErrMsg_Expr = "$.msgInfo,$.message,$.msg,$.resultMsg,$.errorMsg,$.errMsg,$.responseMsg,$.responseMessage,$.retMsg,$.subResultCode,$.errorDesc,$.error," +
             "$.getMsgInfo(),$.getMessage(),$.getMsg(),$.getResultMsg(),$.getErrorMsg(),$.getResponseMsg(),$.getRetMsg()";
 
     public static Integer parseIntCode(Object obj) {
