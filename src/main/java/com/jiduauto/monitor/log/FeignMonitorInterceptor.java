@@ -31,7 +31,7 @@ import java.util.Map;
  * @date 2023/07/24
  */
 @Slf4j
-class FeignMonitorLogConfiguration {
+class FeignMonitorInterceptor {
     @Resource
     private MonitorLogProperties monitorLogProperties;
 
