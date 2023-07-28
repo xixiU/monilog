@@ -10,7 +10,6 @@ import com.jiduauto.monitor.log.model.MonitorLogProperties;
 import com.jiduauto.monitor.log.parse.LogParser;
 import com.jiduauto.monitor.log.parse.ParsedResult;
 import com.jiduauto.monitor.log.parse.ResultParseStrategy;
-import com.jiduauto.monitor.log.parse.ResultParser;
 import com.jiduauto.monitor.log.util.*;
 import feign.*;
 import lombok.SneakyThrows;
@@ -153,7 +152,7 @@ class FeignMonitorLogConfiguration {
                         mlp.setOutput(json);
                         LogParser cl = ReflectUtil.getAnnotation(LogParser.class, mlp.getServiceCls(), m);
                         //尝试更精确的提取业务失败信息
-                        String specifiedBoolExpr = StringUtils.trimToNull(defaultBoolExpr + ResultParser.Default_Bool_Expr);
+                        String specifiedBoolExpr = StringUtils.trimToNull(defaultBoolExpr);
                         ResultParseStrategy rps = cl == null ? null : cl.resultParseStrategy();//默认使用IfSuccess策略
                         String boolExpr = cl == null ? specifiedBoolExpr : cl.boolExpr();
                         String codeExpr = cl == null ? null : cl.errorCodeExpr();
