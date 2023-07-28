@@ -356,7 +356,7 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
         }
         UserAgentType userAgentType = UaUtil.parseUserAgentType(userAgent);
         if (UserAgentType.LIBRARY.equals(userAgentType)) {
-            return LogPoint.http_server;
+            return LogPoint.feign_server;
         }
         return LogPoint.http_server;
     }
