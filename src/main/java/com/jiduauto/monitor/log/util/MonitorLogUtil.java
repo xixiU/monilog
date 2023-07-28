@@ -1,11 +1,11 @@
 package com.jiduauto.monitor.log.util;
 
-import com.jiduauto.monitor.log.model.MonitorLogPrinter;
+import com.alibaba.fastjson.JSON;
 import com.jiduauto.monitor.log.constant.Constants;
 import com.jiduauto.monitor.log.enums.LogPoint;
 import com.jiduauto.monitor.log.enums.MonitorType;
 import com.jiduauto.monitor.log.model.MonitorLogParams;
-import com.alibaba.fastjson.JSON;
+import com.jiduauto.monitor.log.model.MonitorLogPrinter;
 import com.metric.MetricMonitor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -37,47 +37,48 @@ public class MonitorLogUtil {
     }
 
     private static void doMonitor(MonitorLogParams logParams) {
-        String[] tags = processTags(logParams);
+        TagBuilder systemTags = getSystemTags(logParams);
         LogPoint logPoint = logParams.getLogPoint();
         if (logPoint == null) {
             logPoint = LogPoint.unknown;
         }
-        String name = Constants.BUSINESS_NAME_PREFIX + Constants.UNDERLINE ;
+        //TODO 这里在后边加入了自定义的tag，可能与全局监控混淆
+        String[] allTags = systemTags.add(logParams.getTags()).toArray();
 
+        String name = Constants.BUSINESS_NAME_PREFIX + Constants.UNDERLINE;
         if (logParams.isHasUserTag()) {
-            name =  name + logParams.getService() + Constants.UNDERLINE + logParams.getAction();
+            name = name + logParams.getService() + Constants.UNDERLINE + logParams.getAction();
         }
         name = name + Constants.UNDERLINE + logPoint.name();
         // 默认打一个record记录
-        MetricMonitor.record(name + MonitorType.RECORD.getMark(), tags);
+        MetricMonitor.record(name + MonitorType.RECORD.getMark(), allTags);
         // 对返回值添加累加记录
-        MetricMonitor.cumulation(name + MonitorType.CUMULATION.getMark(), 1, tags);
-        try{
-            MetricMonitor.eventDruation(name + MonitorType.TIMER.getMark(), tags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
-        }catch (Exception e){
-            log.error("MetricMonitor.eventDruation name:{}, tag:{}" ,name, JSON.toJSONString(tags));
+        MetricMonitor.cumulation(name + MonitorType.CUMULATION.getMark(), 1, allTags);
+        try {
+            MetricMonitor.eventDruation(name + MonitorType.TIMER.getMark(), allTags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            log.error("MetricMonitor.eventDruation name:{}, tag:{}", name, JSON.toJSONString(allTags));
         }
     }
 
     /**
      * 统一打上环境标、应用名、打标类型、处理结果
-     *
      */
-    public static String[] processTags(MonitorLogParams logParams) {
-        TagBuilder tb = TagBuilder.of(logParams.getTags());
+    private static TagBuilder getSystemTags(MonitorLogParams logParams) {
         boolean success = logParams.isSuccess() && logParams.getException() == null;
-        tb.add(Constants.RESULT, success ? Constants.SUCCESS : Constants.ERROR)
+        String exceptionMsg = logParams.getException() == null ? "null" : ExceptionUtil.getErrorMsg(logParams.getException());
+        int maxLen = 30;
+        if (exceptionMsg.length() > maxLen) {
+            exceptionMsg = exceptionMsg.substring(0, maxLen) + "...";
+        }
+        return TagBuilder.of(Constants.RESULT, success ? Constants.SUCCESS : Constants.ERROR)
                 .add(Constants.APPLICATION, MonitorSpringUtils.getApplicationName())
                 .add(Constants.LOG_POINT, logParams.getLogPoint().name())
                 .add(Constants.ENV, MonitorSpringUtils.getActiveProfile())
                 .add(Constants.SERVICE_NAME, logParams.getService())
                 .add(Constants.ACTION_NAME, logParams.getAction())
                 .add(Constants.MSG_CODE, logParams.getMsgCode())
-                .add(Constants.COST, String.valueOf(logParams.getCost()));
-        if (logParams.getException() != null) {
-            Throwable exception = logParams.getException();
-            tb.add(Constants.EXCEPTION, exception.getClass().getSimpleName()).add(Constants.EXCEPTION_MSG, exception.getMessage());
-        }
-        return tb.toArray();
+                .add(Constants.COST, String.valueOf(logParams.getCost()))
+                .add(Constants.EXCEPTION, exceptionMsg);
     }
 }

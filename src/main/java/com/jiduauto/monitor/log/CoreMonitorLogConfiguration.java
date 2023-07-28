@@ -81,7 +81,7 @@ public class CoreMonitorLogConfiguration {
             if (!needLog) {
                 return;
             }
-            String tags = JSON.toJSONString(MonitorLogUtil.processTags(logParams));
+            String tags = JSON.toJSONString(logParams.getTags());
             logger.info("monitor_log[{}]-{}.{} {}|{}|{} {} input:{}, output:{}, tags:{}", logPoint, service, action, success, code, msg, rt, input, output, tags);
         }
 

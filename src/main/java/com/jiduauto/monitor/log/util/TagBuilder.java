@@ -43,6 +43,14 @@ public class TagBuilder {
         return new TagBuilder().add(k1, v1).add(k2, v2).add(k3, v3);
     }
 
+
+    public TagBuilder add(String[] tags) {
+        if (tags == null || tags.length == 0) {
+            return this;
+        }
+        return add(Arrays.asList(tags));
+    }
+
     public TagBuilder add(List<String> tags) {
         if (CollectionUtils.isEmpty(tags)) {
             return this;
