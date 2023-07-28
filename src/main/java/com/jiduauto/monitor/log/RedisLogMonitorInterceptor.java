@@ -8,6 +8,7 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.core.Ordered;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 @Slf4j
 class RedisLogMonitorInterceptor {
@@ -17,10 +18,15 @@ class RedisLogMonitorInterceptor {
         public RedisTemplateEnhanceProcessor(MonitorLogProperties.RedisProperties redisProperties) {
             this.redisProperties = redisProperties;
         }
+
         @Override
         public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
             if (bean instanceof RedisTemplate && !(bean instanceof RedisLogMonitorInterceptor.EnhancedRedisTemplate)) {
-                return new RedisLogMonitorInterceptor.EnhancedRedisTemplate<>((RedisTemplate<?, ?>) bean, redisProperties);
+                if (bean instanceof StringRedisTemplate) {
+                    return new RedisLogMonitorInterceptor.EnhancedStringRedisTemplate((StringRedisTemplate) bean, redisProperties);
+                } else {
+                    return new RedisLogMonitorInterceptor.EnhancedRedisTemplate<>((RedisTemplate<?, ?>) bean, redisProperties);
+                }
             }
             return BeanPostProcessor.super.postProcessBeforeInitialization(bean, beanName);
         }
@@ -32,18 +38,35 @@ class RedisLogMonitorInterceptor {
     }
 
     @AllArgsConstructor
-    private static class EnhancedRedisTemplate<K, V> extends RedisTemplate<K, V> {
+    private static class EnhancedStringRedisTemplate extends StringRedisTemplate implements RedisExecutor {
+        private final StringRedisTemplate redisTemplate;
+        private final MonitorLogProperties.RedisProperties redisProperties;
+
+        @Override
+        public <T> T execute(RedisCallback<T> action, boolean exposeConnection, boolean pipeline) {
+            return doExecute(redisTemplate, action, exposeConnection, pipeline);
+        }
+    }
+
+    @AllArgsConstructor
+    private static class EnhancedRedisTemplate<K, V> extends RedisTemplate<K, V> implements RedisExecutor {
         private final RedisTemplate<K, V> redisTemplate;
         private final MonitorLogProperties.RedisProperties redisProperties;
 
         @Override
         public <T> T execute(RedisCallback<T> action, boolean exposeConnection, boolean pipeline) {
+            return doExecute(redisTemplate, action, exposeConnection, pipeline);
+        }
+    }
+
+    interface RedisExecutor {
+        default <T> T doExecute(RedisTemplate redisTemplate, RedisCallback<T> action, boolean exposeConnection, boolean pipeline) {
             long start = System.currentTimeMillis();
             long cost = 0;
             Throwable ex = null;
             T ret = null;
             try {
-                ret = redisTemplate.execute(action, exposeConnection, pipeline);
+                ret = (T) redisTemplate.execute(action, exposeConnection, pipeline);
             } catch (Throwable e) {
                 ex = e;
             } finally {
