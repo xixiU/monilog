@@ -10,6 +10,7 @@ import com.jiduauto.monitor.log.model.MonitorLogProperties;
 import com.jiduauto.monitor.log.parse.LogParser;
 import com.jiduauto.monitor.log.parse.ParsedResult;
 import com.jiduauto.monitor.log.parse.ResultParseStrategy;
+import com.jiduauto.monitor.log.parse.ResultParser;
 import com.jiduauto.monitor.log.util.*;
 import feign.*;
 import lombok.SneakyThrows;
@@ -113,7 +114,7 @@ class FeignMonitorLogConfiguration {
 
             mlp.setCost(cost);
             mlp.setException(ex);
-            mlp.setSuccess(ex == null);
+            mlp.setSuccess(ex == null && originResponse.status() < HttpStatus.BAD_REQUEST.value());
             mlp.setLogPoint(LogPoint.feign_client);
             mlp.setInput(new Object[]{formatRequestInfo(request)});
             mlp.setMsgCode(ErrorEnum.SUCCESS.name());
@@ -134,7 +135,7 @@ class FeignMonitorLogConfiguration {
             Response ret;
             try {
                 BufferingFeignClientResponse response = new BufferingFeignClientResponse(originResponse);
-                mlp.setSuccess(mlp.isSuccess() && response.status() == HttpStatus.OK.value());
+                mlp.setSuccess(mlp.isSuccess() && response.status() < HttpStatus.BAD_REQUEST.value());
                 if (!mlp.isSuccess()) {
                     mlp.setMsgCode(String.valueOf(response.status()));
                     mlp.setMsgInfo(ErrorEnum.FAILED.getMsg());
@@ -152,8 +153,9 @@ class FeignMonitorLogConfiguration {
                         mlp.setOutput(json);
                         LogParser cl = ReflectUtil.getAnnotation(LogParser.class, mlp.getServiceCls(), m);
                         //尝试更精确的提取业务失败信息
+                        String specifiedBoolExpr = StringUtils.trimToNull(defaultBoolExpr + ResultParser.Default_Bool_Expr);
                         ResultParseStrategy rps = cl == null ? null : cl.resultParseStrategy();//默认使用IfSuccess策略
-                        String boolExpr = cl == null ? StringUtils.trimToNull(defaultBoolExpr) : cl.boolExpr();
+                        String boolExpr = cl == null ? specifiedBoolExpr : cl.boolExpr();
                         String codeExpr = cl == null ? null : cl.errorCodeExpr();
                         String msgExpr = cl == null ? null : cl.errorMsgExpr();
                         ParsedResult parsedResult = ResultParseUtil.parseResult(json, rps, null, boolExpr, codeExpr, msgExpr);

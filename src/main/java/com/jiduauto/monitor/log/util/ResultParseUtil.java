@@ -38,26 +38,34 @@ public final class ResultParseUtil {
 
         boolean succ = true;
         ErrorEnum errorEnum = ErrorEnum.SUCCESS;
+        String msgCode = ResultParser.parseErrCode(returnObj, codeExpr);
+        String msgInfo = ResultParser.parseErrMsg(returnObj, msgExpr);
         switch (strategy) {
             case IfSuccess:
-                String msgCode = ResultParser.parseErrCode(returnObj, codeExpr);
-                String msgInfo = ResultParser.parseErrMsg(returnObj, msgExpr);
                 //此处属于悲观判定：只有当解析成功且值为true，才认为成功。 解析结果未知也认为是失败，可以倒逼使用的地方主动纠正判定逻辑，提高告警的敏感性
-                return new ParsedResult(parsedSucc != null && parsedSucc, msgCode, msgInfo);
+                succ = parsedSucc != null && parsedSucc;
+                break;
             case IfNotException:
-                return new ParsedResult(succ, errorEnum.name(), errorEnum.getMsg());
+                break;
             case IfNotNull:
                 if (!(succ = returnObj != null)) {
                     errorEnum = ErrorEnum.NULL_RESULT;
                 }
-                return new ParsedResult(succ, errorEnum.name(), errorEnum.getMsg());
+                break;
             case IfNotEmpty:
             default:
                 if (!(succ = isNotEmpty(returnObj))) {
                     errorEnum = ErrorEnum.EMPTY_RESULT;
                 }
-                return new ParsedResult(succ, errorEnum.name(), errorEnum.getMsg());
+                break;
         }
+        if (StringUtils.isBlank(msgCode)) {
+            msgCode = errorEnum.name();
+        }
+        if (StringUtils.isBlank(msgInfo)) {
+            msgInfo = errorEnum.getMsg();
+        }
+        return new ParsedResult(succ, msgCode, msgInfo);
     }
 
 
