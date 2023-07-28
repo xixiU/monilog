@@ -50,7 +50,7 @@ class MonitorLogAutoConfiguration {
 
     @ConditionalOnProperty(prefix = "monitor.log.grpc", name = "enable", havingValue = "true", matchIfMissing = true)
     @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('grpc')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('grpc'))")
-    @ConditionalOnClass(name = {"io.grpc.stub.AbstractStub", "io.grpc.stub.ServerCalls", "com.jiduauto.monitor.log.CoreMonitorLogConfiguration"})
+    @ConditionalOnClass(name = {"io.grpc.stub.AbstractStub", "io.grpc.stub.ServerCalls"})
     @Configuration
     class GrpcMonitorLogConfiguration {
         @Order(-100)
@@ -84,7 +84,7 @@ class MonitorLogAutoConfiguration {
     @Configuration
     @ConditionalOnProperty(prefix = "monitor.log.rocketmq", name = "enable", havingValue = "true", matchIfMissing = true)
     @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('rocketmq')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('rocketmq'))")
-    @ConditionalOnClass(name = {"org.apache.rocketmq.client.MQAdmin", "com.jiduauto.monitor.log.CoreMonitorLogConfiguration"})
+    @ConditionalOnClass(name = {"org.apache.rocketmq.client.MQAdmin"})
     class RocketMqMonitorLogConfiguration{
         @Bean
         @ConditionalOnProperty(prefix = "monitor.log.rocketmq.consumer", name = "enable", havingValue = "true", matchIfMissing = true)
