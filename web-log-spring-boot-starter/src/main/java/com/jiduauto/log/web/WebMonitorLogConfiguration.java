@@ -105,6 +105,9 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
         long startTime = System.currentTimeMillis();
         String responseBodyStr = "";
         MonitorLogParams logParams = new MonitorLogParams();
+        if (logParams != null) {
+            logParams.setHasUserTag(true);
+        }
         logParams.setLogPoint(LogPoint.http_server);
         logParams.setServiceCls(method.getBeanType());
         logParams.setService(method.getBeanType().getSimpleName());

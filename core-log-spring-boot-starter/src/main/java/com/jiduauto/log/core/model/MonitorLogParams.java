@@ -22,4 +22,5 @@ public class MonitorLogParams {
     private Throwable exception;
     private Object[] input;
     private Object output;
+    private boolean hasUserTag;
 }

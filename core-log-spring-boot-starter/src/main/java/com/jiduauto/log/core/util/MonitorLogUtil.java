@@ -43,6 +43,10 @@ public class MonitorLogUtil {
             logPoint = LogPoint.unknown;
         }
         String name = Constants.BUSINESS_NAME_PREFIX + Constants.UNDERLINE + logPoint.name();
+
+        if (logParams.isHasUserTag()) {
+            name = logParams.getService() + Constants.UNDERLINE + logParams.getAction() + logPoint.name();
+        }
         // 默认打一个record记录
         MetricMonitor.record(name + MonitorType.RECORD.getMark(), tags);
         // 对返回值添加累加记录
