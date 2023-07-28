@@ -43,7 +43,9 @@ public final class ResultParseUtil {
         switch (strategy) {
             case IfSuccess:
                 //此处属于悲观判定：只有当解析成功且值为true，才认为成功。 解析结果未知也认为是失败，可以倒逼使用的地方主动纠正判定逻辑，提高告警的敏感性
-                succ = parsedSucc != null && parsedSucc;
+                if (!(succ = parsedSucc != null && parsedSucc)) {
+                    errorEnum = ErrorEnum.FAILED;
+                }
                 break;
             case IfNotException:
                 break;
