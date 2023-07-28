@@ -28,13 +28,13 @@ class MonitorLogAutoConfiguration {
     private MonitorLogProperties monitorLogProperties;
 
     @Bean
-    public MonitorLogAop aspectProcessor() {
+    MonitorLogAop aspectProcessor() {
         return new MonitorLogAop();
     }
 
     @Bean
     @ConditionalOnMissingBean(MonitorLogPrinter.class)
-    public MonitorLogPrinter monitorLogPrinter() {
+    MonitorLogPrinter monitorLogPrinter() {
         log.info("!!! core monitor start ……");
         return new DefaultMonitorLogPrinter(monitorLogProperties.getPrinter());
     }
@@ -43,7 +43,7 @@ class MonitorLogAutoConfiguration {
     @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('feign')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('feign'))")
     @ConditionalOnClass({Feign.class})
     @Bean
-    public FeignMonitorInterceptor.FeignClientEnhanceProcessor feignClientEnhanceProcessor() {
+    FeignMonitorInterceptor.FeignClientEnhanceProcessor feignClientEnhanceProcessor() {
         log.info("!!! feign monitor start ……");
         return new FeignMonitorInterceptor.FeignClientEnhanceProcessor(monitorLogProperties.getFeign());
     }
@@ -52,7 +52,7 @@ class MonitorLogAutoConfiguration {
     @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('grpc')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('grpc'))")
     @ConditionalOnClass(name = {"io.grpc.stub.AbstractStub", "io.grpc.stub.ServerCalls", "com.jiduauto.monitor.log.CoreMonitorLogConfiguration"})
     @Configuration
-    public class GrpcMonitorLogConfiguration {
+    class GrpcMonitorLogConfiguration {
         @Order(-100)
         @GrpcGlobalServerInterceptor
         @ConditionalOnProperty(prefix = "monitor.log.grpc.server", name = "enable", havingValue = "true", matchIfMissing = true)
@@ -75,7 +75,7 @@ class MonitorLogAutoConfiguration {
     @ConditionalOnProperty(prefix = "monitor.log.mybatis", name = "enable", havingValue = "true", matchIfMissing = true)
     @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('mybatis')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('mybatis'))")
     @Bean
-    public MybatisMonitorLogInterceptor.MybatisInterceptor mybatisMonitorSqlFilter() {
+    MybatisMonitorLogInterceptor.MybatisInterceptor mybatisMonitorSqlFilter() {
         log.info("!!! mybatis monitor start ……");
         return new MybatisMonitorLogInterceptor.MybatisInterceptor(monitorLogProperties.getMybatis());
     }
@@ -85,7 +85,7 @@ class MonitorLogAutoConfiguration {
     @ConditionalOnProperty(prefix = "monitor.log.rocketmq", name = "enable", havingValue = "true", matchIfMissing = true)
     @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('rocketmq')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('rocketmq'))")
     @ConditionalOnClass(name = {"org.apache.rocketmq.client.MQAdmin", "com.jiduauto.monitor.log.CoreMonitorLogConfiguration"})
-    public class RocketMqMonitorLogConfiguration{
+    class RocketMqMonitorLogConfiguration{
         @Bean
         @ConditionalOnProperty(prefix = "monitor.log.rocketmq.consumer", name = "enable", havingValue = "true", matchIfMissing = true)
         RocketMqMonitorLogInterceptor.RocketMQConsumerInterceptor rocketMQConsumerPostProcessor() {
@@ -120,7 +120,7 @@ class MonitorLogAutoConfiguration {
     @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('xxljob')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('xxljob'))")
     @ConditionalOnClass({IJobHandler.class})
     @Bean
-    public XxlJobLogMonitorExecuteInterceptor xxlJobLogMonitorExecuteInterceptor() {
+    XxlJobLogMonitorExecuteInterceptor xxlJobLogMonitorExecuteInterceptor() {
         log.info("!!! xxljob monitor start ……");
         return new XxlJobLogMonitorExecuteInterceptor();
     }
