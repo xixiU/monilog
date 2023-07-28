@@ -4,6 +4,7 @@ package com.jiduauto.monitor.log;
 import com.jiduauto.monitor.log.aop.MonitorLogAop;
 import com.jiduauto.monitor.log.enums.LogPoint;
 import com.jiduauto.monitor.log.parse.LogParser;
+import com.jiduauto.monitor.log.parse.ResultParser;
 import com.xxl.job.core.biz.model.ReturnT;
 import com.xxl.job.core.handler.IJobHandler;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -31,7 +32,8 @@ class XxlJobMonitorLogConfiguration {
     static class XxlJobLogMonitorExecuteInterceptor {
         @Around("execution(public * com.xxl.job.core.handler.IJobHandler+.*(..)) || @annotation(com.xxl.job.core.handler.annotation.XxlJob)")
         public Object interceptXxlJob(ProceedingJoinPoint pjp) throws Throwable {
-            return MonitorLogAop.processAround(pjp, LogParser.Default.buildInstance("$.code==" + ReturnT.SUCCESS_CODE), LogPoint.xxljob);
+            String boolExpr = "$.code==" + ReturnT.SUCCESS_CODE + "," + ResultParser.Default_Bool_Expr;
+            return MonitorLogAop.processAround(pjp, LogParser.Default.buildInstance(boolExpr), LogPoint.xxljob);
         }
     }
 }
