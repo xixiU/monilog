@@ -57,6 +57,10 @@ public class MonitorLogProperties {
      * rocketmq监控配置
      */
     private RocketMqProperties rocketmq = new RocketMqProperties();
+    /**
+     * redis监控配置
+     */
+    private RedisProperties redis = new RedisProperties();
 
     @Getter
     @Setter
@@ -203,5 +207,18 @@ public class MonitorLogProperties {
          * 是否输出各个rocketmq发送者流量的详情日志
          */
         private boolean printRocketmqProducerDetailLog = true;
+    }
+
+    @Getter
+    @Setter
+    public static class RedisProperties{
+        /**
+         * 开启redis监控
+         */
+        private boolean enable = true;
+        /**
+         * 是否输redis的详情日志
+         */
+        private boolean printRedisDetailLog = true;
     }
 }

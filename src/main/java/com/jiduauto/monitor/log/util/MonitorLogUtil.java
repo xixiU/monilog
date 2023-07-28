@@ -6,6 +6,7 @@ import com.jiduauto.monitor.log.enums.LogPoint;
 import com.jiduauto.monitor.log.enums.MonitorType;
 import com.jiduauto.monitor.log.model.MonitorLogParams;
 import com.jiduauto.monitor.log.model.MonitorLogPrinter;
+import com.jiduauto.monitor.log.model.MonitorLogProperties;
 import com.metric.MetricMonitor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -19,20 +20,15 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class MonitorLogUtil {
     public static void log(MonitorLogParams logParams) {
-        MonitorLogPrinter printer = null;
-        try {
-            printer = MonitorSpringUtils.getBean(MonitorLogPrinter.class);
-        } catch (Exception e) {
-            log.warn(Constants.SYSTEM_ERROR_PREFIX + ":no MonitorLogPrinter instance found");
-        }
-
         try {
             doMonitor(logParams);
-            if (printer != null) {
-                printer.log(logParams);
-            }
         } catch (Exception e) {
             log.warn(Constants.SYSTEM_ERROR_PREFIX + "doMonitor error:{}", e.getMessage());
+        }
+        try {
+            printDetailLog(logParams);
+        } catch (Exception e) {
+            log.warn(Constants.SYSTEM_ERROR_PREFIX + "printDetailLog error:{}", e.getMessage());
         }
     }
 
@@ -62,6 +58,8 @@ public class MonitorLogUtil {
         }
     }
 
+
+
     /**
      * 统一打上环境标、应用名、打标类型、处理结果
      */
@@ -81,5 +79,51 @@ public class MonitorLogUtil {
                 .add(Constants.MSG_CODE, logParams.getMsgCode())
                 .add(Constants.COST, String.valueOf(logParams.getCost()))
                 .add(Constants.EXCEPTION, exceptionMsg);
+    }
+
+    /**
+     * 打印详情日志
+     * @param logParams
+     */
+    private static void printDetailLog(MonitorLogParams logParams){
+        MonitorLogPrinter printer = null;
+        MonitorLogProperties properties = null;
+        try {
+            printer = MonitorSpringUtils.getBean(MonitorLogPrinter.class);
+            properties = MonitorSpringUtils.getBean(MonitorLogProperties.class);
+        } catch (Exception e) {
+            log.warn(Constants.SYSTEM_ERROR_PREFIX + ":no MonitorLogPrinter instance found");
+        }
+        if (printer == null || properties == null) {
+            return;
+        }
+        MonitorLogProperties.PrinterProperties printerCfg = properties.getPrinter();
+        if (!printerCfg.isPrintDetailLog()) {
+            return;
+        }
+        LogPoint logPoint = logParams.getLogPoint();
+        if (logPoint == null) {
+            return;
+        }
+        boolean doPrinter = true;
+        switch (logPoint) {
+            case http_server: doPrinter = properties.getWeb().isPrintHttpServerDetailLog();break;
+            case http_client: doPrinter = properties.getWeb().isPrintHttpClientDetailLog();break;
+            case feign_server: doPrinter = properties.getFeign().isPrintFeignServerDetailLog();break;
+            case feign_client: doPrinter = properties.getFeign().isPrintFeignClientDetailLog();break;
+            case grpc_client: doPrinter = properties.getGrpc().isPrintGrpcClientDetailLog();break;
+            case grpc_server: doPrinter = properties.getGrpc().isPrintGrpcServerDetailLog();break;
+            case rocketmq_consumer: doPrinter = properties.getRocketmq().isPrintRocketmqConsumerDetailLog();break;
+            case rocketmq_producer: doPrinter = properties.getRocketmq().isPrintRocketmqProducerDetailLog();break;
+            case mybatis: doPrinter = properties.getMybatis().isPrintMybatisDetailLog();break;
+            case xxljob: doPrinter = properties.getXxljob().isPrintXxljobDetailLog();break;
+            case redis: doPrinter = properties.getRedis().isPrintRedisDetailLog();
+            case unknown:
+            default:
+                break;
+        }
+        if (doPrinter) {
+            printer.log(logParams);
+        }
     }
 }
