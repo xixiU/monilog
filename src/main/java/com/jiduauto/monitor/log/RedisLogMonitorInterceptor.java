@@ -1,6 +1,7 @@
 package com.jiduauto.monitor.log;
 
 
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -10,7 +11,9 @@ import org.aspectj.lang.annotation.Aspect;
 class RedisLogMonitorInterceptor {
 
     @Aspect
+    @AllArgsConstructor
     static class RedisTemplateEnhancer {
+        private final MonitorLogProperties.RedisProperties redis;
         @Around("execution(public * *.execute(org.springframework.data.redis.core.RedisCallback, boolean ,boolean))")
         Object intercept(ProceedingJoinPoint pjp) {
             long start = System.currentTimeMillis();
