@@ -47,6 +47,7 @@ public class MonitorLogUtil {
         if (logParams.isHasUserTag()) {
             name = name + logParams.getService() + Constants.UNDERLINE + logParams.getAction();
         }
+        // TODO rongjie.yuan  2023/7/28 12:45 全局监控与业务监控区分开来。
         name = name + Constants.UNDERLINE + logPoint.name();
         // 默认打一个record记录
         MetricMonitor.record(name + MonitorType.RECORD.getMark(), tags);
