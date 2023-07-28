@@ -33,7 +33,8 @@ class XxlJobMonitorLogConfiguration {
         @Around("execution(public * com.xxl.job.core.handler.IJobHandler+.*(..)) || @annotation(com.xxl.job.core.handler.annotation.XxlJob)")
         public Object interceptXxlJob(ProceedingJoinPoint pjp) throws Throwable {
             String boolExpr = "$.code==" + ReturnT.SUCCESS_CODE + "," + ResultParser.Default_Bool_Expr;
-            return MonitorLogAop.processAround(pjp, LogParser.Default.buildInstance(boolExpr), LogPoint.xxljob);
+            LogParser logParser = LogParser.Default.buildInstance(boolExpr);
+            return MonitorLogAop.processAround(pjp, logParser, LogPoint.xxljob);
         }
     }
 }
