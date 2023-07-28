@@ -55,7 +55,7 @@ class WebMonitorLogInterceptor extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        HandlerMethod method = getHandlerMethod(wrapperRequest);
+        HandlerMethod method = getHandlerMethod(isMultipart ? request : wrapperRequest);
         if (method == null) {
             filterChain.doFilter(request, response);
             return;
@@ -67,23 +67,23 @@ class WebMonitorLogInterceptor extends OncePerRequestFilter {
         long startTime = System.currentTimeMillis();
         String responseBodyStr = "";
         MonitorLogParams logParams = new MonitorLogParams();
-        if (logParams != null) {
+        if (tagList != null && tagList.size() > 1) {
             logParams.setHasUserTag(true);
         }
         logParams.setServiceCls(method.getBeanType());
         logParams.setService(method.getBeanType().getSimpleName());
         logParams.setAction(method.getMethod().getName());
-        TagBuilder tagBuilder = TagBuilder.of(tagList).add("url", requestURI).add("method", wrapperRequest.getMethod());
+        TagBuilder tagBuilder = TagBuilder.of(tagList).add("url", requestURI).add("method", request.getMethod());
         logParams.setTags(tagBuilder.toArray());
 
-        Map<String, String> requestHeaderMap = getRequestHeaders(wrapperRequest);
+        Map<String, String> requestHeaderMap = getRequestHeaders(request);
 
         Map<String, String> requestBodyMap = new HashMap<>();
         logParams.setLogPoint(validateRequest(requestHeaderMap));
-        JSONObject jsonObject = formatRequestInfo(isMultipart, wrapperRequest, requestHeaderMap);
+        JSONObject jsonObject = formatRequestInfo(isMultipart, isMultipart ? request : wrapperRequest, requestHeaderMap);
         Object o = jsonObject.get("body");
         if (o instanceof Map) {
-            requestBodyMap = (Map<String, String>) o;
+            requestBodyMap.putAll((Map<String, String>) o);
         }
         logParams.setInput(new Object[]{jsonObject});
         logParams.setMsgCode(ErrorEnum.SUCCESS.name());
@@ -260,9 +260,9 @@ class WebMonitorLogInterceptor extends OncePerRequestFilter {
         logParams.setTags(oriTags);
     }
 
-    private JSONObject formatRequestInfo(boolean isMultipart, RequestWrapper requestWrapper, Map<String, String> requestHeaderMap) {
-        Map<String, String[]> parameterMap = requestWrapper.getParameterMap();
-        String requestBodyParams = isMultipart ? "Binary data" : requestWrapper.getBodyString();
+    private JSONObject formatRequestInfo(boolean isMultipart, HttpServletRequest request, Map<String, String> requestHeaderMap) {
+        Map<String, String[]> parameterMap = request.getParameterMap();
+        String requestBodyParams = isMultipart ? "Binary data" : ((RequestWrapper)request).getBodyString();
 
         JSONObject obj = new JSONObject();
         if (StringUtils.isNotBlank(requestBodyParams)) {
