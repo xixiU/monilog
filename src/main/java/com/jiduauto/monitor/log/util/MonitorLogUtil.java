@@ -41,9 +41,9 @@ public class MonitorLogUtil {
         //TODO 这里在后边加入了自定义的tag，可能与全局监控混淆
         String[] allTags = systemTags.add(logParams.getTags()).toArray();
 
-        String name = Constants.BUSINESS_NAME_PREFIX + Constants.UNDERLINE;
+        String name = Constants.BUSINESS_NAME_PREFIX ;
         if (logParams.isHasUserTag()) {
-            name = name + logParams.getService() + Constants.UNDERLINE + logParams.getAction();
+            name = name + Constants.UNDERLINE + logParams.getService() + Constants.UNDERLINE + logParams.getAction();
         }
         // TODO rongjie.yuan  2023/7/28 12:45 全局监控与业务监控区分开来。
         name = name + Constants.UNDERLINE + logPoint.name();
