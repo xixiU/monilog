@@ -25,6 +25,7 @@ public class MonitorLogParams {
     private Throwable exception;
     private Object[] input;
     private Object output;
+    private boolean hasUserTag;
 
     public String getMsgCode() {
         return StringUtils.isBlank(msgCode) ? (success ? ErrorEnum.SUCCESS.name() : ErrorEnum.FAILED.name()) : msgCode;

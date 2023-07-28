@@ -6,11 +6,6 @@ import com.jiduauto.monitor.log.enums.LogPoint;
 import com.jiduauto.monitor.log.enums.MonitorType;
 import com.jiduauto.monitor.log.model.MonitorLogParams;
 import com.alibaba.fastjson.JSON;
-import com.jiduauto.log.core.MonitorLogPrinter;
-import com.jiduauto.log.core.constant.Constants;
-import com.jiduauto.log.core.enums.LogPoint;
-import com.jiduauto.log.core.enums.MonitorType;
-import com.jiduauto.log.core.model.MonitorLogParams;
 import com.metric.MetricMonitor;
 import lombok.extern.slf4j.Slf4j;
 
