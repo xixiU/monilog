@@ -14,7 +14,8 @@ class RedisLogMonitorInterceptor {
     @AllArgsConstructor
     static class RedisTemplateEnhancer {
         private final MonitorLogProperties.RedisProperties redis;
-        @Around("execution(public * *.execute(org.springframework.data.redis.core.RedisCallback, boolean ,boolean))")
+
+        @Around("execution(* org.springframework.data.redis.core.RedisTemplate.execute(*, boolean ,boolean)) || execution(* org.springframework.data.redis.core.StringRedisTemplate.execute(*, boolean ,boolean))")
         Object intercept(ProceedingJoinPoint pjp) {
             long start = System.currentTimeMillis();
             long cost = 0;
