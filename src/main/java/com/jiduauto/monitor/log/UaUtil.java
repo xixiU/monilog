@@ -7,7 +7,6 @@ import org.apache.commons.lang3.StringUtils;
 
 class UaUtil {
     private static final UserAgentStringParser parser = UADetectorServiceFactory.getResourceModuleParser();
-
     public static UserAgentType parseUserAgentType(String userAgent) {
         if (StringUtils.isBlank(userAgent)) {
             return UserAgentType.UNKNOWN;

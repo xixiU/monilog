@@ -150,7 +150,7 @@ class RocketMqMonitorLogInterceptor {
                 String topic = message instanceof MessageExt ? ((MessageExt) message).getTopic() : anno.topic();;
 
                 if (topic.startsWith("${")) {
-                    topic = MonitorSpringUtils.getApplicationContext().getEnvironment().resolvePlaceholders(topic);
+                    topic = SpringUtils.getApplicationContext().getEnvironment().resolvePlaceholders(topic);
                 }
                 String tag = message instanceof MessageExt ? ((MessageExt) message).getTags() : anno.selectorExpression();
 
@@ -193,7 +193,7 @@ class RocketMqMonitorLogInterceptor {
             List<Object> obj = new ArrayList<>();
             for (MessageExt msg : msgs) {
                 String str = new String(msg.getBody(), StandardCharsets.UTF_8);
-                JSON json = MonitorStringUtil.tryConvert2Json(str);
+                JSON json = StringUtil.tryConvert2Json(str);
                 obj.add(json == null ? str : json);
             }
             return obj.toArray(new Object[0]);

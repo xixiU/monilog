@@ -64,7 +64,7 @@ class MonitorLogAspectCtx {
         MonitorLog anno = ReflectUtil.getAnnotation(MonitorLog.class, methodOwnedClass, targetMethod, method);
         MonitorLogTags logTags = ReflectUtil.getAnnotation(MonitorLogTags.class, methodOwnedClass, targetMethod, method);
         this.logPoint = anno == null ? LogPoint.unknown : anno.value();
-        this.tags = MonitorStringUtil.getTagArray(logTags);
+        this.tags = StringUtil.getTagArray(logTags);
 
     }
 

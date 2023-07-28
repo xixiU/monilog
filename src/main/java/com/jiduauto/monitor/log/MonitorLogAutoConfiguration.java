@@ -105,10 +105,10 @@ class MonitorLogAutoConfiguration {
     @ConditionalOnProperty(prefix = "monitor.log.web", name = "enable", havingValue = "true", matchIfMissing = true)
     @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('web')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('web'))")
     @Bean
-    FilterRegistrationBean<WebMonitorLogFilter> logMonitorFilterBean() {
+    FilterRegistrationBean<WebMonitorLogInterceptor> logMonitorFilterBean() {
         log.info("!!! web monitor start ……");
-        FilterRegistrationBean<WebMonitorLogFilter> filterRegBean = new FilterRegistrationBean<>();
-        filterRegBean.setFilter(new WebMonitorLogFilter());
+        FilterRegistrationBean<WebMonitorLogInterceptor> filterRegBean = new FilterRegistrationBean<>();
+        filterRegBean.setFilter(new WebMonitorLogInterceptor());
         filterRegBean.setOrder(Integer.MAX_VALUE);
         filterRegBean.setEnabled(Boolean.TRUE);
         filterRegBean.setName("logMonitorFilter");

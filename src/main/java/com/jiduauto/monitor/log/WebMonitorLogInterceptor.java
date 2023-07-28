@@ -29,12 +29,12 @@ import java.io.UnsupportedEncodingException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.jiduauto.monitor.log.MonitorStringUtil.checkPathMatch;
+import static com.jiduauto.monitor.log.StringUtil.checkPathMatch;
 
 
 
 @Slf4j
-class WebMonitorLogFilter extends OncePerRequestFilter {
+class WebMonitorLogInterceptor extends OncePerRequestFilter {
     /**
      * 集度JNS请求时header中会带X-JIDU-SERVICENAME
      */
@@ -42,7 +42,6 @@ class WebMonitorLogFilter extends OncePerRequestFilter {
     private static final String USER_AGENT = "User-Agent";
     @Resource
     private MonitorLogProperties monitorLogProperties;
-
 
     @Override
     public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws IOException, ServletException {
@@ -65,7 +64,7 @@ class WebMonitorLogFilter extends OncePerRequestFilter {
         ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(response);
 
         MonitorLogTags logTags = ReflectUtil.getAnnotation(MonitorLogTags.class, method.getBeanType(), method.getMethod());
-        List<String> tagList = MonitorStringUtil.getTagList(logTags);
+        List<String> tagList = StringUtil.getTagList(logTags);
         long startTime = System.currentTimeMillis();
         String responseBodyStr = "";
         MonitorLogParams logParams = new MonitorLogParams();
@@ -102,7 +101,7 @@ class WebMonitorLogFilter extends OncePerRequestFilter {
             filterChain.doFilter(isMultipart ? request : wrapperRequest, wrapperResponse);
             responseBodyStr = getResponseBody(wrapperResponse);
             wrapperResponse.copyBodyToResponse();
-            JSON json = MonitorStringUtil.tryConvert2Json(responseBodyStr);
+            JSON json = StringUtil.tryConvert2Json(responseBodyStr);
             if (json instanceof JSONObject) {
                 LogParser cl = ReflectUtil.getAnnotation(LogParser.class, method.getBeanType(), method.getMethod());
                 //尝试更精确的提取业务失败信息
@@ -179,7 +178,7 @@ class WebMonitorLogFilter extends OncePerRequestFilter {
 
 
     private static HandlerMethod getHandlerMethod(HttpServletRequest request) {
-        Map<String, HandlerMapping> matchingBeans = BeanFactoryUtils.beansOfTypeIncludingAncestors(MonitorSpringUtils.getApplicationContext(), HandlerMapping.class, true, false);
+        Map<String, HandlerMapping> matchingBeans = BeanFactoryUtils.beansOfTypeIncludingAncestors(SpringUtils.getApplicationContext(), HandlerMapping.class, true, false);
         List<HandlerMapping> handlerMappings = new ArrayList<>(matchingBeans.values());
         for (HandlerMapping mapping : handlerMappings) {
             HandlerExecutionChain handlerExecutionChain;
@@ -209,7 +208,7 @@ class WebMonitorLogFilter extends OncePerRequestFilter {
     private void dealResponseTags(MonitorLogParams logParams, String responseBodyStr) {
         String[] oriTags = logParams.getTags();
 
-        Map<String, String> jsonMap = MonitorStringUtil.tryConvert2Map(responseBodyStr);
+        Map<String, String> jsonMap = StringUtil.tryConvert2Map(responseBodyStr);
         if (MapUtils.isEmpty(jsonMap)) {
             return;
         }
@@ -268,13 +267,13 @@ class WebMonitorLogFilter extends OncePerRequestFilter {
 
         JSONObject obj = new JSONObject();
         if (StringUtils.isNotBlank(requestBodyParams)) {
-            Map<String, String> requestBodyMap = MonitorStringUtil.tryConvert2Map(requestBodyParams);
+            Map<String, String> requestBodyMap = StringUtil.tryConvert2Map(requestBodyParams);
             obj.put("body", requestBodyMap != null ? requestBodyMap : requestBodyParams);
         }
         if (MapUtils.isNotEmpty(parameterMap)) {
             Map<String, Collection<String>> collected = parameterMap.entrySet().stream()
                     .collect(Collectors.toMap(Map.Entry::getKey, item -> Arrays.asList(item.getValue())));
-            obj.put("query", MonitorStringUtil.encodeQueryString(collected));
+            obj.put("query", StringUtil.encodeQueryString(collected));
         }
         if (MapUtils.isNotEmpty(requestHeaderMap)) {
             obj.put("headers", requestHeaderMap);

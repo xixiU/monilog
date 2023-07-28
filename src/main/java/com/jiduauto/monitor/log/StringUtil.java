@@ -15,9 +15,8 @@ import java.util.stream.Collectors;
  * @date 2023/07/25
  */
 @Slf4j
-class MonitorStringUtil {
+class StringUtil {
     private static final AntPathMatcher antPathMatcher = new AntPathMatcher();
-
     public static boolean checkPathMatch(Collection<String> pathList, String toCheckPath) {
         if (CollectionUtils.isEmpty(pathList)) {
             return false;

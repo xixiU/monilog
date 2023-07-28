@@ -65,9 +65,9 @@ class MonitorLogUtil {
             exceptionMsg = exceptionMsg.substring(0, maxLen) + "...";
         }
         return TagBuilder.of(Constants.RESULT, success ? Constants.SUCCESS : Constants.ERROR)
-                .add(Constants.APPLICATION, MonitorSpringUtils.getApplicationName())
+                .add(Constants.APPLICATION, SpringUtils.getApplicationName())
                 .add(Constants.LOG_POINT, logParams.getLogPoint().name())
-                .add(Constants.ENV, MonitorSpringUtils.getActiveProfile())
+                .add(Constants.ENV, SpringUtils.getActiveProfile())
                 .add(Constants.SERVICE_NAME, logParams.getService())
                 .add(Constants.ACTION_NAME, logParams.getAction())
                 .add(Constants.MSG_CODE, logParams.getMsgCode())
@@ -83,8 +83,8 @@ class MonitorLogUtil {
         MonitorLogPrinter printer = null;
         MonitorLogProperties properties = null;
         try {
-            printer = MonitorSpringUtils.getBean(MonitorLogPrinter.class);
-            properties = MonitorSpringUtils.getBean(MonitorLogProperties.class);
+            printer = SpringUtils.getBean(MonitorLogPrinter.class);
+            properties = SpringUtils.getBean(MonitorLogProperties.class);
         } catch (Exception e) {
             log.warn(Constants.SYSTEM_ERROR_PREFIX + ":no MonitorLogPrinter instance found");
         }

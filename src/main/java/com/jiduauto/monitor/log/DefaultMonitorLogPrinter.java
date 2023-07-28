@@ -49,13 +49,13 @@ class DefaultMonitorLogPrinter implements MonitorLogPrinter {
     }
 
     private boolean needLog(String logPoint, String service, String action) {
-        if (MonitorStringUtil.checkPathMatch(printerProperties.getInfoExcludeComponents(), logPoint)) {
+        if (StringUtil.checkPathMatch(printerProperties.getInfoExcludeComponents(), logPoint)) {
             return false;
         }
-        if (MonitorStringUtil.checkPathMatch(printerProperties.getInfoExcludeServices(), service)) {
+        if (StringUtil.checkPathMatch(printerProperties.getInfoExcludeServices(), service)) {
             return false;
         }
-        if (MonitorStringUtil.checkPathMatch(printerProperties.getInfoExcludeActions(), action)) {
+        if (StringUtil.checkPathMatch(printerProperties.getInfoExcludeActions(), action)) {
             return false;
         }
         return true;
