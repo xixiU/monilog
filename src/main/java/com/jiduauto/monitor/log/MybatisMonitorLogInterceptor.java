@@ -20,11 +20,6 @@ import java.sql.Statement;
 
 
 class MybatisMonitorLogInterceptor {
-
-    /**
-     * @author ：xiaoxu.bao
-     * @date ：2022/11/14 21:39
-     */
     @Intercepts({
             @Signature(type = StatementHandler.class, method = "query", args = {Statement.class, ResultHandler.class}),
             @Signature(type = StatementHandler.class, method = "update", args = {Statement.class})

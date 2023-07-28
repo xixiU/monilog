@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
  * 默认日志打印方式
  */
 class DefaultMonitorLogPrinter implements MonitorLogPrinter {
-    private MonitorLogProperties.PrinterProperties printerProperties;
+    private final MonitorLogProperties.PrinterProperties printerProperties;
 
     public DefaultMonitorLogPrinter(MonitorLogProperties.PrinterProperties printerProperties) {
         this.printerProperties = printerProperties;

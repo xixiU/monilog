@@ -17,7 +17,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.StreamUtils;
 
-import javax.annotation.Resource;
 import java.io.*;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
@@ -32,12 +31,8 @@ import java.util.Map;
  */
 @Slf4j
 class FeignMonitorInterceptor {
-    @Resource
-    private MonitorLogProperties monitorLogProperties;
-
-
     static class FeignClientEnhanceProcessor implements BeanPostProcessor, Ordered {
-        private MonitorLogProperties.FeignProperties feignProperties;
+        private final MonitorLogProperties.FeignProperties feignProperties;
 
         public FeignClientEnhanceProcessor(MonitorLogProperties.FeignProperties feignProperties) {
             this.feignProperties = feignProperties;

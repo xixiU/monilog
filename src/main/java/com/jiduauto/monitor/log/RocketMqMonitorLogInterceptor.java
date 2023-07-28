@@ -32,7 +32,6 @@ import java.util.Objects;
 import java.util.function.BiFunction;
 
 class RocketMqMonitorLogInterceptor {
-
     @Slf4j
     static class RocketMQConsumerInterceptor implements BeanPostProcessor {
         @Override

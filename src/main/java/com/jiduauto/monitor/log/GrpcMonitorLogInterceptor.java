@@ -24,10 +24,8 @@ import java.util.stream.Collectors;
 @Slf4j
 class GrpcMonitorLogInterceptor {
     private static final String TIME_KEY = "nowTime";
-
     @Slf4j
     static class GrpcLogPrintClientInterceptor implements ClientInterceptor {
-
         @Override
         public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> method, CallOptions callOptions, Channel channel) {
             return new GrpcMonitorLogClientCall<>(channel.newCall(method, callOptions), new ConcurrentHashMap<>(), method);
@@ -167,7 +165,6 @@ class GrpcMonitorLogInterceptor {
 
     @Slf4j
     static class GrpcLogPrintServerInterceptor implements ServerInterceptor {
-
         @Override
         public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call, Metadata metadata, ServerCallHandler<ReqT, RespT> next) {
             MethodDescriptor<ReqT, RespT> method = call.getMethodDescriptor();
