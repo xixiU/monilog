@@ -32,6 +32,7 @@ public class MonitorLogUtil {
                 printer.log(logParams);
             }
         } catch (Exception e) {
+            // TODO rongjie.yuan  2023/7/28 12:59 错误前缀统一，然后不要打error。
             log.warn(Constants.SYSTEM_ERROR_PREFIX + "doMonitor error:{}", e.getMessage());
         }
     }
@@ -49,6 +50,7 @@ public class MonitorLogUtil {
         if (logParams.isHasUserTag()) {
             name = name + logParams.getService() + Constants.UNDERLINE + logParams.getAction();
         }
+        // TODO rongjie.yuan  2023/7/28 12:45 全局监控与业务监控区分开来。
         name = name + Constants.UNDERLINE + logPoint.name();
         // 默认打一个record记录
         MetricMonitor.record(name + MonitorType.RECORD.getMark(), allTags);
