@@ -128,7 +128,7 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
         try {
             dealRequestTags(isMultipart ? request : wrapperRequest, logParams, requestHeaderMap, requestBodyMap);
         } catch (Exception e) {
-            log.error("dealRequestTags error", e);
+            log.warn(Constants.SYSTEM_ERROR_PREFIX + "dealRequestTags error: {}", e.getMessage());
         }
 
         try {
@@ -219,7 +219,7 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
             try {
                 handlerExecutionChain = mapping.getHandler(request);
             } catch (Exception e) {
-                log.error("getHandler error", e);
+                log.warn(Constants.SYSTEM_ERROR_PREFIX + "getHandlerMethod error: {}", e.getMessage());
                 continue;
             }
             if (handlerExecutionChain == null) {

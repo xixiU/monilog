@@ -2,6 +2,7 @@ package com.jiduauto.monitor.log.parse;
 
 import com.alibaba.fastjson.JSONPath;
 import com.google.common.base.Preconditions;
+import com.jiduauto.monitor.log.constant.Constants;
 import com.jiduauto.monitor.log.util.ExceptionUtil;
 import com.jiduauto.monitor.log.util.ReflectUtil;
 import com.jiduauto.monitor.log.util.SplitterUtil;
@@ -164,7 +165,7 @@ public final class ResultParser {
             p.setExpect(expect);
             return p;
         } catch (Exception e) {
-            log.warn("resultParser parse error:{}", e.getMessage());
+            log.warn(Constants.SYSTEM_ERROR_PREFIX +"resultParser parse error:{}", e.getMessage());
             return null;
         }
     }
@@ -178,7 +179,7 @@ public final class ResultParser {
         try {
             return ReflectUtil.invokeMethod(obj, methodName);
         } catch (Throwable e) {
-            log.warn("resultParser parseObjVal error:{}", e.getMessage());
+            log.warn(Constants.SYSTEM_ERROR_PREFIX + "resultParser parseObjVal error:{}", e.getMessage());
             Throwable tx = ExceptionUtil.getRealException(e);
             if (tx instanceof NoSuchMethodException || (tx.getMessage() != null && tx.getMessage().contains("No such method"))) {
                 return evalVal(obj, path);
@@ -191,7 +192,7 @@ public final class ResultParser {
         try {
             return JSONPath.eval(root, path);
         } catch (Throwable e) {
-            log.warn("resultParser evalVal error:{}", e.getMessage());
+            log.warn(Constants.SYSTEM_ERROR_PREFIX + "resultParser evalVal error:{}", e.getMessage());
         }
         return null;
     }

@@ -1,5 +1,8 @@
 package com.jiduauto.monitor.log.model;
 
+import com.jiduauto.monitor.log.constant.Constants;
+import lombok.extern.slf4j.Slf4j;
+
 import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;
 import javax.servlet.ServletRequest;
@@ -10,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 
+@Slf4j
 public class RequestWrapper extends HttpServletRequestWrapper {
 
     private byte[] body;
@@ -39,7 +43,7 @@ public class RequestWrapper extends HttpServletRequestWrapper {
                 sb.append(line);
             }
         } catch (IOException e) {
-            // do nothing
+            log.warn(Constants.SYSTEM_ERROR_PREFIX + "RequestWrapper.getBodyString error:{}", e.getMessage());
         }
         return sb.toString();
     }
@@ -57,7 +61,7 @@ public class RequestWrapper extends HttpServletRequestWrapper {
             }
             byteArrayOutputStream.flush();
         } catch (IOException e) {
-            e.printStackTrace();
+            log.warn(Constants.SYSTEM_ERROR_PREFIX + "RequestWrapper.cloneInputStream error:{}", e.getMessage());
         }
         return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
     }

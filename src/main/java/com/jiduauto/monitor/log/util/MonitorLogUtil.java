@@ -23,7 +23,7 @@ public class MonitorLogUtil {
         try {
             printer = MonitorSpringUtils.getBean(MonitorLogPrinter.class);
         } catch (Exception e) {
-            log.error("no MonitorLogPrinter instance found");
+            log.warn(Constants.SYSTEM_ERROR_PREFIX + ":no MonitorLogPrinter instance found");
         }
 
         try {
@@ -32,7 +32,7 @@ public class MonitorLogUtil {
                 printer.log(logParams);
             }
         } catch (Exception e) {
-            log.error("log error", e);
+            log.warn(Constants.SYSTEM_ERROR_PREFIX + "doMonitor error:{}", e.getMessage());
         }
     }
 
@@ -57,7 +57,7 @@ public class MonitorLogUtil {
         try {
             MetricMonitor.eventDruation(name + MonitorType.TIMER.getMark(), allTags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
         } catch (Exception e) {
-            log.error("MetricMonitor.eventDuration name:{}, tag:{}", name, JSON.toJSONString(allTags));
+            log.warn(Constants.SYSTEM_ERROR_PREFIX + "eventDuration name:{}, tag:{}, error:{}", name, JSON.toJSONString(allTags), e.getMessage());
         }
     }
 

@@ -29,7 +29,7 @@ public class Constants {
     /**
      * 异常的类
      */
-    public static final String EXCEPTION  ="exception";
+    public static final String EXCEPTION = "exception";
 
     /**
      * 错误
@@ -71,5 +71,10 @@ public class Constants {
      * 环境
      */
     public static final String ENV = "env";
+
+    /**
+     * 框架异常信息前缀
+     */
+    public static final String SYSTEM_ERROR_PREFIX = "__monitor_log_warn__";
 
 }

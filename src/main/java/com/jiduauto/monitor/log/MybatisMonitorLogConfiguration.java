@@ -1,5 +1,6 @@
 package com.jiduauto.monitor.log;
 
+import com.jiduauto.monitor.log.constant.Constants;
 import com.jiduauto.monitor.log.enums.ErrorEnum;
 import com.jiduauto.monitor.log.enums.LogPoint;
 import com.jiduauto.monitor.log.enums.MonitorType;
@@ -130,14 +131,14 @@ class MybatisMonitorLogConfiguration {
                 MetaObject metaObject = SystemMetaObject.forObject(expectedStatementHandler);
                 //fastReturn
                 if (BooleanUtils.isNotTrue(metaObject.hasGetter("h.target"))) {
-                    log.error("can't find mappedStatement h.get method");
+                    log.warn(Constants.SYSTEM_ERROR_PREFIX + "can't find mappedStatement h.get method");
                     break;
                 }
                 expectedStatementHandler = metaObject.getValue("h.target");
             }
             //failFast
             if (!(expectedStatementHandler instanceof StatementHandler)) {
-                log.error("sorry, expectedStatementHandler not instanceof StatementHandler!");
+                log.warn(Constants.SYSTEM_ERROR_PREFIX + "sorry, expectedStatementHandler not instanceof StatementHandler!");
                 return null;
             }
             return expectedStatementHandler;

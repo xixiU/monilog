@@ -2,6 +2,7 @@ package com.jiduauto.monitor.log;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
+import com.jiduauto.monitor.log.constant.Constants;
 import com.jiduauto.monitor.log.enums.ErrorEnum;
 import com.jiduauto.monitor.log.enums.LogPoint;
 import com.jiduauto.monitor.log.model.ErrorInfo;
@@ -281,7 +282,7 @@ class RocketMqMonitorLogConfiguration {
                     logParams.setTags(TagBuilder.of("topic", message.getTopic(), "group", context.getProducerGroup(), "tag", message.getTags()).toArray());
                     MonitorLogUtil.log(logParams);
                 } catch (Exception e) {
-                    log.error("sendMessageAfter error", e);
+                    log.warn(Constants.SYSTEM_ERROR_PREFIX + "sendMessageAfter error: {}", e.getMessage());
                 }
             }
         }

@@ -1,6 +1,7 @@
 package com.jiduauto.monitor.log.aop;
 
 
+import com.jiduauto.monitor.log.constant.Constants;
 import com.jiduauto.monitor.log.parse.LogParser;
 import com.jiduauto.monitor.log.enums.LogPoint;
 import com.jiduauto.monitor.log.model.MonitorLogParams;
@@ -42,7 +43,7 @@ public class MonitorLogAop {
             if (tx != null && e == tx) {
                 throw e;
             }
-            log.error("MonitorLogAop processAround error", e);
+            log.warn(Constants.SYSTEM_ERROR_PREFIX + "MonitorLogAop processAround error:{}", e.getMessage());
             if (ctx != null && ctx.isHasExecuted()) {
                 return ctx.getResult();
             }
@@ -93,7 +94,7 @@ public class MonitorLogAop {
         try {
             MonitorLogUtil.log(params);
         } catch (Exception e) {
-            log.error("logPrinter.log error", e);
+            log.warn(Constants.SYSTEM_ERROR_PREFIX + "MonitorLogAop afterProcess error:{}", e.getMessage());
         }
     }
 
