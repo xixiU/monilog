@@ -45,7 +45,7 @@ public class MonitorLogUtil {
         String name = Constants.BUSINESS_NAME_PREFIX + Constants.UNDERLINE ;
 
         if (logParams.isHasUserTag()) {
-            name =  logParams.getService() + Constants.UNDERLINE + logParams.getAction();
+            name = name + logParams.getService() + Constants.UNDERLINE + logParams.getAction();
         }
         name = name + Constants.UNDERLINE + logPoint.name();
         // 默认打一个record记录
