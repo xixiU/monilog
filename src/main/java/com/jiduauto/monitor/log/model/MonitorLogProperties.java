@@ -128,7 +128,7 @@ public class MonitorLogProperties {
         /**
          * 解析feign调用结果的默认表达式，默认校验返回编码是否等于0或者200有一个匹配即认为调用成功,多个表达式直接逗号分割.
          */
-        private String boolExprDefault = "$.code==200,$.code==0,$status=200";
+        private String boolExprDefault = "$.code==200,$.code==0,$.status=200";
     }
 
     @Getter

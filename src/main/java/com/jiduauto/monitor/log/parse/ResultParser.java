@@ -5,6 +5,7 @@ import com.google.common.base.Preconditions;
 import com.jiduauto.monitor.log.util.ExceptionUtil;
 import com.jiduauto.monitor.log.util.ReflectUtil;
 import com.jiduauto.monitor.log.util.SplitterUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -16,6 +17,7 @@ import java.util.List;
 /**
  * @author yepei
  */
+@Slf4j
 public final class ResultParser {
     private static final String EXPECT_SPLITTER1 = "==";
     private static final String EXPECT_SPLITTER2 = "=";
@@ -162,6 +164,7 @@ public final class ResultParser {
             p.setExpect(expect);
             return p;
         } catch (Exception e) {
+            log.warn("resultParser parse error:{}", e.getMessage());
             return null;
         }
     }
@@ -175,6 +178,7 @@ public final class ResultParser {
         try {
             return ReflectUtil.invokeMethod(obj, methodName);
         } catch (Throwable e) {
+            log.warn("resultParser parseObjVal error:{}", e.getMessage());
             Throwable tx = ExceptionUtil.getRealException(e);
             if (tx instanceof NoSuchMethodException || (tx.getMessage() != null && tx.getMessage().contains("No such method"))) {
                 return evalVal(obj, path);
@@ -186,7 +190,8 @@ public final class ResultParser {
     private static Object evalVal(Object root, String path) {
         try {
             return JSONPath.eval(root, path);
-        } catch (Throwable ignore) {
+        } catch (Throwable e) {
+            log.warn("resultParser evalVal error:{}", e.getMessage());
         }
         return null;
     }
