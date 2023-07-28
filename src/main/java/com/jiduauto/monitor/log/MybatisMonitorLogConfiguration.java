@@ -44,6 +44,7 @@ import java.sql.Statement;
 class MybatisMonitorLogConfiguration {
     @Resource
     private MonitorLogProperties monitorLogProperties;
+
     @Bean
     public MybatisInterceptor mybatisMonitorSqlFilter() {
         return new MybatisInterceptor(monitorLogProperties.getMybatis());
@@ -71,58 +72,90 @@ class MybatisMonitorLogConfiguration {
         @Override
         public Object intercept(Invocation invocation) {
             long nowTime = System.currentTimeMillis();
-
             MonitorLogParams logParams = new MonitorLogParams();
+            logParams.setLogPoint(LogPoint.mybatis);
+            logParams.setSuccess(true);
+            logParams.setMsgCode(ErrorEnum.SUCCESS.name());
+            logParams.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
             long costTime = -1;
+            Throwable bizException = null;
+            Object obj = null;
             try {
                 // 获取调用的目标对象
-                Object expectedStatementHandler = getStatementHandlerObject(invocation);
-                if (expectedStatementHandler == null) {
-                    invocation.proceed();
-                    return null;
+                MybatisInvocationInfo invocationInfo = parseMybatisExecuteInfo(invocation);
+                logParams.setServiceCls(invocationInfo.serviceCls);
+                logParams.setService(invocationInfo.serviceCls.getSimpleName());
+                logParams.setAction(invocationInfo.methodName);
+                logParams.setInput(new String[]{invocationInfo.sql});
+                try {
+                    obj = invocation.proceed();
+                } catch (Throwable t) {
+                    bizException = t;
                 }
-                StatementHandler statementHandler = (StatementHandler) expectedStatementHandler;
-                MetaObject metaObject = SystemMetaObject.forObject(statementHandler);
-                MappedStatement mappedStatement = (MappedStatement) metaObject.getValue("delegate.mappedStatement");
-                String mapperId = mappedStatement.getId();
-                Class<?> serviceCls = Class.forName(mapperId.substring(0, mapperId.lastIndexOf('.')));
-                String methodName = mapperId.substring(mapperId.lastIndexOf('.') + 1);
-
-                logParams.setLogPoint(LogPoint.mybatis);
-                logParams.setService(serviceCls.getSimpleName());
-                logParams.setServiceCls(serviceCls);
-                logParams.setAction(methodName);
-                logParams.setSuccess(true);
-                logParams.setMsgCode(ErrorEnum.SUCCESS.name());
-                logParams.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
-                BoundSql boundSql = statementHandler.getBoundSql();
-                String sql = boundSql.getSql().replace("\n+|\r+|\\s+", " ");
-                logParams.setInput(new String[]{sql});
-                //这句可能异常
-                Object obj = invocation.proceed();
                 logParams.setOutput(obj);
                 costTime = System.currentTimeMillis() - nowTime + 1;
                 logParams.setCost(costTime);
                 // 超过两秒的，打印错误日志
-                if (costTime > mybatisProperties.getLongQueryTime()) {
+                if (mybatisProperties != null && mybatisProperties.getLongQueryTime() > 0 && costTime > mybatisProperties.getLongQueryTime()) {
                     MetricMonitor.record(SQL_COST_TOO_LONG + MonitorType.RECORD.getMark());
-                    log.error("sql_cost_time_too_long, sql{}, time:{}", sql, costTime);
+                    log.error("sql_cost_time_too_long, sql{}, time:{}", invocationInfo.sql, costTime);
                 }
-                return obj;
+                if (bizException == null) {
+                    return obj;
+                } else {
+                    throw bizException;
+                }
             } catch (Throwable e) {
-                log.error("mysqlInterceptor process error", e);
-                logParams.setSuccess(false);
-                logParams.setException(e);
-                ErrorInfo errorInfo = ExceptionUtil.parseException(e);
-                if (errorInfo != null) {
-                    logParams.setMsgCode(errorInfo.getErrorCode());
-                    logParams.setMsgInfo(errorInfo.getErrorMsg());
+                if (e == bizException) {//说明e是业务异常
+                    logParams.setSuccess(false);
+                    Throwable realException = ExceptionUtil.getRealException(e);
+                    logParams.setException(realException);
+                    ErrorInfo errorInfo = ExceptionUtil.parseException(e);
+                    if (errorInfo != null) {
+                        logParams.setMsgCode(errorInfo.getErrorCode());
+                        logParams.setMsgInfo(errorInfo.getErrorMsg());
+                    }
+                    throw e;
+                } else {//组件异常
+                    log.warn(Constants.SYSTEM_ERROR_PREFIX + "mybatisInterceptor process error:{}", e.getMessage());
+                    return obj;
                 }
-                throw e;
             } finally {
                 logParams.setCost(costTime < 0 ? System.currentTimeMillis() - nowTime + 1 : costTime);
                 MonitorLogUtil.log(logParams);
             }
+        }
+
+        private static class MybatisInvocationInfo {
+            Class<?> serviceCls;
+            String methodName;
+
+            String sql;
+        }
+        private static MybatisInvocationInfo parseMybatisExecuteInfo(Invocation invocation) {
+            Class<?> serviceCls = invocation.getTarget().getClass();
+            String methodName = invocation.getMethod().getName();
+            String sql = "[parseSqlFailed]";
+            try {
+                Object expectedStatementHandler = getStatementHandlerObject(invocation);
+                if (expectedStatementHandler != null) {
+                    StatementHandler statementHandler = (StatementHandler) expectedStatementHandler;
+                    MetaObject metaObject = SystemMetaObject.forObject(statementHandler);
+                    MappedStatement mappedStatement = (MappedStatement) metaObject.getValue("delegate.mappedStatement");
+                    String mapperId = mappedStatement.getId();
+                    serviceCls = Class.forName(mapperId.substring(0, mapperId.lastIndexOf('.')));
+                    methodName = mapperId.substring(mapperId.lastIndexOf('.') + 1);
+                    BoundSql boundSql = statementHandler.getBoundSql();
+                    sql = boundSql.getSql().replace("\n+|\r+|\\s+", " ");
+                }
+            } catch (Throwable e) {
+                log.warn(Constants.SYSTEM_ERROR_PREFIX + "parseMybatisExecuteInfo error:{}", e.getMessage());
+            }
+            MybatisInvocationInfo info = new MybatisInvocationInfo();
+            info.serviceCls = serviceCls;
+            info.methodName = methodName;
+            info.sql = sql;
+            return info;
         }
 
         private static Object getStatementHandlerObject(Invocation invocation) {
