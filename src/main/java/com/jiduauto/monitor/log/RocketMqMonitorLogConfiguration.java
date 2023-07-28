@@ -96,6 +96,7 @@ class RocketMqMonitorLogConfiguration {
             private final MessageListenerConcurrently delegate;
             private final Class<?> cls;
             private final String consumerGroup;
+
             @Override
             public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs, ConsumeConcurrentlyContext context) {
                 return new ConsumerHook<>(delegate::consumeMessage, cls, consumerGroup).apply(msgs, context);
@@ -107,6 +108,7 @@ class RocketMqMonitorLogConfiguration {
             private final MessageListenerOrderly delegate;
             private Class<?> cls;
             private final String consumerGroup;
+
             @Override
             public ConsumeOrderlyStatus consumeMessage(List<MessageExt> msgs, ConsumeOrderlyContext context) {
                 return new ConsumerHook<>(delegate::consumeMessage, cls, consumerGroup).apply(msgs, context);
@@ -118,6 +120,7 @@ class RocketMqMonitorLogConfiguration {
             private final BiFunction<List<MessageExt>, C, R> delegate;
             private final Class<?> cls;
             private final String consumerGroup;
+
             @Override
             public R apply(List<MessageExt> msgs, C c) {
                 MonitorLogParams params = new MonitorLogParams();
@@ -157,6 +160,7 @@ class RocketMqMonitorLogConfiguration {
             private final RocketMQListener<T> delegate;
             private final Class<?> cls;
             private final String consumerGroup;
+
             @Override
             public void onMessage(T message) {
                 MonitorLogParams params = new MonitorLogParams();
@@ -264,8 +268,9 @@ class RocketMqMonitorLogConfiguration {
                     SendResult sendResult = context.getSendResult();
                     SendStatus status = sendResult == null ? null : sendResult.getSendStatus();
                     logParams.setOutput(sendResult);
-                    logParams.setSuccess(context.getException() != null && status == SendStatus.SEND_OK);
-                    logParams.setMsgCode(status == null ? ErrorEnum.FAILED.name() : status.name());
+                    logParams.setSuccess(context.getException() == null && status == SendStatus.SEND_OK);
+                    logParams.setMsgCode(logParams.isSuccess() ? ErrorEnum.FAILED.name() : status.name());
+                    logParams.setMsgInfo(logParams.isSuccess() ? ErrorEnum.FAILED.getMsg() : ErrorEnum.SUCCESS.getMsg());
                     Message message = context.getMessage();
                     logParams.setInput(new Object[]{new String(message.getBody(), StandardCharsets.UTF_8)});
                     logParams.setTags(TagBuilder.of("topic", message.getTopic(), "group", context.getProducerGroup(), "tag", message.getTags()).toArray());
