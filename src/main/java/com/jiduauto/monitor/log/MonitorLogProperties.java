@@ -65,6 +65,10 @@ class MonitorLogProperties {
      * redis监控配置
      */
     private RedisProperties redis = new RedisProperties();
+    /**
+     * httpClient监控配置
+     */
+    private HttpClientProperties httpclient = new HttpClientProperties();
 
     @Getter
     @Setter
@@ -224,5 +228,28 @@ class MonitorLogProperties {
          * 是否输redis的详情日志
          */
         private boolean printRedisDetailLog = true;
+    }
+
+    @Getter
+    @Setter
+    static class HttpClientProperties {
+        /**
+         * 开启httpClient监控
+         */
+        private boolean enable = true;
+        /**
+         * 是否输出httpClient的详情日志
+         */
+        private boolean printRedisDetailLog = true;
+
+        /**
+         * 不监控的url清单，支持模糊路径如a/*
+         */
+        private Set<String> urlBlackList;
+
+        /**
+         * 仅监控的url清单，支持模糊路径如a/*,仅当此配置不空且元素个数大于0时才生效
+         */
+        private Set<String> urlWhiteList;
     }
 }

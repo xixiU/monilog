@@ -32,6 +32,8 @@
         <mybatis.starter.version>3.0.2</mybatis.starter.version>
         <grpc.starter.version>2.10.3</grpc.starter.version>
         <openfeign.version>10.10.1</openfeign.version>
+        <spring.data.redis.version>2.7.2</spring.data.redis.version>
+        <httpcore.version>4.4.14</httpcore.version>
     </properties>
 
 
@@ -160,6 +162,18 @@
             <groupId>com.xuxueli</groupId>
             <artifactId>xxl-job-core</artifactId>
             <version>${xxl.job.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-redis</artifactId>
+            <version>${spring.data.redis.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore</artifactId>
+            <version>${httpcore.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

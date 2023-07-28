@@ -1,10 +1,9 @@
 package com.jiduauto.monitor.log;
 
-import com.xxl.job.core.handler.IJobHandler;
-import feign.Feign;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.interceptor.GrpcGlobalClientInterceptor;
 import net.devh.boot.grpc.server.interceptor.GrpcGlobalServerInterceptor;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.*;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -35,6 +34,7 @@ class MonitorLogAutoConfiguration {
         return new MonitorLogAop();
     }
 
+    @Order(Integer.MIN_VALUE)
     @Bean("__springUtils")
     SpringUtils springUtils() {
         return new SpringUtils();
@@ -49,7 +49,7 @@ class MonitorLogAutoConfiguration {
 
     @ConditionalOnProperty(prefix = "monitor.log.feign", name = "enable", havingValue = "true", matchIfMissing = true)
     @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('feign')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('feign'))")
-    @ConditionalOnClass({Feign.class})
+    @ConditionalOnClass(name = {"feign.Feign"})
     @Bean
     FeignMonitorInterceptor.FeignClientEnhanceProcessor feignClientEnhanceProcessor() {
         log.info("!!! feign monitor start ...");
@@ -126,10 +126,42 @@ class MonitorLogAutoConfiguration {
 
     @ConditionalOnProperty(prefix = "monitor.log.xxljob", name = "enable", havingValue = "true", matchIfMissing = true)
     @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('xxljob')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('xxljob'))")
-    @ConditionalOnClass({IJobHandler.class})
+    @ConditionalOnClass(name = "com.xxl.job.core.handler.IJobHandler")
     @Bean
-    XxlJobLogMonitorExecuteInterceptor xxlJobLogMonitorExecuteInterceptor() {
+    XxlJobLogMonitorInterceptor xxlJobLogMonitorExecuteInterceptor() {
         log.info("!!! xxljob monitor start ...");
-        return new XxlJobLogMonitorExecuteInterceptor();
+        return new XxlJobLogMonitorInterceptor();
+    }
+
+    @ConditionalOnProperty(prefix = "monitor.log.redis", name = "enable", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('redis')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('redis'))")
+    @ConditionalOnClass(name = "org.springframework.data.redis.core.RedisTemplate")
+    @Bean
+    RedisLogMonitorInterceptor.RedisTemplateEnhanceProcessor redisLogMonitorInterceptor() {
+        log.info("!!! redis monitor start ...");
+        return new RedisLogMonitorInterceptor.RedisTemplateEnhanceProcessor(monitorLogProperties.getRedis());
+    }
+
+    @Configuration
+    @ConditionalOnProperty(prefix = "monitor.log.httpclient", name = "enable", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('httpclient')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('httpclient'))")
+    @ConditionalOnClass(name = {"org.apache.http.client.HttpClient", "org.apache.http.impl.client.CloseableHttpClient", "org.apache.http.impl.client.HttpClientBuilder"})
+    @AutoConfigureAfter(MonitorLogAutoConfiguration.class)
+    static class HttpClientLogMonitorConfiguration {
+        @Resource
+        private MonitorLogProperties monitorLogProperties;
+
+        /**
+         * 注意，只有当在Spring中注入了HttpClientBuilder对象，拦截器才会生效
+         *
+         * @return
+         */
+        @Bean
+        HttpClientLogMonitorInterceptor.HttpClientBuilderProcessor httpClientBuilderProcessor() {
+            log.info("!!! httpclient monitor start ...");
+            HttpClientLogMonitorInterceptor.RequestInterceptor requestInterceptor = new HttpClientLogMonitorInterceptor.RequestInterceptor();
+            HttpClientLogMonitorInterceptor.ResponseInterceptor responseInterceptor = new HttpClientLogMonitorInterceptor.ResponseInterceptor();
+            return new HttpClientLogMonitorInterceptor.HttpClientBuilderProcessor(monitorLogProperties.getHttpclient(), requestInterceptor, responseInterceptor);
+        }
     }
 }

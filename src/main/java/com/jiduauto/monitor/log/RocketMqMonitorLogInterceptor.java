@@ -212,7 +212,6 @@ class RocketMqMonitorLogInterceptor {
             return bean;
         }
 
-
         private static class RocketMQSendHook implements SendMessageHook {
             @Override
             public String hookName() {
