@@ -1,5 +1,6 @@
 package com.jiduauto.log.core.util;
 
+import com.alibaba.fastjson.JSON;
 import com.jiduauto.log.core.MonitorLogPrinter;
 import com.jiduauto.log.core.constant.Constants;
 import com.jiduauto.log.core.enums.LogPoint;
@@ -46,7 +47,11 @@ public class MonitorLogUtil {
         MetricMonitor.record(name + MonitorType.RECORD.getMark(), tags);
         // 对返回值添加累加记录
         MetricMonitor.cumulation(name + MonitorType.CUMULATION.getMark(), 1, tags);
-        MetricMonitor.eventDruation(name + MonitorType.TIMER.getMark(), tags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
+        try{
+            MetricMonitor.eventDruation(name + MonitorType.TIMER.getMark(), tags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
+        }catch (Exception e){
+            log.error("MetricMonitor.eventDruation name:{}, tag:{}" ,name, JSON.toJSONString(tags));
+        }
     }
 
     /**
