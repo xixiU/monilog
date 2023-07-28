@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.metric.MetricMonitor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -17,13 +18,20 @@ class MonitorLogUtil {
         try {
             doMonitor(logParams);
         } catch (Exception e) {
-            log.warn(Constants.SYSTEM_ERROR_PREFIX + "doMonitor error:{}", e.getMessage());
+            log("doMonitor error:{}", e.getMessage());
         }
         try {
             printDetailLog(logParams);
         } catch (Exception e) {
-            log.warn(Constants.SYSTEM_ERROR_PREFIX + "printDetailLog error:{}", e.getMessage());
+            log("printDetailLog error:{}", e.getMessage());
         }
+    }
+
+    /**
+     * 打印框架日志
+     */
+    public static void log(String pattern, Object... arg) {
+        log.warn("__monitor_log_warn__" + pattern, arg);
     }
 
     private static void doMonitor(MonitorLogParams logParams) {
@@ -35,12 +43,12 @@ class MonitorLogUtil {
         //TODO 这里在后边加入了自定义的tag，可能与全局监控混淆
         String[] allTags = systemTags.add(logParams.getTags()).toArray();
 
-        String name = Constants.BUSINESS_NAME_PREFIX ;
+        String name = "business_monitor";
         if (logParams.isHasUserTag()) {
-            name = name + Constants.UNDERLINE + logParams.getService() + Constants.UNDERLINE + logParams.getAction();
+            name = name + "_" + logParams.getService() + "_" + logParams.getAction();
         }
         // TODO rongjie.yuan  2023/7/28 12:45 全局监控与业务监控区分开来。
-        name = name + Constants.UNDERLINE + logPoint.name();
+        name = name + "_" + logPoint.name();
         // 默认打一个record记录
         MetricMonitor.record(name + MonitorType.RECORD.getMark(), allTags);
         // 对返回值添加累加记录
@@ -48,10 +56,9 @@ class MonitorLogUtil {
         try {
             MetricMonitor.eventDruation(name + MonitorType.TIMER.getMark(), allTags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
         } catch (Exception e) {
-            log.warn(Constants.SYSTEM_ERROR_PREFIX + "eventDuration name:{}, tag:{}, error:{}", name, JSON.toJSONString(allTags), e.getMessage());
+            MonitorLogUtil.log("eventDuration name:{}, tag:{}, error:{}", name, JSON.toJSONString(allTags), e.getMessage());
         }
     }
-
 
 
     /**
@@ -64,29 +71,30 @@ class MonitorLogUtil {
         if (exceptionMsg.length() > maxLen) {
             exceptionMsg = exceptionMsg.substring(0, maxLen) + "...";
         }
-        return TagBuilder.of(Constants.RESULT, success ? Constants.SUCCESS : Constants.ERROR)
-                .add(Constants.APPLICATION, SpringUtils.getApplicationName())
-                .add(Constants.LOG_POINT, logParams.getLogPoint().name())
-                .add(Constants.ENV, SpringUtils.getActiveProfile())
-                .add(Constants.SERVICE_NAME, logParams.getService())
-                .add(Constants.ACTION_NAME, logParams.getAction())
-                .add(Constants.MSG_CODE, logParams.getMsgCode())
-                .add(Constants.COST, String.valueOf(logParams.getCost()))
-                .add(Constants.EXCEPTION, exceptionMsg);
+        return TagBuilder.of("result", success ? "success" : "error")
+                .add("application", SpringUtils.getApplicationName())
+                .add("logPoint", logParams.getLogPoint().name())
+                .add("env", SpringUtils.getActiveProfile())
+                .add("service", logParams.getService())
+                .add("action", logParams.getAction())
+                .add("msgCode", logParams.getMsgCode())
+                .add("cost", String.valueOf(logParams.getCost()))
+                .add("exception", exceptionMsg);
     }
 
     /**
      * 打印详情日志
+     *
      * @param logParams
      */
-    private static void printDetailLog(MonitorLogParams logParams){
+    private static void printDetailLog(MonitorLogParams logParams) {
         MonitorLogPrinter printer = null;
         MonitorLogProperties properties = null;
         try {
             printer = SpringUtils.getBean(MonitorLogPrinter.class);
             properties = SpringUtils.getBean(MonitorLogProperties.class);
         } catch (Exception e) {
-            log.warn(Constants.SYSTEM_ERROR_PREFIX + ":no MonitorLogPrinter instance found");
+            MonitorLogUtil.log(":no MonitorLogPrinter instance found");
         }
         if (printer == null || properties == null) {
             return;
@@ -99,19 +107,52 @@ class MonitorLogUtil {
         if (logPoint == null) {
             return;
         }
+        Set<String> infoExcludeComponents = printerCfg.getInfoExcludeComponents();
+        Set<String> infoExcludeServices = printerCfg.getInfoExcludeServices();
+        Set<String> infoExcludeActions = printerCfg.getInfoExcludeActions();
+        if (StringUtil.checkPathMatch(infoExcludeComponents, logPoint.name())) {
+            return;
+        }
+        if (StringUtil.checkPathMatch(infoExcludeServices, logParams.getService())) {
+            return;
+        }
+        if (StringUtil.checkPathMatch(infoExcludeActions, logParams.getAction())) {
+            return;
+        }
         boolean doPrinter = true;
         switch (logPoint) {
-            case http_server: doPrinter = properties.getWeb().isPrintHttpServerDetailLog();break;
-            case http_client: doPrinter = properties.getWeb().isPrintHttpClientDetailLog();break;
-            case feign_server: doPrinter = properties.getFeign().isPrintFeignServerDetailLog();break;
-            case feign_client: doPrinter = properties.getFeign().isPrintFeignClientDetailLog();break;
-            case grpc_client: doPrinter = properties.getGrpc().isPrintGrpcClientDetailLog();break;
-            case grpc_server: doPrinter = properties.getGrpc().isPrintGrpcServerDetailLog();break;
-            case rocketmq_consumer: doPrinter = properties.getRocketmq().isPrintRocketmqConsumerDetailLog();break;
-            case rocketmq_producer: doPrinter = properties.getRocketmq().isPrintRocketmqProducerDetailLog();break;
-            case mybatis: doPrinter = properties.getMybatis().isPrintMybatisDetailLog();break;
-            case xxljob: doPrinter = properties.getXxljob().isPrintXxljobDetailLog();break;
-            case redis: doPrinter = properties.getRedis().isPrintRedisDetailLog();
+            case http_server:
+                doPrinter = properties.getWeb().isPrintHttpServerDetailLog();
+                break;
+            case http_client:
+                doPrinter = properties.getWeb().isPrintHttpClientDetailLog();
+                break;
+            case feign_server:
+                doPrinter = properties.getFeign().isPrintFeignServerDetailLog();
+                break;
+            case feign_client:
+                doPrinter = properties.getFeign().isPrintFeignClientDetailLog();
+                break;
+            case grpc_client:
+                doPrinter = properties.getGrpc().isPrintGrpcClientDetailLog();
+                break;
+            case grpc_server:
+                doPrinter = properties.getGrpc().isPrintGrpcServerDetailLog();
+                break;
+            case rocketmq_consumer:
+                doPrinter = properties.getRocketmq().isPrintRocketmqConsumerDetailLog();
+                break;
+            case rocketmq_producer:
+                doPrinter = properties.getRocketmq().isPrintRocketmqProducerDetailLog();
+                break;
+            case mybatis:
+                doPrinter = properties.getMybatis().isPrintMybatisDetailLog();
+                break;
+            case xxljob:
+                doPrinter = properties.getXxljob().isPrintXxljobDetailLog();
+                break;
+            case redis:
+                doPrinter = properties.getRedis().isPrintRedisDetailLog();
             case unknown:
             default:
                 break;

@@ -48,7 +48,7 @@ class RocketMqMonitorLogInterceptor {
                         consumer.setMessageListener(new EnhancedListenerOrderly((MessageListenerOrderly) messageListener, bizCls, consumerGroup));
                     }
                 } else if (bean instanceof DefaultMQPullConsumer) {
-                    //TODO 该模式下暂不支持增强
+                    MonitorLogUtil.log("current rocketmq mode[pull] not support intercept");
                 }
             } else if (bean instanceof DefaultRocketMQListenerContainer) {//使用了rocketmq-starter
                 DefaultRocketMQListenerContainer container = (DefaultRocketMQListenerContainer) bean;
@@ -143,7 +143,7 @@ class RocketMqMonitorLogInterceptor {
                 long start = System.currentTimeMillis();
                 RocketMQMessageListener anno = cls.getAnnotation(RocketMQMessageListener.class);
                 if (anno == null) {
-                    log.warn("RocketMQMessageListener is missing");
+                    MonitorLogUtil.log("RocketMQMessageListener is missing");
                     delegate.onMessage(message);
                     return;
                 }
@@ -253,7 +253,7 @@ class RocketMqMonitorLogInterceptor {
                     logParams.setTags(TagBuilder.of("topic", message.getTopic(), "group", context.getProducerGroup(), "tag", message.getTags()).toArray());
                     MonitorLogUtil.log(logParams);
                 } catch (Exception e) {
-                    log.warn(Constants.SYSTEM_ERROR_PREFIX + "sendMessageAfter error: {}", e.getMessage());
+                    MonitorLogUtil.log("sendMessageAfter error: {}", e.getMessage());
                 }
             }
         }

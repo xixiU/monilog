@@ -15,8 +15,8 @@ import org.springframework.core.annotation.Order;
 import javax.annotation.Resource;
 
 /**
- * @description: 启动类
  * @author rongjie.yuan
+ * @description: 启动类
  * @date 2023/7/28 17:06
  */
 @Configuration
@@ -28,14 +28,20 @@ class MonitorLogAutoConfiguration {
     private MonitorLogProperties monitorLogProperties;
 
     @Bean
+    @ConditionalOnBean(MonitorLogPrinter.class)
     MonitorLogAop aspectProcessor() {
         return new MonitorLogAop();
+    }
+
+    @Bean("__springUtils")
+    SpringUtils springUtils() {
+        return new SpringUtils();
     }
 
     @Bean
     @ConditionalOnMissingBean(MonitorLogPrinter.class)
     MonitorLogPrinter monitorLogPrinter() {
-        log.info("!!! core monitor start ……");
+        log.info("!!! monitor logPrinter start ...");
         return new DefaultMonitorLogPrinter(monitorLogProperties.getPrinter());
     }
 
@@ -44,7 +50,7 @@ class MonitorLogAutoConfiguration {
     @ConditionalOnClass({Feign.class})
     @Bean
     FeignMonitorInterceptor.FeignClientEnhanceProcessor feignClientEnhanceProcessor() {
-        log.info("!!! feign monitor start ……");
+        log.info("!!! feign monitor start ...");
         return new FeignMonitorInterceptor.FeignClientEnhanceProcessor(monitorLogProperties.getFeign());
     }
 
@@ -57,7 +63,7 @@ class MonitorLogAutoConfiguration {
         @GrpcGlobalServerInterceptor
         @ConditionalOnProperty(prefix = "monitor.log.grpc.server", name = "enable", havingValue = "true", matchIfMissing = true)
         GrpcMonitorLogInterceptor.GrpcLogPrintServerInterceptor grpcLogPrintServerInterceptor() {
-            log.info("!!! grpc server monitor start ……");
+            log.info("!!! grpc server monitor start ...");
             return new GrpcMonitorLogInterceptor.GrpcLogPrintServerInterceptor();
         }
 
@@ -66,7 +72,7 @@ class MonitorLogAutoConfiguration {
         @ConditionalOnClass(name = "io.grpc.ClientInterceptor")
         @ConditionalOnProperty(prefix = "monitor.log.grpc.client", name = "enable", havingValue = "true", matchIfMissing = true)
         GrpcMonitorLogInterceptor.GrpcLogPrintClientInterceptor grpcLogPrintClientInterceptor() {
-            log.info("!!! grpc client monitor start ……");
+            log.info("!!! grpc client monitor start ...");
             return new GrpcMonitorLogInterceptor.GrpcLogPrintClientInterceptor();
         }
     }
@@ -76,7 +82,7 @@ class MonitorLogAutoConfiguration {
     @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('mybatis')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('mybatis'))")
     @Bean
     MybatisMonitorLogInterceptor.MybatisInterceptor mybatisMonitorSqlFilter() {
-        log.info("!!! mybatis monitor start ……");
+        log.info("!!! mybatis monitor start ...");
         return new MybatisMonitorLogInterceptor.MybatisInterceptor(monitorLogProperties.getMybatis());
     }
 
@@ -85,18 +91,18 @@ class MonitorLogAutoConfiguration {
     @ConditionalOnProperty(prefix = "monitor.log.rocketmq", name = "enable", havingValue = "true", matchIfMissing = true)
     @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('rocketmq')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('rocketmq'))")
     @ConditionalOnClass(name = {"org.apache.rocketmq.client.MQAdmin"})
-    static class RocketMqMonitorLogConfiguration{
+    static class RocketMqMonitorLogConfiguration {
         @Bean
         @ConditionalOnProperty(prefix = "monitor.log.rocketmq.consumer", name = "enable", havingValue = "true", matchIfMissing = true)
         RocketMqMonitorLogInterceptor.RocketMQConsumerInterceptor rocketMQConsumerPostProcessor() {
-            log.info("!!! rocketmq consumer monitor start ……");
+            log.info("!!! rocketmq consumer monitor start ...");
             return new RocketMqMonitorLogInterceptor.RocketMQConsumerInterceptor();
         }
 
         @Bean
         @ConditionalOnProperty(prefix = "monitor.log.rocketmq.producer", name = "enable", havingValue = "true", matchIfMissing = true)
         RocketMqMonitorLogInterceptor.RocketMQProducerInterceptor rocketMQProducerPostProcessor() {
-            log.info("!!! rocketmq producer monitor start ……");
+            log.info("!!! rocketmq producer monitor start ...");
             return new RocketMqMonitorLogInterceptor.RocketMQProducerInterceptor();
         }
     }
@@ -105,13 +111,13 @@ class MonitorLogAutoConfiguration {
     @ConditionalOnProperty(prefix = "monitor.log.web", name = "enable", havingValue = "true", matchIfMissing = true)
     @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('web')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('web'))")
     @Bean
-    FilterRegistrationBean<WebMonitorLogInterceptor> logMonitorFilterBean() {
-        log.info("!!! web monitor start ……");
+    FilterRegistrationBean<WebMonitorLogInterceptor> webMonitorLogInterceptor() {
+        log.info("!!! web monitor start ...");
         FilterRegistrationBean<WebMonitorLogInterceptor> filterRegBean = new FilterRegistrationBean<>();
         filterRegBean.setFilter(new WebMonitorLogInterceptor());
         filterRegBean.setOrder(Integer.MAX_VALUE);
         filterRegBean.setEnabled(Boolean.TRUE);
-        filterRegBean.setName("logMonitorFilter");
+        filterRegBean.setName("webMonitorLogInterceptor");
         filterRegBean.setAsyncSupported(Boolean.TRUE);
         return filterRegBean;
     }
@@ -121,7 +127,7 @@ class MonitorLogAutoConfiguration {
     @ConditionalOnClass({IJobHandler.class})
     @Bean
     XxlJobLogMonitorExecuteInterceptor xxlJobLogMonitorExecuteInterceptor() {
-        log.info("!!! xxljob monitor start ……");
+        log.info("!!! xxljob monitor start ...");
         return new XxlJobLogMonitorExecuteInterceptor();
     }
 }

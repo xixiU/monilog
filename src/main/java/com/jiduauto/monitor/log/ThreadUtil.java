@@ -35,11 +35,9 @@ class ThreadUtil {
             }
             try {
                 serviceCls = Class.forName(currentSte.getClassName());
-                if (serviceCls != null) {
-                    MonitorLogTags monitorLogTags = ReflectUtil.getAnnotation(MonitorLogTags.class, serviceCls, serviceCls.getMethods());
-                    if (monitorLogTags != null) {
-                        new StackTraceElement(currentSte.getClassName(), currentSte.getMethodName(), currentSte.getFileName(), currentSte.getLineNumber());
-                    }
+                MonitorLogTags monitorLogTags = ReflectUtil.getAnnotation(MonitorLogTags.class, serviceCls, serviceCls.getMethods());
+                if (monitorLogTags != null) {
+                    new StackTraceElement(currentSte.getClassName(), currentSte.getMethodName(), currentSte.getFileName(), currentSte.getLineNumber());
                 }
             } catch (Exception e) {
 

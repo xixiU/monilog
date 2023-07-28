@@ -82,7 +82,7 @@ class MybatisMonitorLogInterceptor {
                     }
                     throw e;
                 } else {//组件异常
-                    log.warn(Constants.SYSTEM_ERROR_PREFIX + "mybatisInterceptor process error:{}", e.getMessage());
+                    MonitorLogUtil.log( "mybatisInterceptor process error:{}", e.getMessage());
                     return obj;
                 }
             } finally {
@@ -115,7 +115,7 @@ class MybatisMonitorLogInterceptor {
                     sql = boundSql.getSql().replace("\n+|\r+|\\s+", " ");
                 }
             } catch (Throwable e) {
-                log.warn(Constants.SYSTEM_ERROR_PREFIX + "parseMybatisExecuteInfo error:{}", e.getMessage());
+                MonitorLogUtil.log( "parseMybatisExecuteInfo error:{}", e.getMessage());
             }
             MybatisInvocationInfo info = new MybatisInvocationInfo();
             info.serviceCls = serviceCls;
@@ -130,14 +130,14 @@ class MybatisMonitorLogInterceptor {
                 MetaObject metaObject = SystemMetaObject.forObject(expectedStatementHandler);
                 //fastReturn
                 if (BooleanUtils.isNotTrue(metaObject.hasGetter("h.target"))) {
-                    log.warn(Constants.SYSTEM_ERROR_PREFIX + "can't find mappedStatement h.get method");
+                    MonitorLogUtil.log( "can't find mappedStatement h.get method");
                     break;
                 }
                 expectedStatementHandler = metaObject.getValue("h.target");
             }
             //failFast
             if (!(expectedStatementHandler instanceof StatementHandler)) {
-                log.warn(Constants.SYSTEM_ERROR_PREFIX + "sorry, expectedStatementHandler not instanceof StatementHandler!");
+                MonitorLogUtil.log( "sorry, expectedStatementHandler not instanceof StatementHandler!");
                 return null;
             }
             return expectedStatementHandler;

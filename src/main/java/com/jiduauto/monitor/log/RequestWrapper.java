@@ -14,7 +14,6 @@ import java.util.*;
 
 @Slf4j
 class RequestWrapper extends HttpServletRequestWrapper {
-
     private byte[] body;
     private Map<String, String[]> modifiableParameters;
 
@@ -29,7 +28,6 @@ class RequestWrapper extends HttpServletRequestWrapper {
         return new String(body, StandardCharsets.UTF_8);
     }
 
-
     /**
      * 获取请求Body
      */
@@ -42,7 +40,7 @@ class RequestWrapper extends HttpServletRequestWrapper {
                 sb.append(line);
             }
         } catch (IOException e) {
-            log.warn(Constants.SYSTEM_ERROR_PREFIX + "RequestWrapper.getBodyString error:{}", e.getMessage());
+            MonitorLogUtil.log("RequestWrapper.getBodyString error:{}", e.getMessage());
         }
         return sb.toString();
     }
@@ -60,7 +58,7 @@ class RequestWrapper extends HttpServletRequestWrapper {
             }
             byteArrayOutputStream.flush();
         } catch (IOException e) {
-            log.warn(Constants.SYSTEM_ERROR_PREFIX + "RequestWrapper.cloneInputStream error:{}", e.getMessage());
+            MonitorLogUtil.log("RequestWrapper.cloneInputStream error:{}", e.getMessage());
         }
         return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
     }

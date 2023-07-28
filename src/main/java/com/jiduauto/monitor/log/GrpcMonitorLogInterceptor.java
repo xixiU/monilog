@@ -278,7 +278,7 @@ class GrpcMonitorLogInterceptor {
         try {
             return JsonFormat.printer().omittingInsignificantWhitespace().print(message);
         } catch (Exception e) {
-            log.warn(Constants.SYSTEM_ERROR_PREFIX + "rpc message序列化成json错误:{}", e.getMessage());
+            MonitorLogUtil.log("rpc message序列化成json错误:{}", e.getMessage());
             return message.toString();
         }
     }
@@ -292,7 +292,7 @@ class GrpcMonitorLogInterceptor {
                 return json;
             }
         } catch (Exception e) {
-            log.warn(Constants.SYSTEM_ERROR_PREFIX + "rpc message序列化成json错误: {}", e.getMessage());
+            MonitorLogUtil.log("rpc message序列化成json错误: {}", e.getMessage());
             return message.toString();
         }
     }

@@ -51,8 +51,6 @@ class FeignMonitorInterceptor {
             return Integer.MAX_VALUE;
         }
     }
-
-
     private static class EnhancedFeignClient implements Client {
         private final Client realClient;
         private final String defaultBoolExpr;
@@ -176,7 +174,7 @@ class FeignMonitorInterceptor {
     }
 
 
-    static class BufferingFeignClientResponse implements Closeable {
+    private static class BufferingFeignClientResponse implements Closeable {
         private final Response response;
         private byte[] body;
 

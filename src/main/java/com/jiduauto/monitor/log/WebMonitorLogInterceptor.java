@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 import static com.jiduauto.monitor.log.StringUtil.checkPathMatch;
 
 
-
 @Slf4j
 class WebMonitorLogInterceptor extends OncePerRequestFilter {
     /**
@@ -94,7 +93,7 @@ class WebMonitorLogInterceptor extends OncePerRequestFilter {
         try {
             dealRequestTags(isMultipart ? request : wrapperRequest, logParams, requestHeaderMap, requestBodyMap);
         } catch (Exception e) {
-            log.warn(Constants.SYSTEM_ERROR_PREFIX + "dealRequestTags error: {}", e.getMessage());
+            MonitorLogUtil.log("dealRequestTags error: {}", e.getMessage());
         }
 
         try {
@@ -185,7 +184,7 @@ class WebMonitorLogInterceptor extends OncePerRequestFilter {
             try {
                 handlerExecutionChain = mapping.getHandler(request);
             } catch (Exception e) {
-                log.warn(Constants.SYSTEM_ERROR_PREFIX + "getHandlerMethod error: {}", e.getMessage());
+                MonitorLogUtil.log("getHandlerMethod error: {}", e.getMessage());
                 continue;
             }
             if (handlerExecutionChain == null) {
@@ -218,7 +217,7 @@ class WebMonitorLogInterceptor extends OncePerRequestFilter {
             }
             String parameterName = oriTags[i].substring(1, oriTags[i].length() - 1);
             String resultTagValue = jsonMap.get(parameterName);
-            oriTags[i] = StringUtils.isNotBlank(resultTagValue) ? resultTagValue : Constants.NO_VALUE_CODE;
+            oriTags[i] = StringUtils.isNotBlank(resultTagValue) ? resultTagValue : "00";
         }
         logParams.setTags(oriTags);
     }
@@ -299,7 +298,7 @@ class WebMonitorLogInterceptor extends OncePerRequestFilter {
                 return payload;
             }
         }
-        return "";
+        return null;
     }
 
 

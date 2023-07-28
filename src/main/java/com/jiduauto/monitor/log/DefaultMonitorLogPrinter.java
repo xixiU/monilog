@@ -40,25 +40,8 @@ class DefaultMonitorLogPrinter implements MonitorLogPrinter {
             logger.error("monitor_log[{}]-{}.{} {}|{}|{} {} input:{}, output:{}", logPoint, service, action, success, code, msg, rt, input, output, ex);
             return;
         }
-        boolean needLog = needLog(logPoint, service, action);
-        if (!needLog) {
-            return;
-        }
         String tags = JSON.toJSONString(logParams.getTags());
         logger.info("monitor_log[{}]-{}.{} {}|{}|{} {} input:{}, output:{}, tags:{}", logPoint, service, action, success, code, msg, rt, input, output, tags);
-    }
-
-    private boolean needLog(String logPoint, String service, String action) {
-        if (StringUtil.checkPathMatch(printerProperties.getInfoExcludeComponents(), logPoint)) {
-            return false;
-        }
-        if (StringUtil.checkPathMatch(printerProperties.getInfoExcludeServices(), service)) {
-            return false;
-        }
-        if (StringUtil.checkPathMatch(printerProperties.getInfoExcludeActions(), action)) {
-            return false;
-        }
-        return true;
     }
 
     private String formatLongText(Object o) {

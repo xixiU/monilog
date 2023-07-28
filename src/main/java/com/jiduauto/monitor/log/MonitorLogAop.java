@@ -17,7 +17,7 @@ class MonitorLogAop {
         return processAround(pjp, null, null);
     }
 
-    public static Object processAround(ProceedingJoinPoint pjp, LogParser logParser, LogPoint logPoint) throws Throwable {
+    static Object processAround(ProceedingJoinPoint pjp, LogParser logParser, LogPoint logPoint) throws Throwable {
         MonitorLogAspectCtx ctx = null;
         Throwable tx = null;
         try {
@@ -37,13 +37,14 @@ class MonitorLogAop {
             if (tx != null && e == tx) {
                 throw e;
             }
-            log.warn(Constants.SYSTEM_ERROR_PREFIX + "MonitorLogAop processAround error:{}", e.getMessage());
+            MonitorLogUtil.log("MonitorLogAop processAround error:{}", e.getMessage());
             if (ctx != null && ctx.isHasExecuted()) {
                 return ctx.getResult();
             }
             return pjp.proceed();
         }
     }
+
     private static MonitorLogAspectCtx beforeProcess(ProceedingJoinPoint pjp, LogParser logParser, LogPoint logPoint) {
         MonitorLogAspectCtx ctx = new MonitorLogAspectCtx(pjp, pjp.getArgs());
         if (logParser != null) {
@@ -82,13 +83,13 @@ class MonitorLogAop {
         params.setException(ctx.getException());
         params.setInput(ctx.getArgs());
         params.setOutput(ctx.getResult());
-        if (ctx.getTags()!=null && ctx.getTags().length >0) {
+        if (ctx.getTags() != null && ctx.getTags().length > 0) {
             params.setHasUserTag(true);
         }
         try {
             MonitorLogUtil.log(params);
         } catch (Exception e) {
-            log.warn(Constants.SYSTEM_ERROR_PREFIX + "MonitorLogAop afterProcess error:{}", e.getMessage());
+            MonitorLogUtil.log("MonitorLogAop afterProcess error:{}", e.getMessage());
         }
     }
 

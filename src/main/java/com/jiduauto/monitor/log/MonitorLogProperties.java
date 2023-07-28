@@ -22,6 +22,10 @@ class MonitorLogProperties {
      */
     private boolean enable = true;
     /**
+     * 服务名，默认取值：${spring.application.name}
+     */
+    private String appName = "${spring.application.name}";
+    /**
      * 监控开启组件清单，默认为*，目前支持feign,grpc,mybatis,rocketmq,web,xxljob，可以一键设置开启.
      */
     private Set<String> componentIncludes = Sets.newHashSet("*");

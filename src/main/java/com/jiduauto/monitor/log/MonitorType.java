@@ -23,8 +23,7 @@ enum MonitorType {
     /**
      * 耗时
      */
-    TIMER(21, "_timer", "耗时")
-    ;
+    TIMER(21, "_timer", "耗时");
 
     private final int code;
 
