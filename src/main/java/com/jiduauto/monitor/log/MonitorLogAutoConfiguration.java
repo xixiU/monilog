@@ -23,7 +23,7 @@ import javax.annotation.Resource;
 @EnableConfigurationProperties(MonitorLogProperties.class)
 @ConditionalOnProperty(prefix = "monitor.log", name = "enable", matchIfMissing = true)
 @Slf4j
-public class MonitorLogAutoConfiguration {
+class MonitorLogAutoConfiguration {
     @Resource
     private MonitorLogProperties monitorLogProperties;
 
