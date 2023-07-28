@@ -61,7 +61,6 @@ class MybatisMonitorLogConfiguration {
     @Slf4j
     static class MybatisInterceptor implements Interceptor {
         private final MonitorLogProperties.MybatisProperties mybatisProperties;
-        private static final String SQL = "sql";
         private static final String SQL_COST_TOO_LONG = "sqlCostTooLang";
 
         public MybatisInterceptor(MonitorLogProperties.MybatisProperties mybatisProperties) {
