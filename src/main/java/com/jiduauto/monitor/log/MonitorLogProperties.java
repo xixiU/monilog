@@ -64,7 +64,7 @@ class MonitorLogProperties {
 
     @Getter
     @Setter
-    public static class PrinterProperties {
+    static class PrinterProperties {
         /**
          * 是否输出各个流量出入口的详情日志(总开关)
          */
@@ -89,7 +89,7 @@ class MonitorLogProperties {
 
     @Getter
     @Setter
-    public static class WebProperties {
+    static class WebProperties {
         /**
          * 开启web监控
          */
@@ -110,7 +110,7 @@ class MonitorLogProperties {
 
     @Getter
     @Setter
-    public static class GrpcProperties {
+    static class GrpcProperties {
         /**
          * 开启grpc监控
          */
@@ -135,7 +135,7 @@ class MonitorLogProperties {
 
     @Getter
     @Setter
-    public static class XxljobProperties {
+    static class XxljobProperties {
         /**
          * 开启xxljob监控
          */
@@ -148,7 +148,7 @@ class MonitorLogProperties {
 
     @Getter
     @Setter
-    public static class FeignProperties {
+    static class FeignProperties {
         /**
          * 开启feign监控
          */
@@ -169,7 +169,7 @@ class MonitorLogProperties {
 
     @Getter
     @Setter
-    public static class MybatisProperties {
+    static class MybatisProperties {
         /**
          * 开启mybatis监控
          */
@@ -186,7 +186,7 @@ class MonitorLogProperties {
 
     @Getter
     @Setter
-    public static class RocketMqProperties {
+    static class RocketMqProperties {
         /**
          * 开启rocketmq监控
          */
@@ -211,7 +211,7 @@ class MonitorLogProperties {
 
     @Getter
     @Setter
-    public static class RedisProperties{
+    static class RedisProperties {
         /**
          * 开启redis监控
          */
