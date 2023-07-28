@@ -2,19 +2,16 @@ package com.jiduauto.monitor.log;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import feign.*;
+import feign.Client;
+import feign.MethodMetadata;
+import feign.Request;
+import feign.Response;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -33,20 +30,11 @@ import java.util.Map;
  * @author yp
  * @date 2023/07/24
  */
-@Configuration
-@ConditionalOnProperty(prefix = "monitor.log.feign", name = "enable", havingValue = "true", matchIfMissing = true)
-@ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('feign')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('feign'))")
-@ConditionalOnClass({Feign.class, CoreMonitorLogConfiguration.class})
-@AutoConfigureAfter(CoreMonitorLogConfiguration.class)
 @Slf4j
 class FeignMonitorLogConfiguration {
     @Resource
     private MonitorLogProperties monitorLogProperties;
 
-    @Bean
-    public FeignClientEnhanceProcessor feignClientEnhanceProcessor() {
-        return new FeignClientEnhanceProcessor(monitorLogProperties.getFeign());
-    }
 
     static class FeignClientEnhanceProcessor implements BeanPostProcessor, Ordered {
         private MonitorLogProperties.FeignProperties feignProperties;

@@ -14,32 +14,12 @@ import org.apache.ibatis.plugin.Signature;
 import org.apache.ibatis.reflection.MetaObject;
 import org.apache.ibatis.reflection.SystemMetaObject;
 import org.apache.ibatis.session.ResultHandler;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
-import javax.annotation.Resource;
 import java.lang.reflect.Proxy;
 import java.sql.Statement;
 
-@EnableConfigurationProperties
-@ConditionalOnProperty(prefix = "monitor.log.mybatis", name = "enable", havingValue = "true", matchIfMissing = true)
-@ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('mybatis')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('mybatis'))")
-@ConditionalOnClass(CoreMonitorLogConfiguration.class)
-@AutoConfigureAfter(CoreMonitorLogConfiguration.class)
-@Configuration
-class MybatisMonitorLogConfiguration {
-    @Resource
-    private MonitorLogProperties monitorLogProperties;
 
-    @Bean
-    public MybatisInterceptor mybatisMonitorSqlFilter() {
-        return new MybatisInterceptor(monitorLogProperties.getMybatis());
-    }
+class MybatisMonitorLogConfiguration {
 
     /**
      * @author ：xiaoxu.bao

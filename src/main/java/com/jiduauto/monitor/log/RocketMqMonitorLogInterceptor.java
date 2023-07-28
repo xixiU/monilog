@@ -23,12 +23,6 @@ import org.apache.rocketmq.spring.core.RocketMQListener;
 import org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -37,23 +31,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
-@Configuration
-@ConditionalOnProperty(prefix = "monitor.log.rocketmq", name = "enable", havingValue = "true", matchIfMissing = true)
-@ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('rocketmq')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('rocketmq'))")
-@ConditionalOnClass(name = {"org.apache.rocketmq.client.MQAdmin", "com.jiduauto.monitor.log.CoreMonitorLogConfiguration"})
-@AutoConfigureAfter(CoreMonitorLogConfiguration.class)
-class RocketMqMonitorLogConfiguration {
-    @Bean
-    @ConditionalOnProperty(prefix = "monitor.log.rocketmq.consumer", name = "enable", havingValue = "true", matchIfMissing = true)
-    RocketMQConsumerInterceptor rocketMQConsumerPostProcessor() {
-        return new RocketMQConsumerInterceptor();
-    }
-
-    @Bean
-    @ConditionalOnProperty(prefix = "monitor.log.rocketmq.producer", name = "enable", havingValue = "true", matchIfMissing = true)
-    RocketMQProducerInterceptor rocketMQProducerPostProcessor() {
-        return new RocketMQProducerInterceptor();
-    }
+class RocketMqMonitorLogInterceptor {
 
     @Slf4j
     static class RocketMQConsumerInterceptor implements BeanPostProcessor {

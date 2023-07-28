@@ -6,16 +6,8 @@ import com.google.protobuf.util.JsonFormat;
 import io.grpc.*;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
-import net.devh.boot.grpc.client.interceptor.GrpcGlobalClientInterceptor;
-import net.devh.boot.grpc.server.interceptor.GrpcGlobalServerInterceptor;
 import net.devh.boot.grpc.server.service.GrpcService;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -28,32 +20,14 @@ import java.util.stream.Collectors;
  * @author dianming.cao
  * @date 2022/8/16
  */
-@Configuration
-@ConditionalOnProperty(prefix = "monitor.log.grpc", name = "enable", havingValue = "true", matchIfMissing = true)
-@ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('grpc')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('grpc'))")
-@ConditionalOnClass(name = {"io.grpc.stub.AbstractStub", "io.grpc.stub.ServerCalls", "com.jiduauto.monitor.log.CoreMonitorLogConfiguration"})
-@AutoConfigureAfter(CoreMonitorLogConfiguration.class)
+
 @Slf4j
-class GrpcMonitorLogConfiguration {
+class GrpcMonitorLogInterceptor {
     private static final String TIME_KEY = "nowTime";
-
-    @Order(-100)
-    @GrpcGlobalServerInterceptor
-    @ConditionalOnProperty(prefix = "monitor.log.grpc.server", name = "enable", havingValue = "true", matchIfMissing = true)
-    GrpcLogPrintServerInterceptor grpcLogPrintServerInterceptor() {
-        return new GrpcLogPrintServerInterceptor();
-    }
-
-    @Order(-101)
-    @GrpcGlobalClientInterceptor
-    @ConditionalOnClass(name = "io.grpc.ClientInterceptor")
-    @ConditionalOnProperty(prefix = "monitor.log.grpc.client", name = "enable", havingValue = "true", matchIfMissing = true)
-    GrpcLogPrintClientInterceptor grpcLogPrintClientInterceptor() {
-        return new GrpcLogPrintClientInterceptor();
-    }
 
     @Slf4j
     static class GrpcLogPrintClientInterceptor implements ClientInterceptor {
+
         @Override
         public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> method, CallOptions callOptions, Channel channel) {
             return new GrpcMonitorLogClientCall<>(channel.newCall(method, callOptions), new ConcurrentHashMap<>(), method);

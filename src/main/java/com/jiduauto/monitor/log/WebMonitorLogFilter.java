@@ -9,11 +9,6 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.util.http.fileupload.servlet.ServletFileUpload;
 import org.springframework.beans.factory.BeanFactoryUtils;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.condition.*;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
@@ -37,14 +32,9 @@ import java.util.stream.Collectors;
 import static com.jiduauto.monitor.log.MonitorStringUtil.checkPathMatch;
 
 
-@Configuration
-@ConditionalOnWebApplication
-@ConditionalOnProperty(prefix = "monitor.log.web", name = "enable", havingValue = "true", matchIfMissing = true)
-@ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('web')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('web'))")
-@ConditionalOnClass({CoreMonitorLogConfiguration.class})
-@AutoConfigureAfter(CoreMonitorLogConfiguration.class)
+
 @Slf4j
-class WebMonitorLogConfiguration extends OncePerRequestFilter {
+class WebMonitorLogFilter extends OncePerRequestFilter {
     /**
      * 集度JNS请求时header中会带X-JIDU-SERVICENAME
      */
@@ -53,16 +43,6 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
     @Resource
     private MonitorLogProperties monitorLogProperties;
 
-    @Bean
-    FilterRegistrationBean<WebMonitorLogConfiguration> logMonitorFilterBean() {
-        FilterRegistrationBean<WebMonitorLogConfiguration> filterRegBean = new FilterRegistrationBean<>();
-        filterRegBean.setFilter(this);
-        filterRegBean.setOrder(Integer.MAX_VALUE);
-        filterRegBean.setEnabled(Boolean.TRUE);
-        filterRegBean.setName("logMonitorFilter");
-        filterRegBean.setAsyncSupported(Boolean.TRUE);
-        return filterRegBean;
-    }
 
     @Override
     public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws IOException, ServletException {
