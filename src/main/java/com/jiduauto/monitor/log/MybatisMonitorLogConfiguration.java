@@ -95,7 +95,7 @@ class MybatisMonitorLogConfiguration {
                 logParams.setOutput(obj);
                 costTime = System.currentTimeMillis() - nowTime + 1;
                 logParams.setCost(costTime);
-                // 超过两秒的，打印错误日志
+                // 超过时间阀值的，打印错误日志
                 if (mybatisProperties != null && mybatisProperties.getLongQueryTime() > 0 && costTime > mybatisProperties.getLongQueryTime()) {
                     MetricMonitor.record(SQL_COST_TOO_LONG + MonitorType.RECORD.getMark());
                     log.error("sql_cost_time_too_long, sql{}, time:{}", invocationInfo.sql, costTime);
