@@ -175,8 +175,13 @@ class RocketMqMonitorLogConfiguration {
                     delegate.onMessage(message);
                     return;
                 }
-                String topic = anno.topic();
+                String topic = message instanceof MessageExt ? ((MessageExt) message).getTopic() : anno.topic();;
+
+                if (topic.startsWith("${")) {
+                    topic = MonitorSpringUtils.getApplicationContext().getEnvironment().resolvePlaceholders(topic);
+                }
                 String tag = message instanceof MessageExt ? ((MessageExt) message).getTags() : anno.selectorExpression();
+
                 try {
                     params.setInput(formatInputMsg(message));
                     String[] tags = TagBuilder.of("group", consumerGroup, "topic", topic, "tag", tag).toArray();

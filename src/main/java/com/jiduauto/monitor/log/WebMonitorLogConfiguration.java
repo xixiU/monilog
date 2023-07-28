@@ -100,6 +100,9 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
         long startTime = System.currentTimeMillis();
         String responseBodyStr = "";
         MonitorLogParams logParams = new MonitorLogParams();
+        if (logParams != null) {
+            logParams.setHasUserTag(true);
+        }
         logParams.setLogPoint(LogPoint.http_server);
         logParams.setServiceCls(method.getBeanType());
         logParams.setService(method.getBeanType().getSimpleName());
@@ -338,7 +341,8 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
         if (MapUtils.isEmpty(headerMap)) {
             return LogPoint.unknown;
         }
-        if (headerMap.containsKey(JIDU_JNS_HEADER)) {
+        String jnsHeader = getMapValueIgnoreCase(headerMap, JIDU_JNS_HEADER);
+        if (StringUtils.isNotBlank(jnsHeader)) {
             return LogPoint.feign_server;
         }
         String userAgent = getMapValueIgnoreCase(headerMap, USER_AGENT);

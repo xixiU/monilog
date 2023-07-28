@@ -87,6 +87,9 @@ public class MonitorLogAop {
         params.setException(ctx.getException());
         params.setInput(ctx.getArgs());
         params.setOutput(ctx.getResult());
+        if (ctx.getTags()!=null && ctx.getTags().length >0) {
+            params.setHasUserTag(true);
+        }
         try {
             MonitorLogUtil.log(params);
         } catch (Exception e) {
