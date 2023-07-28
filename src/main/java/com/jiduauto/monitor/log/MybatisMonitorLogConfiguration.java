@@ -132,6 +132,7 @@ class MybatisMonitorLogConfiguration {
 
             String sql;
         }
+
         private static MybatisInvocationInfo parseMybatisExecuteInfo(Invocation invocation) {
             Class<?> serviceCls = invocation.getTarget().getClass();
             String methodName = invocation.getMethod().getName();
