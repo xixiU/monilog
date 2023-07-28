@@ -64,7 +64,7 @@ public class CoreMonitorLogConfiguration {
             String logPoint = logParams.getLogPoint().name();
             String service = logParams.getService();
             String action = logParams.getAction();
-            String success = logParams.isSuccess() ? "Y" : "N";
+            String success = logParams.isSuccess() ? "true" : "false";
             String code = logParams.getMsgCode();
             String msg = logParams.getMsgInfo();
             String rt = logParams.getCost() + "ms";
@@ -73,7 +73,7 @@ public class CoreMonitorLogConfiguration {
             Throwable ex = logParams.getException();
 
             if (!logParams.isSuccess()) {
-                logger.error("monitor log[{}]-{}.{} {}-{}-{} {} input:{}, output:{}", logPoint, service, action, success, code, msg, rt, input, output, ex);
+                logger.error("monitor_log[{}]-{}.{} {}|{}|{} {} input:{}, output:{}", logPoint, service, action, success, code, msg, rt, input, output, ex);
                 return;
             }
             boolean needLog = needLog(logPoint, service, action);
@@ -81,7 +81,7 @@ public class CoreMonitorLogConfiguration {
                 return;
             }
             String tags = JSON.toJSONString(MonitorLogUtil.processTags(logParams));
-            logger.info("monitor log[{}]-{}.{} {}-{}-{} {} input:{}, output:{}, tags:{}", logPoint, service, action, success, code, msg, rt, input, output, tags);
+            logger.info("monitor_log[{}]-{}.{} {}|{}|{} {} input:{}, output:{}, tags:{}", logPoint, service, action, success, code, msg, rt, input, output, tags);
         }
 
         private boolean needLog(String logPoint, String service, String action) {
