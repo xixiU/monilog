@@ -13,8 +13,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
 
-import javax.annotation.Resource;
-
 /**
  * @author rongjie.yuan
  * @description: 启动类
@@ -26,9 +24,6 @@ import javax.annotation.Resource;
 @Slf4j
 @Import({SpringUtils.class})
 class MonitorLogAutoConfiguration {
-    @Resource
-    private MonitorLogProperties monitorLogProperties;
-
     @Bean
     @ConditionalOnBean(MonitorLogPrinter.class)
     MonitorLogAop aspectProcessor() {
@@ -43,7 +38,7 @@ class MonitorLogAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(MonitorLogPrinter.class)
-    MonitorLogPrinter monitorLogPrinter() {
+    MonitorLogPrinter monitorLogPrinter(MonitorLogProperties monitorLogProperties) {
         log.info("!!! monitor logPrinter start ...");
         return new DefaultMonitorLogPrinter(monitorLogProperties.getPrinter());
     }
@@ -52,7 +47,7 @@ class MonitorLogAutoConfiguration {
     @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('feign')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('feign'))")
     @ConditionalOnClass(name = {"feign.Feign"})
     @Bean
-    FeignMonitorInterceptor.FeignClientEnhanceProcessor feignClientEnhanceProcessor() {
+    FeignMonitorInterceptor.FeignClientEnhanceProcessor feignClientEnhanceProcessor(MonitorLogProperties monitorLogProperties) {
         log.info("!!! feign monitor start ...");
         return new FeignMonitorInterceptor.FeignClientEnhanceProcessor(monitorLogProperties.getFeign());
     }
@@ -84,7 +79,7 @@ class MonitorLogAutoConfiguration {
     @ConditionalOnProperty(prefix = "monitor.log.mybatis", name = "enable", havingValue = "true", matchIfMissing = true)
     @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('mybatis')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('mybatis'))")
     @Bean
-    MybatisMonitorLogInterceptor.MybatisInterceptor mybatisMonitorSqlFilter() {
+    MybatisMonitorLogInterceptor.MybatisInterceptor mybatisMonitorSqlFilter(MonitorLogProperties monitorLogProperties) {
         log.info("!!! mybatis monitor start ...");
         return new MybatisMonitorLogInterceptor.MybatisInterceptor(monitorLogProperties.getMybatis());
     }
@@ -138,7 +133,7 @@ class MonitorLogAutoConfiguration {
     @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('redis')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('redis'))")
     @ConditionalOnClass(name = "org.springframework.data.redis.core.RedisTemplate")
     @Bean
-    RedisLogMonitorInterceptor.RedisTemplateEnhanceProcessor redisLogMonitorInterceptor() {
+    RedisLogMonitorInterceptor.RedisTemplateEnhanceProcessor redisLogMonitorInterceptor(MonitorLogProperties monitorLogProperties) {
         log.info("!!! redis monitor start ...");
         return new RedisLogMonitorInterceptor.RedisTemplateEnhanceProcessor(monitorLogProperties.getRedis());
     }
@@ -149,9 +144,6 @@ class MonitorLogAutoConfiguration {
     @ConditionalOnClass(name = {"org.apache.http.client.HttpClient", "org.apache.http.impl.client.CloseableHttpClient", "org.apache.http.impl.client.HttpClientBuilder"})
     @AutoConfigureAfter(MonitorLogAutoConfiguration.class)
     static class HttpClientLogMonitorConfiguration {
-        @Resource
-        private MonitorLogProperties monitorLogProperties;
-
         /**
          * 注意，只有使用Spring容器中的HttpClientBuilder对象，拦截器才会生效
          */
@@ -163,7 +155,7 @@ class MonitorLogAutoConfiguration {
 
         @Bean
         @ConditionalOnBean(HttpClientBuilder.class)
-        HttpClientLogMonitorInterceptor.HttpClientBuilderProcessor httpClientBuilderProcessor() {
+        HttpClientLogMonitorInterceptor.HttpClientBuilderProcessor httpClientBuilderProcessor(MonitorLogProperties monitorLogProperties) {
             log.info("!!! httpclient monitor start ...");
             HttpClientLogMonitorInterceptor.RequestInterceptor requestInterceptor = new HttpClientLogMonitorInterceptor.RequestInterceptor();
             HttpClientLogMonitorInterceptor.ResponseInterceptor responseInterceptor = new HttpClientLogMonitorInterceptor.ResponseInterceptor();
