@@ -53,7 +53,6 @@ import static com.jiduauto.monitor.log.util.MonitorStringUtil.checkPathMatch;
 @ConditionalOnProperty(prefix = "monitor.log.web", name = "enable", havingValue = "true", matchIfMissing = true)
 @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('web')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('web'))")
 @ConditionalOnClass({CoreMonitorLogConfiguration.class})
-@ConditionalOnBean(MonitorLogPrinter.class)
 @AutoConfigureAfter(CoreMonitorLogConfiguration.class)
 @Slf4j
 class WebMonitorLogConfiguration extends OncePerRequestFilter {

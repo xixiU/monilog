@@ -3,10 +3,10 @@ package com.jiduauto.monitor.log;
 import com.alibaba.fastjson.JSON;
 import com.google.protobuf.MessageOrBuilder;
 import com.google.protobuf.util.JsonFormat;
-import com.jiduauto.monitor.log.parse.LogParser;
 import com.jiduauto.monitor.log.enums.ErrorEnum;
 import com.jiduauto.monitor.log.enums.LogPoint;
 import com.jiduauto.monitor.log.model.MonitorLogParams;
+import com.jiduauto.monitor.log.parse.LogParser;
 import com.jiduauto.monitor.log.parse.ParsedResult;
 import com.jiduauto.monitor.log.parse.ResultParseStrategy;
 import com.jiduauto.monitor.log.util.*;
@@ -18,7 +18,6 @@ import net.devh.boot.grpc.server.interceptor.GrpcGlobalServerInterceptor;
 import net.devh.boot.grpc.server.service.GrpcService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -40,7 +39,6 @@ import java.util.stream.Collectors;
 @ConditionalOnProperty(prefix = "monitor.log.grpc", name = "enable", havingValue = "true", matchIfMissing = true)
 @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('grpc')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('grpc'))")
 @ConditionalOnClass(name = {"io.grpc.stub.AbstractStub", "io.grpc.stub.ServerCalls", "com.jiduauto.monitor.log.CoreMonitorLogConfiguration"})
-@ConditionalOnBean(MonitorLogPrinter.class)
 @AutoConfigureAfter(CoreMonitorLogConfiguration.class)
 @Slf4j
 class GrpcMonitorLogConfiguration {
