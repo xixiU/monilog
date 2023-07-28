@@ -19,7 +19,7 @@ import java.lang.reflect.Proxy;
 import java.sql.Statement;
 
 
-class MybatisMonitorLogConfiguration {
+class MybatisMonitorLogInterceptor {
 
     /**
      * @author ：xiaoxu.bao
