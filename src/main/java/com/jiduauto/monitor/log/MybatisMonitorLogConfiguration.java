@@ -95,7 +95,7 @@ class MybatisMonitorLogConfiguration {
                 logParams.setMsgCode(ErrorEnum.SUCCESS.name());
                 logParams.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
                 BoundSql boundSql = statementHandler.getBoundSql();
-                String sql = boundSql.getSql().replace("\n|\r|\\s+", " ");
+                String sql = boundSql.getSql().replace("\n+|\r+|\\s+", " ");
                 logParams.setInput(new String[]{sql});
                 //这句可能异常
                 Object obj = invocation.proceed();
