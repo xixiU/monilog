@@ -17,9 +17,8 @@ class RedisLogMonitorInterceptor {
         public RedisTemplateEnhanceProcessor(MonitorLogProperties.RedisProperties redisProperties) {
             this.redisProperties = redisProperties;
         }
-
         @Override
-        public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+        public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
             if (bean instanceof RedisTemplate && !(bean instanceof RedisLogMonitorInterceptor.EnhancedRedisTemplate)) {
                 return new RedisLogMonitorInterceptor.EnhancedRedisTemplate<>((RedisTemplate<?, ?>) bean, redisProperties);
             }
