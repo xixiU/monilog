@@ -84,6 +84,7 @@ public class HttpClientLogMonitorInterceptor {
             StatusLine statusLine = httpResponse.getStatusLine();
             p.setSuccess(statusLine.getStatusCode() == HttpStatus.SC_OK);
             p.setMsgCode(String.valueOf(statusLine.getStatusCode()));
+            log.info("httpclient monitor execute... to be implemented");
             //TODO
 //            p.setOutput();
 //            p.setMsgInfo();
