@@ -1,13 +1,6 @@
 package com.jiduauto.monitor.log;
 
 import com.alibaba.fastjson.JSON;
-import com.jiduauto.monitor.log.aop.MonitorLogAop;
-import com.jiduauto.monitor.log.model.MonitorLogParams;
-import com.jiduauto.monitor.log.model.MonitorLogPrinter;
-import com.jiduauto.monitor.log.model.MonitorLogProperties;
-import com.jiduauto.monitor.log.util.MonitorLogUtil;
-import com.jiduauto.monitor.log.util.MonitorSpringUtils;
-import com.jiduauto.monitor.log.util.MonitorStringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;

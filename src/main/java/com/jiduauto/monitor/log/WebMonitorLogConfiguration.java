@@ -2,18 +2,6 @@ package com.jiduauto.monitor.log;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.jiduauto.monitor.log.annotation.MonitorLogTags;
-import com.jiduauto.monitor.log.constant.Constants;
-import com.jiduauto.monitor.log.enums.ErrorEnum;
-import com.jiduauto.monitor.log.enums.LogPoint;
-import com.jiduauto.monitor.log.model.ErrorInfo;
-import com.jiduauto.monitor.log.model.MonitorLogParams;
-import com.jiduauto.monitor.log.model.MonitorLogProperties;
-import com.jiduauto.monitor.log.model.RequestWrapper;
-import com.jiduauto.monitor.log.parse.LogParser;
-import com.jiduauto.monitor.log.parse.ParsedResult;
-import com.jiduauto.monitor.log.parse.ResultParseStrategy;
-import com.jiduauto.monitor.log.util.*;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.uadetector.UserAgentType;
 import org.apache.commons.collections4.CollectionUtils;
@@ -46,7 +34,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.jiduauto.monitor.log.util.MonitorStringUtil.checkPathMatch;
+import static com.jiduauto.monitor.log.MonitorStringUtil.checkPathMatch;
 
 
 @Configuration
@@ -104,7 +92,6 @@ class WebMonitorLogConfiguration extends OncePerRequestFilter {
         if (logParams != null) {
             logParams.setHasUserTag(true);
         }
-        logParams.setLogPoint(LogPoint.http_server);
         logParams.setServiceCls(method.getBeanType());
         logParams.setService(method.getBeanType().getSimpleName());
         logParams.setAction(method.getMethod().getName());

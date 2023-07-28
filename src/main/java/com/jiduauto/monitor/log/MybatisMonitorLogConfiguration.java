@@ -1,14 +1,5 @@
 package com.jiduauto.monitor.log;
 
-import com.jiduauto.monitor.log.constant.Constants;
-import com.jiduauto.monitor.log.enums.ErrorEnum;
-import com.jiduauto.monitor.log.enums.LogPoint;
-import com.jiduauto.monitor.log.enums.MonitorType;
-import com.jiduauto.monitor.log.model.ErrorInfo;
-import com.jiduauto.monitor.log.model.MonitorLogParams;
-import com.jiduauto.monitor.log.model.MonitorLogProperties;
-import com.jiduauto.monitor.log.util.ExceptionUtil;
-import com.jiduauto.monitor.log.util.MonitorLogUtil;
 import com.metric.MetricMonitor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;

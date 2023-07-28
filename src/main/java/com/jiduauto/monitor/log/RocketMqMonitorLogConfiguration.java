@@ -2,12 +2,6 @@ package com.jiduauto.monitor.log;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
-import com.jiduauto.monitor.log.constant.Constants;
-import com.jiduauto.monitor.log.enums.ErrorEnum;
-import com.jiduauto.monitor.log.enums.LogPoint;
-import com.jiduauto.monitor.log.model.ErrorInfo;
-import com.jiduauto.monitor.log.model.MonitorLogParams;
-import com.jiduauto.monitor.log.util.*;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
