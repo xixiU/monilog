@@ -62,6 +62,10 @@ public class MonitorLogProperties {
     @Setter
     public static class PrinterProperties {
         /**
+         * 是否输出各个流量出入口的详情日志(总开关)
+         */
+        private boolean printDetailLog = true;
+        /**
          * 默认详情日志打印最长的长度，目前仅限制了收集参数中的input与output的长度
          */
         private Integer maxTextLen = 5000;
@@ -87,6 +91,14 @@ public class MonitorLogProperties {
          */
         private boolean enable = true;
         /**
+         * 是否输出各个http(非rpc类)入口流量的详情日志
+         */
+        private boolean printHttpServerDetailLog = true;
+        /**
+         * 是否输出各个http出口流量的详情日志
+         */
+        private boolean printHttpClientDetailLog = true;
+        /**
          * 不监控的url清单，支持模糊路径如a/*， 默认值：/actuator/health, /misc/ping, /actuator/prometheus
          */
         private Set<String> urlBlackList = Sets.newHashSet("/actuator/health", "/misc/ping", "/actuator/prometheus");
@@ -107,6 +119,14 @@ public class MonitorLogProperties {
          * 开启grpc Client端监控
          */
         private boolean clientEnable = true;
+        /**
+         * 是否输出各个grpc入口流量的详情日志
+         */
+        private boolean printGrpcServerDetailLog = true;
+        /**
+         * 是否输出各个grpc出口流量的详情日志
+         */
+        private boolean printGrpcClientDetailLog = true;
     }
 
     @Getter
@@ -116,6 +136,10 @@ public class MonitorLogProperties {
          * 开启xxljob监控
          */
         private boolean enable = true;
+        /**
+         * 是否输出各个xxljob流量的详情日志
+         */
+        private boolean printXxljobDetailLog = true;
     }
 
     @Getter
@@ -125,6 +149,14 @@ public class MonitorLogProperties {
          * 开启feign监控
          */
         private boolean enable = true;
+        /**
+         * 是否输出各个feign入口流量的详情日志
+         */
+        private boolean printFeignServerDetailLog = true;
+        /**
+         * 是否输出各个feign出口流量的详情日志
+         */
+        private boolean printFeignClientDetailLog = true;
         /**
          * 解析feign调用结果的默认表达式，默认校验返回编码是否等于0或者200有一个匹配即认为调用成功,多个表达式直接逗号分割.
          */
@@ -139,11 +171,14 @@ public class MonitorLogProperties {
          */
         private boolean enable = true;
         /**
+         * 是否输mybatis的详情日志
+         */
+        private boolean printMybatisDetailLog = true;
+        /**
          * mybatis慢sql阈值，单位毫秒.
          */
         private long longQueryTime = 2000;
     }
-
 
     @Getter
     @Setter
@@ -160,5 +195,13 @@ public class MonitorLogProperties {
          * 开启rocketmq生产者监控
          */
         private boolean producerEnable = true;
+        /**
+         * 是否输出各个rocketmq消费者流量的详情日志
+         */
+        private boolean printRocketmqConsumerDetailLog = true;
+        /**
+         * 是否输出各个rocketmq发送者流量的详情日志
+         */
+        private boolean printRocketmqProducerDetailLog = true;
     }
 }

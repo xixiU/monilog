@@ -32,7 +32,6 @@ public class MonitorLogUtil {
                 printer.log(logParams);
             }
         } catch (Exception e) {
-            // TODO rongjie.yuan  2023/7/28 12:59 错误前缀统一，然后不要打error。
             log.warn(Constants.SYSTEM_ERROR_PREFIX + "doMonitor error:{}", e.getMessage());
         }
     }
