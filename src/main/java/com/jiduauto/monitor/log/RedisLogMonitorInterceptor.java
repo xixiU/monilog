@@ -33,7 +33,7 @@ class RedisLogMonitorInterceptor {
                 RedisSerializer<?> hashKeySerializer = ((RedisTemplate<?, ?>) bean).getHashKeySerializer();
                 RedisSerializer<?> hashValueSerializer = ((RedisTemplate<?, ?>) bean).getHashValueSerializer();
                 //...
-
+                System.out.println("...redistemplate...");
             }
             return BeanPostProcessor.super.postProcessBeforeInitialization(bean, beanName);
         }
