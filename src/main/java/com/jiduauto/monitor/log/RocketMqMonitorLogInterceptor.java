@@ -33,7 +33,7 @@ import java.util.function.BiFunction;
 
 class RocketMqMonitorLogInterceptor {
     @Slf4j
-    static class RocketMQConsumerInterceptor implements BeanPostProcessor {
+    static class RocketMQConsumerEnhanceProcessor implements BeanPostProcessor {
         @Override
         public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
             if (bean instanceof MQConsumer) {//不使用rocketmq-starter时
@@ -202,7 +202,7 @@ class RocketMqMonitorLogInterceptor {
 
 
     @Slf4j
-    static class RocketMQProducerInterceptor implements BeanPostProcessor {
+    static class RocketMQProducerInhanceProcessor implements BeanPostProcessor {
         @Override
         public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
             if (bean instanceof DefaultMQProducer) {

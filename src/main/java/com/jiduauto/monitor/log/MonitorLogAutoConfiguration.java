@@ -38,18 +38,18 @@ class MonitorLogAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(MonitorLogPrinter.class)
-    MonitorLogPrinter monitorLogPrinter(MonitorLogProperties monitorLogProperties) {
+    MonitorLogPrinter monitorLogPrinter() {
         log.info("!!! monitor logPrinter start ...");
-        return new DefaultMonitorLogPrinter(monitorLogProperties.getPrinter());
+        return new DefaultMonitorLogPrinter();
     }
 
     @ConditionalOnProperty(prefix = "monitor.log.feign", name = "enable", havingValue = "true", matchIfMissing = true)
     @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('feign')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('feign'))")
     @ConditionalOnClass(name = {"feign.Feign"})
     @Bean
-    FeignMonitorInterceptor.FeignClientEnhanceProcessor feignClientEnhanceProcessor(MonitorLogProperties monitorLogProperties) {
+    FeignMonitorInterceptor.FeignClientEnhanceProcessor feignClientEnhanceProcessor() {
         log.info("!!! feign monitor start ...");
-        return new FeignMonitorInterceptor.FeignClientEnhanceProcessor(monitorLogProperties.getFeign());
+        return new FeignMonitorInterceptor.FeignClientEnhanceProcessor();
     }
 
     @ConditionalOnProperty(prefix = "monitor.log.grpc", name = "enable", havingValue = "true", matchIfMissing = true)
@@ -79,9 +79,9 @@ class MonitorLogAutoConfiguration {
     @ConditionalOnProperty(prefix = "monitor.log.mybatis", name = "enable", havingValue = "true", matchIfMissing = true)
     @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('mybatis')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('mybatis'))")
     @Bean
-    MybatisMonitorLogInterceptor.MybatisInterceptor mybatisMonitorSqlFilter(MonitorLogProperties monitorLogProperties) {
+    MybatisMonitorLogInterceptor.MybatisInterceptor mybatisMonitorSqlFilter() {
         log.info("!!! mybatis monitor start ...");
-        return new MybatisMonitorLogInterceptor.MybatisInterceptor(monitorLogProperties.getMybatis());
+        return new MybatisMonitorLogInterceptor.MybatisInterceptor();
     }
 
 
@@ -92,16 +92,16 @@ class MonitorLogAutoConfiguration {
     static class RocketMqMonitorLogConfiguration {
         @Bean
         @ConditionalOnProperty(prefix = "monitor.log.rocketmq.consumer", name = "enable", havingValue = "true", matchIfMissing = true)
-        RocketMqMonitorLogInterceptor.RocketMQConsumerInterceptor rocketMQConsumerPostProcessor() {
+        RocketMqMonitorLogInterceptor.RocketMQConsumerEnhanceProcessor rocketMQConsumerPostProcessor() {
             log.info("!!! rocketmq consumer monitor start ...");
-            return new RocketMqMonitorLogInterceptor.RocketMQConsumerInterceptor();
+            return new RocketMqMonitorLogInterceptor.RocketMQConsumerEnhanceProcessor();
         }
 
         @Bean
         @ConditionalOnProperty(prefix = "monitor.log.rocketmq.producer", name = "enable", havingValue = "true", matchIfMissing = true)
-        RocketMqMonitorLogInterceptor.RocketMQProducerInterceptor rocketMQProducerPostProcessor() {
+        RocketMqMonitorLogInterceptor.RocketMQProducerInhanceProcessor rocketMQProducerPostProcessor() {
             log.info("!!! rocketmq producer monitor start ...");
-            return new RocketMqMonitorLogInterceptor.RocketMQProducerInterceptor();
+            return new RocketMqMonitorLogInterceptor.RocketMQProducerInhanceProcessor();
         }
     }
 
@@ -109,10 +109,10 @@ class MonitorLogAutoConfiguration {
     @ConditionalOnProperty(prefix = "monitor.log.web", name = "enable", havingValue = "true", matchIfMissing = true)
     @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('web')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('web'))")
     @Bean
-    FilterRegistrationBean<WebMonitorLogInterceptor> webMonitorLogInterceptor(MonitorLogProperties monitorLogProperties) {
+    FilterRegistrationBean<WebMonitorLogInterceptor> webMonitorLogInterceptor() {
         log.info("!!! web monitor start ...");
         FilterRegistrationBean<WebMonitorLogInterceptor> filterRegBean = new FilterRegistrationBean<>();
-        filterRegBean.setFilter(new WebMonitorLogInterceptor(monitorLogProperties));
+        filterRegBean.setFilter(new WebMonitorLogInterceptor());
         filterRegBean.setOrder(Integer.MAX_VALUE);
         filterRegBean.setEnabled(Boolean.TRUE);
         filterRegBean.setName("webMonitorLogInterceptor");
@@ -133,9 +133,9 @@ class MonitorLogAutoConfiguration {
     @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('redis')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('redis'))")
     @ConditionalOnClass(name = "org.springframework.data.redis.core.RedisTemplate")
     @Bean
-    RedisLogMonitorInterceptor.RedisTemplateEnhancer redisTemplateEnhancer(MonitorLogProperties monitorLogProperties) {
+    RedisLogMonitorInterceptor.RedisTemplateEnhancer redisTemplateEnhancer() {
         log.info("!!! redis monitor start ...");
-        return new RedisLogMonitorInterceptor.RedisTemplateEnhancer(monitorLogProperties.getRedis());
+        return new RedisLogMonitorInterceptor.RedisTemplateEnhancer();
     }
 
     @Configuration
@@ -155,11 +155,11 @@ class MonitorLogAutoConfiguration {
 
         @Bean
         @ConditionalOnBean(HttpClientBuilder.class)
-        HttpClientLogMonitorInterceptor.HttpClientBuilderProcessor httpClientBuilderProcessor(MonitorLogProperties monitorLogProperties) {
+        HttpClientLogMonitorInterceptor.HttpClientBuilderEnhanceProcessor httpClientBuilderProcessor() {
             log.info("!!! httpclient monitor start ...");
             HttpClientLogMonitorInterceptor.RequestInterceptor requestInterceptor = new HttpClientLogMonitorInterceptor.RequestInterceptor();
             HttpClientLogMonitorInterceptor.ResponseInterceptor responseInterceptor = new HttpClientLogMonitorInterceptor.ResponseInterceptor();
-            return new HttpClientLogMonitorInterceptor.HttpClientBuilderProcessor(monitorLogProperties.getHttpclient(), requestInterceptor, responseInterceptor);
+            return new HttpClientLogMonitorInterceptor.HttpClientBuilderEnhanceProcessor(requestInterceptor, responseInterceptor);
         }
     }
 }

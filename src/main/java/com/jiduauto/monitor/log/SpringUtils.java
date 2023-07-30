@@ -81,10 +81,14 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
      * @since 5.3.3
      */
     public static String getProperty(String key) {
-        if (null == applicationContext) {
+        if (null == applicationContext || StringUtils.isBlank(key)) {
             return null;
         }
         return applicationContext.getEnvironment().getProperty(key);
+    }
+
+    public static String parseSpELValue(String spel) {
+        return applicationContext.getEnvironment().resolvePlaceholders(spel);
     }
 
     /**

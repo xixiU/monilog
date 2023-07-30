@@ -2,7 +2,6 @@ package com.jiduauto.monitor.log;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.uadetector.UserAgentType;
 import org.apache.commons.collections4.CollectionUtils;
@@ -20,6 +19,7 @@ import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 import org.springframework.web.util.WebUtils;
 
+import javax.annotation.Resource;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -33,21 +33,23 @@ import static com.jiduauto.monitor.log.StringUtil.checkPathMatch;
 
 
 @Slf4j
-@AllArgsConstructor
 class WebMonitorLogInterceptor extends OncePerRequestFilter {
     /**
      * 集度JNS请求时header中会带X-JIDU-SERVICENAME
      */
     private static final String JIDU_JNS_HEADER = "X-JIDU-SERVICENAME";
     private static final String USER_AGENT = "User-Agent";
-    private final MonitorLogProperties monitorLogProperties;
+    @Resource
+    private MonitorLogProperties monitorLogProperties;
 
     @Override
     public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws IOException, ServletException {
+        MonitorLogProperties.WebProperties webProperties = monitorLogProperties.getWeb();
         boolean isMultipart = ServletFileUpload.isMultipartContent(request);
         RequestWrapper wrapperRequest = isMultipart ? null : new RequestWrapper(request);
         String requestURI = request.getRequestURI();
-        Set<String> urlBlackList = monitorLogProperties.getWeb().getUrlBlackList();
+
+        Set<String> urlBlackList = webProperties.getUrlBlackList();
         if (CollectionUtils.isEmpty(urlBlackList)) {
             urlBlackList = new HashSet<>();
         }

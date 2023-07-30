@@ -3,17 +3,21 @@ package com.jiduauto.monitor.log;
 import com.google.common.collect.Sets;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.util.Set;
 
 /**
  * @author yp
  * @date 2023/07/12
  */
-@Configuration
+@Component
 @ConfigurationProperties("monitor.log")
+@ConditionalOnProperty(prefix = "monitor.log", name = "enable", matchIfMissing = true)
 @Getter
 @Setter
 class MonitorLogProperties {
@@ -25,6 +29,11 @@ class MonitorLogProperties {
      * 服务名，默认取值：${spring.application.name}
      */
     private String appName = "${spring.application.name}";
+    /**
+     * 解析feign调用结果的默认表达式，默认校验返回编码是否等于0或者200有一个匹配即认为调用成功,多个表达式直接逗号分割.
+     * 注意，如果表达式前以"+"开头，则表示在原有默认表达式的基础上追加，否则会覆盖原默认表达式
+     */
+    private String globalDefaultBoolExpr = "+$.code==0";
     /**
      * 监控开启组件清单，默认为*，目前支持feign,grpc,mybatis,rocketmq,web,xxljob，可以一键设置开启.
      */
@@ -69,6 +78,13 @@ class MonitorLogProperties {
      * httpClient监控配置
      */
     private HttpClientProperties httpclient = new HttpClientProperties();
+
+    @PostConstruct
+    private void init() {
+        if (StringUtils.startsWith(this.appName, "$")) {
+            this.appName = SpringUtils.parseSpELValue(this.appName);
+        }
+    }
 
     @Getter
     @Setter
@@ -171,8 +187,9 @@ class MonitorLogProperties {
         private boolean printFeignClientDetailLog = true;
         /**
          * 解析feign调用结果的默认表达式，默认校验返回编码是否等于0或者200有一个匹配即认为调用成功,多个表达式直接逗号分割.
+         * 注意，如果表达式前以"+"开头，则表示在原有默认表达式的基础上追加，否则会覆盖原默认表达式
          */
-        private String boolExprDefault = "$.code==200,$.code==0,$.status==200";
+        private String defaultBoolExpr = "$.code==200,$.code==0,$.status==200";
     }
 
     @Getter

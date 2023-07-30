@@ -11,20 +11,26 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.core.Ordered;
 
+import javax.annotation.Resource;
 import java.io.IOException;
 
 @Slf4j
 public class HttpClientLogMonitorInterceptor {
-    @AllArgsConstructor
-    static class HttpClientBuilderProcessor implements BeanPostProcessor, Ordered {
-        private final MonitorLogProperties.HttpClientProperties httpClientProperties;
+    static class HttpClientBuilderEnhanceProcessor implements BeanPostProcessor, Ordered {
         private final RequestInterceptor requestInterceptor;
         private final ResponseInterceptor responseInterceptor;
+        @Resource
+        private MonitorLogProperties monitorLogProperties;
+
+        HttpClientBuilderEnhanceProcessor(RequestInterceptor requestInterceptor, ResponseInterceptor responseInterceptor) {
+            this.requestInterceptor = requestInterceptor;
+            this.responseInterceptor = responseInterceptor;
+        }
 
         @Override
         public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
             if (bean instanceof HttpClientBuilder && !(bean instanceof EnhancedHttpClientBuilder)) {
-                return new EnhancedHttpClientBuilder((HttpClientBuilder) bean, httpClientProperties, requestInterceptor, responseInterceptor);
+                return new EnhancedHttpClientBuilder((HttpClientBuilder) bean, monitorLogProperties.getHttpclient(), requestInterceptor, responseInterceptor);
             }
             return BeanPostProcessor.super.postProcessBeforeInitialization(bean, beanName);
         }

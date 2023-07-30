@@ -5,15 +5,14 @@ import com.alibaba.fastjson.JSON;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Resource;
+
 /**
  * 默认日志打印方式
  */
 class DefaultMonitorLogPrinter implements MonitorLogPrinter {
-    private final MonitorLogProperties.PrinterProperties printerProperties;
-
-    public DefaultMonitorLogPrinter(MonitorLogProperties.PrinterProperties printerProperties) {
-        this.printerProperties = printerProperties;
-    }
+    @Resource
+    private MonitorLogProperties monitorLogProperties;
 
     @Override
     public void log(MonitorLogParams logParams) {
@@ -45,7 +44,7 @@ class DefaultMonitorLogPrinter implements MonitorLogPrinter {
     }
 
     private String formatLongText(Object o) {
-        int maxTextLen = printerProperties.getMaxTextLen();
+        int maxTextLen = monitorLogProperties.getPrinter().getMaxTextLen();
         if (o == null || o instanceof String) {
             return (String) o;
         }

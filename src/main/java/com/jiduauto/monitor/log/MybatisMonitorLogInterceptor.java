@@ -15,6 +15,7 @@ import org.apache.ibatis.reflection.MetaObject;
 import org.apache.ibatis.reflection.SystemMetaObject;
 import org.apache.ibatis.session.ResultHandler;
 
+import javax.annotation.Resource;
 import java.lang.reflect.Proxy;
 import java.sql.Statement;
 
@@ -26,12 +27,9 @@ class MybatisMonitorLogInterceptor {
     })
     @Slf4j
     static class MybatisInterceptor implements Interceptor {
-        private final MonitorLogProperties.MybatisProperties mybatisProperties;
         private static final String SQL_COST_TOO_LONG = "sqlCostTooLang";
-
-        public MybatisInterceptor(MonitorLogProperties.MybatisProperties mybatisProperties) {
-            this.mybatisProperties = mybatisProperties;
-        }
+        @Resource
+        private MonitorLogProperties monitorLogProperties;
 
         @SneakyThrows
         @Override
@@ -61,6 +59,7 @@ class MybatisMonitorLogInterceptor {
                 costTime = System.currentTimeMillis() - nowTime + 1;
                 logParams.setCost(costTime);
                 // 超过时间阀值的，打印错误日志
+                MonitorLogProperties.MybatisProperties mybatisProperties = monitorLogProperties.getMybatis();
                 if (mybatisProperties != null && mybatisProperties.getLongQueryTime() > 0 && costTime > mybatisProperties.getLongQueryTime()) {
                     MetricMonitor.record(SQL_COST_TOO_LONG + MonitorType.RECORD.getMark());
                     log.error("sql_cost_time_too_long, sql{}, time:{}", invocationInfo.sql, costTime);

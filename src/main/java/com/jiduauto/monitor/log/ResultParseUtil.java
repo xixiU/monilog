@@ -12,6 +12,7 @@ import java.util.Map;
  */
 final class ResultParseUtil {
     public static ParsedResult parseResult(Object returnObj, ResultParseStrategy strategy, Throwable t, String boolExpr, String codeExpr, String msgExpr) {
+        boolExpr = correctBoolExpr(boolExpr);
         boolean noStrategy = strategy == null;
         Boolean parsedSucc = null;
         if (noStrategy) {//默认使用IfSuccess策略
@@ -63,6 +64,26 @@ final class ResultParseUtil {
             msgInfo = errorEnum.getMsg();
         }
         return new ParsedResult(succ, msgCode, msgInfo);
+    }
+
+    private static String correctBoolExpr(String boolExpr) {
+        if (StringUtils.isBlank(boolExpr)) {
+            try {
+                MonitorLogProperties monitorLogProperties = SpringUtils.getBean(MonitorLogProperties.class);
+                if (monitorLogProperties != null) {
+                    boolExpr = monitorLogProperties.getGlobalDefaultBoolExpr();
+                }
+            } catch (Exception ex) {
+                MonitorLogUtil.log("getBean of MonitorLogProperties error:{}", ex.getMessage());
+            }
+        }
+        if (StringUtils.isNotBlank(boolExpr)) {
+            boolExpr = StringUtils.strip(boolExpr, ",");
+            if (StringUtils.startsWith(boolExpr, "+")) {
+                boolExpr = boolExpr.substring(1) + "," + ResultParser.Default_Bool_Expr;
+            }
+        }
+        return boolExpr;
     }
 
 
