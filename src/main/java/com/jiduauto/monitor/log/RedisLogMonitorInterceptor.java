@@ -15,33 +15,31 @@ import java.lang.reflect.Method;
 
 
 @Slf4j
-class RedisLogMonitorInterceptor {
+class RedisLogMonitorInterceptor implements BeanPostProcessor, Ordered {
 
-    static class RedisConnectionFactoryEnhanceProcessor implements BeanPostProcessor, Ordered {
-        @Resource
-        private MonitorLogProperties monitorLogProperties;
+    @Resource
+    private MonitorLogProperties monitorLogProperties;
 
-        @Override
-        public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
-            if (bean instanceof RedisConnectionFactory) {
-                return getProxyBean(bean);
-            } else if (bean instanceof RedisTemplate) {
-                RedisSerializer<?> defaultSerializer = ((RedisTemplate<?, ?>) bean).getDefaultSerializer();
-                RedisSerializer<?> keySerializer = ((RedisTemplate<?, ?>) bean).getKeySerializer();
-                RedisSerializer<?> valueSerializer = ((RedisTemplate<?, ?>) bean).getValueSerializer();
-                RedisSerializer<String> stringSerializer = ((RedisTemplate<?, ?>) bean).getStringSerializer();
-                RedisSerializer<?> hashKeySerializer = ((RedisTemplate<?, ?>) bean).getHashKeySerializer();
-                RedisSerializer<?> hashValueSerializer = ((RedisTemplate<?, ?>) bean).getHashValueSerializer();
-                //...
-                System.out.println("...redistemplate...");
-            }
-            return BeanPostProcessor.super.postProcessBeforeInitialization(bean, beanName);
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+        if (bean instanceof RedisConnectionFactory) {
+            return getProxyBean(bean);
+        } else if (bean instanceof RedisTemplate) {
+            RedisSerializer<?> defaultSerializer = ((RedisTemplate<?, ?>) bean).getDefaultSerializer();
+            RedisSerializer<?> keySerializer = ((RedisTemplate<?, ?>) bean).getKeySerializer();
+            RedisSerializer<?> valueSerializer = ((RedisTemplate<?, ?>) bean).getValueSerializer();
+            RedisSerializer<String> stringSerializer = ((RedisTemplate<?, ?>) bean).getStringSerializer();
+            RedisSerializer<?> hashKeySerializer = ((RedisTemplate<?, ?>) bean).getHashKeySerializer();
+            RedisSerializer<?> hashValueSerializer = ((RedisTemplate<?, ?>) bean).getHashValueSerializer();
+            //...
+            System.out.println("...redistemplate...");
         }
+        return BeanPostProcessor.super.postProcessBeforeInitialization(bean, beanName);
+    }
 
-        @Override
-        public int getOrder() {
-            return Integer.MAX_VALUE;
-        }
+    @Override
+    public int getOrder() {
+        return Integer.MAX_VALUE;
     }
 
     private static RedisConnectionFactory getProxyBean(Object bean) {
