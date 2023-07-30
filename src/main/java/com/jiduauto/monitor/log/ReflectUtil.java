@@ -302,43 +302,6 @@ class ReflectUtil {
         return list;
     }
 
-    public static <T extends Annotation> T copyAnnotation(T anno) {
-        return copyAnnotation(anno, null);
-    }
-
-    public static <T extends Annotation> T copyAnnotation(T origin, Map<String, Object> specifiedValues) {
-        final String memberValuesFieldName = "memberValues";
-        try {
-            Class<?> cls = origin.getClass();
-            if (Proxy.isProxyClass(cls)) {
-                cls = origin.annotationType();
-            }
-            InvocationHandler handler = Proxy.getInvocationHandler(origin);
-            Field memberValuesField = handler.getClass().getDeclaredField(memberValuesFieldName);
-            memberValuesField.setAccessible(true);
-            Map<String, Object> oldValues = (Map<String, Object>) memberValuesField.get(handler);
-
-            Constructor<?> constructor = Class.forName("sun.reflect.annotation.AnnotationInvocationHandler").getDeclaredConstructor(Class.class, Map.class);
-            constructor.setAccessible(true);
-            InvocationHandler proxyHandler = (InvocationHandler) constructor.newInstance(cls, new HashMap<>(oldValues));
-            Annotation proxy = (Annotation) Proxy.newProxyInstance(cls.getClassLoader(), new Class[]{cls}, proxyHandler);
-            if (specifiedValues != null) {
-                InvocationHandler newHandler = Proxy.getInvocationHandler(proxy);
-                Field newField = newHandler.getClass().getDeclaredField(memberValuesFieldName);
-                newField.setAccessible(true);
-                Map<String, Object> newValues = (Map<String, Object>) newField.get(newHandler);
-                for (Map.Entry<String, Object> me : specifiedValues.entrySet()) {
-                    if (me.getKey() != null && me.getValue() != null) {
-                        newValues.put(me.getKey(), me.getValue());
-                    }
-                }
-            }
-            return (T) proxy;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private static boolean compatible(Object arg, Type type) {
         try {
             Object val = convertType(arg, type);

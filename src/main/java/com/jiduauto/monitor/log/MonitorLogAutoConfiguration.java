@@ -133,9 +133,9 @@ class MonitorLogAutoConfiguration {
     @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('redis')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('redis'))")
     @ConditionalOnClass(name = "org.springframework.data.redis.core.RedisTemplate")
     @Bean
-    RedisLogMonitorInterceptor.RedisTemplateEnhancer redisTemplateEnhancer() {
+    RedisLogMonitorInterceptor.RedisConnectionFactoryEnhanceProcessor redisTemplateEnhancer() {
         log.info("!!! redis monitor start ...");
-        return new RedisLogMonitorInterceptor.RedisTemplateEnhancer();
+        return new RedisLogMonitorInterceptor.RedisConnectionFactoryEnhanceProcessor();
     }
 
     @Configuration

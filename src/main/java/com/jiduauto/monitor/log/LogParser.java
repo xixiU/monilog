@@ -72,7 +72,7 @@ public @interface LogParser {
             newValues.put("boolExpr", boolExpr);
             newValues.put("errorCodeExpr", errorCodeExpr);
             newValues.put("errorMsgExpr", errorMsgExpr);
-            return ReflectUtil.copyAnnotation(origin, newValues);
+            return ProxyUtils.copyAnnotation(origin, newValues);
         }
     }
 
