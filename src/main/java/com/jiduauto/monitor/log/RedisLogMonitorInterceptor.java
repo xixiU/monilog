@@ -12,7 +12,6 @@ import org.springframework.data.redis.serializer.RedisSerializer;
 
 import javax.annotation.Resource;
 import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 
 
 @Slf4j
@@ -24,7 +23,7 @@ class RedisLogMonitorInterceptor {
 
         @Override
         public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
-            if (bean instanceof RedisConnectionFactory && !(Proxy.isProxyClass(bean.getClass()))) {
+            if (bean instanceof RedisConnectionFactory) {
                 return getProxyBean(bean);
             } else if (bean instanceof RedisTemplate) {
                 RedisSerializer<?> defaultSerializer = ((RedisTemplate<?, ?>) bean).getDefaultSerializer();
