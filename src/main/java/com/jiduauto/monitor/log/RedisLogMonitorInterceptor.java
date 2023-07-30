@@ -22,7 +22,7 @@ class RedisLogMonitorInterceptor implements BeanPostProcessor, Ordered {
 
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-        if (bean instanceof RedisConnectionFactory) {
+        if (bean instanceof RedisConnectionFactory || beanName.equals("redisConnectionFactory")) {
             return getProxyBean(bean);
         } else if (bean instanceof RedisTemplate) {
             RedisSerializer<?> defaultSerializer = ((RedisTemplate<?, ?>) bean).getDefaultSerializer();
