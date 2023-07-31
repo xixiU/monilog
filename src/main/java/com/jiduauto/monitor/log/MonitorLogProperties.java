@@ -8,6 +8,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.util.Set;
 
 /**
@@ -78,20 +79,57 @@ class MonitorLogProperties {
      */
     private HttpClientProperties httpclient = new HttpClientProperties();
 
-    public String getAppName() {
+    @PostConstruct
+    private void init() {
         if (StringUtils.isBlank(this.appName)) {
             this.appName = SpringUtils.getApplicationName();
         }
-        return this.appName;
+        boolean isDevOrTest = SpringUtils.isTargetEnv("dev", "test", "local");
+        if (printer.printDetailLog == null) {
+            printer.printDetailLog = isDevOrTest;
+        }
+        if (web.printWebServerDetailLog == null) {
+            web.printWebServerDetailLog = isDevOrTest;
+        }
+        if (grpc.printGrpcClientDetailLog == null) {
+            grpc.printGrpcClientDetailLog = isDevOrTest;
+        }
+        if (grpc.printGrpcServerDetailLog == null) {
+            grpc.printGrpcServerDetailLog = isDevOrTest;
+        }
+        if (xxljob.printXxljobDetailLog == null) {
+            xxljob.printXxljobDetailLog = isDevOrTest;
+        }
+        if (feign.printFeignClientDetailLog == null) {
+            feign.printFeignClientDetailLog = isDevOrTest;
+        }
+        if (feign.printFeignServerDetailLog == null) {
+            feign.printFeignServerDetailLog = isDevOrTest;
+        }
+        if (mybatis.printMybatisDetailLog == null) {
+            mybatis.printMybatisDetailLog = isDevOrTest;
+        }
+        if (rocketmq.printRocketmqConsumerDetailLog == null) {
+            rocketmq.printRocketmqConsumerDetailLog = isDevOrTest;
+        }
+        if (rocketmq.printRocketmqProducerDetailLog == null) {
+            rocketmq.printRocketmqProducerDetailLog = isDevOrTest;
+        }
+        if (redis.printRedisDetailLog == null) {
+            redis.printRedisDetailLog = isDevOrTest;
+        }
+        if (httpclient.printHttpclientDetailLog == null) {
+            httpclient.printHttpclientDetailLog = isDevOrTest;
+        }
     }
 
     @Getter
     @Setter
     static class PrinterProperties {
         /**
-         * 是否输出各个流量出入口的详情日志(总开关)
+         * 是否输出各个流量出入口的详情日志(总开关)，dev/test环境下默认true，其它环境默认false
          */
-        private boolean printDetailLog = true;
+        private Boolean printDetailLog;
         /**
          * 默认详情日志打印最长的长度，目前仅限制了收集参数中的input与output的长度
          */
@@ -118,13 +156,9 @@ class MonitorLogProperties {
          */
         private boolean enable = true;
         /**
-         * 是否输出各个http(非rpc类)入口流量的详情日志
+         * 是否输出各个http(非rpc类)入口流量的详情日志, dev/test环境下默认true，其它环境默认false
          */
-        private boolean printHttpServerDetailLog = true;
-        /**
-         * 是否输出各个http出口流量的详情日志
-         */
-        private boolean printHttpClientDetailLog = true;
+        private Boolean printWebServerDetailLog;
         /**
          * 不监控的url清单，支持模糊路径如a/*， 默认值：/actuator/health, /misc/ping, /actuator/prometheus
          */
@@ -147,13 +181,13 @@ class MonitorLogProperties {
          */
         private boolean clientEnable = true;
         /**
-         * 是否输出各个grpc入口流量的详情日志
+         * 是否输出各个grpc入口流量的详情日志，dev/test环境下默认true，其它环境默认false
          */
-        private boolean printGrpcServerDetailLog = true;
+        private Boolean printGrpcServerDetailLog;
         /**
-         * 是否输出各个grpc出口流量的详情日志
+         * 是否输出各个grpc出口流量的详情日志，dev/test环境下默认true，其它环境默认false
          */
-        private boolean printGrpcClientDetailLog = true;
+        private Boolean printGrpcClientDetailLog;
     }
 
     @Getter
@@ -164,9 +198,9 @@ class MonitorLogProperties {
          */
         private boolean enable = true;
         /**
-         * 是否输出各个xxljob流量的详情日志
+         * 是否输出各个xxljob流量的详情日志，dev/test环境下默认true，其它环境默认false
          */
-        private boolean printXxljobDetailLog = true;
+        private Boolean printXxljobDetailLog;
     }
 
     @Getter
@@ -177,13 +211,13 @@ class MonitorLogProperties {
          */
         private boolean enable = true;
         /**
-         * 是否输出各个feign入口流量的详情日志
+         * 是否输出各个feign入口流量的详情日志，dev/test环境下默认true，其它环境默认false
          */
-        private boolean printFeignServerDetailLog = true;
+        private Boolean printFeignServerDetailLog;
         /**
-         * 是否输出各个feign出口流量的详情日志
+         * 是否输出各个feign出口流量的详情日志，dev/test环境下默认true，其它环境默认false
          */
-        private boolean printFeignClientDetailLog = true;
+        private Boolean printFeignClientDetailLog;
         /**
          * 解析feign调用结果的默认表达式，默认校验返回编码是否等于0或者200有一个匹配即认为调用成功,多个表达式直接逗号分割.
          * 注意，如果表达式前以"+"开头，则表示在原有默认表达式的基础上追加，否则会覆盖原默认表达式
@@ -199,9 +233,9 @@ class MonitorLogProperties {
          */
         private boolean enable = true;
         /**
-         * 是否输mybatis的详情日志
+         * 是否输mybatis的详情日志，dev/test环境下默认true，其它环境默认false
          */
-        private boolean printMybatisDetailLog = true;
+        private Boolean printMybatisDetailLog;
         /**
          * mybatis慢sql阈值，单位毫秒.
          */
@@ -224,13 +258,13 @@ class MonitorLogProperties {
          */
         private boolean producerEnable = true;
         /**
-         * 是否输出各个rocketmq消费者流量的详情日志
+         * 是否输出各个rocketmq消费者流量的详情日志，dev/test环境下默认true，其它环境默认false
          */
-        private boolean printRocketmqConsumerDetailLog = true;
+        private Boolean printRocketmqConsumerDetailLog;
         /**
-         * 是否输出各个rocketmq发送者流量的详情日志
+         * 是否输出各个rocketmq发送者流量的详情日志，dev/test环境下默认true，其它环境默认false
          */
-        private boolean printRocketmqProducerDetailLog = true;
+        private Boolean printRocketmqProducerDetailLog;
     }
 
     @Getter
@@ -241,9 +275,9 @@ class MonitorLogProperties {
          */
         private boolean enable = true;
         /**
-         * 是否输redis的详情日志
+         * 是否输redis的详情日志，dev/test环境下默认true，其它环境默认false
          */
-        private boolean printRedisDetailLog = true;
+        private Boolean printRedisDetailLog;
     }
 
     @Getter
@@ -254,9 +288,9 @@ class MonitorLogProperties {
          */
         private boolean enable = true;
         /**
-         * 是否输出httpClient的详情日志
+         * 是否输出httpClient的详情日志，dev/test环境下默认true，其它环境默认false
          */
-        private boolean printRedisDetailLog = true;
+        private Boolean printHttpclientDetailLog;
 
         /**
          * 不监控的url清单，支持模糊路径如a/*

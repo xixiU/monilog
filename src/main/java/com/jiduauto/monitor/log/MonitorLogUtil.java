@@ -100,7 +100,7 @@ class MonitorLogUtil {
             return;
         }
         MonitorLogProperties.PrinterProperties printerCfg = properties.getPrinter();
-        if (!printerCfg.isPrintDetailLog()) {
+        if (!printerCfg.getPrintDetailLog()) {
             return;
         }
         LogPoint logPoint = logParams.getLogPoint();
@@ -122,37 +122,38 @@ class MonitorLogUtil {
         boolean doPrinter = true;
         switch (logPoint) {
             case http_server:
-                doPrinter = properties.getWeb().isPrintHttpServerDetailLog();
+                doPrinter = properties.getWeb().getPrintWebServerDetailLog();
                 break;
             case http_client:
-                doPrinter = properties.getWeb().isPrintHttpClientDetailLog();
+                doPrinter = properties.getHttpclient().getPrintHttpclientDetailLog();
+                ;
                 break;
             case feign_server:
-                doPrinter = properties.getFeign().isPrintFeignServerDetailLog();
+                doPrinter = properties.getFeign().getPrintFeignServerDetailLog();
                 break;
             case feign_client:
-                doPrinter = properties.getFeign().isPrintFeignClientDetailLog();
+                doPrinter = properties.getFeign().getPrintFeignClientDetailLog();
                 break;
             case grpc_client:
-                doPrinter = properties.getGrpc().isPrintGrpcClientDetailLog();
+                doPrinter = properties.getGrpc().getPrintGrpcClientDetailLog();
                 break;
             case grpc_server:
-                doPrinter = properties.getGrpc().isPrintGrpcServerDetailLog();
+                doPrinter = properties.getGrpc().getPrintGrpcServerDetailLog();
                 break;
             case rocketmq_consumer:
-                doPrinter = properties.getRocketmq().isPrintRocketmqConsumerDetailLog();
+                doPrinter = properties.getRocketmq().getPrintRocketmqConsumerDetailLog();
                 break;
             case rocketmq_producer:
-                doPrinter = properties.getRocketmq().isPrintRocketmqProducerDetailLog();
+                doPrinter = properties.getRocketmq().getPrintRocketmqProducerDetailLog();
                 break;
             case mybatis:
-                doPrinter = properties.getMybatis().isPrintMybatisDetailLog();
+                doPrinter = properties.getMybatis().getPrintMybatisDetailLog();
                 break;
             case xxljob:
-                doPrinter = properties.getXxljob().isPrintXxljobDetailLog();
+                doPrinter = properties.getXxljob().getPrintXxljobDetailLog();
                 break;
             case redis:
-                doPrinter = properties.getRedis().isPrintRedisDetailLog();
+                doPrinter = properties.getRedis().getPrintRedisDetailLog();
             case unknown:
             default:
                 break;

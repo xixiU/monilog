@@ -129,7 +129,22 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
      * @since 5.3.3
      */
     public static String getActiveProfile() {
-        final String[] activeProfiles = getActiveProfiles();
+        String[] activeProfiles = getActiveProfiles();
         return (activeProfiles == null || activeProfiles.length == 0) ? null : activeProfiles[0];
+    }
+
+    public static boolean isTargetEnv(String... envs) {
+        String[] activeProfiles = getActiveProfiles();
+        if (activeProfiles == null || envs == null || envs.length == 0) {
+            return false;
+        }
+        for (String s : activeProfiles) {
+            for (String env : envs) {
+                if (StringUtils.containsIgnoreCase(s, env)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
