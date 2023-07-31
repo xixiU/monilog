@@ -47,9 +47,9 @@ class MonitorLogAutoConfiguration {
     @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('feign')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('feign'))")
     @ConditionalOnClass(name = {"feign.Feign"})
     @Bean
-    FeignMonitorInterceptor.FeignClientEnhanceProcessor feignClientEnhanceProcessor() {
+    FeignMonitorInterceptor feignMonitorInterceptor() {
         log.info("!!! feign monitor start ...");
-        return new FeignMonitorInterceptor.FeignClientEnhanceProcessor();
+        return new FeignMonitorInterceptor();
     }
 
     @ConditionalOnProperty(prefix = "monitor.log.grpc", name = "enable", havingValue = "true", matchIfMissing = true)

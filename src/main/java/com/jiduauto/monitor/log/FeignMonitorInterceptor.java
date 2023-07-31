@@ -6,13 +6,15 @@ import feign.Client;
 import feign.MethodMetadata;
 import feign.Request;
 import feign.Response;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.core.Ordered;
+import org.springframework.core.PriorityOrdered;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.StreamUtils;
@@ -31,147 +33,149 @@ import java.util.Map;
  * @date 2023/07/24
  */
 @Slf4j
-class FeignMonitorInterceptor {
-    static class FeignClientEnhanceProcessor implements BeanPostProcessor, Ordered {
-        @Resource
-        private MonitorLogProperties monitorLogProperties;
+class FeignMonitorInterceptor implements BeanPostProcessor, PriorityOrdered {
+    @Resource
+    private MonitorLogProperties monitorLogProperties;
 
-        @Override
-        public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
-            if (bean instanceof Client && !(bean instanceof EnhancedFeignClient)) {
-                return new EnhancedFeignClient((Client) bean, monitorLogProperties.getFeign().getDefaultBoolExpr());
-            }
-            return BeanPostProcessor.super.postProcessBeforeInitialization(bean, beanName);
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+        if (bean instanceof Client) {
+            return getProxyBean(bean, monitorLogProperties.getFeign());
         }
-
-        @Override
-        public int getOrder() {
-            return Integer.MAX_VALUE;
-        }
+        return BeanPostProcessor.super.postProcessBeforeInitialization(bean, beanName);
     }
 
-    private static class EnhancedFeignClient implements Client {
-        private final Client realClient;
-        private final String defaultBoolExpr;
+    @Override
+    public int getOrder() {
+        return Ordered.HIGHEST_PRECEDENCE;
+    }
 
-        private EnhancedFeignClient(Client realClient, String defaultBoolExpr) {
-            this.realClient = realClient;
-            this.defaultBoolExpr = defaultBoolExpr;
-        }
-
-        @SneakyThrows
-        @Override
-        public Response execute(Request request, Request.Options options) {
-            long start = System.currentTimeMillis();
-            Response originResponse = null;
-            Throwable ex = null;
-            long cost = 0;
-            try {
-                //原始调用
-                originResponse = realClient.execute(request, options);
-            } catch (Throwable e) {
-                ex = e;
-            } finally {
-                cost = System.currentTimeMillis() - start;
-            }
-            MethodMetadata mm = request.requestTemplate().methodMetadata();
-            Method m = mm.method();
-            MonitorLogParams mlp = new MonitorLogParams();
-            mlp.setServiceCls(m.getDeclaringClass());
-            mlp.setService(m.getDeclaringClass().getSimpleName());
-            mlp.setAction(m.getName());
-            mlp.setTags(new String[]{"method", request.httpMethod().toString(), "url", request.url()});
-
-            mlp.setCost(cost);
-            mlp.setException(ex);
-            mlp.setSuccess(ex == null && originResponse.status() < HttpStatus.BAD_REQUEST.value());
-            mlp.setLogPoint(LogPoint.feign_client);
-            mlp.setInput(new Object[]{formatRequestInfo(request)});
-            mlp.setMsgCode(ErrorEnum.SUCCESS.name());
-            mlp.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
-            if (ex != null) {
-                ErrorInfo errorInfo = ExceptionUtil.parseException(ex);
-                if (errorInfo != null) {
-                    mlp.setMsgCode(errorInfo.getErrorCode());
-                    mlp.setMsgInfo(errorInfo.getErrorMsg());
-                }
-                throw ex;
-            }
-            //包装响应
-            Charset charset = request.charset();
-            if (charset == null) {
-                charset = StandardCharsets.UTF_8;
-            }
-            Response ret;
-            try {
-                BufferingFeignClientResponse response = new BufferingFeignClientResponse(originResponse);
-                mlp.setSuccess(mlp.isSuccess() && response.status() < HttpStatus.BAD_REQUEST.value());
-                if (!mlp.isSuccess()) {
-                    mlp.setMsgCode(String.valueOf(response.status()));
-                    mlp.setMsgInfo(ErrorEnum.FAILED.getMsg());
-                }
-                String resultStr = null;
-                if (response.isDownstream()) {
-                    mlp.setOutput("Binary data");
-                } else {
-                    resultStr = response.body(); //读掉原始response中的数据
-                    mlp.setOutput(resultStr);
-                }
-                if (resultStr != null && response.isJson()) {
-                    Object json = JSON.parse(resultStr);
-                    if (json != null) {
-                        mlp.setOutput(json);
-                        LogParser cl = ReflectUtil.getAnnotation(LogParser.class, mlp.getServiceCls(), m);
-                        //尝试更精确的提取业务失败信息
-                        String specifiedBoolExpr = StringUtils.trimToNull(defaultBoolExpr);
-                        ResultParseStrategy rps = cl == null ? null : cl.resultParseStrategy();//默认使用IfSuccess策略
-                        String boolExpr = cl == null ? specifiedBoolExpr : cl.boolExpr();
-                        String codeExpr = cl == null ? null : cl.errorCodeExpr();
-                        String msgExpr = cl == null ? null : cl.errorMsgExpr();
-                        ParsedResult parsedResult = ResultParseUtil.parseResult(json, rps, null, boolExpr, codeExpr, msgExpr);
-                        mlp.setSuccess(parsedResult.isSuccess());
-                        mlp.setMsgCode(parsedResult.getMsgCode());
-                        mlp.setMsgInfo(parsedResult.getMsgInfo());
-                    }
-                }
-                if (resultStr != null) {
-                    //重写将数据写入原始response中去
-                    ret = response.getResponse().toBuilder().body(resultStr, charset).build();
-                } else {
-                    ret = response.getResponse();
-                }
-                response.close();
-            } catch (Exception e) {
-                return originResponse;
-            } finally {
-                MonitorLogUtil.log(mlp);
+    private static RedisConnectionFactory getProxyBean(Object bean, MonitorLogProperties.FeignProperties feignProperties) {
+        return (RedisConnectionFactory) ProxyUtils.getProxy(bean, invocation -> {
+            Object ret = invocation.proceed();
+            Method m = invocation.getMethod();
+            String methodName = m.getName();
+            int parameterCount = m.getParameterCount();
+            Class<?>[] parameterTypes = m.getParameterTypes();
+            if (methodName.equals("execute") && parameterCount == 2 && parameterTypes[0] == Request.class && parameterTypes[1] == Request.Options.class) {
+                //如果是getConnection方法，把返回结果进行代理包装：在返回结果前后做一些额外的事情
+                return ProxyUtils.getProxy(ret, mi -> FeignMonitorInterceptor.doIntercept(mi, feignProperties));
             }
             return ret;
-        }
-
-        private static JSONObject formatRequestInfo(Request request) {
-            String bodyParams = request.isBinary() ? "Binary data" : request.length() == 0 ? null : new String(request.body(), request.charset()).trim();
-            Map<String, Collection<String>> queries = request.requestTemplate().queries();
-            Map<String, Collection<String>> headers = request.headers();
-            JSONObject obj = new JSONObject();
-            if (StringUtils.isNotBlank(bodyParams)) {
-                JSON json = StringUtil.tryConvert2Json(bodyParams);
-                obj.put("body", json != null ? json : bodyParams);
-            }
-            if (MapUtils.isNotEmpty(queries)) {
-                obj.put("query", StringUtil.encodeQueryString(queries));
-            }
-            if (MapUtils.isNotEmpty(headers)) {
-                Map<String, String> headerMap = new HashMap<>();
-                for (Map.Entry<String, Collection<String>> me : headers.entrySet()) {
-                    headerMap.put(me.getKey(), String.join(",", me.getValue()));
-                }
-                obj.put("headers", headerMap);
-            }
-            return obj;
-        }
+        });
     }
 
+    private static Object doIntercept(MethodInvocation invocation, MonitorLogProperties.FeignProperties feignProperties) throws Throwable {
+        long start = System.currentTimeMillis();
+        Object[] args = invocation.getArguments();
+        Request request = (Request) args[0];
+        Response originResponse = null;
+        Throwable ex = null;
+        long cost = 0;
+        try {
+            //原始调用
+            originResponse = (Response) invocation.proceed();
+        } catch (Throwable e) {
+            ex = e;
+        } finally {
+            cost = System.currentTimeMillis() - start;
+        }
+        MethodMetadata mm = request.requestTemplate().methodMetadata();
+        Method m = mm.method();
+        MonitorLogParams mlp = new MonitorLogParams();
+        mlp.setServiceCls(m.getDeclaringClass());
+        mlp.setService(m.getDeclaringClass().getSimpleName());
+        mlp.setAction(m.getName());
+        mlp.setTags(new String[]{"method", request.httpMethod().toString(), "url", request.url()});
+
+        mlp.setCost(cost);
+        mlp.setException(ex);
+        mlp.setSuccess(ex == null && originResponse.status() < HttpStatus.BAD_REQUEST.value());
+        mlp.setLogPoint(LogPoint.feign_client);
+        mlp.setInput(new Object[]{formatRequestInfo(request)});
+        mlp.setMsgCode(ErrorEnum.SUCCESS.name());
+        mlp.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
+        if (ex != null) {
+            ErrorInfo errorInfo = ExceptionUtil.parseException(ex);
+            if (errorInfo != null) {
+                mlp.setMsgCode(errorInfo.getErrorCode());
+                mlp.setMsgInfo(errorInfo.getErrorMsg());
+            }
+            throw ex;
+        }
+        //包装响应
+        Charset charset = request.charset();
+        if (charset == null) {
+            charset = StandardCharsets.UTF_8;
+        }
+        Response ret;
+        try {
+            BufferingFeignClientResponse response = new BufferingFeignClientResponse(originResponse);
+            mlp.setSuccess(mlp.isSuccess() && response.status() < HttpStatus.BAD_REQUEST.value());
+            if (!mlp.isSuccess()) {
+                mlp.setMsgCode(String.valueOf(response.status()));
+                mlp.setMsgInfo(ErrorEnum.FAILED.getMsg());
+            }
+            String resultStr = null;
+            if (response.isDownstream()) {
+                mlp.setOutput("Binary data");
+            } else {
+                resultStr = response.body(); //读掉原始response中的数据
+                mlp.setOutput(resultStr);
+            }
+            if (resultStr != null && response.isJson()) {
+                Object json = JSON.parse(resultStr);
+                if (json != null) {
+                    mlp.setOutput(json);
+                    LogParser cl = ReflectUtil.getAnnotation(LogParser.class, mlp.getServiceCls(), m);
+                    //尝试更精确的提取业务失败信息
+                    String specifiedBoolExpr = StringUtils.trimToNull(feignProperties.getDefaultBoolExpr());
+                    ResultParseStrategy rps = cl == null ? null : cl.resultParseStrategy();//默认使用IfSuccess策略
+                    String boolExpr = cl == null ? specifiedBoolExpr : cl.boolExpr();
+                    String codeExpr = cl == null ? null : cl.errorCodeExpr();
+                    String msgExpr = cl == null ? null : cl.errorMsgExpr();
+                    ParsedResult parsedResult = ResultParseUtil.parseResult(json, rps, null, boolExpr, codeExpr, msgExpr);
+                    mlp.setSuccess(parsedResult.isSuccess());
+                    mlp.setMsgCode(parsedResult.getMsgCode());
+                    mlp.setMsgInfo(parsedResult.getMsgInfo());
+                }
+            }
+            if (resultStr != null) {
+                //重写将数据写入原始response中去
+                ret = response.getResponse().toBuilder().body(resultStr, charset).build();
+            } else {
+                ret = response.getResponse();
+            }
+            response.close();
+        } catch (Exception e) {
+            return originResponse;
+        } finally {
+            MonitorLogUtil.log(mlp);
+        }
+        return ret;
+    }
+
+    private static JSONObject formatRequestInfo(Request request) {
+        String bodyParams = request.isBinary() ? "Binary data" : request.length() == 0 ? null : new String(request.body(), request.charset()).trim();
+        Map<String, Collection<String>> queries = request.requestTemplate().queries();
+        Map<String, Collection<String>> headers = request.headers();
+        JSONObject obj = new JSONObject();
+        if (StringUtils.isNotBlank(bodyParams)) {
+            JSON json = StringUtil.tryConvert2Json(bodyParams);
+            obj.put("body", json != null ? json : bodyParams);
+        }
+        if (MapUtils.isNotEmpty(queries)) {
+            obj.put("query", StringUtil.encodeQueryString(queries));
+        }
+        if (MapUtils.isNotEmpty(headers)) {
+            Map<String, String> headerMap = new HashMap<>();
+            for (Map.Entry<String, Collection<String>> me : headers.entrySet()) {
+                headerMap.put(me.getKey(), String.join(",", me.getValue()));
+            }
+            obj.put("headers", headerMap);
+        }
+        return obj;
+    }
 
     private static class BufferingFeignClientResponse implements Closeable {
         private final Response response;
@@ -196,8 +200,7 @@ class FeignMonitorInterceptor {
 
         boolean isDownstream() {
             String header = getFirstHeader(HttpHeaders.CONTENT_DISPOSITION);
-            return StringUtils.containsIgnoreCase(header, "attachment")
-                    || StringUtils.containsIgnoreCase(header, "filename");
+            return StringUtils.containsIgnoreCase(header, "attachment") || StringUtils.containsIgnoreCase(header, "filename");
         }
 
         boolean isJson() {
