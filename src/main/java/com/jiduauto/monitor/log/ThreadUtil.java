@@ -79,15 +79,13 @@ class ThreadUtil {
             }
             if (clsName.equals(name)) {
                 hasFoundTargetClass = true;
-                if (excludePkgPrefixs != null) {
-                    for (String excludePkgPrefix : excludes) {
-                        if (name.startsWith(excludePkgPrefix)) {
-                            continue out;
-                        }
+                continue;
+            } else if (hasFoundTargetClass) {
+                for (String excludePkgPrefix : excludes) {
+                    if (name.startsWith(excludePkgPrefix)) {
+                        continue out;
                     }
                 }
-                target = st[i + 1];
-                break;
             }
             if (hasFoundTargetClass) {
                 target = st[i];
