@@ -86,7 +86,7 @@ class FeignMonitorInterceptor implements BeanPostProcessor, PriorityOrdered {
 
         private Response doFeignInvocationRecord(Method m, Request request, Response response, long cost, Throwable ex, MonitorLogProperties.FeignProperties feignProperties) {
             String requestURI = request.url();
-            Set<String> urlBlackList = feignProperties.getUrlBlackList();
+            Set<String> urlBlackList = feignProperties == null ? new HashSet<>() : feignProperties.getUrlBlackList();
             if (CollectionUtils.isEmpty(urlBlackList)) {
                 urlBlackList = new HashSet<>();
             }
