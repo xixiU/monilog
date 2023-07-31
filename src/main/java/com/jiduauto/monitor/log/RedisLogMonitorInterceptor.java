@@ -20,6 +20,7 @@ class RedisLogMonitorInterceptor implements BeanPostProcessor, Ordered {
     @Resource
     private MonitorLogProperties monitorLogProperties;
 
+    //参考：https://github.com/youbl/study/blob/master/demo-log-redis/src/main/java/beinet/cn/logdemoredis/redis/RedisFactoryBean.java
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
         if (bean instanceof RedisConnectionFactory || beanName.equals("redisConnectionFactory")) {
