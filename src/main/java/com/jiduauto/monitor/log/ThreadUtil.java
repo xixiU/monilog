@@ -1,6 +1,11 @@
 package com.jiduauto.monitor.log;
 
 
+import com.google.common.collect.Sets;
+
+import java.util.Arrays;
+import java.util.Set;
+
 /**
  * @author yp
  * @date 2023/07/26
@@ -58,6 +63,10 @@ class ThreadUtil {
         if (currentCls == null) {
             return null;
         }
+        Set<String> excludes = Sets.newHashSet("com.sun.proxy.$Proxy", "java.lang.reflect", "sun.reflect");
+        if (excludePkgPrefixs != null) {
+            excludes.addAll(Arrays.asList(excludePkgPrefixs));
+        }
         String clsName = currentCls.getCanonicalName();
         StackTraceElement[] st = Thread.currentThread().getStackTrace();
         StackTraceElement target = null;
@@ -71,8 +80,8 @@ class ThreadUtil {
             if (clsName.equals(name)) {
                 hasFoundTargetClass = true;
                 if (excludePkgPrefixs != null) {
-                    for (String excludePkgPrefix : excludePkgPrefixs) {
-                        if (name.startsWith(excludePkgPrefix) || name.startsWith("com.sun.proxy.$Proxy") || name.startsWith("java.lang.reflect") || name.startsWith("sun.reflect")) {
+                    for (String excludePkgPrefix : excludes) {
+                        if (name.startsWith(excludePkgPrefix)) {
                             continue out;
                         }
                     }
