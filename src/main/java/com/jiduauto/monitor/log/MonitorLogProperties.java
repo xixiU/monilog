@@ -32,7 +32,7 @@ class MonitorLogProperties {
      * 解析feign调用结果的默认表达式，默认校验返回编码是否等于0或者200有一个匹配即认为调用成功,多个表达式直接逗号分割.
      * 注意，如果表达式前以"+"开头，则表示在原有默认表达式的基础上追加，否则会覆盖原默认表达式
      */
-    private String globalDefaultBoolExpr = "+$.code==0";
+    private String globalDefaultBoolExpr = "+$.code==0,$.code==200";
     /**
      * 监控开启组件清单，默认为*，目前支持feign,grpc,mybatis,rocketmq,web,xxljob，可以一键设置开启.
      */
@@ -188,7 +188,7 @@ class MonitorLogProperties {
          * 解析feign调用结果的默认表达式，默认校验返回编码是否等于0或者200有一个匹配即认为调用成功,多个表达式直接逗号分割.
          * 注意，如果表达式前以"+"开头，则表示在原有默认表达式的基础上追加，否则会覆盖原默认表达式
          */
-        private String defaultBoolExpr = "$.code==200,$.code==0,$.status==200";
+        private String defaultBoolExpr = "+$.status==200";
     }
 
     @Getter
