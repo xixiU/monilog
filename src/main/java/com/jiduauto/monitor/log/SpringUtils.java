@@ -73,6 +73,15 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
         return getBeanFactory().getBean(clazz);
     }
 
+    public static <T> T getBeanWithoutException(Class<T> clazz) {
+        try {
+            return getBeanFactory().getBean(clazz);
+        } catch (Exception e) {
+            MonitorLogUtil.log("SpringUtils.getBean failed:{}", e.getMessage());
+            return null;
+        }
+    }
+
     /**
      * 获取配置文件配置项的值
      *

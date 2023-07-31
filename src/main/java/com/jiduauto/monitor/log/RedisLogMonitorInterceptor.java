@@ -6,20 +6,16 @@ import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.core.Ordered;
+import org.springframework.core.PriorityOrdered;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
 
-import javax.annotation.Resource;
 import java.lang.reflect.Method;
 
 
 @Slf4j
-class RedisLogMonitorInterceptor implements BeanPostProcessor, Ordered {
-
-    @Resource
-    private MonitorLogProperties monitorLogProperties;
-
+class RedisLogMonitorInterceptor implements BeanPostProcessor, PriorityOrdered {
     //参考：https://github.com/youbl/study/blob/master/demo-log-redis/src/main/java/beinet/cn/logdemoredis/redis/RedisFactoryBean.java
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
@@ -40,7 +36,7 @@ class RedisLogMonitorInterceptor implements BeanPostProcessor, Ordered {
 
     @Override
     public int getOrder() {
-        return Integer.MAX_VALUE;
+        return Ordered.HIGHEST_PRECEDENCE;
     }
 
     private static RedisConnectionFactory getProxyBean(Object bean) {
