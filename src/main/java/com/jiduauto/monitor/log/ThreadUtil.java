@@ -72,7 +72,7 @@ class ThreadUtil {
                 hasFoundTargetClass = true;
                 if (excludePkgPrefixs != null) {
                     for (String excludePkgPrefix : excludePkgPrefixs) {
-                        if (clsName.startsWith(excludePkgPrefix)) {
+                        if (name.startsWith(excludePkgPrefix) || name.startsWith("com.sun.proxy.$Proxy") || name.startsWith("java.lang.reflect") || name.startsWith("sun.reflect")) {
                             continue out;
                         }
                     }

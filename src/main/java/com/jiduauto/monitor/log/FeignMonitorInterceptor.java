@@ -97,6 +97,17 @@ class FeignMonitorInterceptor implements BeanPostProcessor, PriorityOrdered {
             mlp.setServiceCls(m.getDeclaringClass());
             mlp.setService(m.getDeclaringClass().getSimpleName());
             mlp.setAction(m.getName());
+
+            StackTraceElement st = ThreadUtil.getNextClassFromStack(m.getDeclaringClass(), "feign");
+            if (st != null) {
+                String className = st.getClassName();
+                try {
+                    mlp.setServiceCls(Class.forName(className));
+                } catch (Exception ignore) {}
+                mlp.setService(mlp.getServiceCls().getSimpleName());
+                mlp.setAction(st.getMethodName());
+            }
+
             mlp.setTags(new String[]{"method", request.httpMethod().toString(), "url", requestURI});
 
             mlp.setCost(cost);
