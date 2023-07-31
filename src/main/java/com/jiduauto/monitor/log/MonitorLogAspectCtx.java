@@ -73,13 +73,11 @@ class MonitorLogAspectCtx {
         this.cost = cost;
         this.result = result;
         this.exception = exception;
-
         LogParser cl = this.logParserAnnotation;
         ResultParseStrategy rps = cl == null ? null : cl.resultParseStrategy();
         String boolExpr = cl == null ? null : cl.boolExpr();
         String codeExpr = cl == null ? null : cl.errorCodeExpr();
         String msgExpr = cl == null ? null : cl.errorMsgExpr();
-
         this.parsedResult = ResultParseUtil.parseResult(result, rps, exception, boolExpr, codeExpr, msgExpr);
         return this;
     }

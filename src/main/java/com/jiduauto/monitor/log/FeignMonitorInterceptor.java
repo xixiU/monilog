@@ -14,12 +14,10 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.core.Ordered;
 import org.springframework.core.PriorityOrdered;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.StreamUtils;
 
-import javax.annotation.Resource;
 import java.io.*;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
@@ -34,13 +32,10 @@ import java.util.Map;
  */
 @Slf4j
 class FeignMonitorInterceptor implements BeanPostProcessor, PriorityOrdered {
-    @Resource
-    private MonitorLogProperties monitorLogProperties;
-
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
         if (bean instanceof Client) {
-            return getProxyBean(bean, monitorLogProperties.getFeign());
+            return getProxyBean(bean);
         }
         return BeanPostProcessor.super.postProcessBeforeInitialization(bean, beanName);
     }
@@ -50,8 +45,8 @@ class FeignMonitorInterceptor implements BeanPostProcessor, PriorityOrdered {
         return Ordered.HIGHEST_PRECEDENCE;
     }
 
-    private static RedisConnectionFactory getProxyBean(Object bean, MonitorLogProperties.FeignProperties feignProperties) {
-        return (RedisConnectionFactory) ProxyUtils.getProxy(bean, invocation -> {
+    private static Client getProxyBean(Object bean) {
+        return (Client) ProxyUtils.getProxy(bean, invocation -> {
             Object ret = invocation.proceed();
             Method m = invocation.getMethod();
             String methodName = m.getName();
@@ -59,7 +54,8 @@ class FeignMonitorInterceptor implements BeanPostProcessor, PriorityOrdered {
             Class<?>[] parameterTypes = m.getParameterTypes();
             if (methodName.equals("execute") && parameterCount == 2 && parameterTypes[0] == Request.class && parameterTypes[1] == Request.Options.class) {
                 //如果是getConnection方法，把返回结果进行代理包装：在返回结果前后做一些额外的事情
-                return ProxyUtils.getProxy(ret, mi -> FeignMonitorInterceptor.doIntercept(mi, feignProperties));
+                MonitorLogProperties properties = SpringUtils.getBeanWithoutException(MonitorLogProperties.class);
+                return ProxyUtils.getProxy(ret, mi -> FeignMonitorInterceptor.doIntercept(mi, properties == null ? null : properties.getFeign()));
             }
             return ret;
         });
@@ -129,7 +125,7 @@ class FeignMonitorInterceptor implements BeanPostProcessor, PriorityOrdered {
                     mlp.setOutput(json);
                     LogParser cl = ReflectUtil.getAnnotation(LogParser.class, mlp.getServiceCls(), m);
                     //尝试更精确的提取业务失败信息
-                    String specifiedBoolExpr = StringUtils.trimToNull(feignProperties.getDefaultBoolExpr());
+                    String specifiedBoolExpr = StringUtils.trimToNull(feignProperties == null ? null : feignProperties.getDefaultBoolExpr());
                     ResultParseStrategy rps = cl == null ? null : cl.resultParseStrategy();//默认使用IfSuccess策略
                     String boolExpr = cl == null ? specifiedBoolExpr : cl.boolExpr();
                     String codeExpr = cl == null ? null : cl.errorCodeExpr();
