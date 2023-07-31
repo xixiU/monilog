@@ -14,7 +14,6 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.core.Ordered;
 import org.springframework.core.PriorityOrdered;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.StreamUtils;
@@ -46,8 +45,8 @@ class FeignMonitorInterceptor implements BeanPostProcessor, PriorityOrdered {
         return Ordered.HIGHEST_PRECEDENCE;
     }
 
-    private static RedisConnectionFactory getProxyBean(Object bean) {
-        return (RedisConnectionFactory) ProxyUtils.getProxy(bean, invocation -> {
+    private static Client getProxyBean(Object bean) {
+        return (Client) ProxyUtils.getProxy(bean, invocation -> {
             Object ret = invocation.proceed();
             Method m = invocation.getMethod();
             String methodName = m.getName();
