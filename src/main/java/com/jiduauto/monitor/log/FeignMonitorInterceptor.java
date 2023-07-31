@@ -54,10 +54,10 @@ class FeignMonitorInterceptor implements BeanPostProcessor, PriorityOrdered {
         @Override
         public Object invoke(MethodInvocation invocation) throws Throwable {
             long start = System.currentTimeMillis();
-            Response ret = null;
+            Object result = null;
             Throwable ex = null;
             try {
-                ret = (Response) invocation.proceed();
+                result = invocation.proceed();
             } catch (Throwable t) {
                 ex = t;
             }
@@ -69,12 +69,13 @@ class FeignMonitorInterceptor implements BeanPostProcessor, PriorityOrdered {
             boolean isTargetMethod = methodName.equals("execute") && parameterCount == 2 && parameterTypes[0] == Request.class && parameterTypes[1] == Request.Options.class;
             if (!isTargetMethod) {
                 if (ex == null) {
-                    return ret;
+                    return result;
                 } else {
                     throw ex;
                 }
             }
             MonitorLogProperties properties = SpringUtils.getBeanWithoutException(MonitorLogProperties.class);
+            Response ret = (Response) result;
             ret = doFeignInvocationRecord(m, (Request) (invocation.getArguments()[0]), ret, cost, ex, properties == null ? null : properties.getFeign());
             if (ex == null) {
                 return ret;
