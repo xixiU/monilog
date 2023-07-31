@@ -36,11 +36,11 @@ class DefaultMonitorLogPrinter implements MonitorLogPrinter {
         Throwable ex = p.getException();
 
         if (!p.isSuccess()) {
-            logger.error("monitor_digest_log[{}]-{}.{}|{}|{}|{}|{} input:{}, output:{}", logPoint, service, action, success, code, msg, rt, input, output, ex);
+            logger.error("monitor_detail_log[{}]-{}.{}|{}|{}|{}|{} input:{}, output:{}", logPoint, service, action, success, code, msg, rt, input, output, ex);
             return;
         }
         String tags = JSON.toJSONString(p.getTags());
-        logger.info("monitor_digest_log[{}]-{}.{}|{}|{}|{}|{} input:{}, output:{}, tags:{}", logPoint, service, action, success, code, msg, rt, input, output, tags);
+        logger.info("monitor_detail_log[{}]-{}.{}|{}|{}|{}|{} input:{}, output:{}, tags:{}", logPoint, service, action, success, code, msg, rt, input, output, tags);
     }
 
     @Override

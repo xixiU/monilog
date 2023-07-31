@@ -26,7 +26,7 @@ class MonitorLogUtil {
         try {
             printDigestLog(logParams);
         } catch (Exception e) {
-            log("printDetailLog error:{}", e.getMessage());
+            log("printDigestLog error:{}", e.getMessage());
         }
         try {
             printDetailLog(logParams);
