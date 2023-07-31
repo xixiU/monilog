@@ -111,7 +111,7 @@ class MybatisMonitorLogInterceptor {
                     serviceCls = Class.forName(mapperId.substring(0, mapperId.lastIndexOf('.')));
                     methodName = mapperId.substring(mapperId.lastIndexOf('.') + 1);
                     BoundSql boundSql = statementHandler.getBoundSql();
-                    sql = boundSql.getSql().replace("(\\\\n)+|\n+|\r+|\\s+"," ");
+                    sql = boundSql.getSql().replaceAll("--.*(\n|\\\\n)$","").replaceAll("(\\\\n)+|\n+|\r+|\\s+"," "); //注意，sql中可能还含有以 "--"开头的注释
                 }
             } catch (Throwable e) {
                 MonitorLogUtil.log( "parseMybatisExecuteInfo error:{}", e.getMessage());
