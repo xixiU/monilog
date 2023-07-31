@@ -73,10 +73,7 @@ class ThreadUtil {
         boolean hasFoundTargetClass = false;
         out:
         for (int i = 0; i < st.length - 1; i++) {
-            String name = st[i].getClassName();
-            if (name.contains("$")) {
-                name = name.split("\\$")[0];
-            }
+            String name = getDeclaringClassName(st[i].getClassName());
             if (clsName.equals(name)) {
                 hasFoundTargetClass = true;
                 continue;
@@ -93,5 +90,16 @@ class ThreadUtil {
             }
         }
         return target == null ? null : new StackTraceElement(target.getClassName(), target.getMethodName(), target.getFileName(), target.getLineNumber());
+    }
+
+    private static String getDeclaringClassName(String name) {
+        String declaringCls = null;
+        if (name.contains("$")) {
+            declaringCls = name.split("\\$")[0];
+        }
+        if (declaringCls != null && declaringCls.endsWith(".")) {
+            return name;
+        }
+        return declaringCls;
     }
 }
