@@ -8,6 +8,7 @@ import feign.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeansException;
@@ -22,9 +23,9 @@ import java.io.*;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+
+import static com.jiduauto.monitor.log.StringUtil.checkPathMatch;
 
 /**
  * @author yp
@@ -83,11 +84,20 @@ class FeignMonitorInterceptor implements BeanPostProcessor, PriorityOrdered {
         }
 
         private Response doFeignInvocationRecord(Method m, Request request, Response response, long cost, Throwable ex, MonitorLogProperties.FeignProperties feignProperties) {
+            String requestURI = request.url();
+            Set<String> urlBlackList = feignProperties.getUrlBlackList();
+            if (CollectionUtils.isEmpty(urlBlackList)) {
+                urlBlackList = new HashSet<>();
+            }
+            if (checkPathMatch(urlBlackList, requestURI)) {
+                return response;
+            }
+
             MonitorLogParams mlp = new MonitorLogParams();
             mlp.setServiceCls(m.getDeclaringClass());
             mlp.setService(m.getDeclaringClass().getSimpleName());
             mlp.setAction(m.getName());
-            mlp.setTags(new String[]{"method", request.httpMethod().toString(), "url", request.url()});
+            mlp.setTags(new String[]{"method", request.httpMethod().toString(), "url", requestURI});
 
             mlp.setCost(cost);
             mlp.setException(ex);

@@ -223,6 +223,11 @@ class MonitorLogProperties {
          * 注意，如果表达式前以"+"开头，则表示在原有默认表达式的基础上追加，否则会覆盖原默认表达式
          */
         private String defaultBoolExpr = "+$.status==200";
+
+        /**
+         * 不监控的url清单，支持模糊路径如a/*， 默认值：/actuator/health, /misc/ping, /actuator/prometheus
+         */
+        private Set<String> urlBlackList = Sets.newHashSet("/actuator/health", "/misc/ping", "/actuator/prometheus");
     }
 
     @Getter
