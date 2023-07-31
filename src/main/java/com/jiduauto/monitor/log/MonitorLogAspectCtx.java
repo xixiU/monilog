@@ -73,13 +73,6 @@ class MonitorLogAspectCtx {
         this.cost = cost;
         this.result = result;
         this.exception = exception;
-        if (result == null && (method.getReturnType() == void.class || method.getReturnType() == Void.class)) {
-            if (exception == null) {
-                this.parsedResult = new ParsedResult(true, ErrorEnum.SUCCESS.name(), ErrorEnum.SUCCESS.getMsg());
-                return this;
-            }
-        }
-
         LogParser cl = this.logParserAnnotation;
         ResultParseStrategy rps = cl == null ? null : cl.resultParseStrategy();
         String boolExpr = cl == null ? null : cl.boolExpr();
