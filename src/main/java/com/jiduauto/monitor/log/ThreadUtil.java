@@ -97,9 +97,9 @@ class ThreadUtil {
         if (name.contains("$")) {
             declaringCls = name.split("\\$")[0];
         }
-        if (declaringCls != null && declaringCls.endsWith(".")) {
-            return name;
+        if (declaringCls != null) {
+            return declaringCls.endsWith(".") ? name : declaringCls;
         }
-        return declaringCls;
+        return name;
     }
 }
