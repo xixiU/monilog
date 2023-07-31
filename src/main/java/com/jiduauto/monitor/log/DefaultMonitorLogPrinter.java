@@ -15,32 +15,56 @@ class DefaultMonitorLogPrinter implements MonitorLogPrinter {
     private MonitorLogProperties monitorLogProperties;
 
     @Override
-    public void log(MonitorLogParams logParams) {
-        if (logParams == null) {
+    public void logDetail(MonitorLogParams p) {
+        if (p == null) {
             return;
         }
-        Class<?> serviceCls = logParams.getServiceCls();
+        Class<?> serviceCls = p.getServiceCls();
         if (serviceCls == null) {
             serviceCls = MonitorLogUtil.class;
         }
         Logger logger = LoggerFactory.getLogger(serviceCls);
-        String logPoint = logParams.getLogPoint().name();
-        String service = logParams.getService();
-        String action = logParams.getAction();
-        String success = logParams.isSuccess() ? "true" : "false";
-        String code = logParams.getMsgCode();
-        String msg = logParams.getMsgInfo();
-        String rt = logParams.getCost() + "ms";
-        String input = formatLongText(logParams.getInput());
-        String output = formatLongText(logParams.getOutput());
-        Throwable ex = logParams.getException();
+        String logPoint = p.getLogPoint().name();
+        String service = p.getService();
+        String action = p.getAction();
+        String success = p.isSuccess() ? "true" : "false";
+        String code = p.getMsgCode();
+        String msg = p.getMsgInfo();
+        String rt = p.getCost() + "ms";
+        String input = formatLongText(p.getInput());
+        String output = formatLongText(p.getOutput());
+        Throwable ex = p.getException();
 
-        if (!logParams.isSuccess()) {
-            logger.error("monitor_log[{}]-{}.{} {}|{}|{} {} input:{}, output:{}", logPoint, service, action, success, code, msg, rt, input, output, ex);
+        if (!p.isSuccess()) {
+            logger.error("monitor_digest_log[{}]-{}.{}|{}|{}|{}|{} input:{}, output:{}", logPoint, service, action, success, code, msg, rt, input, output, ex);
             return;
         }
-        String tags = JSON.toJSONString(logParams.getTags());
-        logger.info("monitor_log[{}]-{}.{} {}|{}|{} {} input:{}, output:{}, tags:{}", logPoint, service, action, success, code, msg, rt, input, output, tags);
+        String tags = JSON.toJSONString(p.getTags());
+        logger.info("monitor_digest_log[{}]-{}.{}|{}|{}|{}|{} input:{}, output:{}, tags:{}", logPoint, service, action, success, code, msg, rt, input, output, tags);
+    }
+
+    @Override
+    public void logDigest(MonitorLogParams p) {
+        if (p == null) {
+            return;
+        }
+        Class<?> serviceCls = p.getServiceCls();
+        if (serviceCls == null) {
+            serviceCls = MonitorLogUtil.class;
+        }
+        Logger logger = LoggerFactory.getLogger(serviceCls);
+        String logPoint = p.getLogPoint().name();
+        String service = p.getService();
+        String action = p.getAction();
+        String success = p.isSuccess() ? "true" : "false";
+        String code = p.getMsgCode();
+        String msg = p.getMsgInfo();
+        String rt = p.getCost() + "ms";
+        if (!p.isSuccess()) {
+            logger.error("monitor_digest_log[{}]-{}.{}|{}|{}|{}|{}", logPoint, service, action, success, code, msg, rt);
+            return;
+        }
+        logger.info("monitor_digest_log[{}]-{}.{}|{}|{}|{}|{}", logPoint, service, action, success, code, msg, rt);
     }
 
     private String formatLongText(Object o) {

@@ -14,11 +14,19 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 class MonitorLogUtil {
+    private static MonitorLogPrinter logPrinter = null;
+    private static MonitorLogProperties logProperties = null;
+
     public static void log(MonitorLogParams logParams) {
         try {
             doMonitor(logParams);
         } catch (Exception e) {
             log("doMonitor error:{}", e.getMessage());
+        }
+        try {
+            printDigestLog(logParams);
+        } catch (Exception e) {
+            log("printDetailLog error:{}", e.getMessage());
         }
         try {
             printDetailLog(logParams);
@@ -83,19 +91,26 @@ class MonitorLogUtil {
     }
 
     /**
+     * 打印摘要日志
+     *
+     * @param logParams
+     */
+    private static void printDigestLog(MonitorLogParams logParams) {
+        MonitorLogPrinter printer = getLogPrinter();
+        if (printer == null) {
+            return;
+        }
+        printer.logDigest(logParams);
+    }
+
+    /**
      * 打印详情日志
      *
      * @param logParams
      */
     private static void printDetailLog(MonitorLogParams logParams) {
-        MonitorLogPrinter printer = null;
-        MonitorLogProperties properties = null;
-        try {
-            printer = SpringUtils.getBean(MonitorLogPrinter.class);
-            properties = SpringUtils.getBean(MonitorLogProperties.class);
-        } catch (Exception e) {
-            MonitorLogUtil.log(":no MonitorLogPrinter instance found");
-        }
+        MonitorLogPrinter printer = getLogPrinter();
+        MonitorLogProperties properties = getLogProperties();
         if (printer == null || properties == null) {
             return;
         }
@@ -159,7 +174,33 @@ class MonitorLogUtil {
                 break;
         }
         if (doPrinter) {
-            printer.log(logParams);
+            printer.logDetail(logParams);
         }
+    }
+
+    private static MonitorLogPrinter getLogPrinter() {
+        if (logPrinter != null) {
+            return logPrinter;
+        }
+        MonitorLogPrinter printer = null;
+        try {
+            printer = SpringUtils.getBean(MonitorLogPrinter.class);
+        } catch (Exception e) {
+            MonitorLogUtil.log(":no MonitorLogPrinter instance found");
+        }
+        return (logPrinter = printer);
+    }
+
+    private static MonitorLogProperties getLogProperties() {
+        if (logProperties != null) {
+            return logProperties;
+        }
+        MonitorLogProperties properties = null;
+        try {
+            properties = SpringUtils.getBean(MonitorLogProperties.class);
+        } catch (Exception e) {
+            MonitorLogUtil.log(":no MonitorLogProperties instance found");
+        }
+        return (logProperties = properties);
     }
 }
