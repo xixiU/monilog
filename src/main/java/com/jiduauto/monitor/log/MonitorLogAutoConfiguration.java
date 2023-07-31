@@ -148,7 +148,7 @@ class MonitorLogAutoConfiguration {
          * 注意，只有使用Spring容器中的HttpClientBuilder对象，拦截器才会生效
          */
         @Bean
-        @ConditionalOnMissingBean(HttpClientBuilder.class)
+        //@ConditionalOnMissingBean(HttpClientBuilder.class)
         HttpClientBuilder httpClientBuilder() {
             return XHttpClientBuilder.create();
         }
