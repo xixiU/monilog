@@ -98,11 +98,15 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
      * @since 5.7.12
      */
     public static String getApplicationName() {
+        String appName = getProperty("monitor.log.appName");
+        if (StringUtils.isNotBlank(appName)) {
+            return appName;
+        }
         String property = getProperty("spring.application.name");
         if (StringUtils.isNotBlank(property)) {
             return property;
         }
-        return getProperty("monitor.log.appName");
+        throw new RuntimeException("appName is not set");
     }
 
     /**

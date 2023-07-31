@@ -8,7 +8,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.util.Set;
 
 /**
@@ -22,13 +21,13 @@ import java.util.Set;
 @Setter
 class MonitorLogProperties {
     /**
+     * 服务名，默认取值：${spring.application.name}
+     */
+    private String appName;
+    /**
      * 开启核心监控，提供统一日志参数收集与aop参数收集.
      */
     private boolean enable = true;
-    /**
-     * 服务名，默认取值：${spring.application.name}
-     */
-    private String appName = "${spring.application.name}";
     /**
      * 解析feign调用结果的默认表达式，默认校验返回编码是否等于0或者200有一个匹配即认为调用成功,多个表达式直接逗号分割.
      * 注意，如果表达式前以"+"开头，则表示在原有默认表达式的基础上追加，否则会覆盖原默认表达式
@@ -79,11 +78,11 @@ class MonitorLogProperties {
      */
     private HttpClientProperties httpclient = new HttpClientProperties();
 
-    @PostConstruct
-    private void init() {
-        if (StringUtils.startsWith(this.appName, "$")) {
-            this.appName = SpringUtils.parseSpELValue(this.appName);
+    public String getAppName() {
+        if (StringUtils.isBlank(this.appName)) {
+            this.appName = SpringUtils.getApplicationName();
         }
+        return this.appName;
     }
 
     @Getter
