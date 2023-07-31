@@ -58,7 +58,7 @@ class RedisLogMonitorInterceptor implements BeanPostProcessor, PriorityOrdered {
             return invocation.proceed();
         }
         Object target = invocation.getThis();
-        String serviceName = target.getClass().getName();
+        String serviceName = target.getClass().getSimpleName();
         Object[] args = invocation.getArguments();
         log.info("redis monitor execute... to be implemented");
 

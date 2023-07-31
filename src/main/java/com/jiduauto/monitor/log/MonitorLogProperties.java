@@ -121,6 +121,7 @@ class MonitorLogProperties {
         if (httpclient.printHttpclientDetailLog == null) {
             httpclient.printHttpclientDetailLog = isDevOrTest;
         }
+        feign.resetDefaultBoolExpr(globalDefaultBoolExpr);
     }
 
     @Getter
@@ -228,6 +229,10 @@ class MonitorLogProperties {
          * 不监控的url清单，支持模糊路径如a/*， 默认值：/actuator/health, /misc/ping, /actuator/prometheus
          */
         private Set<String> urlBlackList = Sets.newHashSet("/actuator/health", "/misc/ping", "/actuator/prometheus");
+
+        public void resetDefaultBoolExpr(String globalDefaultBoolExpr) {
+            this.defaultBoolExpr = ResultParser.mergeBoolExpr(globalDefaultBoolExpr, defaultBoolExpr);
+        }
     }
 
     @Getter

@@ -9,8 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author yepei
@@ -27,13 +26,11 @@ final class ResultParser {
     /**
      * 默认的错误码解析路径，注意对于基于方法的解析方式，仅支持无参方法
      */
-    public static final String Default_ErrCode_Expr = "$.msgCode,$.resultCode,$.errorCode,$.responseCode,$.retCode,$.code,$.status," +
-            "$.getMsgCode(),$.getResultCode(),$.getErrorCode(),$.getResponseCode(),$.getRetCode(),$.getCode()";
+    public static final String Default_ErrCode_Expr = "$.msgCode,$.resultCode,$.errorCode,$.responseCode,$.retCode,$.code,$.status," + "$.getMsgCode(),$.getResultCode(),$.getErrorCode(),$.getResponseCode(),$.getRetCode(),$.getCode()";
     /**
      * 默认的错误原因解析路径，注意对于基于方法的解析方式，仅支持无参方法
      */
-    public static final String Default_ErrMsg_Expr = "$.msgInfo,$.message,$.msg,$.resultMsg,$.errorMsg,$.errMsg,$.responseMsg,$.responseMessage,$.retMsg,$.subResultCode,$.errorDesc,$.error," +
-            "$.getMsgInfo(),$.getMessage(),$.getMsg(),$.getResultMsg(),$.getErrorMsg(),$.getResponseMsg(),$.getRetMsg()";
+    public static final String Default_ErrMsg_Expr = "$.msgInfo,$.message,$.msg,$.resultMsg,$.errorMsg,$.errMsg,$.responseMsg,$.responseMessage,$.retMsg,$.subResultCode,$.errorDesc,$.error," + "$.getMsgInfo(),$.getMessage(),$.getMsg(),$.getResultMsg(),$.getErrorMsg(),$.getResponseMsg(),$.getRetMsg()";
 
     public static Integer parseIntCode(Object obj) {
         return parseIntCode(obj, null);
@@ -193,5 +190,27 @@ final class ResultParser {
             }
         }
         return null;
+    }
+
+    public static void main(String[] args) {
+        String s = mergeBoolExpr("+$.code==0,$.code==200", "+$.status==200,$.code=200");
+        System.out.println(s);
+    }
+
+    public static String mergeBoolExpr(String globalDefaultBoolExprs, String defaultBoolExprs) {
+        if (StringUtils.isBlank(globalDefaultBoolExprs)) {
+            return defaultBoolExprs;
+        }
+        if (StringUtils.isBlank(defaultBoolExprs)) {
+            return globalDefaultBoolExprs;
+        }
+        String globalDefaultBoolExpr = StringUtils.stripStart(globalDefaultBoolExprs.replaceAll(EXPECT_SPLITTER1, EXPECT_SPLITTER2), "+");
+        String defaultBoolExpr = StringUtils.stripStart(defaultBoolExprs.replaceAll(EXPECT_SPLITTER1, EXPECT_SPLITTER2), "+");
+        List<String> globalExprList = SplitterUtil.splitByComma(globalDefaultBoolExpr);
+        List<String> defaultExpr = SplitterUtil.splitByComma(defaultBoolExpr);
+        String prefix = globalDefaultBoolExprs.startsWith("+") || defaultBoolExprs.startsWith("+") ? "+" : "";
+        Set<String> set = new HashSet<>(globalExprList);
+        set.addAll(defaultExpr);
+        return prefix + String.join(",", set);
     }
 }
