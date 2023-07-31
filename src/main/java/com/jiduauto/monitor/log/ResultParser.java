@@ -175,7 +175,7 @@ final class ResultParser {
         try {
             return ReflectUtil.invokeMethod(obj, methodName);
         } catch (Throwable e) {
-            MonitorLogUtil.log("resultParser parseObjVal error:{}", e.getMessage());
+            //MonitorLogUtil.log("resultParser parseObjVal error:{}", e.getMessage());
             Throwable tx = ExceptionUtil.getRealException(e);
             if (tx instanceof NoSuchMethodException || (tx.getMessage() != null && tx.getMessage().contains("No such method"))) {
                 return evalVal(obj, path);
@@ -188,7 +188,7 @@ final class ResultParser {
         try {
             return JSONPath.eval(root, path);
         } catch (Throwable e) {
-            MonitorLogUtil.log("resultParser evalVal error:{}", e.getMessage());
+            //MonitorLogUtil.log("resultParser evalVal error:{}", e.getMessage());
         }
         return null;
     }

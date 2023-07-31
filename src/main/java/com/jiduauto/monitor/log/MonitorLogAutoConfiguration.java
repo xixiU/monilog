@@ -150,16 +150,7 @@ class MonitorLogAutoConfiguration {
         @Bean
         @ConditionalOnMissingBean(HttpClientBuilder.class)
         HttpClientBuilder httpClientBuilder() {
-            return HttpClientBuilder.create();
-        }
-
-        @Bean
-        @ConditionalOnBean(HttpClientBuilder.class)
-        HttpClientLogMonitorInterceptor.HttpClientBuilderEnhanceProcessor httpClientBuilderProcessor() {
-            log.info("!!! httpclient monitor start ...");
-            HttpClientLogMonitorInterceptor.RequestInterceptor requestInterceptor = new HttpClientLogMonitorInterceptor.RequestInterceptor();
-            HttpClientLogMonitorInterceptor.ResponseInterceptor responseInterceptor = new HttpClientLogMonitorInterceptor.ResponseInterceptor();
-            return new HttpClientLogMonitorInterceptor.HttpClientBuilderEnhanceProcessor(requestInterceptor, responseInterceptor);
+            return XHttpClientBuilder.create();
         }
     }
 }
