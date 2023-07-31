@@ -3,12 +3,10 @@ package com.jiduauto.monitor.log;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import feign.Client;
-import feign.MethodMetadata;
 import feign.Request;
 import feign.Response;
-import lombok.AllArgsConstructor;
-import lombok.experimental.Delegate;
 import lombok.extern.slf4j.Slf4j;
+import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -48,125 +46,117 @@ class FeignMonitorInterceptor implements BeanPostProcessor, PriorityOrdered {
     }
 
     private static Client getProxyBean(Object bean) {
-        return (Client) ProxyUtils.getProxy(bean, invocation -> {
-            Response ret = (Response) invocation.proceed(); //feign.Response
+        return (Client) ProxyUtils.getProxy(bean, new FeignExecuteInterceptor());
+    }
+
+    private static class FeignExecuteInterceptor implements MethodInterceptor {
+        @Override
+        public Object invoke(MethodInvocation invocation) throws Throwable {
+            long start = System.currentTimeMillis();
+            Response ret = null;
+            Throwable ex = null;
+            try {
+                ret = (Response) invocation.proceed();
+            } catch (Throwable t) {
+                ex = t;
+            }
+            long cost = System.currentTimeMillis() - start;
             Method m = invocation.getMethod();
             String methodName = m.getName();
             int parameterCount = m.getParameterCount();
             Class<?>[] parameterTypes = m.getParameterTypes();
-            if (methodName.equals("execute") && parameterCount == 2 && parameterTypes[0] == Request.class && parameterTypes[1] == Request.Options.class) {
-                //如果是execute方法，把返回结果进行代理包装：在返回结果前后做一些额外的事情
-                MonitorLogProperties properties = SpringUtils.getBeanWithoutException(MonitorLogProperties.class);
-                ProxiedResponse pr = new ProxiedResponse(ret);
-                //由于Response类是final，无法被cglib生成代理 ，因此这里在创建代理前先进行一下包装
-                ProxiedResponse proxyResponse = (ProxiedResponse) ProxyUtils.getProxy(pr, mi -> FeignMonitorInterceptor.doIntercept(mi, properties == null ? null : properties.getFeign()));
-                //再返回feign的原生response对象
-                return proxyResponse == null ? null : proxyResponse.toFeignResponse();
-            }
-            return ret;
-        });
-    }
-
-    @AllArgsConstructor
-    private static class ProxiedResponse {
-        @Delegate
-        private final Response response;
-
-        public Object toFeignResponse() {
-            return response;
-        }
-    }
-
-    private static ProxiedResponse doIntercept(MethodInvocation invocation, MonitorLogProperties.FeignProperties feignProperties) throws Throwable {
-        long start = System.currentTimeMillis();
-        Object[] args = invocation.getArguments();
-        Request request = (Request) args[0];
-        ProxiedResponse proxiedResponse = null;
-        Response originResponse = null;
-        Throwable ex = null;
-        long cost;
-        try {
-            //原始调用
-            originResponse = (Response) invocation.proceed();
-            proxiedResponse = originResponse == null ? null : new ProxiedResponse(originResponse);
-        } catch (Throwable e) {
-            ex = e;
-        } finally {
-            cost = System.currentTimeMillis() - start;
-        }
-        MethodMetadata mm = request.requestTemplate().methodMetadata();
-        Method m = mm.method();
-        MonitorLogParams mlp = new MonitorLogParams();
-        mlp.setServiceCls(m.getDeclaringClass());
-        mlp.setService(m.getDeclaringClass().getSimpleName());
-        mlp.setAction(m.getName());
-        mlp.setTags(new String[]{"method", request.httpMethod().toString(), "url", request.url()});
-
-        mlp.setCost(cost);
-        mlp.setException(ex);
-        mlp.setSuccess(ex == null && proxiedResponse != null && proxiedResponse.status() < HttpStatus.BAD_REQUEST.value());
-        mlp.setLogPoint(LogPoint.feign_client);
-        mlp.setInput(new Object[]{formatRequestInfo(request)});
-        mlp.setMsgCode(ErrorEnum.SUCCESS.name());
-        mlp.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
-        if (ex != null) {
-            ErrorInfo errorInfo = ExceptionUtil.parseException(ex);
-            if (errorInfo != null) {
-                mlp.setMsgCode(errorInfo.getErrorCode());
-                mlp.setMsgInfo(errorInfo.getErrorMsg());
-            }
-            throw ex;
-        }
-        //包装响应
-        Charset charset = request.charset();
-        if (charset == null) {
-            charset = StandardCharsets.UTF_8;
-        }
-        Response ret;
-        try {
-            BufferingFeignClientResponse bufferedResp = new BufferingFeignClientResponse(originResponse);
-            mlp.setSuccess(mlp.isSuccess() && originResponse != null && bufferedResp.status() < HttpStatus.BAD_REQUEST.value());
-            if (!mlp.isSuccess()) {
-                mlp.setMsgCode(String.valueOf(bufferedResp.status()));
-                mlp.setMsgInfo(ErrorEnum.FAILED.getMsg());
-            }
-            String resultStr = null;
-            if (bufferedResp.isDownstream()) {
-                mlp.setOutput("Binary data");
-            } else {
-                resultStr = bufferedResp.body(); //读掉原始response中的数据
-                mlp.setOutput(resultStr);
-            }
-            if (resultStr != null && bufferedResp.isJson()) {
-                Object json = JSON.parse(resultStr);
-                if (json != null) {
-                    mlp.setOutput(json);
-                    LogParser cl = ReflectUtil.getAnnotation(LogParser.class, mlp.getServiceCls(), m);
-                    //尝试更精确的提取业务失败信息
-                    String specifiedBoolExpr = StringUtils.trimToNull(feignProperties == null ? null : feignProperties.getDefaultBoolExpr());
-                    ResultParseStrategy rps = cl == null ? null : cl.resultParseStrategy();//默认使用IfSuccess策略
-                    String boolExpr = cl == null ? specifiedBoolExpr : cl.boolExpr();
-                    String codeExpr = cl == null ? null : cl.errorCodeExpr();
-                    String msgExpr = cl == null ? null : cl.errorMsgExpr();
-                    ParsedResult parsedResult = ResultParseUtil.parseResult(json, rps, null, boolExpr, codeExpr, msgExpr);
-                    mlp.setSuccess(parsedResult.isSuccess());
-                    mlp.setMsgCode(parsedResult.getMsgCode());
-                    mlp.setMsgInfo(parsedResult.getMsgInfo());
+            boolean isTargetMethod = methodName.equals("execute") && parameterCount == 2 && parameterTypes[0] == Request.class && parameterTypes[1] == Request.Options.class;
+            if (!isTargetMethod) {
+                if (ex == null) {
+                    return ret;
+                } else {
+                    throw ex;
                 }
             }
-            if (resultStr != null) {
-                //重写将数据写入原始response中去
-                ret = bufferedResp.getResponse().toBuilder().body(resultStr, charset).build();
+            MonitorLogProperties properties = SpringUtils.getBeanWithoutException(MonitorLogProperties.class);
+            ret = doFeignInvocationRecord(m, (Request) (invocation.getArguments()[0]), ret, cost, ex, properties == null ? null : properties.getFeign());
+            if (ex == null) {
+                return ret;
             } else {
-                ret = bufferedResp.getResponse();
+                throw ex;
             }
-            bufferedResp.close();
-        } catch (Exception e) {
-            return proxiedResponse;
-        } finally {
-            MonitorLogUtil.log(mlp);
         }
-        return new ProxiedResponse(ret);
+
+        private Response doFeignInvocationRecord(Method m, Request request, Response response, long cost, Throwable ex, MonitorLogProperties.FeignProperties feignProperties) {
+            MonitorLogParams mlp = new MonitorLogParams();
+            mlp.setServiceCls(m.getDeclaringClass());
+            mlp.setService(m.getDeclaringClass().getSimpleName());
+            mlp.setAction(m.getName());
+            mlp.setTags(new String[]{"method", request.httpMethod().toString(), "url", request.url()});
+
+            mlp.setCost(cost);
+            mlp.setException(ex);
+            mlp.setSuccess(ex == null && response.status() < HttpStatus.BAD_REQUEST.value());
+            mlp.setLogPoint(LogPoint.feign_client);
+            mlp.setInput(new Object[]{formatRequestInfo(request)});
+            mlp.setMsgCode(ErrorEnum.SUCCESS.name());
+            mlp.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
+            if (ex != null) {
+                mlp.setSuccess(false);
+                ErrorInfo errorInfo = ExceptionUtil.parseException(ex);
+                if (errorInfo != null) {
+                    mlp.setMsgCode(errorInfo.getErrorCode());
+                    mlp.setMsgInfo(errorInfo.getErrorMsg());
+                }
+                return response;
+            }
+            //包装响应
+            Charset charset = request.charset();
+            if (charset == null) {
+                charset = StandardCharsets.UTF_8;
+            }
+            Response ret = null;
+            try {
+                BufferingFeignClientResponse bufferedResp = new BufferingFeignClientResponse(response);
+                mlp.setSuccess(mlp.isSuccess() && response.status() < HttpStatus.BAD_REQUEST.value());
+                if (!mlp.isSuccess()) {
+                    mlp.setMsgCode(String.valueOf(bufferedResp.status()));
+                    mlp.setMsgInfo(ErrorEnum.FAILED.getMsg());
+                }
+                String resultStr = null;
+                if (bufferedResp.isDownstream()) {
+                    mlp.setOutput("Binary data");
+                } else {
+                    resultStr = bufferedResp.body(); //读掉原始response中的数据
+                    mlp.setOutput(resultStr);
+                }
+                if (resultStr != null && bufferedResp.isJson()) {
+                    Object json = JSON.parse(resultStr);
+                    if (json != null) {
+                        mlp.setOutput(json);
+                        LogParser cl = ReflectUtil.getAnnotation(LogParser.class, mlp.getServiceCls(), m);
+                        //尝试更精确的提取业务失败信息
+                        String specifiedBoolExpr = StringUtils.trimToNull(feignProperties == null ? null : feignProperties.getDefaultBoolExpr());
+                        ResultParseStrategy rps = cl == null ? null : cl.resultParseStrategy();//默认使用IfSuccess策略
+                        String boolExpr = cl == null ? specifiedBoolExpr : cl.boolExpr();
+                        String codeExpr = cl == null ? null : cl.errorCodeExpr();
+                        String msgExpr = cl == null ? null : cl.errorMsgExpr();
+                        ParsedResult parsedResult = ResultParseUtil.parseResult(json, rps, null, boolExpr, codeExpr, msgExpr);
+                        mlp.setSuccess(parsedResult.isSuccess());
+                        mlp.setMsgCode(parsedResult.getMsgCode());
+                        mlp.setMsgInfo(parsedResult.getMsgInfo());
+                    }
+                }
+                if (resultStr != null) {
+                    //重写将数据写入原始response中去
+                    ret = bufferedResp.getResponse().toBuilder().body(resultStr, charset).build();
+                } else {
+                    ret = bufferedResp.getResponse();
+                }
+                bufferedResp.close();
+            } catch (Exception e) {
+                MonitorLogUtil.log("doFeignInvocationRecord error: {}", e.getMessage());
+                ret = response;
+            } finally {
+                MonitorLogUtil.log(mlp);
+            }
+            return ret;
+        }
     }
 
     private static JSONObject formatRequestInfo(Request request) {
