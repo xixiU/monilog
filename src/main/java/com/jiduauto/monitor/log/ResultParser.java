@@ -8,6 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -169,26 +170,27 @@ final class ResultParser {
     private static Object parseObjVal(Object obj, String path) {
         boolean isMethod = path.contains("(") && path.contains(")");
         if (!isMethod) {
-            return evalVal(obj, path);
+            try {
+                return JSONPath.eval(obj, path);
+            } catch (Throwable e) {
+                MonitorLogUtil.log("resultParser evalVal error:{}", e.getMessage());
+            }
+            return null;
         }
         String methodName = StringUtils.remove(StringUtils.remove(StringUtils.remove(path, "$."), ")"), "(").trim();
         try {
-            return ReflectUtil.invokeMethod(obj, methodName);
+            Method method = ReflectUtil.getMethodWithoutException(obj, methodName, new Object[]{});
+            if (method == null) {
+                return null;
+            }
+            method.setAccessible(true);
+            return method.invoke(obj, methodName, new Object[]{});
         } catch (Throwable e) {
-            //MonitorLogUtil.log("resultParser parseObjVal error:{}", e.getMessage());
+            MonitorLogUtil.log("resultParser parseObjVal error:{}", e.getMessage());
             Throwable tx = ExceptionUtil.getRealException(e);
             if (tx instanceof NoSuchMethodException || (tx.getMessage() != null && tx.getMessage().contains("No such method"))) {
-                return evalVal(obj, path);
+                return null;
             }
-        }
-        return null;
-    }
-
-    private static Object evalVal(Object root, String path) {
-        try {
-            return JSONPath.eval(root, path);
-        } catch (Throwable e) {
-            //MonitorLogUtil.log("resultParser evalVal error:{}", e.getMessage());
         }
         return null;
     }

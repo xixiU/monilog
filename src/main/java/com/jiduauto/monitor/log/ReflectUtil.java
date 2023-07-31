@@ -7,7 +7,10 @@ import com.google.common.collect.Sets;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -75,6 +78,15 @@ class ReflectUtil {
         return getClsMethod(ownerCls, methodName, args);
     }
 
+    public static Method getMethodWithoutException(Object service, String methodName, Object[] args) {
+        Class<?> ownerCls = service instanceof Class ? (Class<?>) service : service.getClass();
+        try {
+            return getClsMethod(ownerCls, methodName, args);
+        } catch (Throwable e) {
+            return null;
+        }
+    }
+
     public static Method getClsMethod(Class<?> cls, String methodName, Object[] args) {
         List<Method> list = getClsMethods(cls, methodName, args);
         if (CollectionUtils.isEmpty(list)) {
@@ -83,6 +95,15 @@ class ReflectUtil {
         return list.get(0);
     }
 
+    /**
+     * 从当前类以及该类的父类、接口上寻找符合签名的方法(含非public方法)，找到一个就立即返回
+     * //getDeclaredMethods:获取当前类的所有方法；包括 protected/默认/private 修饰的方法；不包括父类 、接口 public 修饰的方法
+     * //getMethods：获取当前类或父类或父接口的 public 修饰的字段；包含接口中 default 修饰的方法
+     * @param cls
+     * @param methodName
+     * @param args
+     * @return
+     */
     private static List<Method> getClsMethods(Class<?> cls, String methodName, Object[] args) {
         List<Method> results = new ArrayList<>();
         Optional<Method> first = Arrays.stream(cls.getDeclaredMethods()).filter(e -> matchMethod(e, methodName, args)).findFirst();
