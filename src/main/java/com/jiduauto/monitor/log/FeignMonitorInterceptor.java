@@ -6,6 +6,8 @@ import feign.Client;
 import feign.MethodMetadata;
 import feign.Request;
 import feign.Response;
+import lombok.AllArgsConstructor;
+import lombok.experimental.Delegate;
 import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.collections4.MapUtils;
@@ -47,30 +49,46 @@ class FeignMonitorInterceptor implements BeanPostProcessor, PriorityOrdered {
 
     private static Client getProxyBean(Object bean) {
         return (Client) ProxyUtils.getProxy(bean, invocation -> {
-            Object ret = invocation.proceed();
+            Response ret = (Response) invocation.proceed(); //feign.Response
             Method m = invocation.getMethod();
             String methodName = m.getName();
             int parameterCount = m.getParameterCount();
             Class<?>[] parameterTypes = m.getParameterTypes();
             if (methodName.equals("execute") && parameterCount == 2 && parameterTypes[0] == Request.class && parameterTypes[1] == Request.Options.class) {
-                //如果是getConnection方法，把返回结果进行代理包装：在返回结果前后做一些额外的事情
+                //如果是execute方法，把返回结果进行代理包装：在返回结果前后做一些额外的事情
                 MonitorLogProperties properties = SpringUtils.getBeanWithoutException(MonitorLogProperties.class);
-                return ProxyUtils.getProxy(ret, mi -> FeignMonitorInterceptor.doIntercept(mi, properties == null ? null : properties.getFeign()));
+                ProxiedResponse pr = new ProxiedResponse(ret);
+                //由于Response类是final，无法被cglib生成代理 ，因此这里在创建代理前先进行一下包装
+                ProxiedResponse proxyResponse = (ProxiedResponse) ProxyUtils.getProxy(pr, mi -> FeignMonitorInterceptor.doIntercept(mi, properties == null ? null : properties.getFeign()));
+                //再返回feign的原生response对象
+                return proxyResponse == null ? null : proxyResponse.toFeignResponse();
             }
             return ret;
         });
     }
 
-    private static Object doIntercept(MethodInvocation invocation, MonitorLogProperties.FeignProperties feignProperties) throws Throwable {
+    @AllArgsConstructor
+    private static class ProxiedResponse {
+        @Delegate
+        private final Response response;
+
+        public Object toFeignResponse() {
+            return response;
+        }
+    }
+
+    private static ProxiedResponse doIntercept(MethodInvocation invocation, MonitorLogProperties.FeignProperties feignProperties) throws Throwable {
         long start = System.currentTimeMillis();
         Object[] args = invocation.getArguments();
         Request request = (Request) args[0];
+        ProxiedResponse proxiedResponse = null;
         Response originResponse = null;
         Throwable ex = null;
-        long cost = 0;
+        long cost;
         try {
             //原始调用
             originResponse = (Response) invocation.proceed();
+            proxiedResponse = originResponse == null ? null : new ProxiedResponse(originResponse);
         } catch (Throwable e) {
             ex = e;
         } finally {
@@ -86,7 +104,7 @@ class FeignMonitorInterceptor implements BeanPostProcessor, PriorityOrdered {
 
         mlp.setCost(cost);
         mlp.setException(ex);
-        mlp.setSuccess(ex == null && originResponse.status() < HttpStatus.BAD_REQUEST.value());
+        mlp.setSuccess(ex == null && proxiedResponse != null && proxiedResponse.status() < HttpStatus.BAD_REQUEST.value());
         mlp.setLogPoint(LogPoint.feign_client);
         mlp.setInput(new Object[]{formatRequestInfo(request)});
         mlp.setMsgCode(ErrorEnum.SUCCESS.name());
@@ -106,20 +124,20 @@ class FeignMonitorInterceptor implements BeanPostProcessor, PriorityOrdered {
         }
         Response ret;
         try {
-            BufferingFeignClientResponse response = new BufferingFeignClientResponse(originResponse);
-            mlp.setSuccess(mlp.isSuccess() && response.status() < HttpStatus.BAD_REQUEST.value());
+            BufferingFeignClientResponse bufferedResp = new BufferingFeignClientResponse(originResponse);
+            mlp.setSuccess(mlp.isSuccess() && originResponse != null && bufferedResp.status() < HttpStatus.BAD_REQUEST.value());
             if (!mlp.isSuccess()) {
-                mlp.setMsgCode(String.valueOf(response.status()));
+                mlp.setMsgCode(String.valueOf(bufferedResp.status()));
                 mlp.setMsgInfo(ErrorEnum.FAILED.getMsg());
             }
             String resultStr = null;
-            if (response.isDownstream()) {
+            if (bufferedResp.isDownstream()) {
                 mlp.setOutput("Binary data");
             } else {
-                resultStr = response.body(); //读掉原始response中的数据
+                resultStr = bufferedResp.body(); //读掉原始response中的数据
                 mlp.setOutput(resultStr);
             }
-            if (resultStr != null && response.isJson()) {
+            if (resultStr != null && bufferedResp.isJson()) {
                 Object json = JSON.parse(resultStr);
                 if (json != null) {
                     mlp.setOutput(json);
@@ -138,17 +156,17 @@ class FeignMonitorInterceptor implements BeanPostProcessor, PriorityOrdered {
             }
             if (resultStr != null) {
                 //重写将数据写入原始response中去
-                ret = response.getResponse().toBuilder().body(resultStr, charset).build();
+                ret = bufferedResp.getResponse().toBuilder().body(resultStr, charset).build();
             } else {
-                ret = response.getResponse();
+                ret = bufferedResp.getResponse();
             }
-            response.close();
+            bufferedResp.close();
         } catch (Exception e) {
-            return originResponse;
+            return proxiedResponse;
         } finally {
             MonitorLogUtil.log(mlp);
         }
-        return ret;
+        return new ProxiedResponse(ret);
     }
 
     private static JSONObject formatRequestInfo(Request request) {
