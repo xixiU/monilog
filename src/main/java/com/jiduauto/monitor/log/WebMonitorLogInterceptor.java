@@ -20,6 +20,7 @@ import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 import org.springframework.web.util.WebUtils;
 
+import javax.annotation.Nullable;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -46,6 +47,7 @@ class WebMonitorLogInterceptor extends OncePerRequestFilter {
     public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws IOException, ServletException {
         MonitorLogProperties.WebProperties webProperties = monitorLogProperties.getWeb();
         boolean isMultipart = ServletFileUpload.isMultipartContent(request);
+        @Nullable
         RequestWrapper wrapperRequest = isMultipart ? null : new RequestWrapper(request);
         String requestURI = request.getRequestURI();
 
@@ -204,7 +206,6 @@ class WebMonitorLogInterceptor extends OncePerRequestFilter {
     /**
      * 处理返回的tag
      *
-     * @param logParams
      */
     private void dealResponseTags(MonitorLogParams logParams, String responseBodyStr) {
         String[] oriTags = logParams.getTags();
@@ -227,8 +228,6 @@ class WebMonitorLogInterceptor extends OncePerRequestFilter {
     /**
      * 处理请求tag
      *
-     * @param request
-     * @param logParams
      */
     private void dealRequestTags(HttpServletRequest request, MonitorLogParams logParams, Map<String, String> requestHeaderMap, Map<String, String> requestBodyMap) {
         String[] oriTags = logParams.getTags();
