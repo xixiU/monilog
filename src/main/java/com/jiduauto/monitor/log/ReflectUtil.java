@@ -81,8 +81,9 @@ class ReflectUtil {
     public static Method getMethodWithoutException(Object service, String methodName, Object[] args) {
         Class<?> ownerCls = service instanceof Class ? (Class<?>) service : service.getClass();
         try {
-            return getClsMethod(ownerCls, methodName, args);
-        } catch (Throwable e) {
+            List<Method> list = getClsMethods(ownerCls, methodName, args);
+            return CollectionUtils.isEmpty(list) ? null : list.get(0);
+        } catch (Throwable ignore) {
             return null;
         }
     }
