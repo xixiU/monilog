@@ -62,7 +62,7 @@ class MonitorLogUtil {
         try {
             MetricMonitor.eventDruation(name + MonitorType.TIMER.getMark(), allTags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
         } catch (Exception e) {
-            MonitorLogUtil.log("eventDuration name:{}, tag:{}, error:{}", name, JSON.toJSONString(allTags), e.getMessage());
+            MonitorLogUtil.log("eventDuration error name:{}, tag:{}, msg:{}", name, JSON.toJSONString(allTags), e.getMessage());
         }
     }
 

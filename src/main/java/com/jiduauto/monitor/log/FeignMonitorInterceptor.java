@@ -11,10 +11,6 @@ import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.core.Ordered;
-import org.springframework.core.PriorityOrdered;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.StreamUtils;
@@ -32,21 +28,21 @@ import static com.jiduauto.monitor.log.StringUtil.checkPathMatch;
  * @date 2023/07/24
  */
 @Slf4j
-class FeignMonitorInterceptor implements BeanPostProcessor, PriorityOrdered {
-    @Override
-    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-        if (bean instanceof Client) {
-            return getProxyBean(bean);
-        }
-        return BeanPostProcessor.super.postProcessBeforeInitialization(bean, beanName);
-    }
+class FeignMonitorInterceptor {
+//    @Override
+//    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+//        if (bean instanceof Client ) {
+//            return getProxyBean(bean);
+//        }
+//        return BeanPostProcessor.super.postProcessBeforeInitialization(bean, beanName);
+//    }
+//
+//    @Override
+//    public int getOrder() {
+//        return Ordered.HIGHEST_PRECEDENCE;
+//    }
 
-    @Override
-    public int getOrder() {
-        return Ordered.HIGHEST_PRECEDENCE;
-    }
-
-    private static Client getProxyBean(Object bean) {
+    public static Client getProxyBean(Object bean) {
         return (Client) ProxyUtils.getProxy(bean, new FeignExecuteInterceptor());
     }
 

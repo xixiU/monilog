@@ -25,6 +25,11 @@ import org.springframework.core.annotation.Order;
 @Import({SpringUtils.class})
 class MonitorLogAutoConfiguration {
     @Bean
+    MonitorLogProperties monitorLogProperties(){
+        return new MonitorLogProperties();
+    }
+
+    @Bean
     @ConditionalOnBean(MonitorLogPrinter.class)
     MonitorLogAop aspectProcessor() {
         return new MonitorLogAop();
@@ -43,14 +48,14 @@ class MonitorLogAutoConfiguration {
         return new DefaultMonitorLogPrinter();
     }
 
-    @ConditionalOnProperty(prefix = "monitor.log.feign", name = "enable", havingValue = "true", matchIfMissing = true)
-    @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('feign')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('feign'))")
-    @ConditionalOnClass(name = {"feign.Feign"})
-    @Bean
-    FeignMonitorInterceptor feignMonitorInterceptor() {
-        log.info("!!! feign monitor start ...");
-        return new FeignMonitorInterceptor();
-    }
+//    @ConditionalOnProperty(prefix = "monitor.log.feign", name = "enable", havingValue = "true", matchIfMissing = true)
+//    @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('feign')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('feign'))")
+//    @ConditionalOnClass(name = {"feign.Feign"})
+//    @Bean
+//    FeignMonitorInterceptor feignMonitorInterceptor() {
+//        log.info("!!! feign monitor start ...");
+//        return new FeignMonitorInterceptor();
+//    }
 
     @ConditionalOnProperty(prefix = "monitor.log.grpc", name = "enable", havingValue = "true", matchIfMissing = true)
     @ConditionalOnExpression("('${monitor.log.component.includes:*}'.equals('*') or '${monitor.log.component.includes}'.contains('grpc')) and !('${monitor.log.component.excludes:}'.equals('*') or '${monitor.log.component.excludes:}'.contains('grpc'))")
