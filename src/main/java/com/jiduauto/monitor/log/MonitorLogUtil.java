@@ -59,8 +59,6 @@ class MonitorLogUtil {
         name = name + "_" + logPoint.name();
         // 默认打一个record记录
         MetricMonitor.record(name + MonitorType.RECORD.getMark(), allTags);
-        // 对返回值添加累加记录
-        MetricMonitor.cumulation(name + MonitorType.CUMULATION.getMark(), 1, allTags);
         try {
             MetricMonitor.eventDruation(name + MonitorType.TIMER.getMark(), allTags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
         } catch (Exception e) {
