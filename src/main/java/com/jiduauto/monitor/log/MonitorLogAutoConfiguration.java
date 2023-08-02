@@ -35,6 +35,13 @@ class MonitorLogAutoConfiguration {
         return new MonitorLogAop();
     }
 
+    @Bean
+    @ConditionalOnMissingBean(MonitorLogAop.class)
+    @ConditionalOnClass(MonitorLogTags.class)
+    MonitorLogAop aspectUserProcessor() {
+        return new MonitorLogAop();
+    }
+
     @Order(Integer.MIN_VALUE)
     @Bean("__springUtils")
     SpringUtils springUtils() {

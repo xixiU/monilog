@@ -22,7 +22,11 @@ public enum LogPoint {
     rocketmq_producer,
     mybatis,
     redis,
-    unknown;
+    unknown,
+    /**
+     * 用户自定义业务维度
+     */
+    user_define;
 
     private final boolean entrance;
 

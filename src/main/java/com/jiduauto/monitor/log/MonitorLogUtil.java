@@ -51,19 +51,23 @@ class MonitorLogUtil {
         //TODO 这里在后边加入了自定义的tag，可能与全局监控混淆
         String[] allTags = systemTags.add(logParams.getTags()).toArray();
 
-        String name = "business_monitor";
+        String name = "business_monitor_" + logPoint.name();
+        addMonitor(name, allTags, logParams.getCost());
         if (logParams.isHasUserTag()) {
             name = name + "_" + logParams.getService() + "_" + logParams.getAction();
+            addMonitor(name, allTags, logParams.getCost());
         }
-        // TODO rongjie.yuan  2023/7/28 12:45 全局监控与业务监控区分开来。
-        name = name + "_" + logPoint.name();
-        // 默认打一个record记录
-        MetricMonitor.record(name + MonitorType.RECORD.getMark(), allTags);
-        try {
-            MetricMonitor.eventDruation(name + MonitorType.TIMER.getMark(), allTags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
-        } catch (Exception e) {
-            MonitorLogUtil.log("eventDuration error name:{}, tag:{}, msg:{}", name, JSON.toJSONString(allTags), e.getMessage());
+    }
+    private static void addMonitor(String namePrefix , String[] tags, long cost){
+        try{
+            // 打record
+            MetricMonitor.record(namePrefix + MonitorType.RECORD.getMark(), tags);
+            // 打耗时
+            MetricMonitor.eventDruation(namePrefix + MonitorType.TIMER.getMark(), tags).record(cost, TimeUnit.MILLISECONDS);
+        }catch (Exception e){
+            MonitorLogUtil.log("addMonitor error name:{}, tag:{}, msg:{}", namePrefix, JSON.toJSONString(tags), e.getMessage());
         }
+
     }
 
 

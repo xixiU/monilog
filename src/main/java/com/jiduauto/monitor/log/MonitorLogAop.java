@@ -1,10 +1,13 @@
 package com.jiduauto.monitor.log;
 
 
+import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+
+import java.util.Map;
 
 /**
  * @author yp
@@ -69,11 +72,11 @@ class MonitorLogAop {
     }
 
     private static void afterProcess(MonitorLogAspectCtx ctx) {
+        String[] tags = ctx.getTags();
         MonitorLogParams params = new MonitorLogParams();
         ParsedResult parsedResult = ctx.getParsedResult();
         params.setServiceCls(ctx.getMethodOwnedClass());
         params.setLogPoint(ctx.getLogPoint());
-        params.setTags(ctx.getTags());
         params.setService(ctx.parseServiceName());
         params.setAction(ctx.getMethodName());
         params.setSuccess(parsedResult.isSuccess());
@@ -83,13 +86,33 @@ class MonitorLogAop {
         params.setException(ctx.getException());
         params.setInput(ctx.getArgs());
         params.setOutput(ctx.getResult());
-        if (ctx.getTags() != null && ctx.getTags().length > 0) {
+        if (tags != null && tags.length > 0) {
             params.setHasUserTag(true);
+            //
+            params.setTags(processUserTag(ctx.getArgs(), tags));
         }
         try {
             MonitorLogUtil.log(params);
         } catch (Exception e) {
             MonitorLogUtil.log("MonitorLogAop afterProcess error:{}", e.getMessage());
+        }
+    }
+
+    /**
+     * 处理用户自定义tag
+     */
+    private static String[] processUserTag(Object[] input, String[] oriTags){
+        try{
+            if (oriTags == null || oriTags.length == 0 || input == null || input.length == 0) {
+                return oriTags;
+            }
+            // 默认只解析第一个参数里面的对象，多个参数没法确定解析顺序
+            Map<String, String> jsonMap = StringUtil.tryConvert2Map(JSON.toJSONString(input[0]));
+            return StringUtil.processUserTag(jsonMap, oriTags);
+        }catch (Exception e){
+            // 处理错误异常吞掉
+            MonitorLogUtil.log("MonitorLogAop processUserTag error:{}", e.getMessage());
+            return oriTags;
         }
     }
 

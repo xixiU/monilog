@@ -5,6 +5,8 @@ import com.alibaba.fastjson.JSONValidator;
 import com.alibaba.fastjson.TypeReference;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.AntPathMatcher;
 
 import java.util.*;
@@ -90,11 +92,38 @@ class StringUtil {
             if (!validate) {
                 return new HashMap<>();
             }
-            return JSON.parseObject(str, new TypeReference<Map<String, String>>() {
-            });
+            return JSON.parseObject(str, new TypeReference<Map<String, String>>() {});
         } catch (Exception e) {
             return new HashMap<>();
         }
+    }
+
+    public static String[] processUserTag(Map<String, String> jsonMap, String[] oriTags){
+        if (MapUtils.isEmpty(jsonMap) || oriTags == null || oriTags.length == 0 ) {
+            return oriTags;
+        }
+        String[] replaceTags = Arrays.copyOf(oriTags, oriTags.length);
+        for (int i = 0; i < replaceTags.length; i++) {
+            if ((!replaceTags[i].startsWith("${") && !replaceTags[i].startsWith("{")) || !replaceTags[i].endsWith("}")) {
+                continue;
+            }
+            int startIndex = 1;
+            if (replaceTags[i].startsWith("${")) {
+                startIndex = 2;
+            }
+            String parameterName = replaceTags[i].substring(startIndex, replaceTags[i].length() - 1);
+            String resultTagValue = jsonMap.get(parameterName);
+            replaceTags[i] = StringUtils.isNotBlank(resultTagValue) ? resultTagValue : "00";
+        }
+        return replaceTags;
+    }
+
+    public static String[] processUserTag(String strMap, String[] oriTags){
+        Map<String, String> jsonMap = StringUtil.tryConvert2Map(strMap);
+        if (MapUtils.isEmpty(jsonMap) || oriTags == null || oriTags.length == 0 ) {
+            return oriTags;
+        }
+        return processUserTag(jsonMap, oriTags);
     }
 
     public static String encodeQueryString(Map<String, Collection<String>> params) {

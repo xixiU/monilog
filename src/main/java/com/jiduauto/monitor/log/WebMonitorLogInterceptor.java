@@ -130,7 +130,7 @@ class WebMonitorLogInterceptor extends OncePerRequestFilter {
             throw e;
         } finally {
             if (logParams.isSuccess() && StringUtils.isNotBlank(responseBodyStr) && isJson(requestHeaderMap)) {
-                dealResponseTags(logParams, responseBodyStr);
+                logParams.setTags(StringUtil.processUserTag(responseBodyStr, logParams.getTags()));
             }
             logParams.setCost(System.currentTimeMillis() - startTime);
             MonitorLogUtil.log(logParams);
@@ -201,28 +201,6 @@ class WebMonitorLogInterceptor extends OncePerRequestFilter {
             return (HandlerMethod) handlerExecutionChain.getHandler();
         }
         return null;
-    }
-
-    /**
-     * 处理返回的tag
-     *
-     */
-    private void dealResponseTags(MonitorLogParams logParams, String responseBodyStr) {
-        String[] oriTags = logParams.getTags();
-
-        Map<String, String> jsonMap = StringUtil.tryConvert2Map(responseBodyStr);
-        if (MapUtils.isEmpty(jsonMap)) {
-            return;
-        }
-        for (int i = 0; oriTags != null && i < oriTags.length; i++) {
-            if (!oriTags[i].startsWith("{") || !oriTags[i].endsWith("}")) {
-                continue;
-            }
-            String parameterName = oriTags[i].substring(1, oriTags[i].length() - 1);
-            String resultTagValue = jsonMap.get(parameterName);
-            oriTags[i] = StringUtils.isNotBlank(resultTagValue) ? resultTagValue : "00";
-        }
-        logParams.setTags(oriTags);
     }
 
     /**
