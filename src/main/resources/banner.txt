@@ -5,4 +5,4 @@
  |_|  |_|\___/|_| |_|_|_____\___/ \__, |
                                   |___/
 ${spring.application.name} ${spring.profiles.active}
-Powered by pe
+Powered by Jidu-商业中台团队
