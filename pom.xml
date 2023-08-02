@@ -9,8 +9,8 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.jiduauto.log</groupId>
-    <artifactId>monitor-log-spring-boot-starter</artifactId>
+    <groupId>com.jiduauto.monilog</groupId>
+    <artifactId>monilog</artifactId>
     <version>1.0.5-SNAPSHOT</version>
     <modelVersion>4.0.0</modelVersion>
 
