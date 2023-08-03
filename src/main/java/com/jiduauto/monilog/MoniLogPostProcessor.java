@@ -113,8 +113,7 @@ public class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered 
 
     private boolean isTargetBean(@NotNull Object bean, String className) {
         try {
-            Class<?> cls = Class.forName(className);
-            return cls.isAssignableFrom(bean.getClass());
+            return Class.forName(className).isAssignableFrom(bean.getClass());
         } catch (Exception e) {
             return false;
         }
