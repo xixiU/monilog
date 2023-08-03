@@ -80,7 +80,7 @@ public class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered 
                 }
                 return bean;
             } else if (bean instanceof DefaultMQPullConsumer && consumerEnable) {
-                MoniLogUtil.log("current rocketmq mode[pull] not support intercept");
+                MoniLogUtil.warn("current rocketmq mode[pull] not support intercept");
             } else if (bean instanceof DefaultRocketMQListenerContainer && consumerEnable) {
                 //使用了rocketmq-starter
                 DefaultRocketMQListenerContainer container = (DefaultRocketMQListenerContainer) bean;

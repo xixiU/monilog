@@ -74,7 +74,7 @@ final class ResultParseUtil {
                     boolExpr = moniLogProperties.getGlobalDefaultBoolExpr();
                 }
             } catch (Exception ex) {
-                MoniLogUtil.log("getBean of MoniLogProperties error:{}", ex.getMessage());
+                MoniLogUtil.debugError("getBean of MoniLogProperties error:{}", ex);
             }
         }
         if (StringUtils.isNotBlank(boolExpr)) {

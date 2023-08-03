@@ -81,7 +81,7 @@ class MybatisMoniLogInterceptor {
                     }
                     throw e;
                 } else {//组件异常
-                    MoniLogUtil.log( "mybatisInterceptor process error:{}", e.getMessage());
+                    MoniLogUtil.debugError( "mybatisInterceptor process error:{}", e);
                     return obj;
                 }
             } finally {
@@ -115,7 +115,7 @@ class MybatisMoniLogInterceptor {
                     sql = boundSql.getSql().replaceAll("--[^\n|\\\\n].+(\n|\\\\n)","").replaceAll("(\\\\n)+|\n+|\r+|\\s+"," ");
                 }
             } catch (Throwable e) {
-                MoniLogUtil.log( "parseMybatisExecuteInfo error:{}", e.getMessage());
+                MoniLogUtil.debugError( "parseMybatisExecuteInfo error:{}", e);
             }
             MybatisInvocationInfo info = new MybatisInvocationInfo();
             info.serviceCls = serviceCls;
@@ -130,14 +130,12 @@ class MybatisMoniLogInterceptor {
                 MetaObject metaObject = SystemMetaObject.forObject(expectedStatementHandler);
                 //fastReturn
                 if (BooleanUtils.isNotTrue(metaObject.hasGetter("h.target"))) {
-                    MoniLogUtil.log( "can't find mappedStatement h.get method");
                     break;
                 }
                 expectedStatementHandler = metaObject.getValue("h.target");
             }
             //failFast
             if (!(expectedStatementHandler instanceof StatementHandler)) {
-                MoniLogUtil.log( "sorry, expectedStatementHandler not instanceof StatementHandler!");
                 return null;
             }
             return expectedStatementHandler;

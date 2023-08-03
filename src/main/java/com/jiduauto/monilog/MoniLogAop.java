@@ -53,7 +53,7 @@ class MoniLogAop {
             if (tx != null && e == tx) {
                 throw e;
             }
-            MoniLogUtil.log("MoniLogAop processAround error:{}", e.getMessage());
+            MoniLogUtil.debugError("MoniLogAop processAround error:{}", e);
             if (ctx != null && ctx.isHasExecuted()) {
                 return ctx.getResult();
             }
@@ -107,7 +107,7 @@ class MoniLogAop {
         try {
             MoniLogUtil.log(params);
         } catch (Exception e) {
-            MoniLogUtil.log("MoniLogAop afterProcess error:{}", e.getMessage());
+            MoniLogUtil.debugError("MoniLogAop afterProcess error:{}", e);
         }
     }
 
@@ -124,7 +124,7 @@ class MoniLogAop {
             return StringUtil.processUserTag(jsonMap, oriTags);
         } catch (Exception e) {
             // 处理错误异常吞掉
-            MoniLogUtil.log("MoniLogAop processUserTag error:{}", e.getMessage());
+            MoniLogUtil.debugError("MoniLogAop processUserTag error:{}", e);
             return oriTags;
         }
     }

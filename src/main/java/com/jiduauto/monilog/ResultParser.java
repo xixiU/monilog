@@ -159,7 +159,7 @@ final class ResultParser {
             p.setExpect(expect);
             return p;
         } catch (Exception e) {
-            MoniLogUtil.log("resultParser parse error:{}", e.getMessage());
+            MoniLogUtil.debugError("resultParser parse error:{}", e);
             return null;
         }
     }
@@ -170,7 +170,7 @@ final class ResultParser {
             try {
                 return JSONPath.eval(obj, path);
             } catch (Throwable e) {
-                MoniLogUtil.log("resultParser evalVal error:{}", e.getMessage());
+                MoniLogUtil.debugError("resultParser evalVal error:{}", e);
             }
             return null;
         }
@@ -183,7 +183,7 @@ final class ResultParser {
             method.setAccessible(true);
             return method.invoke(obj, methodName, new Object[]{});
         } catch (Throwable e) {
-            MoniLogUtil.log("resultParser parseObjVal error:{}", e.getMessage());
+            MoniLogUtil.debugError("resultParser parseObjVal error:{}", e);
             Throwable tx = ExceptionUtil.getRealException(e);
             if (tx instanceof NoSuchMethodException || (tx.getMessage() != null && tx.getMessage().contains("No such method"))) {
                 return null;
