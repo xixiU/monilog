@@ -2,6 +2,7 @@ package com.jiduauto.monilog;
 
 import com.xxl.job.core.handler.IJobHandler;
 import feign.Client;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.rocketmq.client.MQAdmin;
 import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
@@ -23,7 +24,7 @@ import org.springframework.data.redis.serializer.RedisSerializer;
 
 import java.util.Set;
 
-
+@Slf4j
 public class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered {
     private final MoniLogProperties moniLogProperties;
 
@@ -38,6 +39,7 @@ public class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered 
         }
         if (bean instanceof Client) {
             if (isComponentEnable("feign", moniLogProperties.getFeign().isEnable())) {
+                log.info(">>>monilog feign start...");
                 return FeignMoniLogInterceptor.getProxyBean((Client) bean);
             }
         } else if (bean instanceof IJobHandler) {
@@ -46,6 +48,7 @@ public class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered 
             }
         } else if (bean instanceof RedisConnectionFactory || bean instanceof RedisTemplate) {
             if (isComponentEnable("redis", moniLogProperties.getRedis().isEnable())) {
+                log.info(">>>monilog redis start...");
                 if (bean instanceof RedisConnectionFactory) {
                     return RedisMoniLogInterceptor.getProxyBean(bean);
                 } else {
@@ -61,6 +64,7 @@ public class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered 
                 }
             }
         } else if (bean instanceof MQAdmin || bean instanceof DefaultRocketMQListenerContainer) {
+            log.info(">>>monilog recoketmq start...");
             MoniLogProperties.RocketMqProperties rocketmqProperties = moniLogProperties.getRocketmq();
             if (!rocketmqProperties.isEnable()) {
                 return bean;
