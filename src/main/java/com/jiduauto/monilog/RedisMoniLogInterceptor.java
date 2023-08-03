@@ -3,43 +3,37 @@ package com.jiduauto.monilog;
 
 import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.intercept.MethodInvocation;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.core.Ordered;
-import org.springframework.core.PriorityOrdered;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.RedisSerializer;
 
 import java.lang.reflect.Method;
 
 
 @Slf4j
-class RedisMoniLogInterceptor implements BeanPostProcessor, PriorityOrdered {
+class RedisMoniLogInterceptor  {
     //参考：https://github.com/youbl/study/blob/master/demo-log-redis/src/main/java/beinet/cn/logdemoredis/redis/RedisFactoryBean.java
-    @Override
-    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-        if (bean instanceof RedisConnectionFactory || beanName.equals("redisConnectionFactory")) {
-            return getProxyBean(bean);
-        } else if (bean instanceof RedisTemplate) {
-            RedisSerializer<?> defaultSerializer = ((RedisTemplate<?, ?>) bean).getDefaultSerializer();
-            RedisSerializer<?> keySerializer = ((RedisTemplate<?, ?>) bean).getKeySerializer();
-            RedisSerializer<?> valueSerializer = ((RedisTemplate<?, ?>) bean).getValueSerializer();
-            RedisSerializer<String> stringSerializer = ((RedisTemplate<?, ?>) bean).getStringSerializer();
-            RedisSerializer<?> hashKeySerializer = ((RedisTemplate<?, ?>) bean).getHashKeySerializer();
-            RedisSerializer<?> hashValueSerializer = ((RedisTemplate<?, ?>) bean).getHashValueSerializer();
-            //...
-            System.out.println("...redistemplate...");
-        }
-        return BeanPostProcessor.super.postProcessBeforeInitialization(bean, beanName);
-    }
+//    @Override
+//    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+//        if (bean instanceof RedisConnectionFactory || beanName.equals("redisConnectionFactory")) {
+//            return getProxyBean(bean);
+//        } else if (bean instanceof RedisTemplate) {
+//            RedisSerializer<?> defaultSerializer = ((RedisTemplate<?, ?>) bean).getDefaultSerializer();
+//            RedisSerializer<?> keySerializer = ((RedisTemplate<?, ?>) bean).getKeySerializer();
+//            RedisSerializer<?> valueSerializer = ((RedisTemplate<?, ?>) bean).getValueSerializer();
+//            RedisSerializer<String> stringSerializer = ((RedisTemplate<?, ?>) bean).getStringSerializer();
+//            RedisSerializer<?> hashKeySerializer = ((RedisTemplate<?, ?>) bean).getHashKeySerializer();
+//            RedisSerializer<?> hashValueSerializer = ((RedisTemplate<?, ?>) bean).getHashValueSerializer();
+//            //...
+//            System.out.println("...redistemplate...");
+//        }
+//        return BeanPostProcessor.super.postProcessBeforeInitialization(bean, beanName);
+//    }
 
-    @Override
-    public int getOrder() {
-        return Ordered.HIGHEST_PRECEDENCE;
-    }
+//    @Override
+//    public int getOrder() {
+//        return Ordered.HIGHEST_PRECEDENCE;
+//    }
 
-    private static RedisConnectionFactory getProxyBean(Object bean) {
+    protected static RedisConnectionFactory getProxyBean(Object bean) {
         return (RedisConnectionFactory) ProxyUtils.getProxy(bean, invocation -> {
             Object ret = invocation.proceed();
             String methodName = invocation.getMethod().getName();

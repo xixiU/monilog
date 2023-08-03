@@ -24,6 +24,10 @@ import org.springframework.core.annotation.Order;
 @Slf4j
 @Import({SpringUtils.class})
 class MoniLogAutoConfiguration {
+    @Bean
+    MoniLogPostProcessor moniLogPostProcessor(MoniLogProperties moniLogProperties){
+        return new MoniLogPostProcessor(moniLogProperties);
+    }
 
     @Bean
     @ConditionalOnBean(MoniLogPrinter.class)
@@ -93,25 +97,25 @@ class MoniLogAutoConfiguration {
     }
 
 
-    @Configuration
-    @ConditionalOnProperty(prefix = "monilog.rocketmq", name = "enable", havingValue = "true", matchIfMissing = true)
-    @ConditionalOnExpression("('${monilog.component.includes:*}'.equals('*') or '${monilog.component.includes}'.contains('rocketmq')) and !('${monilog.component.excludes:}'.equals('*') or '${monilog.component.excludes:}'.contains('rocketmq'))")
-    @ConditionalOnClass(name = {"org.apache.rocketmq.client.MQAdmin"})
-    static class RocketMqMoniLogConfiguration {
-        @Bean
-        @ConditionalOnProperty(prefix = "monilog.rocketmq.consumer", name = "enable", havingValue = "true", matchIfMissing = true)
-        RocketMqMoniLogInterceptor.RocketMQConsumerEnhanceProcessor rocketMQConsumerPostProcessor() {
-            log.info("!!! rocketmq consumer monilog start ...");
-            return new RocketMqMoniLogInterceptor.RocketMQConsumerEnhanceProcessor();
-        }
-
-        @Bean
-        @ConditionalOnProperty(prefix = "monilog.rocketmq.producer", name = "enable", havingValue = "true", matchIfMissing = true)
-        RocketMqMoniLogInterceptor.RocketMQProducerInhanceProcessor rocketMQProducerPostProcessor() {
-            log.info("!!! rocketmq producer monilog start ...");
-            return new RocketMqMoniLogInterceptor.RocketMQProducerInhanceProcessor();
-        }
-    }
+//    @Configuration
+//    @ConditionalOnProperty(prefix = "monilog.rocketmq", name = "enable", havingValue = "true", matchIfMissing = true)
+//    @ConditionalOnExpression("('${monilog.component.includes:*}'.equals('*') or '${monilog.component.includes}'.contains('rocketmq')) and !('${monilog.component.excludes:}'.equals('*') or '${monilog.component.excludes:}'.contains('rocketmq'))")
+//    @ConditionalOnClass(name = {"org.apache.rocketmq.client.MQAdmin"})
+//    static class RocketMqMoniLogConfiguration {
+//        @Bean
+//        @ConditionalOnProperty(prefix = "monilog.rocketmq.consumer", name = "enable", havingValue = "true", matchIfMissing = true)
+//        RocketMqMoniLogInterceptor.RocketMQConsumerEnhanceProcessor rocketMQConsumerPostProcessor() {
+//            log.info("!!! rocketmq consumer monilog start ...");
+//            return new RocketMqMoniLogInterceptor.RocketMQConsumerEnhanceProcessor();
+//        }
+//
+//        @Bean
+//        @ConditionalOnProperty(prefix = "monilog.rocketmq.producer", name = "enable", havingValue = "true", matchIfMissing = true)
+//        RocketMqMoniLogInterceptor.RocketMQProducerInhanceProcessor rocketMQProducerPostProcessor() {
+//            log.info("!!! rocketmq producer monilog start ...");
+//            return new RocketMqMoniLogInterceptor.RocketMQProducerInhanceProcessor();
+//        }
+//    }
 
     @ConditionalOnWebApplication
     @ConditionalOnProperty(prefix = "monilog.web", name = "enable", havingValue = "true", matchIfMissing = true)
@@ -137,14 +141,14 @@ class MoniLogAutoConfiguration {
         return new XxlJobMoniLogInterceptor();
     }
 
-    @ConditionalOnProperty(prefix = "monilog.redis", name = "enable", havingValue = "true", matchIfMissing = true)
-    @ConditionalOnExpression("('${monilog.component.includes:*}'.equals('*') or '${monilog.component.includes}'.contains('redis')) and !('${monilog.component.excludes:}'.equals('*') or '${monilog.component.excludes:}'.contains('redis'))")
-    @ConditionalOnClass(name = "org.springframework.data.redis.core.RedisTemplate")
-    @Bean
-    RedisMoniLogInterceptor redisTemplateEnhancer() {
-        log.info("!!! redis monilog start ...");
-        return new RedisMoniLogInterceptor();
-    }
+//    @ConditionalOnProperty(prefix = "monilog.redis", name = "enable", havingValue = "true", matchIfMissing = true)
+//    @ConditionalOnExpression("('${monilog.component.includes:*}'.equals('*') or '${monilog.component.includes}'.contains('redis')) and !('${monilog.component.excludes:}'.equals('*') or '${monilog.component.excludes:}'.contains('redis'))")
+//    @ConditionalOnClass(name = "org.springframework.data.redis.core.RedisTemplate")
+//    @Bean
+//    RedisMoniLogInterceptor redisTemplateEnhancer() {
+//        log.info("!!! redis monilog start ...");
+//        return new RedisMoniLogInterceptor();
+//    }
 
     @Configuration
     @ConditionalOnProperty(prefix = "monilog.httpclient", name = "enable", havingValue = "true", matchIfMissing = true)

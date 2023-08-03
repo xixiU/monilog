@@ -6,23 +6,16 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
-import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
-import org.apache.rocketmq.client.consumer.MQConsumer;
 import org.apache.rocketmq.client.consumer.listener.*;
 import org.apache.rocketmq.client.hook.SendMessageContext;
 import org.apache.rocketmq.client.hook.SendMessageHook;
 import org.apache.rocketmq.client.impl.producer.DefaultMQProducerImpl;
-import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.client.producer.SendStatus;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.spring.annotation.RocketMQMessageListener;
 import org.apache.rocketmq.spring.core.RocketMQListener;
-import org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.config.BeanPostProcessor;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -33,38 +26,38 @@ import java.util.function.BiFunction;
 
 class RocketMqMoniLogInterceptor {
     @Slf4j
-    static class RocketMQConsumerEnhanceProcessor implements BeanPostProcessor {
-        @Override
-        public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-            if (bean instanceof MQConsumer) {//不使用rocketmq-starter时
-                if (bean instanceof DefaultMQPushConsumer) {
-                    DefaultMQPushConsumer consumer = (DefaultMQPushConsumer) bean;
-                    Class<?> bizCls = consumer.getMessageListener().getClass();
-                    MessageListener messageListener = consumer.getMessageListener();
-                    String consumerGroup = consumer.getConsumerGroup();
-                    if (messageListener instanceof MessageListenerConcurrently) {
-                        consumer.setMessageListener(new EnhancedListenerConcurrently((MessageListenerConcurrently) messageListener, bizCls, consumerGroup));
-                    } else if (messageListener instanceof MessageListenerOrderly) {
-                        consumer.setMessageListener(new EnhancedListenerOrderly((MessageListenerOrderly) messageListener, bizCls, consumerGroup));
-                    }
-                } else if (bean instanceof DefaultMQPullConsumer) {
-                    MoniLogUtil.log("current rocketmq mode[pull] not support intercept");
-                }
-            } else if (bean instanceof DefaultRocketMQListenerContainer) {//使用了rocketmq-starter
-                DefaultRocketMQListenerContainer container = (DefaultRocketMQListenerContainer) bean;
-                RocketMQListener<?> bizListener = container.getRocketMQListener();
-                DefaultMQPushConsumer consumer = container.getConsumer();
-                MessageListener originListener = consumer.getMessageListener();
-                if (originListener instanceof EnhancedListenerConcurrently || originListener instanceof EnhancedListenerOrderly) {
-                    return bean;
-                }
-                container.setRocketMQListener(new EnhancedRocketMqListener<>(bizListener, bizListener.getClass(), consumer.getConsumerGroup()));
-            }
-            return bean;
-        }
+    static class RocketMQConsumerEnhanceProcessor  {
+//        @Override
+//        public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+//            if (bean instanceof MQConsumer) {//不使用rocketmq-starter时
+//                if (bean instanceof DefaultMQPushConsumer) {
+//                    DefaultMQPushConsumer consumer = (DefaultMQPushConsumer) bean;
+//                    Class<?> bizCls = consumer.getMessageListener().getClass();
+//                    MessageListener messageListener = consumer.getMessageListener();
+//                    String consumerGroup = consumer.getConsumerGroup();
+//                    if (messageListener instanceof MessageListenerConcurrently) {
+//                        consumer.setMessageListener(new EnhancedListenerConcurrently((MessageListenerConcurrently) messageListener, bizCls, consumerGroup));
+//                    } else if (messageListener instanceof MessageListenerOrderly) {
+//                        consumer.setMessageListener(new EnhancedListenerOrderly((MessageListenerOrderly) messageListener, bizCls, consumerGroup));
+//                    }
+//                } else if (bean instanceof DefaultMQPullConsumer) {
+//                    MoniLogUtil.log("current rocketmq mode[pull] not support intercept");
+//                }
+//            } else if (bean instanceof DefaultRocketMQListenerContainer) {//使用了rocketmq-starter
+//                DefaultRocketMQListenerContainer container = (DefaultRocketMQListenerContainer) bean;
+//                RocketMQListener<?> bizListener = container.getRocketMQListener();
+//                DefaultMQPushConsumer consumer = container.getConsumer();
+//                MessageListener originListener = consumer.getMessageListener();
+//                if (originListener instanceof EnhancedListenerConcurrently || originListener instanceof EnhancedListenerOrderly) {
+//                    return bean;
+//                }
+//                container.setRocketMQListener(new EnhancedRocketMqListener<>(bizListener, bizListener.getClass(), consumer.getConsumerGroup()));
+//            }
+//            return bean;
+//        }
 
         @AllArgsConstructor
-        private static class EnhancedListenerConcurrently implements MessageListenerConcurrently {
+        protected static class EnhancedListenerConcurrently implements MessageListenerConcurrently {
             private final MessageListenerConcurrently delegate;
             private final Class<?> cls;
             private final String consumerGroup;
@@ -76,7 +69,7 @@ class RocketMqMoniLogInterceptor {
         }
 
         @AllArgsConstructor
-        private static class EnhancedListenerOrderly implements MessageListenerOrderly {
+        protected static class EnhancedListenerOrderly implements MessageListenerOrderly {
             private final MessageListenerOrderly delegate;
             private Class<?> cls;
             private final String consumerGroup;
@@ -128,7 +121,7 @@ class RocketMqMoniLogInterceptor {
         }
 
         @AllArgsConstructor
-        private static class EnhancedRocketMqListener<T> implements RocketMQListener<T> {
+        protected static class EnhancedRocketMqListener<T> implements RocketMQListener<T> {
             private final RocketMQListener<T> delegate;
             private final Class<?> cls;
             private final String consumerGroup;
@@ -202,17 +195,17 @@ class RocketMqMoniLogInterceptor {
 
 
     @Slf4j
-    static class RocketMQProducerInhanceProcessor implements BeanPostProcessor {
-        @Override
-        public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-            if (bean instanceof DefaultMQProducer) {
-                DefaultMQProducer producer = (DefaultMQProducer) bean;
-                producer.getDefaultMQProducerImpl().registerSendMessageHook(new RocketMQSendHook());
-            }
-            return bean;
-        }
+    static class RocketMQProducerInhanceProcessor {
+//        @Override
+//        public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+//            if (bean instanceof DefaultMQProducer) {
+//                DefaultMQProducer producer = (DefaultMQProducer) bean;
+//                producer.getDefaultMQProducerImpl().registerSendMessageHook(new RocketMQSendHook());
+//            }
+//            return bean;
+//        }
 
-        private static class RocketMQSendHook implements SendMessageHook {
+        protected static class RocketMQSendHook implements SendMessageHook {
             @Override
             public String hookName() {
                 return RocketMQSendHook.class.getName();
