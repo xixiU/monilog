@@ -25,7 +25,7 @@ import org.springframework.core.annotation.Order;
 @Import({SpringUtils.class})
 class MoniLogAutoConfiguration {
     @Bean
-    MoniLogPostProcessor moniLogPostProcessor(MoniLogProperties moniLogProperties){
+    MoniLogPostProcessor moniLogPostProcessor(MoniLogProperties moniLogProperties) {
         return new MoniLogPostProcessor(moniLogProperties);
     }
 
