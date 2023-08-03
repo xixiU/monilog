@@ -8,7 +8,6 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import javax.annotation.Resource;
 import java.util.Set;
 
 /**
@@ -20,8 +19,6 @@ import java.util.Set;
 @Getter
 @Setter
 class MoniLogProperties implements InitializingBean {
-    @Resource
-    private SpringUtils springUtils;
     /**
      * 服务名，默认取值：${spring.application.name}
      */
@@ -85,11 +82,16 @@ class MoniLogProperties implements InitializingBean {
      */
     private HttpClientProperties httpclient = new HttpClientProperties();
 
+    public String getAppName() {
+        if (StringUtils.isNotBlank(this.appName)) {
+            return this.appName;
+        }
+        System.setProperty("monilog.appName", (this.appName = SpringUtils.getApplicationName()));
+        return this.appName;
+    }
+
     @Override
     public void afterPropertiesSet() throws Exception {
-        if (StringUtils.isBlank(this.appName)) {
-            System.setProperty("monilog.appName", (this.appName = SpringUtils.getApplicationName()));
-        }
         if (printer.detailLogLevel == null) {
             printer.detailLogLevel = LogOutputLevel.onException;
         }
