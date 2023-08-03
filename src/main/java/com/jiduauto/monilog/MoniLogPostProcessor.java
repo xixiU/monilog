@@ -14,7 +14,6 @@ import org.apache.rocketmq.spring.core.RocketMQListener;
 import org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.PropertyValues;
 import org.springframework.beans.factory.config.InstantiationAwareBeanPostProcessor;
 import org.springframework.core.Ordered;
 import org.springframework.core.PriorityOrdered;
@@ -43,20 +42,19 @@ public class MoniLogPostProcessor implements InstantiationAwareBeanPostProcessor
     }
 
     @Override
-    public PropertyValues postProcessProperties(PropertyValues pvs, Object bean, String beanName) throws BeansException {
+    public boolean postProcessAfterInstantiation(Object bean, String beanName) throws BeansException {
         //由于redis所依赖的RedisConnectionFactory和RedisTemplate以及StringRedisTemplate被javakit在RedisRegister中过早实例化，会导致BeanPostProcessor无法处理到它
         //因此才在这里进行二次增强
-        PropertyValues superValues = InstantiationAwareBeanPostProcessor.super.postProcessProperties(pvs, bean, beanName);
         Class<?> redisConnCls = getTargetCls(REDIS_CONN_FACTORY);
         if (redisConnCls == null) {
-            return superValues;
+            return InstantiationAwareBeanPostProcessor.super.postProcessAfterInstantiation(bean, beanName);
         }
         if (bean instanceof RedisTemplate || bean instanceof RedisConnectionFactory) {
             System.out.println("...RedisConnectionFactory...");
         }
 
         //需要支持RedissonClient
-        return superValues;
+        return InstantiationAwareBeanPostProcessor.super.postProcessAfterInstantiation(bean, beanName);
     }
 
     @Override
