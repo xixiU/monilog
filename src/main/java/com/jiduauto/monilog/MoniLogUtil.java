@@ -51,7 +51,7 @@ class MoniLogUtil {
         //TODO 这里在后边加入了自定义的tag，可能与全局监控混淆
         String[] allTags = systemTags.add(logParams.getTags()).toArray();
 
-        String name = "business_monitor_" + logPoint.name();
+        String name = StringUtil.BUSINESS_MONITOR_PREFIX + logPoint.name();
         addMonitor(name, allTags, logParams.getCost());
         if (logParams.isHasUserTag()) {
             name = name + "_" + logParams.getService() + "_" + logParams.getAction();

@@ -26,11 +26,13 @@ import java.lang.reflect.Method;
 
 @Aspect
 class XxlJobMoniLogInterceptor {
+    //处理注解式任务
     @Around("@annotation(com.xxl.job.core.handler.annotation.XxlJob)")
     private Object interceptXxlJob(ProceedingJoinPoint pjp) throws Throwable {
         return MoniLogAop.processAround(pjp, buildLogParserForJob(), LogPoint.xxljob);
     }
 
+    //注解继承式任务
     static IJobHandler getProxyBean(IJobHandler bean) {
         return (IJobHandler) ProxyUtils.getProxy(bean, invocation -> {
             Method method = invocation.getMethod();
