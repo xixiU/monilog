@@ -18,20 +18,28 @@ class MoniLogUtil {
     private static MoniLogProperties logProperties = null;
 
     public static void log(MoniLogParams logParams) {
+        Exception debugError = null;
+
         try {
             doMonitor(logParams);
         } catch (Exception e) {
             log("doMonitor error:{}", e.getMessage());
+            debugError = e;
         }
         try {
             printDigestLog(logParams);
         } catch (Exception e) {
             log("printDigestLog error:{}", e.getMessage());
+            debugError = e;
         }
         try {
             printDetailLog(logParams);
         } catch (Exception e) {
-            log("printDetailLog error:{}", e.getMessage());
+            log("printDetailLog error:{}", e.getMessage(), e);
+            debugError = e;
+        }
+        if (debugError != null && getLogProperties().isDebug()) {
+            log("monilog debug error:{}", debugError);
         }
     }
 
