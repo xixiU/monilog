@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 class StringUtil {
     public static final String BUSINESS_MONITOR_PREFIX = "business_monitor_";
     private static final AntPathMatcher antPathMatcher = new AntPathMatcher();
+
     public static boolean checkPathMatch(Collection<String> pathList, String toCheckPath) {
         if (CollectionUtils.isEmpty(pathList)) {
             return false;
@@ -34,10 +35,11 @@ class StringUtil {
 
     /**
      * 从注解中获取tag列表
+     *
      * @param logTags
      * @return
      */
-    public static List<String> getTagList(MoniLogTags logTags){
+    public static List<String> getTagList(MoniLogTags logTags) {
         if (logTags == null || logTags.tags() == null || logTags.tags().length == 0) {
             return new ArrayList<>();
         }
@@ -45,15 +47,15 @@ class StringUtil {
             return Arrays.stream(logTags.tags()).map(String::trim).collect(Collectors.toList());
         } else {
             // prometheus tag是key,value结构，非偶数tag prometheus上报会报错，这里只打一行日志提醒
-            log.error("tags length must be double，tags：{}",JSON.toJSONString(logTags));
+            log.error("tags length must be double，tags：{}", JSON.toJSONString(logTags));
         }
         return new ArrayList<>();
     }
 
-    public static String[] getTagArray(MoniLogTags logTags){
+    public static String[] getTagArray(MoniLogTags logTags) {
         List<String> tagList = getTagList(logTags);
         if (CollectionUtils.isEmpty(tagList)) {
-           return null;
+            return null;
         }
         return tagList.toArray(new String[0]);
     }
@@ -93,14 +95,15 @@ class StringUtil {
             if (!validate) {
                 return new HashMap<>();
             }
-            return JSON.parseObject(str, new TypeReference<Map<String, String>>() {});
+            return JSON.parseObject(str, new TypeReference<Map<String, String>>() {
+            });
         } catch (Exception e) {
             return new HashMap<>();
         }
     }
 
-    public static String[] processUserTag(Map<String, String> jsonMap, String[] oriTags){
-        if (MapUtils.isEmpty(jsonMap) || oriTags == null || oriTags.length == 0 ) {
+    public static String[] processUserTag(Map<String, String> jsonMap, String[] oriTags) {
+        if (MapUtils.isEmpty(jsonMap) || oriTags == null || oriTags.length == 0) {
             return oriTags;
         }
         String[] replaceTags = Arrays.copyOf(oriTags, oriTags.length);
@@ -119,9 +122,9 @@ class StringUtil {
         return replaceTags;
     }
 
-    public static String[] processUserTag(String strMap, String[] oriTags){
+    public static String[] processUserTag(String strMap, String[] oriTags) {
         Map<String, String> jsonMap = StringUtil.tryConvert2Map(strMap);
-        if (MapUtils.isEmpty(jsonMap) || oriTags == null || oriTags.length == 0 ) {
+        if (MapUtils.isEmpty(jsonMap) || oriTags == null || oriTags.length == 0) {
             return oriTags;
         }
         return processUserTag(jsonMap, oriTags);

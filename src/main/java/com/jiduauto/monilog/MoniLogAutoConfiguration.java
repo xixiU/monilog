@@ -32,6 +32,7 @@ class MoniLogAutoConfiguration {
     @Bean
     @ConditionalOnBean(MoniLogPrinter.class)
     MoniLogAop aspectProcessor() {
+        log.info(">>>monilog core started...");
         return new MoniLogAop();
     }
 
@@ -44,7 +45,6 @@ class MoniLogAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(MoniLogPrinter.class)
     MoniLogPrinter moniLogPrinter() {
-        log.info("!!! monilog logPrinter start ...");
         return new DefaultMoniLogPrinter();
     }
 
@@ -57,7 +57,7 @@ class MoniLogAutoConfiguration {
         @GrpcGlobalServerInterceptor
         @ConditionalOnProperty(prefix = "monilog.grpc.server", name = "enable", havingValue = "true", matchIfMissing = true)
         GrpcMoniLogInterceptor.GrpcLogPrintServerInterceptor grpcLogPrintServerInterceptor() {
-            log.info("!!! grpc server monilog start ...");
+            log.info(">>>monilog grpc-server start...");
             return new GrpcMoniLogInterceptor.GrpcLogPrintServerInterceptor();
         }
 
@@ -66,7 +66,7 @@ class MoniLogAutoConfiguration {
         @ConditionalOnClass(name = "io.grpc.ClientInterceptor")
         @ConditionalOnProperty(prefix = "monilog.grpc.client", name = "enable", havingValue = "true", matchIfMissing = true)
         GrpcMoniLogInterceptor.GrpcLogPrintClientInterceptor grpcLogPrintClientInterceptor() {
-            log.info("!!! grpc client monilog start ...");
+            log.info(">>>monilog grpc-client start...");
             return new GrpcMoniLogInterceptor.GrpcLogPrintClientInterceptor();
         }
     }
@@ -76,7 +76,7 @@ class MoniLogAutoConfiguration {
     @ConditionalOnExpression("('${monilog.component.includes:*}'.equals('*') or '${monilog.component.includes}'.contains('mybatis')) and !('${monilog.component.excludes:}'.equals('*') or '${monilog.component.excludes:}'.contains('mybatis'))")
     @Bean
     MybatisMoniLogInterceptor.MybatisInterceptor mybatisMonitorSqlFilter() {
-        log.info("!!! mybatis monilog start ...");
+        log.info(">>>monilog mybatis start...");
         return new MybatisMoniLogInterceptor.MybatisInterceptor();
     }
 
@@ -85,7 +85,7 @@ class MoniLogAutoConfiguration {
     @ConditionalOnExpression("('${monilog.component.includes:*}'.equals('*') or '${monilog.component.includes}'.contains('web')) and !('${monilog.component.excludes:}'.equals('*') or '${monilog.component.excludes:}'.contains('web'))")
     @Bean
     FilterRegistrationBean<WebMoniLogInterceptor> webMoniLogInterceptor(MoniLogProperties moniLogProperties) {
-        log.info("!!! web monilog start ...");
+        log.info(">>>monilog web start...");
         FilterRegistrationBean<WebMoniLogInterceptor> filterRegBean = new FilterRegistrationBean<>();
         filterRegBean.setFilter(new WebMoniLogInterceptor(moniLogProperties));
         filterRegBean.setOrder(Integer.MAX_VALUE);
@@ -100,7 +100,7 @@ class MoniLogAutoConfiguration {
     @ConditionalOnClass(name = "com.xxl.job.core.handler.IJobHandler")
     @Bean
     XxlJobMoniLogInterceptor xxljobMoniLogInterceptor() {
-        log.info("!!! xxljob monilog start ...");
+        log.info(">>>monilog xxljob start...");
         return new XxlJobMoniLogInterceptor();
     }
 
@@ -115,6 +115,7 @@ class MoniLogAutoConfiguration {
          */
         @Bean
         HttpClientBuilder httpClientBuilder() {
+            log.info(">>>monilog httpclient start...");
             return XHttpClientBuilder.create();
         }
     }
