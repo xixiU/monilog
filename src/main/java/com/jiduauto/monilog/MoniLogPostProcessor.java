@@ -23,7 +23,6 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
 
-import java.util.Map;
 import java.util.Set;
 
 @Slf4j
@@ -52,19 +51,11 @@ public class MoniLogPostProcessor implements BeanPostProcessor, BeanFactoryPostP
         if (redisConnCls == null) {
             return;
         }
-        Map<String, RedisConnectionFactory> factoryMap = beanFactory.getBeansOfType(RedisConnectionFactory.class);
-        Map<String, RedisTemplate> templateMap = beanFactory.getBeansOfType(RedisTemplate.class);
+        String[] factoryBeanNamesForType = beanFactory.getBeanNamesForType(RedisConnectionFactory.class);
+        String[] templateMap = beanFactory.getBeanNamesForType(RedisTemplate.class);
         //需要支持RedissonClient
-        if (factoryMap.isEmpty() && templateMap.isEmpty()) {
-            return;
-        }
 
-        for (Map.Entry<String, RedisTemplate> me : templateMap.entrySet()) {
-            String beanName = me.getKey();
-            RedisTemplate template = me.getValue();
-            RedisConnectionFactory factory = template.getConnectionFactory();
-            System.out.println("...RedisConnectionFactory..." + beanName);
-        }
+        System.out.println("...RedisConnectionFactory...");
     }
 
     @Override
@@ -87,6 +78,8 @@ public class MoniLogPostProcessor implements BeanPostProcessor, BeanFactoryPostP
                 if (bean instanceof RedisConnectionFactory) {
                     return RedisMoniLogInterceptor.getProxyBean(bean);
                 } else {
+                    RedisConnectionFactory factory = ((RedisTemplate<?, ?>) bean).getConnectionFactory();
+
                     RedisSerializer<?> defaultSerializer = ((RedisTemplate<?, ?>) bean).getDefaultSerializer();
                     RedisSerializer<?> keySerializer = ((RedisTemplate<?, ?>) bean).getKeySerializer();
                     RedisSerializer<?> valueSerializer = ((RedisTemplate<?, ?>) bean).getValueSerializer();
