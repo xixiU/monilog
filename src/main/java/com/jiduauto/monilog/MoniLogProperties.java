@@ -27,6 +27,11 @@ class MoniLogProperties {
      * 开启核心监控，提供统一日志参数收集与aop参数收集.
      */
     private boolean enable = true;
+
+    /**
+     * 调试模式
+     */
+    private boolean debug = false;
     /**
      * 解析feign调用结果的默认表达式，默认校验返回编码是否等于0或者200有一个匹配即认为调用成功,多个表达式直接逗号分割.
      * 注意，如果表达式前以"+"开头，则表示在原有默认表达式的基础上追加，否则会覆盖原默认表达式

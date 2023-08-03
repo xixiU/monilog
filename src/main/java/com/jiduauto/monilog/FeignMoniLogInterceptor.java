@@ -119,6 +119,7 @@ class FeignMoniLogInterceptor {
                     mlp.setMsgCode(errorInfo.getErrorCode());
                     mlp.setMsgInfo(errorInfo.getErrorMsg());
                 }
+                MoniLogUtil.log(mlp);
                 return response;
             }
             //包装响应
