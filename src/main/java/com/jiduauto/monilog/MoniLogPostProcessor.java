@@ -14,27 +14,56 @@ import org.apache.rocketmq.spring.core.RocketMQListener;
 import org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.core.Ordered;
 import org.springframework.core.PriorityOrdered;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
 
+import java.util.Map;
 import java.util.Set;
 
 @Slf4j
-public class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered {
+public class MoniLogPostProcessor implements BeanPostProcessor, BeanFactoryPostProcessor, PriorityOrdered {
     private static final String FEIGN_CLIENT = "feign.Client";
     private static final String XXL_JOB = "com.xxl.job.core.handler.IJobHandler";
     private static final String REDIS_CONNECTION = "org.springframework.data.redis.connection.RedisConnectionFactory";
     private static final String REDIS_TEMPLATE = "org.springframework.data.redis.core.RedisTemplate";
     private static final String MQ_ADMIN = "org.apache.rocketmq.client.MQAdmin";
     private static final String MQ_LISTENER_CONTAINER = "org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer";
+
+    private static final String REDIS_CONN_FACTORY = "org.springframework.data.redis.connection.RedisConnectionFactory";
+    private static final String REDISSON_CLIENT = "org.redisson.api.RedissonClient";
     private final MoniLogProperties moniLogProperties;
 
     public MoniLogPostProcessor(MoniLogProperties moniLogProperties) {
         this.moniLogProperties = moniLogProperties;
+    }
+
+    @Override
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+        //由于redis所依赖的RedisConnectionFactory和RedisTemplate以及StringRedisTemplate被javakit在RedisRegister中过早实例化，会导致BeanPostProcessor无法处理到它
+        //因此才在这里进行二次增强
+        Class<?> redisConnCls = getTargetCls(REDIS_CONN_FACTORY);
+        if (redisConnCls == null) {
+            return;
+        }
+        Map<String, RedisConnectionFactory> factoryMap = beanFactory.getBeansOfType(RedisConnectionFactory.class);
+        Map<String, RedisTemplate> templateMap = beanFactory.getBeansOfType(RedisTemplate.class);
+        //需要支持RedissonClient
+        if (factoryMap.isEmpty() && templateMap.isEmpty()) {
+            return;
+        }
+
+        for (Map.Entry<String, RedisTemplate> me : templateMap.entrySet()) {
+            String beanName = me.getKey();
+            RedisTemplate template = me.getValue();
+            RedisConnectionFactory factory = template.getConnectionFactory();
+            System.out.println("...RedisConnectionFactory..."+beanName);
+        }
     }
 
     @Override
@@ -111,11 +140,20 @@ public class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered 
     }
 
 
-    private boolean isTargetBean(@NotNull Object bean, String className) {
+    private static boolean isTargetBean(@NotNull Object bean, String className) {
         try {
-            return Class.forName(className).isAssignableFrom(bean.getClass());
+            Class<?> cls = getTargetCls(className);
+            return cls != null && cls.isAssignableFrom(bean.getClass());
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    private static Class<?> getTargetCls(String className) {
+        try {
+            return Class.forName(className);
+        } catch (Exception e) {
+            return null;
         }
     }
 
