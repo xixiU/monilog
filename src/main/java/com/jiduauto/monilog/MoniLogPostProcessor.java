@@ -14,9 +14,8 @@ import org.apache.rocketmq.spring.core.RocketMQListener;
 import org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
-import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.PropertyValues;
+import org.springframework.beans.factory.config.InstantiationAwareBeanPostProcessor;
 import org.springframework.core.Ordered;
 import org.springframework.core.PriorityOrdered;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -26,7 +25,7 @@ import org.springframework.data.redis.serializer.RedisSerializer;
 import java.util.Set;
 
 @Slf4j
-public class MoniLogPostProcessor implements BeanPostProcessor, BeanFactoryPostProcessor, PriorityOrdered {
+public class MoniLogPostProcessor implements InstantiationAwareBeanPostProcessor, PriorityOrdered {
     private static final String FEIGN_CLIENT = "feign.Client";
     private static final String XXL_JOB = "com.xxl.job.core.handler.IJobHandler";
     private static final String REDIS_CONNECTION = "org.springframework.data.redis.connection.RedisConnectionFactory";
@@ -44,18 +43,20 @@ public class MoniLogPostProcessor implements BeanPostProcessor, BeanFactoryPostP
     }
 
     @Override
-    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+    public PropertyValues postProcessProperties(PropertyValues pvs, Object bean, String beanName) throws BeansException {
         //由于redis所依赖的RedisConnectionFactory和RedisTemplate以及StringRedisTemplate被javakit在RedisRegister中过早实例化，会导致BeanPostProcessor无法处理到它
         //因此才在这里进行二次增强
+        PropertyValues superValues = InstantiationAwareBeanPostProcessor.super.postProcessProperties(pvs, bean, beanName);
         Class<?> redisConnCls = getTargetCls(REDIS_CONN_FACTORY);
         if (redisConnCls == null) {
-            return;
+            return superValues;
         }
-        String[] factoryBeanNamesForType = beanFactory.getBeanNamesForType(RedisConnectionFactory.class);
-        String[] templateMap = beanFactory.getBeanNamesForType(RedisTemplate.class);
-        //需要支持RedissonClient
+        if (bean instanceof RedisTemplate || bean instanceof RedisConnectionFactory) {
+            System.out.println("...RedisConnectionFactory...");
+        }
 
-        System.out.println("...RedisConnectionFactory...");
+        //需要支持RedissonClient
+        return superValues;
     }
 
     @Override
