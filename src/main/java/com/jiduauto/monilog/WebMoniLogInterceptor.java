@@ -97,7 +97,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
         try {
             dealRequestTags(isMultipart ? request : wrapperRequest, logParams, requestHeaderMap, requestBodyMap);
         } catch (Exception e) {
-            MoniLogUtil.innerDebug("dealRequestTags error: {}", e);
+            MoniLogUtil.innerDebug("dealRequestTags error", e);
         }
 
         try {
@@ -188,7 +188,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             try {
                 handlerExecutionChain = mapping.getHandler(request);
             } catch (Exception e) {
-                MoniLogUtil.innerDebug("getHandlerMethod error: {}", e);
+                MoniLogUtil.innerDebug("getHandlerMethod error", e);
                 continue;
             }
             if (handlerExecutionChain == null) {
