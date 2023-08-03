@@ -73,43 +73,44 @@ public class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered 
         } else if (checkBeanExist(bean, "org.apache.rocketmq.client.MQAdmin")
                 || checkBeanExist(bean, "org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer")) {
             log.info(">>>monilog recoketmq start...");
-        }
-        MoniLogProperties.RocketMqProperties rocketmqProperties = moniLogProperties.getRocketmq();
-        if (!rocketmqProperties.isEnable()) {
-            return bean;
-        }
-        boolean consumerEnable = rocketmqProperties.isConsumerEnable();
-        boolean producerEnable = rocketmqProperties.isProducerEnable();
-        //不使用rocketmq-starter时
-        if (checkBeanExist(bean, "org.apache.rocketmq.client.consumer.DefaultMQPushConsumer") && consumerEnable) {
-            DefaultMQPushConsumer consumer = (DefaultMQPushConsumer) bean;
-            Class<?> bizCls = consumer.getMessageListener().getClass();
-            MessageListener messageListener = consumer.getMessageListener();
-            String consumerGroup = consumer.getConsumerGroup();
-            if (messageListener instanceof MessageListenerConcurrently) {
-                consumer.setMessageListener(new RocketMqMoniLogInterceptor.EnhancedListenerConcurrently((MessageListenerConcurrently) messageListener, bizCls, consumerGroup));
-            } else if (messageListener instanceof MessageListenerOrderly) {
-                consumer.setMessageListener(new RocketMqMoniLogInterceptor.EnhancedListenerOrderly((MessageListenerOrderly) messageListener, bizCls, consumerGroup));
-            }
-            return bean;
-        } else if (checkBeanExist(bean, "org.apache.rocketmq.client.consumer.DefaultMQPullConsumer") && consumerEnable) {
-            MoniLogUtil.innerDebug("current rocketmq mode[pull] not support intercept");
-        } else if (checkBeanExist(bean, "org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer") && consumerEnable) {
-            //使用了rocketmq-starter
-            DefaultRocketMQListenerContainer container = (DefaultRocketMQListenerContainer) bean;
-            RocketMQListener<?> bizListener = container.getRocketMQListener();
-            DefaultMQPushConsumer consumer = container.getConsumer();
-            MessageListener originListener = consumer.getMessageListener();
-            if (checkBeanExist(originListener, "com.jiduauto.monilog.RocketMqMoniLogInterceptor.EnhancedListenerConcurrently") ||
-                    checkBeanExist(originListener, "com.jiduauto.monilog.RocketMqMoniLogInterceptor.EnhancedListenerOrderly")) {
+            MoniLogProperties.RocketMqProperties rocketmqProperties = moniLogProperties.getRocketmq();
+            if (!rocketmqProperties.isEnable()) {
                 return bean;
             }
-            container.setRocketMQListener(new RocketMqMoniLogInterceptor.EnhancedRocketMqListener<>(bizListener, bizListener.getClass(), consumer.getConsumerGroup()));
-        } else if (checkBeanExist(bean, "org.apache.rocketmq.client.producer.DefaultMQProducer") && producerEnable) {
-            DefaultMQProducer producer = (DefaultMQProducer) bean;
-            producer.getDefaultMQProducerImpl().registerSendMessageHook(new RocketMqMoniLogInterceptor.RocketMQProducerEnhanceProcessor());
-            return bean;
+            boolean consumerEnable = rocketmqProperties.isConsumerEnable();
+            boolean producerEnable = rocketmqProperties.isProducerEnable();
+            //不使用rocketmq-starter时
+            if (checkBeanExist(bean, "org.apache.rocketmq.client.consumer.DefaultMQPushConsumer") && consumerEnable) {
+                DefaultMQPushConsumer consumer = (DefaultMQPushConsumer) bean;
+                Class<?> bizCls = consumer.getMessageListener().getClass();
+                MessageListener messageListener = consumer.getMessageListener();
+                String consumerGroup = consumer.getConsumerGroup();
+                if (messageListener instanceof MessageListenerConcurrently) {
+                    consumer.setMessageListener(new RocketMqMoniLogInterceptor.EnhancedListenerConcurrently((MessageListenerConcurrently) messageListener, bizCls, consumerGroup));
+                } else if (messageListener instanceof MessageListenerOrderly) {
+                    consumer.setMessageListener(new RocketMqMoniLogInterceptor.EnhancedListenerOrderly((MessageListenerOrderly) messageListener, bizCls, consumerGroup));
+                }
+                return bean;
+            } else if (checkBeanExist(bean, "org.apache.rocketmq.client.consumer.DefaultMQPullConsumer") && consumerEnable) {
+                MoniLogUtil.innerDebug("current rocketmq mode[pull] not support intercept");
+            } else if (checkBeanExist(bean, "org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer") && consumerEnable) {
+                //使用了rocketmq-starter
+                DefaultRocketMQListenerContainer container = (DefaultRocketMQListenerContainer) bean;
+                RocketMQListener<?> bizListener = container.getRocketMQListener();
+                DefaultMQPushConsumer consumer = container.getConsumer();
+                MessageListener originListener = consumer.getMessageListener();
+                if (checkBeanExist(originListener, "com.jiduauto.monilog.RocketMqMoniLogInterceptor.EnhancedListenerConcurrently") ||
+                        checkBeanExist(originListener, "com.jiduauto.monilog.RocketMqMoniLogInterceptor.EnhancedListenerOrderly")) {
+                    return bean;
+                }
+                container.setRocketMQListener(new RocketMqMoniLogInterceptor.EnhancedRocketMqListener<>(bizListener, bizListener.getClass(), consumer.getConsumerGroup()));
+            } else if (checkBeanExist(bean, "org.apache.rocketmq.client.producer.DefaultMQProducer") && producerEnable) {
+                DefaultMQProducer producer = (DefaultMQProducer) bean;
+                producer.getDefaultMQProducerImpl().registerSendMessageHook(new RocketMqMoniLogInterceptor.RocketMQProducerEnhanceProcessor());
+                return bean;
+            }
         }
+
         return bean;
     }
 
