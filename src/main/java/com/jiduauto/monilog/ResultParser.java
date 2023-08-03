@@ -182,7 +182,7 @@ final class ResultParser {
                 return null;
             }
             method.setAccessible(true);
-            return method.invoke(obj, methodName, new Object[]{});
+            return method.invoke(obj);
         } catch (Throwable e) {
             MoniLogUtil.innerDebug("resultParser parseObjVal error, obj:{}, path:{}", JSON.toJSONString(obj), path, e);
             Throwable tx = ExceptionUtil.getRealException(e);
