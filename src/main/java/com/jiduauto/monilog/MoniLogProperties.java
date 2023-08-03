@@ -126,7 +126,6 @@ class MoniLogProperties implements InitializingBean {
             httpclient.detailLogLevel = defaultLevel;
         }
         feign.resetDefaultBoolExpr(globalDefaultBoolExpr);
-
     }
 
     @Getter
