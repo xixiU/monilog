@@ -43,7 +43,7 @@ class MoniLogUtil {
         if (logProperties != null && !logProperties.isDebug()) {
             return;
         }
-        log.warn("__monilog_warn__" + pattern, args);
+        log.warn("__monilog_warn__ " + pattern, args);
     }
 
     private static void doMonitor(MoniLogParams logParams) {
