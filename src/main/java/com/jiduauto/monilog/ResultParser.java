@@ -1,5 +1,6 @@
 package com.jiduauto.monilog;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONPath;
 import com.google.common.base.Preconditions;
 import lombok.extern.slf4j.Slf4j;
@@ -159,7 +160,7 @@ final class ResultParser {
             p.setExpect(expect);
             return p;
         } catch (Exception e) {
-            MoniLogUtil.innerDebug("resultParser parse error", e);
+            MoniLogUtil.innerDebug("resultParser parse error, obj:{}, path:{}, resultCls:{}", JSON.toJSONString(obj), jsonpath, resultCls, e);
             return null;
         }
     }
@@ -170,7 +171,7 @@ final class ResultParser {
             try {
                 return JSONPath.eval(obj, path);
             } catch (Throwable e) {
-                MoniLogUtil.innerDebug("resultParser evalVal error", e);
+                MoniLogUtil.innerDebug("resultParser evalVal error, obj:{}, path:{}", JSON.toJSONString(obj), path, e);
             }
             return null;
         }
@@ -181,9 +182,9 @@ final class ResultParser {
                 return null;
             }
             method.setAccessible(true);
-            return method.invoke(obj, methodName, new Object[]{});
+            return method.invoke(obj);
         } catch (Throwable e) {
-            MoniLogUtil.innerDebug("resultParser parseObjVal error", e);
+            MoniLogUtil.innerDebug("resultParser parseObjVal error, obj:{}, path:{}", JSON.toJSONString(obj), path, e);
             Throwable tx = ExceptionUtil.getRealException(e);
             if (tx instanceof NoSuchMethodException || (tx.getMessage() != null && tx.getMessage().contains("No such method"))) {
                 return null;
