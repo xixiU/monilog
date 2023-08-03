@@ -85,8 +85,7 @@ class MoniLogProperties implements InitializingBean {
     @Override
     public void afterPropertiesSet() throws Exception {
         if (StringUtils.isBlank(this.appName)) {
-            this.appName = SpringUtils.getApplicationName();
-            System.setProperty("monilog.appName", this.appName);
+            System.setProperty("monilog.appName", (this.appName = SpringUtils.getApplicationName()));
         }
         if (printer.detailLogLevel == null) {
             printer.detailLogLevel = LogOutputLevel.onException;

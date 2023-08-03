@@ -39,8 +39,9 @@ public class MoniLogPostProcessor implements BeanPostProcessor, BeanFactoryPostP
     private static final String REDISSON_CLIENT = "org.redisson.api.RedissonClient";
     private final MoniLogProperties moniLogProperties;
 
-    public MoniLogPostProcessor(MoniLogProperties moniLogProperties) {
+    public MoniLogPostProcessor(MoniLogProperties moniLogProperties, SpringUtils springUtils) {
         this.moniLogProperties = moniLogProperties;
+        log.info(">>>MoniLogPostProcessor initializing...");
     }
 
     @Override
@@ -62,7 +63,7 @@ public class MoniLogPostProcessor implements BeanPostProcessor, BeanFactoryPostP
             String beanName = me.getKey();
             RedisTemplate template = me.getValue();
             RedisConnectionFactory factory = template.getConnectionFactory();
-            System.out.println("...RedisConnectionFactory..."+beanName);
+            System.out.println("...RedisConnectionFactory..." + beanName);
         }
     }
 
