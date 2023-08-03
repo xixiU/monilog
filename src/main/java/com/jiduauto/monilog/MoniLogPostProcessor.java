@@ -53,8 +53,8 @@ public class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered 
             }
         } else if (isTargetBean(bean, REDIS_CONNECTION) || isTargetBean(bean, REDIS_TEMPLATE)) {
             if (isComponentEnable("redis", moniLogProperties.getRedis().isEnable())) {
+                log.info(">>>monilog redis start...");
                 if (bean instanceof RedisConnectionFactory) {
-                    log.info(">>>monilog redis start...");
                     return RedisMoniLogInterceptor.getProxyBean(bean);
                 } else {
                     RedisSerializer<?> defaultSerializer = ((RedisTemplate<?, ?>) bean).getDefaultSerializer();
