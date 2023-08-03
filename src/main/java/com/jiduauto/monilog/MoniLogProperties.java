@@ -4,10 +4,10 @@ import com.google.common.collect.Sets;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import javax.annotation.PostConstruct;
 import java.util.Set;
 
 /**
@@ -18,7 +18,7 @@ import java.util.Set;
 @ConditionalOnProperty(prefix = "monilog", name = "enable", matchIfMissing = true)
 @Getter
 @Setter
-class MoniLogProperties {
+class MoniLogProperties implements InitializingBean {
     /**
      * 服务名，默认取值：${spring.application.name}
      */
@@ -82,10 +82,11 @@ class MoniLogProperties {
      */
     private HttpClientProperties httpclient = new HttpClientProperties();
 
-    @PostConstruct
-    private void init() {
+    @Override
+    public void afterPropertiesSet() throws Exception {
         if (StringUtils.isBlank(this.appName)) {
             this.appName = SpringUtils.getApplicationName();
+            System.setProperty("monilog.appName", this.appName);
         }
         boolean isDevOrTest = SpringUtils.isTargetEnv("dev", "test", "local");
         if (printer.printDetailLog == null) {

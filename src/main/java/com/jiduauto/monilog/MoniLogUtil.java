@@ -66,13 +66,14 @@ class MoniLogUtil {
             addMonitor(name, allTags, logParams.getCost());
         }
     }
-    private static void addMonitor(String namePrefix , String[] tags, long cost){
-        try{
+
+    private static void addMonitor(String namePrefix, String[] tags, long cost) {
+        try {
             // 打record
             MetricMonitor.record(namePrefix + MonitorType.RECORD.getMark(), tags);
             // 打耗时
             MetricMonitor.eventDruation(namePrefix + MonitorType.TIMER.getMark(), tags).record(cost, TimeUnit.MILLISECONDS);
-        }catch (Exception e){
+        } catch (Exception e) {
             MoniLogUtil.log("addMonitor error name:{}, tag:{}, msg:{}", namePrefix, JSON.toJSONString(tags), e.getMessage());
         }
 
@@ -125,7 +126,7 @@ class MoniLogUtil {
             return;
         }
         MoniLogProperties.PrinterProperties printerCfg = properties.getPrinter();
-        if (!printerCfg.getPrintDetailLog()) {
+        if (!Boolean.TRUE.equals(printerCfg.getPrintDetailLog())) {
             return;
         }
         LogPoint logPoint = logParams.getLogPoint();
@@ -144,7 +145,7 @@ class MoniLogUtil {
         if (StringUtil.checkPathMatch(infoExcludeActions, logParams.getAction())) {
             return;
         }
-        boolean doPrinter = true;
+        Boolean doPrinter = true;
         switch (logPoint) {
             case http_server:
                 doPrinter = properties.getWeb().getPrintWebServerDetailLog();
@@ -183,7 +184,7 @@ class MoniLogUtil {
             default:
                 break;
         }
-        if (doPrinter) {
+        if (doPrinter != null && doPrinter) {
             printer.logDetail(logParams);
         }
     }
