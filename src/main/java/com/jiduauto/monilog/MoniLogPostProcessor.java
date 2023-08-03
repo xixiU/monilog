@@ -62,6 +62,10 @@ public class MoniLogPostProcessor implements InstantiationAwareBeanPostProcessor
         if (!moniLogProperties.isEnable()) {
             return bean;
         }
+        if (isTargetBean(bean, "com.jiduauto.javakit.redis.RedisRegister")) {
+            System.out.println("这里可以拿到redis链接");
+            return bean;
+        }
         if (isTargetBean(bean, FEIGN_CLIENT)) {
             if (isComponentEnable("feign", moniLogProperties.getFeign().isEnable())) {
                 log.info(">>>monilog feign start...");
