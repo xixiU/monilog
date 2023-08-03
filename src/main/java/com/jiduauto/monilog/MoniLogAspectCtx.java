@@ -44,18 +44,17 @@ class MoniLogAspectCtx {
      */
     private ParsedResult parsedResult;
 
-    public MoniLogAspectCtx(ProceedingJoinPoint pjp, Object[] args) {
-        Method method = ((MethodSignature) pjp.getSignature()).getMethod();
+    public MoniLogAspectCtx(MoniLogAop.InvocationProxy proxy) {
+        this.method = proxy.getMethod();
         Preconditions.checkNotNull(method, "aspect方法为空");
-        this.method = method;
-        this.args = args;
+        this.args = proxy.getArgs();
         //找到指定方法的所属的接口，如果找不到接口，则返回方法的所属类
         this.methodOwnedClass = getMethodCls(method);
         Method targetMethod = null;
         boolean isAbstract = Modifier.isAbstract(method.getModifiers());
         if (isAbstract) {
             try {
-                targetMethod = pjp.getTarget().getClass().getMethod(method.getName(), method.getParameterTypes());
+                targetMethod = proxy.getTarget().getClass().getMethod(method.getName(), method.getParameterTypes());
             } catch (NoSuchMethodException ignore) {
             }
         }

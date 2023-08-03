@@ -27,20 +27,7 @@ import java.util.*;
  */
 @Slf4j
 class FeignMoniLogInterceptor {
-//    @Override
-//    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-//        if (bean instanceof Client ) {
-//            return getProxyBean(bean);
-//        }
-//        return BeanPostProcessor.super.postProcessBeforeInitialization(bean, beanName);
-//    }
-//
-//    @Override
-//    public int getOrder() {
-//        return Ordered.HIGHEST_PRECEDENCE;
-//    }
-
-    public static Client getProxyBean(Object bean) {
+    public static Client getProxyBean(Client bean) {
         return (Client) ProxyUtils.getProxy(bean, new FeignExecuteInterceptor());
     }
 

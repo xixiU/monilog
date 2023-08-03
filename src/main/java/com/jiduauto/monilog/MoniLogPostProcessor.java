@@ -1,5 +1,6 @@
 package com.jiduauto.monilog;
 
+import com.xxl.job.core.handler.IJobHandler;
 import feign.Client;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.BeansException;
@@ -22,11 +23,15 @@ public class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered 
     public MoniLogPostProcessor(MoniLogProperties moniLogProperties) {
         this.moniLogProperties = moniLogProperties;
     }
+
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-        // feign的
         if (bean instanceof Client && needComponent("feign")) {
-            return FeignMoniLogInterceptor.getProxyBean(bean);
+            // feign的
+            return FeignMoniLogInterceptor.getProxyBean((Client) bean);
+        } else if (bean instanceof IJobHandler && needComponent("xxljob")) {
+            //xxljob
+            return XxlJobMoniLogInterceptor.getProxyBean((IJobHandler) bean);
         }
         return BeanPostProcessor.super.postProcessAfterInitialization(bean, beanName);
 
@@ -34,10 +39,10 @@ public class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered 
 
     @Override
     public int getOrder() {
-        return  Ordered.HIGHEST_PRECEDENCE;
+        return Ordered.HIGHEST_PRECEDENCE;
     }
 
-    private boolean needComponent(String component){
+    private boolean needComponent(String component) {
         if (moniLogProperties == null) {
             // todo
             return false;
