@@ -70,7 +70,7 @@ class MoniLogUtil {
             // 打耗时
             MetricMonitor.eventDruation(namePrefix + MonitorType.TIMER.getMark(), tags).record(cost, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
-            MoniLogUtil.innerDebug("addMonitor error name:{}, tag:{}, msg:{}", e, namePrefix, JSON.toJSONString(tags));
+            MoniLogUtil.innerDebug("addMonitor error name:{}, tag:{}", namePrefix, JSON.toJSONString(tags), e);
         }
 
     }

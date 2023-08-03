@@ -278,7 +278,7 @@ class GrpcMoniLogInterceptor {
         try {
             return JsonFormat.printer().omittingInsignificantWhitespace().print(message);
         } catch (Exception e) {
-            MoniLogUtil.innerDebug("rpc message序列化成json错误:{}", e);
+            MoniLogUtil.innerDebug("rpc message序列化成json错误", e);
             return message.toString();
         }
     }
@@ -292,7 +292,7 @@ class GrpcMoniLogInterceptor {
                 return json;
             }
         } catch (Exception e) {
-            MoniLogUtil.innerDebug("rpc message序列化成json错误: {}", e);
+            MoniLogUtil.innerDebug("rpc message序列化成json错误", e);
             return message.toString();
         }
     }

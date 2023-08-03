@@ -154,7 +154,7 @@ class FeignMoniLogInterceptor {
                 }
                 bufferedResp.close();
             } catch (Exception e) {
-                MoniLogUtil.innerDebug("doFeignInvocationRecord error: {}", e);
+                MoniLogUtil.innerDebug("doFeignInvocationRecord error", e);
                 ret = response;
             } finally {
                 MoniLogUtil.log(mlp);

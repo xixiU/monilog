@@ -203,7 +203,7 @@ class RocketMqMoniLogInterceptor {
                 logParams.setTags(TagBuilder.of("topic", message.getTopic(), "group", context.getProducerGroup(), "tag", message.getTags()).toArray());
                 MoniLogUtil.log(logParams);
             } catch (Exception e) {
-                MoniLogUtil.innerDebug("sendMessageAfter error: {}", e);
+                MoniLogUtil.innerDebug("sendMessageAfter error", e);
             }
 
         }

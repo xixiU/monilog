@@ -81,7 +81,7 @@ class MybatisMoniLogInterceptor {
                     }
                     throw e;
                 } else {//组件异常
-                    MoniLogUtil.innerDebug( "mybatisInterceptor process error:{}", e);
+                    MoniLogUtil.innerDebug( "mybatisInterceptor process error", e);
                     return obj;
                 }
             } finally {

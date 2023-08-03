@@ -40,7 +40,7 @@ class RequestWrapper extends HttpServletRequestWrapper {
                 sb.append(line);
             }
         } catch (IOException e) {
-            MoniLogUtil.innerDebug("RequestWrapper.getBodyString error:{}", e);
+            MoniLogUtil.innerDebug("RequestWrapper.getBodyString error", e);
         }
         return sb.toString();
     }
@@ -58,7 +58,7 @@ class RequestWrapper extends HttpServletRequestWrapper {
             }
             byteArrayOutputStream.flush();
         } catch (IOException e) {
-            MoniLogUtil.innerDebug("RequestWrapper.cloneInputStream error:{}", e);
+            MoniLogUtil.innerDebug("RequestWrapper.cloneInputStream error", e);
         }
         return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
     }
