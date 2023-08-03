@@ -91,15 +91,7 @@ class MoniLogUtil {
         if (exceptionMsg.length() > maxLen) {
             exceptionMsg = exceptionMsg.substring(0, maxLen) + "...";
         }
-        return TagBuilder.of("result", success ? "success" : "error")
-                .add("application", SpringUtils.getApplicationName())
-                .add("logPoint", logParams.getLogPoint().name())
-                .add("env", SpringUtils.getActiveProfile())
-                .add("service", logParams.getService())
-                .add("action", logParams.getAction())
-                .add("msgCode", logParams.getMsgCode())
-                .add("cost", String.valueOf(logParams.getCost()))
-                .add("exception", exceptionMsg);
+        return TagBuilder.of("result", success ? "success" : "error").add("application", SpringUtils.getApplicationName()).add("logPoint", logParams.getLogPoint().name()).add("env", SpringUtils.getActiveProfile()).add("service", logParams.getService()).add("action", logParams.getAction()).add("msgCode", logParams.getMsgCode()).add("cost", String.valueOf(logParams.getCost())).add("exception", exceptionMsg);
     }
 
     /**
@@ -127,9 +119,7 @@ class MoniLogUtil {
             return;
         }
         MoniLogProperties.PrinterProperties printerCfg = properties.getPrinter();
-        if (!Boolean.TRUE.equals(printerCfg.getPrintDetailLog())) {
-            return;
-        }
+        LogOutputLevel detailLogLevel = printerCfg.getDetailLogLevel();
         LogPoint logPoint = logParams.getLogPoint();
         if (logPoint == null) {
             return;
@@ -146,46 +136,65 @@ class MoniLogUtil {
         if (StringUtil.checkPathMatch(infoExcludeActions, logParams.getAction())) {
             return;
         }
-        Boolean doPrinter = true;
+
         switch (logPoint) {
             case http_server:
-                doPrinter = properties.getWeb().getPrintWebServerDetailLog();
+                detailLogLevel = properties.getWeb().getDetailLogLevel();
                 break;
             case http_client:
-                doPrinter = properties.getHttpclient().getPrintHttpclientDetailLog();
-                ;
+                detailLogLevel = properties.getHttpclient().getDetailLogLevel();
+
                 break;
             case feign_server:
-                doPrinter = properties.getFeign().getPrintFeignServerDetailLog();
+                detailLogLevel = properties.getFeign().getServerDetailLogLevel();
                 break;
             case feign_client:
-                doPrinter = properties.getFeign().getPrintFeignClientDetailLog();
+                detailLogLevel = properties.getFeign().getClientDetailLogLevel();
                 break;
             case grpc_client:
-                doPrinter = properties.getGrpc().getPrintGrpcClientDetailLog();
+                detailLogLevel = properties.getGrpc().getClientDetailLogLevel();
                 break;
             case grpc_server:
-                doPrinter = properties.getGrpc().getPrintGrpcServerDetailLog();
+                detailLogLevel = properties.getGrpc().getServerDetailLogLevel();
                 break;
             case rocketmq_consumer:
-                doPrinter = properties.getRocketmq().getPrintRocketmqConsumerDetailLog();
+                detailLogLevel = properties.getRocketmq().getConsumerDetailLogLevel();
                 break;
             case rocketmq_producer:
-                doPrinter = properties.getRocketmq().getPrintRocketmqProducerDetailLog();
+                detailLogLevel = properties.getRocketmq().getProducerDetailLogLevel();
                 break;
             case mybatis:
-                doPrinter = properties.getMybatis().getPrintMybatisDetailLog();
+                detailLogLevel = properties.getMybatis().getDetailLogLevel();
                 break;
             case xxljob:
-                doPrinter = properties.getXxljob().getPrintXxljobDetailLog();
+                detailLogLevel = properties.getXxljob().getDetailLogLevel();
                 break;
             case redis:
-                doPrinter = properties.getRedis().getPrintRedisDetailLog();
+                detailLogLevel = properties.getRedis().getDetailLogLevel();
             case unknown:
             default:
                 break;
         }
-        if (doPrinter != null && doPrinter) {
+        if (detailLogLevel == null) {
+            detailLogLevel = LogOutputLevel.onException;
+        }
+        boolean doPrinter = false;
+        switch (detailLogLevel) {
+            case always:
+                doPrinter = true;
+                break;
+            case onFail:
+                doPrinter = !logParams.isSuccess() || logParams.getException() != null;
+                break;
+            case onException:
+                doPrinter = logParams.getException() != null;
+                break;
+            case none:
+            default:
+                break;
+        }
+
+        if (doPrinter) {
             printer.logDetail(logParams);
         }
     }

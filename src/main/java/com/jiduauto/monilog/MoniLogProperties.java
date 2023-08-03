@@ -88,42 +88,42 @@ class MoniLogProperties implements InitializingBean {
             this.appName = SpringUtils.getApplicationName();
             System.setProperty("monilog.appName", this.appName);
         }
-        boolean isDevOrTest = SpringUtils.isTargetEnv("dev", "test", "local");
-        if (printer.printDetailLog == null) {
-            printer.printDetailLog = isDevOrTest;
+        if (printer.detailLogLevel == null) {
+            printer.detailLogLevel = LogOutputLevel.onException;
         }
-        if (web.printWebServerDetailLog == null) {
-            web.printWebServerDetailLog = isDevOrTest;
+        LogOutputLevel defaultLevel = printer.detailLogLevel;
+        if (web.detailLogLevel == null) {
+            web.detailLogLevel = defaultLevel;
         }
-        if (grpc.printGrpcClientDetailLog == null) {
-            grpc.printGrpcClientDetailLog = isDevOrTest;
+        if (grpc.clientDetailLogLevel == null) {
+            grpc.clientDetailLogLevel = defaultLevel;
         }
-        if (grpc.printGrpcServerDetailLog == null) {
-            grpc.printGrpcServerDetailLog = isDevOrTest;
+        if (grpc.serverDetailLogLevel == null) {
+            grpc.serverDetailLogLevel = defaultLevel;
         }
-        if (xxljob.printXxljobDetailLog == null) {
-            xxljob.printXxljobDetailLog = isDevOrTest;
+        if (xxljob.detailLogLevel == null) {
+            xxljob.detailLogLevel = defaultLevel;
         }
-        if (feign.printFeignClientDetailLog == null) {
-            feign.printFeignClientDetailLog = isDevOrTest;
+        if (feign.clientDetailLogLevel == null) {
+            feign.clientDetailLogLevel = defaultLevel;
         }
-        if (feign.printFeignServerDetailLog == null) {
-            feign.printFeignServerDetailLog = isDevOrTest;
+        if (feign.serverDetailLogLevel == null) {
+            feign.serverDetailLogLevel = defaultLevel;
         }
-        if (mybatis.printMybatisDetailLog == null) {
-            mybatis.printMybatisDetailLog = isDevOrTest;
+        if (mybatis.detailLogLevel == null) {
+            mybatis.detailLogLevel = defaultLevel;
         }
-        if (rocketmq.printRocketmqConsumerDetailLog == null) {
-            rocketmq.printRocketmqConsumerDetailLog = isDevOrTest;
+        if (rocketmq.consumerDetailLogLevel == null) {
+            rocketmq.consumerDetailLogLevel = defaultLevel;
         }
-        if (rocketmq.printRocketmqProducerDetailLog == null) {
-            rocketmq.printRocketmqProducerDetailLog = isDevOrTest;
+        if (rocketmq.producerDetailLogLevel == null) {
+            rocketmq.producerDetailLogLevel = defaultLevel;
         }
-        if (redis.printRedisDetailLog == null) {
-            redis.printRedisDetailLog = isDevOrTest;
+        if (redis.detailLogLevel == null) {
+            redis.detailLogLevel = defaultLevel;
         }
-        if (httpclient.printHttpclientDetailLog == null) {
-            httpclient.printHttpclientDetailLog = isDevOrTest;
+        if (httpclient.detailLogLevel == null) {
+            httpclient.detailLogLevel = defaultLevel;
         }
         feign.resetDefaultBoolExpr(globalDefaultBoolExpr);
     }
@@ -132,9 +132,9 @@ class MoniLogProperties implements InitializingBean {
     @Setter
     static class PrinterProperties {
         /**
-         * 是否输出各个流量出入口的详情日志(总开关)，dev/test环境下默认true，其它环境默认false
+         * 流量出入口的的详情日志输出级别总开关，默认仅异常时输出
          */
-        private Boolean printDetailLog;
+        private LogOutputLevel detailLogLevel = LogOutputLevel.onException;
         /**
          * 默认详情日志打印最长的长度，目前仅限制了收集参数中的input与output的长度
          */
@@ -161,9 +161,9 @@ class MoniLogProperties implements InitializingBean {
          */
         private boolean enable = true;
         /**
-         * 是否输出各个http(非rpc类)入口流量的详情日志, dev/test环境下默认true，其它环境默认false
+         * http(非rpc类)入口流量的详情日志输出级别，默认仅异常时输出
          */
-        private Boolean printWebServerDetailLog;
+        private LogOutputLevel detailLogLevel = LogOutputLevel.onException;
         /**
          * 不监控的url清单，支持模糊路径如a/*， 默认值：/actuator/health, /misc/ping, /actuator/prometheus
          */
@@ -186,13 +186,13 @@ class MoniLogProperties implements InitializingBean {
          */
         private boolean clientEnable = true;
         /**
-         * 是否输出各个grpc入口流量的详情日志，dev/test环境下默认true，其它环境默认false
+         * grpc入口流量的详情日志输出级别，默认仅异常时输出
          */
-        private Boolean printGrpcServerDetailLog;
+        private LogOutputLevel serverDetailLogLevel = LogOutputLevel.onException;
         /**
-         * 是否输出各个grpc出口流量的详情日志，dev/test环境下默认true，其它环境默认false
+         * grpc出口流量的详情日志输出级别，默认仅异常时输出
          */
-        private Boolean printGrpcClientDetailLog;
+        private LogOutputLevel clientDetailLogLevel = LogOutputLevel.onException;
     }
 
     @Getter
@@ -203,9 +203,9 @@ class MoniLogProperties implements InitializingBean {
          */
         private boolean enable = true;
         /**
-         * 是否输出各个xxljob流量的详情日志，dev/test环境下默认true，其它环境默认false
+         * xxljob的详情日志输出级别，默认仅异常时输出
          */
-        private Boolean printXxljobDetailLog;
+        private LogOutputLevel detailLogLevel = LogOutputLevel.onException;
     }
 
     @Getter
@@ -216,13 +216,13 @@ class MoniLogProperties implements InitializingBean {
          */
         private boolean enable = true;
         /**
-         * 是否输出各个feign入口流量的详情日志，dev/test环境下默认true，其它环境默认false
+         * feign入口流量的详情日志输出级别，默认仅异常时输出
          */
-        private Boolean printFeignServerDetailLog;
+        private LogOutputLevel serverDetailLogLevel = LogOutputLevel.onException;
         /**
-         * 是否输出各个feign出口流量的详情日志，dev/test环境下默认true，其它环境默认false
+         * feign出口流量的详情日志输出级别，默认仅异常时输出
          */
-        private Boolean printFeignClientDetailLog;
+        private LogOutputLevel clientDetailLogLevel = LogOutputLevel.onException;
         /**
          * 解析feign调用结果的默认表达式，默认校验返回编码是否等于0或者200有一个匹配即认为调用成功,多个表达式直接逗号分割.
          * 注意，如果表达式前以"+"开头，则表示在原有默认表达式的基础上追加，否则会覆盖原默认表达式
@@ -247,9 +247,9 @@ class MoniLogProperties implements InitializingBean {
          */
         private boolean enable = true;
         /**
-         * 是否输mybatis的详情日志，dev/test环境下默认true，其它环境默认false
+         * mybatis的详情日志输出级别，默认仅异常时输出
          */
-        private Boolean printMybatisDetailLog;
+        private LogOutputLevel detailLogLevel = LogOutputLevel.onException;
         /**
          * mybatis慢sql阈值，单位毫秒.
          */
@@ -272,13 +272,13 @@ class MoniLogProperties implements InitializingBean {
          */
         private boolean producerEnable = true;
         /**
-         * 是否输出各个rocketmq消费者流量的详情日志，dev/test环境下默认true，其它环境默认false
+         * rocketmq消费者的详情日志输出级别，默认仅异常时输出
          */
-        private Boolean printRocketmqConsumerDetailLog;
+        private LogOutputLevel consumerDetailLogLevel = LogOutputLevel.onException;
         /**
-         * 是否输出各个rocketmq发送者流量的详情日志，dev/test环境下默认true，其它环境默认false
+         * rocketmq发送者的详情日志输出级别，默认仅异常时输出
          */
-        private Boolean printRocketmqProducerDetailLog;
+        private LogOutputLevel producerDetailLogLevel = LogOutputLevel.onException;
     }
 
     @Getter
@@ -289,9 +289,9 @@ class MoniLogProperties implements InitializingBean {
          */
         private boolean enable = true;
         /**
-         * 是否输redis的详情日志，dev/test环境下默认true，其它环境默认false
+         * redis的详情日志输出级别，默认仅异常时输出
          */
-        private Boolean printRedisDetailLog;
+        private LogOutputLevel detailLogLevel = LogOutputLevel.onException;
     }
 
     @Getter
@@ -302,9 +302,9 @@ class MoniLogProperties implements InitializingBean {
          */
         private boolean enable = true;
         /**
-         * 是否输出httpClient的详情日志，dev/test环境下默认true，其它环境默认false
+         * httpClient的详情日志输出级别，默认仅异常时输出
          */
-        private Boolean printHttpclientDetailLog;
+        private LogOutputLevel detailLogLevel = LogOutputLevel.onException;
 
         /**
          * 不监控的url清单，支持模糊路径如a/*
