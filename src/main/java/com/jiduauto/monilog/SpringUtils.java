@@ -77,7 +77,7 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
         try {
             return getBeanFactory().getBean(clazz);
         } catch (Exception e) {
-            MoniLogUtil.debugError("SpringUtils.getBean failed:{}", e);
+            MoniLogUtil.innerDebug("SpringUtils.getBean failed:{}", e);
             return null;
         }
     }

@@ -81,7 +81,7 @@ class MybatisMoniLogInterceptor {
                     }
                     throw e;
                 } else {//组件异常
-                    MoniLogUtil.debugError( "mybatisInterceptor process error:{}", e);
+                    MoniLogUtil.innerDebug( "mybatisInterceptor process error:{}", e);
                     return obj;
                 }
             } finally {
@@ -115,7 +115,7 @@ class MybatisMoniLogInterceptor {
                     sql = boundSql.getSql().replaceAll("--[^\n|\\\\n].+(\n|\\\\n)","").replaceAll("(\\\\n)+|\n+|\r+|\\s+"," ");
                 }
             } catch (Throwable e) {
-                MoniLogUtil.debugError( "parseMybatisExecuteInfo error:{}", e);
+                MoniLogUtil.innerDebug( "parseMybatisExecuteInfo error:{}", e);
             }
             MybatisInvocationInfo info = new MybatisInvocationInfo();
             info.serviceCls = serviceCls;

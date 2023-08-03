@@ -105,7 +105,7 @@ class RocketMqMoniLogInterceptor {
             long start = System.currentTimeMillis();
             RocketMQMessageListener anno = cls.getAnnotation(RocketMQMessageListener.class);
             if (anno == null) {
-                MoniLogUtil.warn("RocketMQMessageListener is missing");
+                MoniLogUtil.innerDebug("RocketMQMessageListener is missing");
                 delegate.onMessage(message);
                 return;
             }
@@ -203,7 +203,7 @@ class RocketMqMoniLogInterceptor {
                 logParams.setTags(TagBuilder.of("topic", message.getTopic(), "group", context.getProducerGroup(), "tag", message.getTags()).toArray());
                 MoniLogUtil.log(logParams);
             } catch (Exception e) {
-                MoniLogUtil.debugError("sendMessageAfter error: {}", e);
+                MoniLogUtil.innerDebug("sendMessageAfter error: {}", e);
             }
 
         }

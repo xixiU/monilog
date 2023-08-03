@@ -22,33 +22,29 @@ class MoniLogUtil {
         try {
             doMonitor(logParams);
         } catch (Exception e) {
-            debugError("doMonitor error:{}", e);
+            innerDebug("doMonitor error", e);
         }
         try {
             printDigestLog(logParams);
         } catch (Exception e) {
-            debugError("printDigestLog error:{}", e);
+            innerDebug("printDigestLog error", e);
         }
         try {
             printDetailLog(logParams);
         } catch (Exception e) {
-            debugError("printDetailLog error:{}",  e);
+            innerDebug("printDetailLog error", e);
         }
-    }
-
-    public static void warn(String pattern) {
-        log.warn("__monilog_warn__" + pattern);
     }
 
     /**
      * 打印框架日志
      */
-    public static void debugError(String pattern, Throwable e, Object... arg) {
-
-        if (!getLogProperties().isDebug()) {
+    public static void innerDebug(String pattern, Object... args) {
+        MoniLogProperties logProperties = getLogProperties();
+        if (logProperties != null && !logProperties.isDebug()) {
             return;
         }
-        log.warn("__monilog_warn__" + pattern, arg, e);
+        log.warn("__monilog_warn__" + pattern, args);
     }
 
     private static void doMonitor(MoniLogParams logParams) {
@@ -75,7 +71,7 @@ class MoniLogUtil {
             // 打耗时
             MetricMonitor.eventDruation(namePrefix + MonitorType.TIMER.getMark(), tags).record(cost, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
-            MoniLogUtil.debugError("addMonitor error name:{}, tag:{}, msg:{}", e, namePrefix, JSON.toJSONString(tags));
+            MoniLogUtil.innerDebug("addMonitor error name:{}, tag:{}, msg:{}", e, namePrefix, JSON.toJSONString(tags));
         }
 
     }
@@ -207,7 +203,7 @@ class MoniLogUtil {
         try {
             printer = SpringUtils.getBean(MoniLogPrinter.class);
         } catch (Exception e) {
-            MoniLogUtil.debugError(":no MoniLogPrinter instance found", e);
+            MoniLogUtil.innerDebug(":no MoniLogPrinter instance found", e);
         }
         return (logPrinter = printer);
     }
@@ -220,7 +216,7 @@ class MoniLogUtil {
         try {
             properties = SpringUtils.getBean(MoniLogProperties.class);
         } catch (Exception e) {
-            MoniLogUtil.debugError(":no MoniLogProperties instance found", e);
+            MoniLogUtil.innerDebug(":no MoniLogProperties instance found", e);
         }
         return (logProperties = properties);
     }
