@@ -9,30 +9,8 @@ import java.lang.reflect.Method;
 
 
 @Slf4j
-class RedisMoniLogInterceptor  {
+class RedisMoniLogInterceptor {
     //参考：https://github.com/youbl/study/blob/master/demo-log-redis/src/main/java/beinet/cn/logdemoredis/redis/RedisFactoryBean.java
-//    @Override
-//    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-//        if (bean instanceof RedisConnectionFactory || beanName.equals("redisConnectionFactory")) {
-//            return getProxyBean(bean);
-//        } else if (bean instanceof RedisTemplate) {
-//            RedisSerializer<?> defaultSerializer = ((RedisTemplate<?, ?>) bean).getDefaultSerializer();
-//            RedisSerializer<?> keySerializer = ((RedisTemplate<?, ?>) bean).getKeySerializer();
-//            RedisSerializer<?> valueSerializer = ((RedisTemplate<?, ?>) bean).getValueSerializer();
-//            RedisSerializer<String> stringSerializer = ((RedisTemplate<?, ?>) bean).getStringSerializer();
-//            RedisSerializer<?> hashKeySerializer = ((RedisTemplate<?, ?>) bean).getHashKeySerializer();
-//            RedisSerializer<?> hashValueSerializer = ((RedisTemplate<?, ?>) bean).getHashValueSerializer();
-//            //...
-//            System.out.println("...redistemplate...");
-//        }
-//        return BeanPostProcessor.super.postProcessBeforeInitialization(bean, beanName);
-//    }
-
-//    @Override
-//    public int getOrder() {
-//        return Ordered.HIGHEST_PRECEDENCE;
-//    }
-
     protected static RedisConnectionFactory getProxyBean(Object bean) {
         return (RedisConnectionFactory) ProxyUtils.getProxy(bean, invocation -> {
             Object ret = invocation.proceed();
@@ -85,7 +63,6 @@ class RedisMoniLogInterceptor  {
     }
 
     private static Object[] deserialize(Object... args) {
-
         return args;
     }
 }

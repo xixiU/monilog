@@ -6,12 +6,10 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.rocketmq.client.MQAdmin;
 import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
-import org.apache.rocketmq.client.consumer.MQConsumer;
 import org.apache.rocketmq.client.consumer.listener.MessageListener;
 import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
 import org.apache.rocketmq.client.consumer.listener.MessageListenerOrderly;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
-import org.apache.rocketmq.client.producer.MQProducer;
 import org.apache.rocketmq.spring.core.RocketMQListener;
 import org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer;
 import org.jetbrains.annotations.NotNull;
@@ -39,15 +37,15 @@ public class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered 
             return bean;
         }
         if (bean instanceof Client) {
-            if (needComponent("feign", moniLogProperties.getFeign().isEnable())) {
+            if (isComponentEnable("feign", moniLogProperties.getFeign().isEnable())) {
                 return FeignMoniLogInterceptor.getProxyBean((Client) bean);
             }
         } else if (bean instanceof IJobHandler) {
-            if (needComponent("xxljob", moniLogProperties.getXxljob().isEnable())) {
+            if (isComponentEnable("xxljob", moniLogProperties.getXxljob().isEnable())) {
                 return XxlJobMoniLogInterceptor.getProxyBean((IJobHandler) bean);
             }
         } else if (bean instanceof RedisConnectionFactory || bean instanceof RedisTemplate) {
-            if (needComponent("redis", moniLogProperties.getRedis().isEnable())) {
+            if (isComponentEnable("redis", moniLogProperties.getRedis().isEnable())) {
                 if (bean instanceof RedisConnectionFactory) {
                     return RedisMoniLogInterceptor.getProxyBean(bean);
                 } else {
@@ -109,7 +107,7 @@ public class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered 
 
 
     // 校验是否排除
-    private boolean needComponent(String component, Boolean componentEnable) {
+    private boolean isComponentEnable(String component, Boolean componentEnable) {
         if (!Boolean.TRUE.equals(componentEnable)) {
             return false;
         }

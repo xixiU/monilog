@@ -55,15 +55,6 @@ class MoniLogAutoConfiguration {
         return new DefaultMoniLogPrinter();
     }
 
-//    @ConditionalOnProperty(prefix = "monilog.feign", name = "enable", havingValue = "true", matchIfMissing = true)
-//    @ConditionalOnExpression("('${monilog.component.includes:*}'.equals('*') or '${monilog.component.includes}'.contains('feign')) and !('${monilog.component.excludes:}'.equals('*') or '${monilog.component.excludes:}'.contains('feign'))")
-//    @ConditionalOnClass(name = {"feign.Feign"})
-//    @Bean
-//    FeignMonitorInterceptor feignMonitorInterceptor() {
-//        log.info("!!! feign monilog start ...");
-//        return new FeignMonitorInterceptor();
-//    }
-
     @ConditionalOnProperty(prefix = "monilog.grpc", name = "enable", havingValue = "true", matchIfMissing = true)
     @ConditionalOnExpression("('${monilog.component.includes:*}'.equals('*') or '${monilog.component.includes}'.contains('grpc')) and !('${monilog.component.excludes:}'.equals('*') or '${monilog.component.excludes:}'.contains('grpc'))")
     @ConditionalOnClass(name = {"io.grpc.stub.AbstractStub", "io.grpc.stub.ServerCalls"})
@@ -96,27 +87,6 @@ class MoniLogAutoConfiguration {
         return new MybatisMoniLogInterceptor.MybatisInterceptor();
     }
 
-
-//    @Configuration
-//    @ConditionalOnProperty(prefix = "monilog.rocketmq", name = "enable", havingValue = "true", matchIfMissing = true)
-//    @ConditionalOnExpression("('${monilog.component.includes:*}'.equals('*') or '${monilog.component.includes}'.contains('rocketmq')) and !('${monilog.component.excludes:}'.equals('*') or '${monilog.component.excludes:}'.contains('rocketmq'))")
-//    @ConditionalOnClass(name = {"org.apache.rocketmq.client.MQAdmin"})
-//    static class RocketMqMoniLogConfiguration {
-//        @Bean
-//        @ConditionalOnProperty(prefix = "monilog.rocketmq.consumer", name = "enable", havingValue = "true", matchIfMissing = true)
-//        RocketMqMoniLogInterceptor.RocketMQConsumerEnhanceProcessor rocketMQConsumerPostProcessor() {
-//            log.info("!!! rocketmq consumer monilog start ...");
-//            return new RocketMqMoniLogInterceptor.RocketMQConsumerEnhanceProcessor();
-//        }
-//
-//        @Bean
-//        @ConditionalOnProperty(prefix = "monilog.rocketmq.producer", name = "enable", havingValue = "true", matchIfMissing = true)
-//        RocketMqMoniLogInterceptor.RocketMQProducerInhanceProcessor rocketMQProducerPostProcessor() {
-//            log.info("!!! rocketmq producer monilog start ...");
-//            return new RocketMqMoniLogInterceptor.RocketMQProducerInhanceProcessor();
-//        }
-//    }
-
     @ConditionalOnWebApplication
     @ConditionalOnProperty(prefix = "monilog.web", name = "enable", havingValue = "true", matchIfMissing = true)
     @ConditionalOnExpression("('${monilog.component.includes:*}'.equals('*') or '${monilog.component.includes}'.contains('web')) and !('${monilog.component.excludes:}'.equals('*') or '${monilog.component.excludes:}'.contains('web'))")
@@ -141,15 +111,6 @@ class MoniLogAutoConfiguration {
         return new XxlJobMoniLogInterceptor();
     }
 
-//    @ConditionalOnProperty(prefix = "monilog.redis", name = "enable", havingValue = "true", matchIfMissing = true)
-//    @ConditionalOnExpression("('${monilog.component.includes:*}'.equals('*') or '${monilog.component.includes}'.contains('redis')) and !('${monilog.component.excludes:}'.equals('*') or '${monilog.component.excludes:}'.contains('redis'))")
-//    @ConditionalOnClass(name = "org.springframework.data.redis.core.RedisTemplate")
-//    @Bean
-//    RedisMoniLogInterceptor redisTemplateEnhancer() {
-//        log.info("!!! redis monilog start ...");
-//        return new RedisMoniLogInterceptor();
-//    }
-
     @Configuration
     @ConditionalOnProperty(prefix = "monilog.httpclient", name = "enable", havingValue = "true", matchIfMissing = true)
     @ConditionalOnExpression("('${monilog.component.includes:*}'.equals('*') or '${monilog.component.includes}'.contains('httpclient')) and !('${monilog.component.excludes:}'.equals('*') or '${monilog.component.excludes:}'.contains('httpclient'))")
@@ -160,7 +121,6 @@ class MoniLogAutoConfiguration {
          * 注意，只有使用Spring容器中的HttpClientBuilder对象，拦截器才会生效
          */
         @Bean
-        //@ConditionalOnMissingBean(HttpClientBuilder.class)
         HttpClientBuilder httpClientBuilder() {
             return XHttpClientBuilder.create();
         }
