@@ -24,10 +24,6 @@ import org.springframework.core.annotation.Order;
 @Slf4j
 @Import({SpringUtils.class})
 class MoniLogAutoConfiguration {
-    @Bean
-    MoniLogProperties moniLogProperties(){
-        return new MoniLogProperties();
-    }
 
     @Bean
     @ConditionalOnBean(MoniLogPrinter.class)
