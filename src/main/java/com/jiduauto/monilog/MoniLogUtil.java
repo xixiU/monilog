@@ -18,7 +18,6 @@ class MoniLogUtil {
     private static MoniLogProperties logProperties = null;
 
     public static void log(MoniLogParams logParams) {
-
         try {
             doMonitor(logParams);
         } catch (Exception e) {
