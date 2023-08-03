@@ -26,6 +26,15 @@ import java.util.Set;
 
 @Slf4j
 public class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered {
+    private static final String FEIGN_CLIENT = "feign.Client";
+    private static final String XXL_JOB = "com.xxl.job.core.handler.IJobHandler";
+    private static final String REDIS_CONNECTION = "org.springframework.data.redis.connection.RedisConnectionFactory";
+    private static final String REDIS_TEMPLATE = "org.springframework.data.redis.core.RedisTemplate";
+    private static final String MQ_ADMIN = "org.apache.rocketmq.client.MQAdmin";
+    private static final String MQ_LISTENER_CONTAINER = "org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer";
+    private static final String MQ_PUSH_CONSUMER = "org.apache.rocketmq.client.consumer.DefaultMQPushConsumer";
+    private static final String MQ_PULL_CONSUMER = "org.apache.rocketmq.client.consumer.DefaultMQPullConsumer";
+    private static final String MQ_PRODUCER = "org.apache.rocketmq.client.producer.DefaultMQProducer";
     private final MoniLogProperties moniLogProperties;
 
     public MoniLogPostProcessor(MoniLogProperties moniLogProperties) {
