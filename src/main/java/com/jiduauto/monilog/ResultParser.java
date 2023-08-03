@@ -99,7 +99,7 @@ final class ResultParser {
             jsonpaths = Default_Bool_Expr;
         }
         ParsedInfo<Boolean> parsed = parseByPaths(obj, jsonpaths, Boolean.class);
-        return parsed == null ? null : parsed.isExpectValid() ? parsed.getResult() : false;
+        return parsed == null ? null : (parsed.isExpectValid() ? parsed.getResult() : false);
     }
 
     public static <T> ParsedInfo<T> parseByPaths(Object obj, @NotNull String jsonpaths, @NotNull Class<T> resultCls) {
@@ -118,9 +118,13 @@ final class ResultParser {
         for (String path : jsonpaths) {
             ParsedInfo<T> ret = parse(obj, path, resultCls);
             if (ret != null) {
-                if (ret.isExpectValid()) {
+                T val = ret.getResult();
+                if (!ret.isExpectValid()) {//结果不兼容，则一定不是期望结果
+                    continue;
+                }
+                if (val != null) {//结果是兼容类型，且成功匹配到值
                     return ret;
-                } else {
+                } else {//结果类型兼容，但值是空的，表示没取到。例如$.getMsg()，匹配到路径了，但结果中值是null
                     parsedList.add(ret);
                 }
             }
@@ -151,12 +155,13 @@ final class ResultParser {
                 path = splits[0].trim();
                 expect = splits.length > 1 ? splits[1].trim() : null;
             }
-            Object val = parseObjVal(obj, path);
-            if (val == null) {
+            TempResult tr = parseObjVal(obj, path);
+            //这里解析到的结果有三种情况：1是没有找到对应的path，此时返回null，2是找到了path但未取到值，此时foundPath=true,value=null，3是找到了path且取到了值，此时value!=null&foundPath=true
+            if (tr == null || !tr.foundPath) {
                 return null;
             }
             ParsedInfo<T> p = new ParsedInfo<>(resultCls);
-            p.setValue(val);
+            p.setValue(tr.value);
             p.setExpect(expect);
             return p;
         } catch (Exception e) {
@@ -165,11 +170,12 @@ final class ResultParser {
         }
     }
 
-    private static Object parseObjVal(Object obj, String path) {
+    private static TempResult parseObjVal(Object obj, String path) {
         boolean isMethod = path.contains("(") && path.contains(")");
         if (!isMethod) {
             try {
-                return JSONPath.eval(obj, path);
+                Object val = JSONPath.eval(obj, path);
+                return new TempResult(val, val != null); //这种情况下，如果值未找到，也可能是path不存在，因此不能因为val==null就把foundPath置为true
             } catch (Throwable e) {
                 MoniLogUtil.innerDebug("resultParser evalVal error, obj:{}, path:{}", JSON.toJSONString(obj), path, e);
             }
@@ -182,7 +188,7 @@ final class ResultParser {
                 return null;
             }
             method.setAccessible(true);
-            return method.invoke(obj);
+            return new TempResult(method.invoke(obj));
         } catch (Throwable e) {
             MoniLogUtil.innerDebug("resultParser parseObjVal error, obj:{}, path:{}", JSON.toJSONString(obj), path, e);
             Throwable tx = ExceptionUtil.getRealException(e);
@@ -191,11 +197,6 @@ final class ResultParser {
             }
         }
         return null;
-    }
-
-    public static void main(String[] args) {
-        String s = mergeBoolExpr("+$.code==0,$.code==200", "+$.status==200,$.code=200");
-        System.out.println(s);
     }
 
     public static String mergeBoolExpr(String globalDefaultBoolExprs, String defaultBoolExprs) {
@@ -213,5 +214,24 @@ final class ResultParser {
         Set<String> set = new HashSet<>(globalExprList);
         set.addAll(defaultExpr);
         return prefix + String.join(",", set);
+    }
+
+    private static class TempResult {
+        Object value;
+        boolean foundPath;
+
+
+        public TempResult() {
+            this(null, true);
+        }
+
+        public TempResult(Object value) {
+            this(value, true);
+        }
+
+        public TempResult(Object value, boolean foundPath) {
+            this.value = value;
+            this.foundPath = foundPath;
+        }
     }
 }
