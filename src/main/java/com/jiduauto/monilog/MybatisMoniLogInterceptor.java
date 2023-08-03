@@ -115,7 +115,7 @@ class MybatisMoniLogInterceptor {
                     sql = boundSql.getSql().replaceAll("--[^\n|\\\\n].+(\n|\\\\n)","").replaceAll("(\\\\n)+|\n+|\r+|\\s+"," ");
                 }
             } catch (Throwable e) {
-                MoniLogUtil.innerDebug( "parseMybatisExecuteInfo error:{}", e);
+                MoniLogUtil.innerDebug( "parseMybatisExecuteInfo error", e);
             }
             MybatisInvocationInfo info = new MybatisInvocationInfo();
             info.serviceCls = serviceCls;

@@ -39,8 +39,12 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
             logger.error("monilog_detail_log[{}]-{}.{}|{}|{}|{}|{} input:{}, output:{}", logPoint, service, action, success, code, msg, rt, input, output, ex);
             return;
         }
-        String tags = JSON.toJSONString(p.getTags());
-        logger.info("monilog_detail_log[{}]-{}.{}|{}|{}|{}|{} input:{}, output:{}, tags:{}", logPoint, service, action, success, code, msg, rt, input, output, tags);
+        if (p.getTags() == null) {
+            logger.info("monilog_detail_log[{}]-{}.{}|{}|{}|{}|{} input:{}, output:{}", logPoint, service, action, success, code, msg, rt, input, output);
+        } else {
+            String tags = JSON.toJSONString(p.getTags());
+            logger.info("monilog_detail_log[{}]-{}.{}|{}|{}|{}|{} input:{}, output:{}, tags:{}", logPoint, service, action, success, code, msg, rt, input, output, tags);
+        }
     }
 
     @Override
