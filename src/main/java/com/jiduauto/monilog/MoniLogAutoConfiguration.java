@@ -35,13 +35,6 @@ class MoniLogAutoConfiguration {
         return new MoniLogAop();
     }
 
-    @Bean
-    @ConditionalOnMissingBean(MoniLogAop.class)
-    @ConditionalOnClass(MoniLogTags.class)
-    MoniLogAop aspectUserProcessor() {
-        return new MoniLogAop();
-    }
-
     @Order(Integer.MIN_VALUE)
     @Bean("__springUtils")
     SpringUtils springUtils() {
