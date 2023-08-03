@@ -8,6 +8,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import javax.annotation.Resource;
 import java.util.Set;
 
 /**
@@ -19,6 +20,8 @@ import java.util.Set;
 @Getter
 @Setter
 class MoniLogProperties implements InitializingBean {
+    @Resource
+    private SpringUtils springUtils;
     /**
      * 服务名，默认取值：${spring.application.name}
      */

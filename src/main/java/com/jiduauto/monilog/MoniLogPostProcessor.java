@@ -39,7 +39,7 @@ public class MoniLogPostProcessor implements BeanPostProcessor, BeanFactoryPostP
     private static final String REDISSON_CLIENT = "org.redisson.api.RedissonClient";
     private final MoniLogProperties moniLogProperties;
 
-    public MoniLogPostProcessor(MoniLogProperties moniLogProperties, SpringUtils springUtils) {
+    public MoniLogPostProcessor(MoniLogProperties moniLogProperties) {
         this.moniLogProperties = moniLogProperties;
         log.info(">>>MoniLogPostProcessor initializing...");
     }
