@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 class StringUtil {
+    public static final String BUSINESS_MONITOR_PREFIX = "business_monitor_";
     private static final AntPathMatcher antPathMatcher = new AntPathMatcher();
     public static boolean checkPathMatch(Collection<String> pathList, String toCheckPath) {
         if (CollectionUtils.isEmpty(pathList)) {

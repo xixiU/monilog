@@ -27,7 +27,7 @@ class MybatisMoniLogInterceptor {
     })
     @Slf4j
     static class MybatisInterceptor implements Interceptor {
-        private static final String SQL_COST_TOO_LONG = "sqlCostTooLang";
+        private static final String SQL_COST_TOO_LONG = StringUtil.BUSINESS_MONITOR_PREFIX+"sqlCostTooLong";
         @Resource
         private MoniLogProperties moniLogProperties;
 
