@@ -1,5 +1,6 @@
 package com.jiduauto.monilog;
 
+import com.alibaba.fastjson.JSON;
 import com.metric.MetricMonitor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -66,6 +67,23 @@ class MoniLogUtil {
 
         }
     }
+
+    //
+    public static void addCustomerMonitor(MoniLogParams logParams, String namePrefix) {
+        TagBuilder systemTags = getSystemTags(logParams);
+        String[] allTags = systemTags.add(logParams.getTags()).toArray();
+
+        try {
+            // 打record
+            MetricMonitor.record(namePrefix + MonitorType.RECORD.getMark(), allTags);
+            // 打耗时
+            MetricMonitor.eventDruation(namePrefix + MonitorType.TIMER.getMark(), allTags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            MoniLogUtil.innerDebug("addMonitor error name:{}, tag:{}", namePrefix, JSON.toJSONString(allTags), e);
+        }
+
+    }
+
 //
 //    private static void addMonitor(String namePrefix, String[] tags, long cost) {
 //        try {
