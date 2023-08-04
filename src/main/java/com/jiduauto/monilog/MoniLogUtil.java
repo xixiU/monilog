@@ -1,6 +1,5 @@
 package com.jiduauto.monilog;
 
-import com.alibaba.fastjson.JSON;
 import com.metric.MetricMonitor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -56,24 +55,29 @@ class MoniLogUtil {
         String[] allTags = systemTags.add(logParams.getTags()).toArray();
 
         String name = StringUtil.BUSINESS_MONITOR_PREFIX + logPoint.name();
-        addMonitor(name, allTags, logParams.getCost());
+//        addMonitor(name, allTags, logParams.getCost());
+        MetricMonitor.record(name + MonitorType.RECORD.getMark(), allTags);
+        MetricMonitor.eventDruation(name + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
+
         if (logParams.isHasUserTag()) {
             name = name + "_" + logParams.getService() + "_" + logParams.getAction();
-            addMonitor(name, allTags, logParams.getCost());
+//            addMonitor(name, allTags, logParams.getCost());
+            MetricMonitor.eventDruation(name + MonitorType.TIMER.getMark(), allTags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
+
         }
     }
-
-    private static void addMonitor(String namePrefix, String[] tags, long cost) {
-        try {
-            // 打record
-            MetricMonitor.record(namePrefix + MonitorType.RECORD.getMark(), tags);
-            // 打耗时
-            MetricMonitor.eventDruation(namePrefix + MonitorType.TIMER.getMark(), tags).record(cost, TimeUnit.MILLISECONDS);
-        } catch (Exception e) {
-            MoniLogUtil.innerDebug("addMonitor error name:{}, tag:{}", namePrefix, JSON.toJSONString(tags), e);
-        }
-
-    }
+//
+//    private static void addMonitor(String namePrefix, String[] tags, long cost) {
+//        try {
+//            // 打record
+//            MetricMonitor.record(namePrefix + MonitorType.RECORD.getMark(), tags);
+//            // 打耗时
+//            MetricMonitor.eventDruation(namePrefix + MonitorType.TIMER.getMark(), tags).record(cost, TimeUnit.MILLISECONDS);
+//        } catch (Exception e) {
+//            MoniLogUtil.innerDebug("addMonitor error name:{}, tag:{}", namePrefix, JSON.toJSONString(tags), e);
+//        }
+//
+//    }
 
 
     /**
