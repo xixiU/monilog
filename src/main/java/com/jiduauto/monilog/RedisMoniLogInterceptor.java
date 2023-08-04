@@ -70,14 +70,18 @@ class RedisMoniLogInterceptor implements MethodInterceptor {
             p.setOutput(ri.result);
             p.setServiceCls(ri.cls);
             p.setService(ri.cls.getSimpleName());
-            String action = ri.method;
-            if (StringUtils.isNotBlank(ri.maybeKey)) {
-                action = action + ":" + ri.maybeKey;
-            }
-            p.setAction(action);
+            p.setAction(ri.method);
             if (ri.valueLen > 0 && ri.valueLen > redisProperties.getWarnForValueLength() * ONE_KB) {
                 log.error("redis_value_size_too_large, {}.{}:{}, size: {}", p.getService(), p.getAction(), ri.maybeKey, ri.getReadableSize());
             }
+            String msgPrefix = "";
+            if (StringUtils.isNotBlank(ri.maybeKey)) {
+                msgPrefix = "[key:" + ri.maybeKey + "]";
+                if (StringUtils.isNotBlank(p.getMsgInfo())) {
+                    msgPrefix += " ";
+                }
+            }
+            p.setMsgInfo(msgPrefix + p.getMsgInfo());
             MoniLogUtil.log(p);
         }
     }
