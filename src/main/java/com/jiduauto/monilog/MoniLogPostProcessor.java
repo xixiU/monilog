@@ -27,7 +27,7 @@ import java.util.Set;
  */
 
 @Slf4j
-public class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered {
+class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered {
     static final Map<String, Class<?>> CACHED_CLASS = new HashMap<>();
     private static final String FEIGN_CLIENT = "feign.Client";
     private static final String XXL_JOB = "com.xxl.job.core.handler.IJobHandler";
@@ -38,7 +38,7 @@ public class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered 
     static final String REDISSON_CLIENT = "org.redisson.api.RedissonClient";
     private final MoniLogProperties moniLogProperties;
 
-    public MoniLogPostProcessor(MoniLogProperties moniLogProperties) {
+    MoniLogPostProcessor(MoniLogProperties moniLogProperties) {
         this.moniLogProperties = moniLogProperties;
         loadClass();
         log.info(">>>MoniLogPostProcessor initializing...");

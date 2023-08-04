@@ -141,7 +141,7 @@ class MoniLogAop {
         private Object[] args;
         private Executable executable;
 
-        public static InvocationProxy of(ProceedingJoinPoint pjp) {
+        static InvocationProxy of(ProceedingJoinPoint pjp) {
             InvocationProxy proxy = new InvocationProxy();
             proxy.setTarget(pjp.getTarget());
             proxy.setMethod(((MethodSignature) pjp.getSignature()).getMethod());
@@ -150,7 +150,7 @@ class MoniLogAop {
             return proxy;
         }
 
-        public static InvocationProxy of(MethodInvocation invocation) {
+        static InvocationProxy of(MethodInvocation invocation) {
             InvocationProxy proxy = new InvocationProxy();
             proxy.setTarget(invocation.getThis());
             proxy.setMethod(invocation.getMethod());

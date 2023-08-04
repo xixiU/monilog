@@ -26,7 +26,7 @@ class RedisMoniLogInterceptor implements MethodInterceptor {
     private final RedisSerializer valueSerializer;
     private final MoniLogProperties.RedisProperties redisProperties;
 
-    public RedisMoniLogInterceptor(RedisSerializer keySerializer, RedisSerializer valueSerializer, MoniLogProperties.RedisProperties redisProperties) {
+    RedisMoniLogInterceptor(RedisSerializer keySerializer, RedisSerializer valueSerializer, MoniLogProperties.RedisProperties redisProperties) {
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
         this.redisProperties = redisProperties;

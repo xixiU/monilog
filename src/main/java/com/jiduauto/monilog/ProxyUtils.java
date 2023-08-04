@@ -12,7 +12,7 @@ import java.util.Map;
  * @author yp
  * @date 2023/07/30
  */
-public class ProxyUtils {
+class ProxyUtils {
     /**
      * 创建指定对象的代理类
      *

@@ -38,7 +38,7 @@ class MoniLogUtil {
     /**
      * 打印框架日志
      */
-    public static void innerDebug(String pattern, Object... args) {
+    static void innerDebug(String pattern, Object... args) {
         MoniLogProperties logProperties = getLogProperties();
         if (logProperties != null && !logProperties.isDebug()) {
             return;

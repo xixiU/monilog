@@ -27,7 +27,7 @@ import java.util.*;
  */
 @Slf4j
 class FeignMoniLogInterceptor {
-    public static Client getProxyBean(Client bean) {
+    static Client getProxyBean(Client bean) {
         return (Client) ProxyUtils.getProxy(bean, new FeignExecuteInterceptor());
     }
 
