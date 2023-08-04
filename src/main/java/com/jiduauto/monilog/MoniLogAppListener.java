@@ -35,6 +35,7 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
         if (!moniLogProperties.isComponentEnable("redis", moniLogProperties.getRedis().isEnable())) {
             return;
         }
+        log.info(">>>monilog redis start...");
         for (Map.Entry<String, RedisTemplate> me : templates.entrySet()) {
             String beanName = me.getKey();
             RedisTemplate template = me.getValue();
@@ -44,7 +45,6 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
                 Object redisConn = invocation.proceed();
                 String methodName = invocation.getMethod().getName();
                 if (methodName.equals("getConnection")) {
-                    log.info(">>>monilog redis [{}] start...", beanName);
                     return ProxyUtils.getProxy(redisConn, new RedisMoniLogInterceptor(template.getKeySerializer(), template.getValueSerializer(), moniLogProperties.getRedis()));
                 }
                 return redisConn;

@@ -50,7 +50,7 @@ class MoniLogAutoConfiguration {
     @Bean
     @ConditionalOnBean(MoniLogPrinter.class)
     MoniLogAop aspectProcessor() {
-        log.info(">>>monilog core started...");
+        log.info(">>>monilog core start...");
         return new MoniLogAop();
     }
 
