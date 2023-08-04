@@ -107,6 +107,7 @@ class RedisMoniLogInterceptor implements MethodInterceptor {
         if (args == null) {
             return null;
         }
+        //取参数中第一个byte[]类型的参数做为猜想的key
         for (Object arg : args) {
             if (arg instanceof byte[]) {
                 Object obj = serializer.deserialize((byte[]) arg);
