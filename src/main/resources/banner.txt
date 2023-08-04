@@ -4,5 +4,5 @@
  | |  | | (_) | | | | | |__| (_) | (_| |
  |_|  |_|\___/|_| |_|_|_____\___/ \__, |
                                   |___/
-${spring.application.name} ${spring.profiles.active}
-version:1.0.5-SNAPSHOT Powered by Jidu-商业中台团队
+Powered by Jidu-商业中台团队 version:1.0.5-SNAPSHOT
+current env: ${spring.application.name} ${spring.profiles.active}
