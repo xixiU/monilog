@@ -2,6 +2,10 @@ package com.jiduauto.monilog;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
+import org.redisson.api.RLockAsync;
+import org.redisson.api.RObjectAsync;
+import org.redisson.api.RedissonClient;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.context.event.ApplicationPreparedEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -11,6 +15,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import javax.annotation.Resource;
 import java.util.Map;
 
+import static com.jiduauto.monilog.MoniLogPostProcessor.REDISSON_CLIENT;
 import static com.jiduauto.monilog.MoniLogPostProcessor.REDIS_TEMPLATE;
 
 /**
@@ -25,6 +30,11 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
     @Override
     public void onApplicationEvent(ApplicationPreparedEvent event) {
         ConfigurableApplicationContext ctx = event.getApplicationContext();
+        enhanceRedisTemplate(ctx);
+        enhanceRedissonClient(ctx);
+    }
+
+    private void enhanceRedisTemplate(ConfigurableApplicationContext ctx) {
         if (null == MoniLogPostProcessor.getTargetCls(REDIS_TEMPLATE)) {
             return;
         }
@@ -35,7 +45,7 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
         if (!moniLogProperties.isComponentEnable("redis", moniLogProperties.getRedis().isEnable())) {
             return;
         }
-        log.info(">>>monilog redis start...");
+        log.info(">>>monilog redis[jedis] start...");
         for (Map.Entry<String, RedisTemplate> me : templates.entrySet()) {
             String beanName = me.getKey();
             RedisTemplate template = me.getValue();
@@ -45,11 +55,39 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
                 Object redisConn = invocation.proceed();
                 String methodName = invocation.getMethod().getName();
                 if (methodName.equals("getConnection")) {
-                    return ProxyUtils.getProxy(redisConn, new RedisMoniLogInterceptor(template.getKeySerializer(), template.getValueSerializer(), moniLogProperties.getRedis()));
+                    return ProxyUtils.getProxy(redisConn, new RedisMoniLogInterceptor.JedisTemplateInterceptor(template.getKeySerializer(), template.getValueSerializer(), moniLogProperties.getRedis()));
                 }
                 return redisConn;
             });
             template.setConnectionFactory(proxy);
+        }
+    }
+
+    private void enhanceRedissonClient(ConfigurableApplicationContext ctx) {
+        if (null == MoniLogPostProcessor.getTargetCls(REDISSON_CLIENT)) {
+            return;
+        }
+        Map<String, RedissonClient> templates = ctx.getBeansOfType(RedissonClient.class);
+        if (MapUtils.isEmpty(templates)) {
+            return;
+        }
+        if (!moniLogProperties.isComponentEnable("redis", moniLogProperties.getRedis().isEnable())) {
+            return;
+        }
+        ConfigurableListableBeanFactory beanFactory = ctx.getBeanFactory();
+        log.info(">>>monilog redis[redisson] start...");
+        for (Map.Entry<String, RedissonClient> me : templates.entrySet()) {
+            String beanName = me.getKey();
+            RedissonClient client = me.getValue();
+            RedissonClient proxy = ProxyUtils.getProxy(client, invocation -> {
+                Object bucket = invocation.proceed(); //RObjectAsync/RLock...
+                if (bucket instanceof RObjectAsync || bucket instanceof RLockAsync) {
+                    return ProxyUtils.getProxy(bucket, new RedisMoniLogInterceptor.RedissonInterceptor(moniLogProperties.getRedis()));
+                }
+                return bucket;
+            });
+            beanFactory.destroyBean(beanName, client);
+            beanFactory.registerSingleton(beanName, proxy);
         }
     }
 }
