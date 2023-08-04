@@ -85,13 +85,7 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
             Redisson r = ((Redisson) client);
             EvictionScheduler evictionScheduler = r.getEvictionScheduler();
             WriteBehindService writeBehindService = ReflectUtil.getPropValue(r, "writeBehindService", true);
-            //如果redisConnectionFactory调用的是getConnection方法，则该方法返回的结果就是一个RedisConnection对象
-            //此时，我们把RedisConnection对象进行增强，让它在执行redis命令时，记录我们的监控数据
-            CommandAsyncExecutor proxy = ProxyUtils.getProxy(r.getCommandExecutor(), invocation -> {
-                Object result = invocation.proceed();
-                String methodName = invocation.getMethod().getName();
-                return ProxyUtils.getProxy(result, new RedisMoniLogInterceptor.RedissonInterceptor(moniLogProperties.getRedis()));
-            });
+            CommandAsyncExecutor proxy = ProxyUtils.getProxy(r.getCommandExecutor(), new RedisMoniLogInterceptor.RedissonInterceptor(moniLogProperties.getRedis()));
             ReflectUtil.setPropValue(r, "commandExecutor", proxy, true);
             ReflectUtil.setPropValue(evictionScheduler, "executor", proxy, true);
             ReflectUtil.setPropValue(writeBehindService, "executor", proxy, true);
