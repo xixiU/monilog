@@ -4,6 +4,7 @@ package com.jiduauto.monilog;
 import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
 
@@ -68,10 +69,14 @@ class RedisMoniLogInterceptor implements MethodInterceptor {
             p.setInput(ri.args);
             p.setOutput(ri.result);
             p.setServiceCls(ri.cls);
-            p.setAction(ri.method);
             p.setService(ri.cls.getSimpleName());
+            String action = ri.method;
+            if (StringUtils.isNotBlank(ri.maybeKey)) {
+                action = action + ":" + ri.maybeKey;
+            }
+            p.setAction(action);
             if (ri.valueLen > 0 && ri.valueLen > redisProperties.getWarnForValueLength() * ONE_KB) {
-                log.error("redis_value_size_too_large, {}.{}, size: {}", p.getService(), p.getAction(), ri.getReadableSize());
+                log.error("redis_value_size_too_large, {}.{}:{}, size: {}", p.getService(), p.getAction(), ri.maybeKey, ri.getReadableSize());
             }
             MoniLogUtil.log(p);
         }
@@ -90,6 +95,7 @@ class RedisMoniLogInterceptor implements MethodInterceptor {
         try {
             ri.valueLen = ret instanceof byte[] ? ((byte[]) ret).length : 0f;
             ri.args = deserialize(keySerializer, invocation.getArguments());
+            ri.maybeKey = deserializeKey(keySerializer, invocation.getArguments());
             ri.result = deserialize(valueSerializer, new Object[]{ret});
         } catch (Exception e) {
             MoniLogUtil.innerDebug("parseRedisInvocation-deserilize error", e);
@@ -97,12 +103,22 @@ class RedisMoniLogInterceptor implements MethodInterceptor {
         return ri;
     }
 
-    private Object[] deserialize(RedisSerializer serializer, Object[] args) {
-        if (serializer == null) {
-            return args;
-        }
+    private String deserializeKey(RedisSerializer serializer, Object[] args) {
         if (args == null) {
             return null;
+        }
+        for (Object arg : args) {
+            if (arg instanceof byte[]) {
+                Object obj = serializer.deserialize((byte[]) arg);
+                return String.valueOf(obj);
+            }
+        }
+        return null;
+    }
+
+    private Object[] deserialize(RedisSerializer serializer, Object[] args) {
+        if (serializer == null || args == null) {
+            return args;
         }
         Object[] result = new Object[args.length];
         for (int i = 0; i < args.length; i++) {
@@ -120,6 +136,7 @@ class RedisMoniLogInterceptor implements MethodInterceptor {
     private static class RedisInvocation {
         Class<?> cls;
         String method;
+        String maybeKey;
         Object[] args;
         Object result;
         float valueLen;
