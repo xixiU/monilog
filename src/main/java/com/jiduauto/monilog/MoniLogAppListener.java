@@ -86,7 +86,8 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
                 }
                 return bucket;
             });
-            beanFactory.destroyBean(beanName, client);
+            beanFactory.destroyBean(client);
+            beanFactory.clearMetadataCache();
             beanFactory.registerSingleton(beanName, proxy);
         }
     }
