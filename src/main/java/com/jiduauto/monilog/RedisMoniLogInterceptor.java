@@ -15,7 +15,7 @@ import java.util.Set;
 
 @Slf4j
 class RedisMoniLogInterceptor implements MethodInterceptor {
-    private static final long ONE_KB = 2 << 20;
+    private static final long ONE_KB = 2 << 19;
     private static final Set<String> SKIP_METHODS = new HashSet<>();
 
     static {
