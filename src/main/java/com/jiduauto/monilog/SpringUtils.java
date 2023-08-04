@@ -7,9 +7,6 @@ import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ConfigurableApplicationContext;
-
-import java.util.Map;
 
 /**
  * Spring(Spring boot)工具封装，包括：
@@ -74,20 +71,6 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
      */
     static <T> T getBean(Class<T> clazz) {
         return getBeanFactory().getBean(clazz);
-    }
-
-
-    static <T> void replaceSingletonBean(ConfigurableApplicationContext ctx, String beanName, T newBean) {
-        if (newBean == null) {
-            throw new NullPointerException("new bean to replace cannot be null");
-        }
-        Object oldBean = ctx.getBean(beanName);
-        if (!oldBean.getClass().isAssignableFrom(newBean.getClass())) {
-            throw new IllegalArgumentException("new bean not compatible with " + oldBean.getClass());
-        }
-        ConfigurableListableBeanFactory beanFactory = ctx.getBeanFactory();
-        Map<String, Object> singletonMutex = (Map<String, Object>) beanFactory.getSingletonMutex();
-        singletonMutex.put(beanName, newBean);
     }
 
     static <T> T getBeanWithoutException(Class<T> clazz) {

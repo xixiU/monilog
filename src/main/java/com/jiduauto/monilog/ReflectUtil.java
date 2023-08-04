@@ -204,6 +204,25 @@ class ReflectUtil {
         }
     }
 
+    @SuppressWarnings("all")
+    public static void setPropValue(Object obj, String name, Object value, boolean ignoreException) {
+        try {
+            Class cls = obj instanceof Class ? (Class) obj : obj.getClass();
+            Field f = getField(cls, name, null);
+            if (f == null) {
+                throw new NoSuchFieldException("No such field[" + name + "] in " + cls.getCanonicalName());
+            }
+            f.setAccessible(true);
+            f.set(obj, value);
+        } catch (Throwable e) {
+            if (ignoreException) {
+                //...ignore
+            } else {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
 
     public static Field getField(Class<?> cls, String name, Class<?> fieldCls) {
         for (Class<?> superClass = cls; superClass != Object.class; superClass = superClass.getSuperclass()) {

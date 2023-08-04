@@ -2,9 +2,11 @@ package com.jiduauto.monilog;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
-import org.redisson.api.RLockAsync;
-import org.redisson.api.RObjectAsync;
+import org.redisson.Redisson;
+import org.redisson.WriteBehindService;
 import org.redisson.api.RedissonClient;
+import org.redisson.command.CommandAsyncExecutor;
+import org.redisson.eviction.EvictionScheduler;
 import org.springframework.boot.context.event.ApplicationPreparedEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -77,14 +79,22 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
         for (Map.Entry<String, RedissonClient> me : templates.entrySet()) {
             String beanName = me.getKey();
             RedissonClient client = me.getValue();
-            RedissonClient proxy = ProxyUtils.getProxy(client, invocation -> {
-                Object bucket = invocation.proceed(); //RObjectAsync/RLock...
-                if (bucket instanceof RObjectAsync || bucket instanceof RLockAsync) {
-                    return ProxyUtils.getProxy(bucket, new RedisMoniLogInterceptor.RedissonInterceptor(moniLogProperties.getRedis()));
-                }
-                return bucket;
+            if (!(client instanceof Redisson)) {
+                continue;
+            }
+            Redisson r = ((Redisson) client);
+            EvictionScheduler evictionScheduler = r.getEvictionScheduler();
+            WriteBehindService writeBehindService = ReflectUtil.getPropValue(r, "writeBehindService", true);
+            //如果redisConnectionFactory调用的是getConnection方法，则该方法返回的结果就是一个RedisConnection对象
+            //此时，我们把RedisConnection对象进行增强，让它在执行redis命令时，记录我们的监控数据
+            CommandAsyncExecutor proxy = ProxyUtils.getProxy(r.getCommandExecutor(), invocation -> {
+                Object result = invocation.proceed();
+                String methodName = invocation.getMethod().getName();
+                return ProxyUtils.getProxy(result, new RedisMoniLogInterceptor.RedissonInterceptor(moniLogProperties.getRedis()));
             });
-            SpringUtils.replaceSingletonBean(ctx, beanName, proxy);
+            ReflectUtil.setPropValue(r, "commandExecutor", proxy, true);
+            ReflectUtil.setPropValue(evictionScheduler, "executor", proxy, true);
+            ReflectUtil.setPropValue(writeBehindService, "executor", proxy, true);
         }
     }
 }
