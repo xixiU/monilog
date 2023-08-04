@@ -5,7 +5,6 @@ import org.apache.commons.collections4.MapUtils;
 import org.redisson.api.RLockAsync;
 import org.redisson.api.RObjectAsync;
 import org.redisson.api.RedissonClient;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.context.event.ApplicationPreparedEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -74,7 +73,6 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
         if (!moniLogProperties.isComponentEnable("redis", moniLogProperties.getRedis().isEnable())) {
             return;
         }
-        ConfigurableListableBeanFactory beanFactory = ctx.getBeanFactory();
         log.info(">>>monilog redis[redisson] start...");
         for (Map.Entry<String, RedissonClient> me : templates.entrySet()) {
             String beanName = me.getKey();
@@ -86,9 +84,7 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
                 }
                 return bucket;
             });
-            beanFactory.destroyBean(beanName, client);
-            beanFactory.clearMetadataCache();
-            beanFactory.registerSingleton(beanName, proxy);
+            SpringUtils.replaceBean(ctx, beanName, proxy);
         }
     }
 }
