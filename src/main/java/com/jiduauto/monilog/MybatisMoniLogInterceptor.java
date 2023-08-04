@@ -1,6 +1,5 @@
 package com.jiduauto.monilog;
 
-import com.metric.MetricMonitor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
@@ -50,6 +49,7 @@ class MybatisMoniLogInterceptor {
                 logParams.setService(invocationInfo.serviceCls.getSimpleName());
                 logParams.setAction(invocationInfo.methodName);
                 logParams.setInput(new String[]{invocationInfo.sql});
+                logParams.setTags(new String[]{"sql",invocationInfo.sql});
                 try {
                     obj = invocation.proceed();
                 } catch (Throwable t) {
@@ -61,7 +61,8 @@ class MybatisMoniLogInterceptor {
                 // 超过时间阀值的，打印错误日志
                 MoniLogProperties.MybatisProperties mybatisProperties = moniLogProperties.getMybatis();
                 if (mybatisProperties != null && mybatisProperties.getLongQueryTime() > 0 && costTime > mybatisProperties.getLongQueryTime()) {
-                    MetricMonitor.record(SQL_COST_TOO_LONG + MonitorType.RECORD.getMark());
+                    MoniLogUtil.addCustomerMonitor(logParams, SQL_COST_TOO_LONG);
+//                    MetricMonitor.record(SQL_COST_TOO_LONG + MonitorType.RECORD.getMark());
                     log.error("sql_cost_time_too_long, sql{}, time:{}", invocationInfo.sql, costTime);
                 }
                 if (bizException == null) {
