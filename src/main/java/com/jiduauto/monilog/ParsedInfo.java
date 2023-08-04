@@ -79,6 +79,7 @@ final class ParsedInfo<T> {
 
     /**
      * 判断解析后的值是否有效。例如目标结果需要返回boolean类型，但获得的结果不空且不可映射为任何boolean类型
+     * 注意，该方法并不是判断结果是否正确，仅仅只是判断返回的数据是否与期望的结果类型兼容。
      */
     public boolean isExpectValid() {
         //非双操作数，认为结果有效

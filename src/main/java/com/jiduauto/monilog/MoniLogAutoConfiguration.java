@@ -24,18 +24,6 @@ import org.springframework.core.annotation.Order;
 @Slf4j
 @Import({SpringUtils.class})
 class MoniLogAutoConfiguration {
-    @Bean
-    MoniLogPostProcessor moniLogPostProcessor(MoniLogProperties moniLogProperties) {
-        return new MoniLogPostProcessor(moniLogProperties);
-    }
-
-    @Bean
-    @ConditionalOnBean(MoniLogPrinter.class)
-    MoniLogAop aspectProcessor() {
-        log.info(">>>monilog core started...");
-        return new MoniLogAop();
-    }
-
     @Order(Integer.MIN_VALUE)
     @Bean("__springUtils")
     SpringUtils springUtils() {
@@ -46,6 +34,19 @@ class MoniLogAutoConfiguration {
     @ConditionalOnMissingBean(MoniLogPrinter.class)
     MoniLogPrinter moniLogPrinter() {
         return new DefaultMoniLogPrinter();
+    }
+
+    @Bean
+    MoniLogPostProcessor moniLogPostProcessor(MoniLogProperties moniLogProperties) {
+        //因为MoniLogPostProcessor实现了BeanFactoryPostProcessor接口，因此会较早实例化，彼时SpringUtils还没有被注入属性，因此这里要求springUtils必须尽早实例化
+        return new MoniLogPostProcessor(moniLogProperties);
+    }
+
+    @Bean
+    @ConditionalOnBean(MoniLogPrinter.class)
+    MoniLogAop aspectProcessor() {
+        log.info(">>>monilog core started...");
+        return new MoniLogAop();
     }
 
     @ConditionalOnProperty(prefix = "monilog.grpc", name = "enable", havingValue = "true", matchIfMissing = true)

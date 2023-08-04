@@ -14,7 +14,7 @@ import org.apache.rocketmq.spring.core.RocketMQListener;
 import org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.beans.factory.config.InstantiationAwareBeanPostProcessor;
 import org.springframework.core.Ordered;
 import org.springframework.core.PriorityOrdered;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -24,22 +24,47 @@ import org.springframework.data.redis.serializer.RedisSerializer;
 import java.util.Set;
 
 @Slf4j
-public class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered {
+public class MoniLogPostProcessor implements InstantiationAwareBeanPostProcessor, PriorityOrdered {
     private static final String FEIGN_CLIENT = "feign.Client";
     private static final String XXL_JOB = "com.xxl.job.core.handler.IJobHandler";
     private static final String REDIS_CONNECTION = "org.springframework.data.redis.connection.RedisConnectionFactory";
     private static final String REDIS_TEMPLATE = "org.springframework.data.redis.core.RedisTemplate";
     private static final String MQ_ADMIN = "org.apache.rocketmq.client.MQAdmin";
     private static final String MQ_LISTENER_CONTAINER = "org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer";
+
+    private static final String REDIS_CONN_FACTORY = "org.springframework.data.redis.connection.RedisConnectionFactory";
+    private static final String REDISSON_CLIENT = "org.redisson.api.RedissonClient";
     private final MoniLogProperties moniLogProperties;
 
     public MoniLogPostProcessor(MoniLogProperties moniLogProperties) {
         this.moniLogProperties = moniLogProperties;
+        log.info(">>>MoniLogPostProcessor initializing...");
+    }
+
+    @Override
+    public boolean postProcessAfterInstantiation(Object bean, String beanName) throws BeansException {
+        //由于redis所依赖的RedisConnectionFactory和RedisTemplate以及StringRedisTemplate被javakit在RedisRegister中过早实例化，会导致BeanPostProcessor无法处理到它
+        //因此才在这里进行二次增强
+        Class<?> redisConnCls = getTargetCls(REDIS_CONN_FACTORY);
+        if (redisConnCls == null) {
+            return InstantiationAwareBeanPostProcessor.super.postProcessAfterInstantiation(bean, beanName);
+        }
+        if (bean instanceof RedisTemplate || bean instanceof RedisConnectionFactory) {
+            System.out.println("...RedisConnectionFactory...");
+        }
+
+        //需要支持RedissonClient
+        return InstantiationAwareBeanPostProcessor.super.postProcessAfterInstantiation(bean, beanName);
     }
 
     @Override
     public Object postProcessAfterInitialization(@NotNull Object bean, @NotNull String beanName) throws BeansException {
         if (!moniLogProperties.isEnable()) {
+            return bean;
+        }
+        if (isTargetBean(bean, "com.jiduauto.javakit.redis.RedisRegister")) {
+            System.out.println("这里可以拿到redis链接");
+            //考虑一下使用MethodReplacer
             return bean;
         }
         if (isTargetBean(bean, FEIGN_CLIENT)) {
@@ -57,6 +82,8 @@ public class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered 
                 if (bean instanceof RedisConnectionFactory) {
                     return RedisMoniLogInterceptor.getProxyBean(bean);
                 } else {
+                    RedisConnectionFactory factory = ((RedisTemplate<?, ?>) bean).getConnectionFactory();
+
                     RedisSerializer<?> defaultSerializer = ((RedisTemplate<?, ?>) bean).getDefaultSerializer();
                     RedisSerializer<?> keySerializer = ((RedisTemplate<?, ?>) bean).getKeySerializer();
                     RedisSerializer<?> valueSerializer = ((RedisTemplate<?, ?>) bean).getValueSerializer();
@@ -111,11 +138,20 @@ public class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered 
     }
 
 
-    private boolean isTargetBean(@NotNull Object bean, String className) {
+    private static boolean isTargetBean(@NotNull Object bean, String className) {
         try {
-            return Class.forName(className).isAssignableFrom(bean.getClass());
+            Class<?> cls = getTargetCls(className);
+            return cls != null && cls.isAssignableFrom(bean.getClass());
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    private static Class<?> getTargetCls(String className) {
+        try {
+            return Class.forName(className);
+        } catch (Exception e) {
+            return null;
         }
     }
 
