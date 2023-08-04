@@ -77,9 +77,6 @@ class RedisMoniLogInterceptor implements MethodInterceptor {
             String msgPrefix = "";
             if (StringUtils.isNotBlank(ri.maybeKey)) {
                 msgPrefix = "[key:" + ri.maybeKey + "]";
-                if (StringUtils.isNotBlank(p.getMsgInfo())) {
-                    msgPrefix += " ";
-                }
             }
             p.setMsgInfo(msgPrefix + p.getMsgInfo());
             MoniLogUtil.log(p);
