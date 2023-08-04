@@ -82,7 +82,7 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
             throw new NullPointerException("new bean to replace cannot be null");
         }
         Object oldBean = ctx.getBean(beanName);
-        if (oldBean.getClass() != newBean.getClass()) {
+        if (!oldBean.getClass().isAssignableFrom(newBean.getClass())) {
             throw new IllegalArgumentException("new bean not compatiable with " + oldBean.getClass());
         }
         ConfigurableListableBeanFactory beanFactory = ctx.getBeanFactory();
