@@ -18,7 +18,7 @@ import static com.jiduauto.monilog.MoniLogPostProcessor.REDIS_TEMPLATE;
  * @date 2023/08/04
  */
 @Slf4j
-class ApplicationPreparedListener implements ApplicationListener<ApplicationPreparedEvent> {
+class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent> {
     @Resource
     private MoniLogProperties moniLogProperties;
 

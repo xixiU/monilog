@@ -37,9 +37,9 @@ class MoniLogAutoConfiguration {
     }
 
     @Bean
-    ApplicationPreparedListener applicationPreparedListener() {
+    MoniLogAppListener applicationPreparedListener() {
         log.info(">>>monilog mybatis start...");
-        return new ApplicationPreparedListener();
+        return new MoniLogAppListener();
     }
 
     @Bean
