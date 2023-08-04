@@ -64,6 +64,7 @@ public class MoniLogPostProcessor implements InstantiationAwareBeanPostProcessor
         }
         if (isTargetBean(bean, "com.jiduauto.javakit.redis.RedisRegister")) {
             System.out.println("这里可以拿到redis链接");
+            //考虑一下使用MethodReplacer
             return bean;
         }
         if (isTargetBean(bean, FEIGN_CLIENT)) {
