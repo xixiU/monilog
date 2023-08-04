@@ -65,8 +65,12 @@ class TagBuilder {
     }
 
     public TagBuilder add(String key, String value) {
-        if (StringUtils.isBlank(key) || StringUtils.isBlank(value)) {
+        if (StringUtils.isBlank(key)) {
             return this;
+        }
+        // 必须保证tag的key一致
+        if (StringUtils.isBlank(value)) {
+            value = "";
         }
         this.tags.add(key);
         this.tags.add(value);
