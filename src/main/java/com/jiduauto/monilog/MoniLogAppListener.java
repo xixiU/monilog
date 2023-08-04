@@ -84,7 +84,7 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
                 }
                 return bucket;
             });
-            SpringUtils.replaceBean(ctx, beanName, proxy);
+            SpringUtils.replaceSingletonBean(ctx, beanName, proxy);
         }
     }
 }

@@ -77,7 +77,7 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
     }
 
 
-    static <T> void replaceBean(ConfigurableApplicationContext ctx, String beanName, T newBean) {
+    static <T> void replaceSingletonBean(ConfigurableApplicationContext ctx, String beanName, T newBean) {
         if (newBean == null) {
             throw new NullPointerException("new bean to replace cannot be null");
         }
