@@ -316,9 +316,9 @@ class MoniLogProperties implements InitializingBean {
          */
         private LogOutputLevel detailLogLevel = LogOutputLevel.onException;
         /**
-         * redis大值监控日志输出阀值，单位: KB， 默认:5KB， 即超过5KB的缓存，将打印error日志
+         * redis大值监控日志输出阀值，单位: KB， 默认:10KB， 即超过5KB的缓存，将打印error日志
          */
-        private float warnForValueLength = 5;
+        private float warnForValueLength = 10;
     }
 
     @Getter
