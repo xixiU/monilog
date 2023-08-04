@@ -137,10 +137,10 @@ class RedisMoniLogInterceptor {
     }
 
     static class RedissonInterceptor implements MethodInterceptor {
-        private static final Set<String> SKIP_METHODS = new HashSet<>();
+        private static final Set<String> TARGET_METHODS = new HashSet<>();
 
         static {
-            SKIP_METHODS.addAll(Arrays.asList("addListener"));
+            TARGET_METHODS.addAll(Arrays.asList("transfer", "get", "getNow", "getInterrupted", "getInterrupted"));
         }
 
         private final MoniLogProperties.RedisProperties redisProperties;
@@ -150,17 +150,13 @@ class RedisMoniLogInterceptor {
         }
 
         /**
-         * 调用RBucket或RObjectAsync对应子类的方法
-         *
-         * @param invocation the method invocation joinpoint
-         * @return
-         * @throws Throwable
+         * 调用CommandAsyncExecutor的方法
          */
         @Override
         public Object invoke(MethodInvocation invocation) throws Throwable {
             Method method = invocation.getMethod();
             String methodName = method.getName();
-            if (SKIP_METHODS.contains(methodName)) {
+            if (!TARGET_METHODS.contains(methodName)) {
                 return invocation.proceed();
             }
             Object target = invocation.getThis();
