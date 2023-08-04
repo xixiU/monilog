@@ -3,6 +3,7 @@ package com.jiduauto.monilog;
 import com.google.common.collect.Sets;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -88,6 +89,24 @@ class MoniLogProperties implements InitializingBean {
         }
         System.setProperty("monilog.appName", (this.appName = SpringUtils.getApplicationName()));
         return this.appName;
+    }
+
+    boolean isComponentEnable(String componentName, Boolean componentEnable) {
+        if (!Boolean.TRUE.equals(componentEnable)) {
+            return false;
+        }
+        Set<String> componentIncludes = getComponentIncludes();
+        if (CollectionUtils.isEmpty(componentIncludes)) {
+            return false;
+        }
+        if (componentIncludes.contains("*") || componentIncludes.contains(componentName)) {
+            Set<String> componentExcludes = getComponentExcludes();
+            if (CollectionUtils.isEmpty(componentExcludes)) {
+                return true;
+            }
+            return !componentExcludes.contains("*") && !componentExcludes.contains(componentName);
+        }
+        return false;
     }
 
     @Override
@@ -296,6 +315,10 @@ class MoniLogProperties implements InitializingBean {
          * redis的详情日志输出级别，默认仅异常时输出
          */
         private LogOutputLevel detailLogLevel = LogOutputLevel.onException;
+        /**
+         * redis大值监控日志输出阀值，单位: KB， 默认:5KB， 即超过5KB的缓存，将打印error日志
+         */
+        private float warnForValueLength = 5;
     }
 
     @Getter

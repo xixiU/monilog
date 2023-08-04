@@ -11,7 +11,7 @@ import java.util.Set;
  * @date 2023/07/26
  */
 class ThreadUtil {
-    public static StackTraceElement getNextClassFromStack(Class<?> currentCls) {
+    static StackTraceElement getNextClassFromStack(Class<?> currentCls) {
         return getNextClassFromStack(currentCls, null);
     }
 
@@ -22,7 +22,7 @@ class ThreadUtil {
      * @param excludePkgPrefixs
      * @return
      */
-    public static StackTraceElement getNextClassFromStack(Class<?> currentCls, String... excludePkgPrefixs) {
+    static StackTraceElement getNextClassFromStack(Class<?> currentCls, String... excludePkgPrefixs) {
         if (currentCls == null) {
             return null;
         }

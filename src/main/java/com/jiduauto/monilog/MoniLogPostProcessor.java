@@ -1,9 +1,9 @@
 package com.jiduauto.monilog;
 
+import com.google.common.collect.Sets;
 import com.xxl.job.core.handler.IJobHandler;
 import feign.Client;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.MessageListener;
@@ -14,57 +14,39 @@ import org.apache.rocketmq.spring.core.RocketMQListener;
 import org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.config.InstantiationAwareBeanPostProcessor;
+import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.core.Ordered;
 import org.springframework.core.PriorityOrdered;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.RedisSerializer;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
+/**
+ * spring bean的实例化过程参考：https://blog.csdn.net/m0_37588577/article/details/127639584
+ */
+
 @Slf4j
-public class MoniLogPostProcessor implements InstantiationAwareBeanPostProcessor, PriorityOrdered {
+public class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered {
+    static final Map<String, Class<?>> CACHED_CLASS = new HashMap<>();
     private static final String FEIGN_CLIENT = "feign.Client";
     private static final String XXL_JOB = "com.xxl.job.core.handler.IJobHandler";
-    private static final String REDIS_CONNECTION = "org.springframework.data.redis.connection.RedisConnectionFactory";
-    private static final String REDIS_TEMPLATE = "org.springframework.data.redis.core.RedisTemplate";
     private static final String MQ_ADMIN = "org.apache.rocketmq.client.MQAdmin";
     private static final String MQ_LISTENER_CONTAINER = "org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer";
-
     private static final String REDIS_CONN_FACTORY = "org.springframework.data.redis.connection.RedisConnectionFactory";
-    private static final String REDISSON_CLIENT = "org.redisson.api.RedissonClient";
+    static final String REDIS_TEMPLATE = "org.springframework.data.redis.core.RedisTemplate";
+    static final String REDISSON_CLIENT = "org.redisson.api.RedissonClient";
     private final MoniLogProperties moniLogProperties;
 
     public MoniLogPostProcessor(MoniLogProperties moniLogProperties) {
         this.moniLogProperties = moniLogProperties;
+        loadClass();
         log.info(">>>MoniLogPostProcessor initializing...");
-    }
-
-    @Override
-    public boolean postProcessAfterInstantiation(Object bean, String beanName) throws BeansException {
-        //由于redis所依赖的RedisConnectionFactory和RedisTemplate以及StringRedisTemplate被javakit在RedisRegister中过早实例化，会导致BeanPostProcessor无法处理到它
-        //因此才在这里进行二次增强
-        Class<?> redisConnCls = getTargetCls(REDIS_CONN_FACTORY);
-        if (redisConnCls == null) {
-            return InstantiationAwareBeanPostProcessor.super.postProcessAfterInstantiation(bean, beanName);
-        }
-        if (bean instanceof RedisTemplate || bean instanceof RedisConnectionFactory) {
-            System.out.println("...RedisConnectionFactory...");
-        }
-
-        //需要支持RedissonClient
-        return InstantiationAwareBeanPostProcessor.super.postProcessAfterInstantiation(bean, beanName);
     }
 
     @Override
     public Object postProcessAfterInitialization(@NotNull Object bean, @NotNull String beanName) throws BeansException {
         if (!moniLogProperties.isEnable()) {
-            return bean;
-        }
-        if (isTargetBean(bean, "com.jiduauto.javakit.redis.RedisRegister")) {
-            System.out.println("这里可以拿到redis链接");
-            //考虑一下使用MethodReplacer
             return bean;
         }
         if (isTargetBean(bean, FEIGN_CLIENT)) {
@@ -76,24 +58,9 @@ public class MoniLogPostProcessor implements InstantiationAwareBeanPostProcessor
             if (isComponentEnable("xxljob", moniLogProperties.getXxljob().isEnable())) {
                 return XxlJobMoniLogInterceptor.getProxyBean((IJobHandler) bean);
             }
-        } else if (isTargetBean(bean, REDIS_CONNECTION) || isTargetBean(bean, REDIS_TEMPLATE)) {
+        } else if (isTargetBean(bean, REDIS_TEMPLATE)) {
             if (isComponentEnable("redis", moniLogProperties.getRedis().isEnable())) {
-                log.info(">>>monilog redis start...");
-                if (bean instanceof RedisConnectionFactory) {
-                    return RedisMoniLogInterceptor.getProxyBean(bean);
-                } else {
-                    RedisConnectionFactory factory = ((RedisTemplate<?, ?>) bean).getConnectionFactory();
-
-                    RedisSerializer<?> defaultSerializer = ((RedisTemplate<?, ?>) bean).getDefaultSerializer();
-                    RedisSerializer<?> keySerializer = ((RedisTemplate<?, ?>) bean).getKeySerializer();
-                    RedisSerializer<?> valueSerializer = ((RedisTemplate<?, ?>) bean).getValueSerializer();
-                    RedisSerializer<String> stringSerializer = ((RedisTemplate<?, ?>) bean).getStringSerializer();
-                    RedisSerializer<?> hashKeySerializer = ((RedisTemplate<?, ?>) bean).getHashKeySerializer();
-                    RedisSerializer<?> hashValueSerializer = ((RedisTemplate<?, ?>) bean).getHashValueSerializer();
-                    //...
-                    System.out.println("...redistemplate...");
-                    return bean;
-                }
+                log.info(">>>monilog redis start skip...");
             }
         } else if (isTargetBean(bean, MQ_ADMIN) || isTargetBean(bean, MQ_LISTENER_CONTAINER)) {
             log.info(">>>monilog recoketmq start...");
@@ -133,7 +100,6 @@ public class MoniLogPostProcessor implements InstantiationAwareBeanPostProcessor
                 return bean;
             }
         }
-
         return bean;
     }
 
@@ -147,7 +113,11 @@ public class MoniLogPostProcessor implements InstantiationAwareBeanPostProcessor
         }
     }
 
-    private static Class<?> getTargetCls(String className) {
+    static Class<?> getTargetCls(String className) {
+        Class<?> cls = CACHED_CLASS.get(className);
+        if (cls != null) {
+            return cls;
+        }
         try {
             return Class.forName(className);
         } catch (Exception e) {
@@ -163,23 +133,17 @@ public class MoniLogPostProcessor implements InstantiationAwareBeanPostProcessor
 
     // 校验是否排除
     private boolean isComponentEnable(String component, Boolean componentEnable) {
-        if (!Boolean.TRUE.equals(componentEnable)) {
-            return false;
-        }
-        Set<String> componentIncludes = moniLogProperties.getComponentIncludes();
-        if (CollectionUtils.isEmpty(componentIncludes)) {
-            return false;
-        }
-        if (componentIncludes.contains("*") || componentIncludes.contains(component)) {
-            Set<String> componentExcludes = moniLogProperties.getComponentExcludes();
-            if (CollectionUtils.isEmpty(componentExcludes)) {
-                return true;
+        return moniLogProperties.isComponentEnable(component, componentEnable);
+    }
+
+    private static void loadClass() {
+        Set<String> clsNames = Sets.newHashSet(FEIGN_CLIENT, XXL_JOB, MQ_ADMIN, MQ_LISTENER_CONTAINER, REDIS_CONN_FACTORY, REDIS_TEMPLATE, REDISSON_CLIENT);
+        for (String clsName : clsNames) {
+            try {
+                Class<?> cls = Class.forName(clsName);
+                CACHED_CLASS.put(clsName, cls);
+            } catch (Exception ignore) {
             }
-            if (componentExcludes.contains("*") || componentExcludes.contains(component)) {
-                return false;
-            }
-            return true;
         }
-        return false;
     }
 }

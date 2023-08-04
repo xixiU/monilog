@@ -37,8 +37,13 @@ class MoniLogAutoConfiguration {
     }
 
     @Bean
+    ApplicationPreparedListener applicationPreparedListener() {
+        log.info(">>>monilog mybatis start...");
+        return new ApplicationPreparedListener();
+    }
+
+    @Bean
     MoniLogPostProcessor moniLogPostProcessor(MoniLogProperties moniLogProperties) {
-        //因为MoniLogPostProcessor实现了BeanFactoryPostProcessor接口，因此会较早实例化，彼时SpringUtils还没有被注入属性，因此这里要求springUtils必须尽早实例化
         return new MoniLogPostProcessor(moniLogProperties);
     }
 

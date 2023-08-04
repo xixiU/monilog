@@ -20,18 +20,18 @@ public class ProxyUtils {
      * @param interceptor 代理方法
      * @return 代理类
      */
-    public static Object getProxy(Object obj, MethodInterceptor interceptor) {
+    static <T> T getProxy(T obj, MethodInterceptor interceptor) {
         ProxyFactory proxy = new ProxyFactory(obj);
         proxy.setProxyTargetClass(true);
         proxy.addAdvice(interceptor);
-        return proxy.getProxy();
+        return (T) proxy.getProxy();
     }
 
-    public static <T extends Annotation> T copyAnnotation(T anno) {
+    static <T extends Annotation> T copyAnnotation(T anno) {
         return copyAnnotation(anno, null);
     }
 
-    public static <T extends Annotation> T copyAnnotation(T origin, Map<String, Object> specifiedValues) {
+    static <T extends Annotation> T copyAnnotation(T origin, Map<String, Object> specifiedValues) {
         final String memberValuesFieldName = "memberValues";
         try {
             Class<?> cls = origin.getClass();

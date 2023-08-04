@@ -205,7 +205,6 @@ class RocketMqMoniLogInterceptor {
             } catch (Exception e) {
                 MoniLogUtil.innerDebug("sendMessageAfter error", e);
             }
-
         }
     }
 }
