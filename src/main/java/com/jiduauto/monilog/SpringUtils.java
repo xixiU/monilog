@@ -83,7 +83,7 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
         }
         Object oldBean = ctx.getBean(beanName);
         if (!oldBean.getClass().isAssignableFrom(newBean.getClass())) {
-            throw new IllegalArgumentException("new bean not compatiable with " + oldBean.getClass());
+            throw new IllegalArgumentException("new bean not compatible with " + oldBean.getClass());
         }
         ConfigurableListableBeanFactory beanFactory = ctx.getBeanFactory();
         Map<String, Object> singletonMutex = (Map<String, Object>) beanFactory.getSingletonMutex();
