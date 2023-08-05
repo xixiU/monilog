@@ -107,6 +107,7 @@ class RedisMoniLogInterceptor {
     }
 
     /**
+     * 对RedissonClient的执行监控也不太容易，仍需要以曲线求国的方式进行
      * RedissonClient是异步的，且在javakit环境下，其client不受spring生命周期约束，即不能在Spring处理bean的生命周期内进行拦截增强，
      * 此外，它也不能像RedisTemplate那样在Spring启动准备工作妥当后再去增强RedisConnectionFactory，因为RedissonClient内部没有可被增强的连接器，
      * 对RedissonClient的增强，目前只能用SpringAOP去实现(好在Redisson实现了一个定义清晰的接口)，但因为RedissonClient的方法都是异步的，所以即使做了

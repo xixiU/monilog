@@ -30,6 +30,7 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
     }
 
     /**
+     * 对RedisTemplate的执行监控并不太容易，需要以曲线求国的方式进行
      * 此方法对RedisTemplate进行增强，只所以将此操作放在Spring的PreparedEvent之后进行，是因为在javakit环境下，
      * RedisTemplate实例是由javakit手动初始化并使用BeanFactory.registerSingleton来注册到Spring中去的，这样一来，
      * 我们没有办法在Spring的任何生命周期回调函数中拿到这个bean，也就没办法对其在实例化阶段进行增强。另一方面，我们也没有办法对
