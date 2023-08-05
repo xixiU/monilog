@@ -19,7 +19,6 @@ import org.springframework.data.redis.serializer.RedisSerializer;
 import java.lang.reflect.Method;
 import java.util.Set;
 
-
 @Slf4j
 class RedisMoniLogInterceptor {
     private static final long ONE_KB = 2 << 19;
@@ -145,9 +144,6 @@ class RedisMoniLogInterceptor {
         private final MoniLogParams p;
         private final MoniLogProperties.RedisProperties redisProperties;
 
-        /**
-         * 调用CommandAsyncExecutor的方法
-         */
         @Override
         public Object invoke(MethodInvocation invocation) throws Throwable {
             Method method = invocation.getMethod();
