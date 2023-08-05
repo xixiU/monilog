@@ -115,8 +115,8 @@ class RedisMoniLogInterceptor {
      * <ol>
      * <li> 基于普通AOP增强RedissonClient，拦截返回结果为RMap,RSet,RList,RBucket,RBuckets,RLock的所有方法：</li>
      * <li> 正常执行原方法</li>
-     * <li> 对返回结果进行包装和增强,即：放入一个代理结果中去，这个代理结果中保存执行前的时间点信息、调用栈信息</li>
-     * <li> 再监控代理结果的执行</li>
+     * <li> 对返回结果进行包装和增强,即：替换为一个代理对象，同时这个代理结果被new出来时，顺便保存执行前的时间点信息、上下文信息</li>
+     * <li> 再监控此结果类的代理对象的方法执行，并统计耗时、大key等</li>
      * </ol>
      */
     @Aspect
