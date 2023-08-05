@@ -64,8 +64,8 @@ class RedisMoniLogInterceptor {
             } finally {
                 p.setCost(System.currentTimeMillis() - start);
                 JedisInvocation ri = parseRedisInvocation(invocation, ret);
-                if (redisProperties != null && redisProperties.getLongRt() > 0 && p.getCost() > redisProperties.getLongRt()) {
-                    log.error("redis_cost_time_too_long, action: {}, maybeKey:{}, time:{}", p.getService() + "." + p.getAction(), ri.maybeKey, p.getCost());
+                if (redisProperties.getLongRt() > 0 && p.getCost() > redisProperties.getLongRt()) {
+                    log.error("redis_cost_time_too_long, action: {}, key:{}, time:{}", p.getService() + "." + p.getAction(), ri.maybeKey, p.getCost());
                 }
                 p.setInput(ri.args);
                 p.setOutput(ri.result);
@@ -171,8 +171,8 @@ class RedisMoniLogInterceptor {
             } finally {
                 p.setCost(System.currentTimeMillis() - p.getCost());
                 String maybeKey = parserRedissonMaybeKey(p.getInput());
-                if (redisProperties != null && redisProperties.getLongRt() > 0 && p.getCost() > redisProperties.getLongRt()) {
-                    log.error("redis_cost_time_too_long, action: {}, maybeKey:{}, time:{}", p.getAction(), maybeKey, p.getCost());
+                if (redisProperties.getLongRt() > 0 && p.getCost() > redisProperties.getLongRt()) {
+                    log.error("redis_cost_time_too_long, action: {}, key:{}, time:{}", p.getAction(), maybeKey, p.getCost());
                 }
                 if (ret != null && StringUtils.isNotBlank(maybeKey)) {
                     long valueLen = 0;
