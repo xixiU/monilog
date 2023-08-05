@@ -276,7 +276,7 @@ class MoniLogProperties implements InitializingBean {
         /**
          * mybatis慢sql阈值，单位毫秒.
          */
-        private long longQueryTime = 2000;
+        private long longRt = 2000;
     }
 
     @Getter
@@ -319,6 +319,11 @@ class MoniLogProperties implements InitializingBean {
          * redis大值监控日志输出阀值，单位: KB， 默认:10KB， 即超过5KB的缓存，将打印error日志(注意，仅对redis的读取类接口的结果大小做监控)
          */
         private float warnForValueLength = 10;
+
+        /**
+         * redis慢rt阈值，单位毫秒. 默认100ms
+         */
+        private long longRt = 100;
     }
 
     @Getter
