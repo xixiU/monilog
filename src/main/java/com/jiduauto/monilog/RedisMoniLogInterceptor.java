@@ -11,9 +11,7 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.redisson.api.RBucketsAsync;
-import org.redisson.api.RLockAsync;
-import org.redisson.api.RObjectAsync;
+import org.redisson.api.*;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
 
@@ -159,10 +157,10 @@ class RedisMoniLogInterceptor {
     }
 
     /**
-     * RedissonClient的监控比较难实现。基本思路如下：
-     * 1. 增强RedissonClient的所有方法：
+     * RedissonClient是异步的，且在javakit环境下，其client不受spring生命周期约束，因此拦截比较难实现。好在其有一个定义清晰的接口。因此其实的实现思路如下：
+     * 1. 基于普通AOP增强RedissonClient，拦截返回结果为RMap,RSet,RList,RBucket,RBuckets,RLock的所有方法：
      * 1.1 正常执行原方法
-     * 1.2 对返回结果进行包装和增强(仅RObjectAsync、RBucketsAsync、RLockAsync)，即：放入一个代理结果中去，这个代理结果中保存执行前的时间点信息、调用栈信息
+     * 1.2 对返回结果进行包装和增强,即：放入一个代理结果中去，这个代理结果中保存执行前的时间点信息、调用栈信息
      * 1.3 再监控代理结果的执行
      */
     @Aspect
@@ -175,7 +173,12 @@ class RedisMoniLogInterceptor {
             System.out.println("拦截到RedissonClient中方法的执行...");
             long start = System.currentTimeMillis();
             Object result = pjp.proceed();
-            if (result instanceof RObjectAsync || result instanceof RLockAsync || result instanceof RBucketsAsync) {
+            if (result instanceof RMap
+                    || result instanceof RSet
+                    || result instanceof RList
+                    || result instanceof RBucket
+                    || result instanceof RBuckets
+                    || result instanceof RLock) {
                 System.out.println("返回结果需要被代理一下");
                 MoniLogParams p = new MoniLogParams();
                 MethodSignature signature = (MethodSignature) pjp.getSignature();
@@ -199,10 +202,11 @@ class RedisMoniLogInterceptor {
     private static class RedissonResultProxy implements MethodInterceptor {
         private static final Set<String> TARGET_METHODS = Sets.newHashSet(
                 "get", "getAndDelete", "getAndSet", "getAndExpire", "getAndClearExpire",
-                "set", "trySet", "setAndKeepTTL", "setIfAbsent", "setIfExists", "compareAndSet",
-                "tryLock", "lock", "tryLock", "lockInterruptibly"
+                "put", "putIfAbsent", "putIfExists", "randomEntries", "randomKeys", "addAndGet", "containsKey", "containsValue", "remove", "replace", "putAll",
+                "fastPut", "fastRemove", "fastReplace", "fastPutIfAbsent", "fastPutIfExists", "readAllKeySet", "readAllValues", "readAllEntrySet", "readAllMap",
+                "keySet", "values", "entrySet", "addAfter", "addBefore", "fastSet", "readAll", "range", "random", "removeRandom", "tryAdd",
+                "set", "trySet", "setAndKeepTTL", "setIfAbsent", "setIfExists", "compareAndSet", "tryLock", "lock", "tryLock", "lockInterruptibly"
         );
-
         private final MoniLogParams p;
 
         /**
