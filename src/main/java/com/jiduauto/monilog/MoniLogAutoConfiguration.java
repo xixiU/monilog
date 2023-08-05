@@ -110,6 +110,16 @@ class MoniLogAutoConfiguration {
         return new XxlJobMoniLogInterceptor();
     }
 
+    @ConditionalOnProperty(prefix = "monilog.redis", name = "enable", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnExpression("('${monilog.component.includes:*}'.equals('*') or '${monilog.component.includes}'.contains('redis')) and !('${monilog.component.excludes:}'.equals('*') or '${monilog.component.excludes:}'.contains('redis'))")
+    @ConditionalOnBean(type = "org.redisson.api.RedissonClient")
+    @Bean
+    RedisMoniLogInterceptor.RedissonInterceptor redissonInterceptor(MoniLogProperties moniLogProperties) {
+        log.info(">>>monilog redis[redisson] start...");
+        //redisson是异步api，拦截操作较为复杂，需要分步进行。通过下面的这个Interceptor的AOP来实现
+        return new RedisMoniLogInterceptor.RedissonInterceptor(moniLogProperties.getRedis());
+    }
+
     @Configuration
     @ConditionalOnProperty(prefix = "monilog.httpclient", name = "enable", havingValue = "true", matchIfMissing = true)
     @ConditionalOnExpression("('${monilog.component.includes:*}'.equals('*') or '${monilog.component.includes}'.contains('httpclient')) and !('${monilog.component.excludes:}'.equals('*') or '${monilog.component.excludes:}'.contains('httpclient'))")

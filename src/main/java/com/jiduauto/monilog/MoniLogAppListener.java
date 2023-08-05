@@ -2,11 +2,6 @@ package com.jiduauto.monilog;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
-import org.redisson.Redisson;
-import org.redisson.WriteBehindService;
-import org.redisson.api.RedissonClient;
-import org.redisson.command.CommandAsyncExecutor;
-import org.redisson.eviction.EvictionScheduler;
 import org.springframework.boot.context.event.ApplicationPreparedEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -16,7 +11,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import javax.annotation.Resource;
 import java.util.Map;
 
-import static com.jiduauto.monilog.MoniLogPostProcessor.REDISSON_CLIENT;
 import static com.jiduauto.monilog.MoniLogPostProcessor.REDIS_TEMPLATE;
 
 /**
@@ -31,8 +25,8 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
     @Override
     public void onApplicationEvent(ApplicationPreparedEvent event) {
         ConfigurableApplicationContext ctx = event.getApplicationContext();
+        //这里仅增加redisTemplate，不包括Redisson， Redisson的比较复杂，将通过Aop实现
         enhanceRedisTemplate(ctx);
-        enhanceRedissonClient(ctx);
     }
 
     private void enhanceRedisTemplate(ConfigurableApplicationContext ctx) {
@@ -47,9 +41,7 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
             return;
         }
         log.info(">>>monilog redis[jedis] start...");
-        for (Map.Entry<String, RedisTemplate> me : templates.entrySet()) {
-            String beanName = me.getKey();
-            RedisTemplate template = me.getValue();
+        for (RedisTemplate template : templates.values()) {
             //如果redisConnectionFactory调用的是getConnection方法，则该方法返回的结果就是一个RedisConnection对象
             //此时，我们把RedisConnection对象进行增强，让它在执行redis命令时，记录我们的监控数据
             RedisConnectionFactory proxy = ProxyUtils.getProxy(template.getConnectionFactory(), invocation -> {
@@ -61,34 +53,6 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
                 return redisConn;
             });
             template.setConnectionFactory(proxy);
-        }
-    }
-
-    private void enhanceRedissonClient(ConfigurableApplicationContext ctx) {
-        if (null == MoniLogPostProcessor.getTargetCls(REDISSON_CLIENT)) {
-            return;
-        }
-        Map<String, RedissonClient> templates = ctx.getBeansOfType(RedissonClient.class);
-        if (MapUtils.isEmpty(templates)) {
-            return;
-        }
-        if (!moniLogProperties.isComponentEnable("redis", moniLogProperties.getRedis().isEnable())) {
-            return;
-        }
-        log.info(">>>monilog redis[redisson] start...");
-        for (Map.Entry<String, RedissonClient> me : templates.entrySet()) {
-            String beanName = me.getKey();
-            RedissonClient client = me.getValue();
-            if (!(client instanceof Redisson)) {
-                continue;
-            }
-            Redisson r = ((Redisson) client);
-            EvictionScheduler evictionScheduler = r.getEvictionScheduler();
-            WriteBehindService writeBehindService = ReflectUtil.getPropValue(r, "writeBehindService", true);
-            CommandAsyncExecutor proxy = ProxyUtils.getProxy(r.getCommandExecutor(), new RedisMoniLogInterceptor.RedissonInterceptor(moniLogProperties.getRedis()));
-            ReflectUtil.setPropValue(r, "commandExecutor", proxy, true);
-            ReflectUtil.setPropValue(evictionScheduler, "executor", proxy, true);
-            ReflectUtil.setPropValue(writeBehindService, "executor", proxy, true);
         }
     }
 }
