@@ -29,6 +29,22 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
         enhanceRedisTemplate(ctx);
     }
 
+    /**
+     * 此方法对RedisTemplate进行增强，只所以将此操作放在Spring的PreparedEvent之后进行，是因为在javakit环境下，
+     * RedisTemplate实例是由javakit手动初始化并使用BeanFactory.registerSingleton来注册到Spring中去的，这样一来，
+     * 我们没有办法在Spring的任何生命周期回调函数中拿到这个bean，也就没办法对其在实例化阶段进行增强。另一方面，我们也没有办法对
+     * RedisTemplate进行AOP拦截，因为它执行Redis命令是通过RedisConnectionFactory的RedisConnection进行的，我们需要代理的是
+     * RedisConnection的执行命令，而不能是RedisTemplate或RedisConnectionFactory，而RedisConnection又不是一个SpringBean
+     * 所以声明式AOP的路是走不通的。 因此我们选择的方法只能是在Spring的PreparedEvent之后，通过为RedisConnectionFactory创建第一层代理，
+     * 然后拦截第一层代理对象中的getConnection方法，对此方法的返回值(RedisConnection)再进行代理，得到一个ConnectionProxy，然后再对
+     * ConnectionProxy的所有我们关心的redis指令进行拦截和监控 (耗时、大key等)。
+     * <p>
+     * 注意，为了让摘要(或详情)日志中输出的action信息更贴近业务，我们通过回溯线程栈的方式，跳过指定组件(org.springframework.*)后，
+     * 找到最贴近业务调用的目标服务作为监控的目标service和action
+     *
+     * @param ctx
+     */
+
     private void enhanceRedisTemplate(ConfigurableApplicationContext ctx) {
         if (null == MoniLogPostProcessor.getTargetCls(REDIS_TEMPLATE)) {
             return;
@@ -42,8 +58,6 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
         }
         log.info(">>>monilog redis[jedis] start...");
         for (RedisTemplate template : templates.values()) {
-            //如果redisConnectionFactory调用的是getConnection方法，则该方法返回的结果就是一个RedisConnection对象
-            //此时，我们把RedisConnection对象进行增强，让它在执行redis命令时，记录我们的监控数据
             RedisConnectionFactory proxy = ProxyUtils.getProxy(template.getConnectionFactory(), invocation -> {
                 Object redisConn = invocation.proceed();
                 String methodName = invocation.getMethod().getName();
