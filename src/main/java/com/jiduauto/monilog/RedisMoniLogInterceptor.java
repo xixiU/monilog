@@ -100,7 +100,7 @@ class RedisMoniLogInterceptor {
                 ri.maybeKey = parseJedisMaybeKey(keySerializer, invocation.getArguments());
                 ri.result = deserializeRedis(valueSerializer, new Object[]{ret});
             } catch (Exception e) {
-                MoniLogUtil.innerDebug("parseRedisInvocation-deserilize error", e);
+                MoniLogUtil.innerDebug("parseRedisInvocation-deserialize error", e);
             }
             return ri;
         }
