@@ -21,8 +21,7 @@ import java.util.Set;
 
 @Slf4j
 class RedisMoniLogInterceptor {
-    //private static final long ONE_KB = 2 << 19;
-    private static final long ONE_KB = 2 << 1;
+    private static final long ONE_KB = 2 << 19;
     private static final Set<String> SKIP_METHODS_FOR_JEDIS = Sets.newHashSet("isPipelined", "close", "isClosed", "getNativeConnection", "isQueueing", "closePipeline");
     private static final Set<String> TARGET_REDISSON_METHODS = Sets.newHashSet("get", "getAndDelete", "getAndSet", "getAndExpire", "getAndClearExpire", "put", "putIfAbsent", "putIfExists", "randomEntries", "randomKeys", "addAndGet", "containsKey", "containsValue", "remove", "replace", "putAll", "fastPut", "fastRemove", "fastReplace", "fastPutIfAbsent", "fastPutIfExists", "readAllKeySet", "readAllValues", "readAllEntrySet", "readAllMap", "keySet", "values", "entrySet", "addAfter", "addBefore", "fastSet", "readAll", "range", "random", "removeRandom", "tryAdd", "set", "trySet", "setAndKeepTTL", "setIfAbsent", "setIfExists", "compareAndSet", "tryLock", "lock", "tryLock", "lockInterruptibly");
 
@@ -71,7 +70,7 @@ class RedisMoniLogInterceptor {
                 p.setService(ri.cls.getSimpleName());
                 p.setAction(ri.method);
                 if (ri.valueLen > 0 && ri.valueLen > redisProperties.getWarnForValueLength() * ONE_KB) {
-                    log.error("redis_value_size_too_large, {}.{}[key={}], size: {}({})", p.getService(), p.getAction(), ri.maybeKey, ri.valueLen, RamUsageEstimator.humanReadableUnits(ri.valueLen));
+                    log.error("redis_value_size_too_large, {}.{}[key={}], size: {}", p.getService(), p.getAction(), ri.maybeKey, RamUsageEstimator.humanReadableUnits(ri.valueLen));
                 }
                 String msgPrefix = "";
                 if (StringUtils.isNotBlank(ri.maybeKey)) {
@@ -177,7 +176,7 @@ class RedisMoniLogInterceptor {
                         MoniLogUtil.innerDebug("parseRedissonResult length error", e);
                     }
                     if (valueLen > 0 && valueLen > redisProperties.getWarnForValueLength() * ONE_KB) {
-                        log.error("redis_value_size_too_large, {}.{}[key={}], size: {}({})", p.getService(), p.getAction(), maybeKey, valueLen, RamUsageEstimator.humanReadableUnits(valueLen));
+                        log.error("redis_value_size_too_large, {}.{}[key={}], size: {}", p.getService(), p.getAction(), maybeKey, RamUsageEstimator.humanReadableUnits(valueLen));
                     }
                 }
                 String msgPrefix = "";
