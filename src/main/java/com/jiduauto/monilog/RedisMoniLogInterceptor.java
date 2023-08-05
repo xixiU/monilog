@@ -1,6 +1,7 @@
 package com.jiduauto.monilog;
 
 
+import com.carrotsearch.sizeof.RamUsageEstimator;
 import com.google.common.collect.Sets;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,22 +17,17 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Set;
 
 
 @Slf4j
 class RedisMoniLogInterceptor {
+    private static final long ONE_KB = 2 << 19;
+    private static final Set<String> SKIP_METHODS_FOR_JEDIS = Sets.newHashSet("isPipelined", "close", "isClosed", "getNativeConnection", "isQueueing", "closePipeline");
+    private static final Set<String> TARGET_REDISSON_METHODS = Sets.newHashSet("get", "getAndDelete", "getAndSet", "getAndExpire", "getAndClearExpire", "put", "putIfAbsent", "putIfExists", "randomEntries", "randomKeys", "addAndGet", "containsKey", "containsValue", "remove", "replace", "putAll", "fastPut", "fastRemove", "fastReplace", "fastPutIfAbsent", "fastPutIfExists", "readAllKeySet", "readAllValues", "readAllEntrySet", "readAllMap", "keySet", "values", "entrySet", "addAfter", "addBefore", "fastSet", "readAll", "range", "random", "removeRandom", "tryAdd", "set", "trySet", "setAndKeepTTL", "setIfAbsent", "setIfExists", "compareAndSet", "tryLock", "lock", "tryLock", "lockInterruptibly");
+
     @AllArgsConstructor
     static class JedisTemplateInterceptor implements MethodInterceptor {
-        private static final long ONE_KB = 2 << 19;
-        private static final Set<String> SKIP_METHODS = new HashSet<>();
-
-        static {
-            SKIP_METHODS.addAll(Arrays.asList("isPipelined", "close", "isClosed", "getNativeConnection", "isQueueing", "closePipeline"));
-        }
-
         private final RedisSerializer keySerializer;
         private final RedisSerializer valueSerializer;
         private final MoniLogProperties.RedisProperties redisProperties;
@@ -40,7 +36,7 @@ class RedisMoniLogInterceptor {
         public Object invoke(MethodInvocation invocation) throws Throwable {
             Method method = invocation.getMethod();
             String methodName = method.getName();
-            if (SKIP_METHODS.contains(methodName)) {
+            if (SKIP_METHODS_FOR_JEDIS.contains(methodName)) {
                 return invocation.proceed();
             }
             Object target = invocation.getThis();
@@ -68,14 +64,14 @@ class RedisMoniLogInterceptor {
                 throw e;
             } finally {
                 p.setCost(System.currentTimeMillis() - start);
-                RedisInvocation ri = parseRedisInvocation(invocation, ret);
+                JedisInvocation ri = parseRedisInvocation(invocation, ret);
                 p.setInput(ri.args);
                 p.setOutput(ri.result);
                 p.setServiceCls(ri.cls);
                 p.setService(ri.cls.getSimpleName());
                 p.setAction(ri.method);
                 if (ri.valueLen > 0 && ri.valueLen > redisProperties.getWarnForValueLength() * ONE_KB) {
-                    log.error("redis_value_size_too_large, {}.{}[key={}], size: {}({})", p.getService(), p.getAction(), ri.maybeKey, ri.valueLen, ri.getReadableSize());
+                    log.error("redis_value_size_too_large, {}.{}[key={}], size: {}({})", p.getService(), p.getAction(), ri.maybeKey, ri.valueLen, RamUsageEstimator.humanReadableUnits(ri.valueLen));
                 }
                 String msgPrefix = "";
                 if (StringUtils.isNotBlank(ri.maybeKey)) {
@@ -86,8 +82,8 @@ class RedisMoniLogInterceptor {
             }
         }
 
-        private RedisInvocation parseRedisInvocation(MethodInvocation invocation, Object ret) {
-            RedisInvocation ri = new RedisInvocation();
+        private JedisInvocation parseRedisInvocation(MethodInvocation invocation, Object ret) {
+            JedisInvocation ri = new JedisInvocation();
             try {
                 StackTraceElement st = ThreadUtil.getNextClassFromStack(RedisTemplate.class, "org.springframework");
                 ri.cls = Class.forName(st.getClassName());
@@ -97,62 +93,14 @@ class RedisMoniLogInterceptor {
                 ri.method = invocation.getMethod().getName();
             }
             try {
-                ri.valueLen = ret instanceof byte[] ? ((byte[]) ret).length : 0f;
-                ri.args = deserializeArgs(keySerializer, invocation.getArguments());
-                ri.maybeKey = deserializeKey(keySerializer, invocation.getArguments());
-                ri.result = deserializeArgs(valueSerializer, new Object[]{ret});
+                ri.valueLen = RamUsageEstimator.sizeOf(ret);
+                ri.args = deserializeRedis(keySerializer, invocation.getArguments());
+                ri.maybeKey = parseJedisMaybeKey(keySerializer, invocation.getArguments());
+                ri.result = deserializeRedis(valueSerializer, new Object[]{ret});
             } catch (Exception e) {
                 MoniLogUtil.innerDebug("parseRedisInvocation-deserilize error", e);
             }
             return ri;
-        }
-
-        private String deserializeKey(RedisSerializer serializer, Object[] args) {
-            if (args == null) {
-                return null;
-            }
-            //取参数中第一个byte[]类型的参数做为猜想的key
-            for (Object arg : args) {
-                if (arg instanceof byte[]) {
-                    Object obj = serializer.deserialize((byte[]) arg);
-                    return String.valueOf(obj);
-                }
-            }
-            return null;
-        }
-
-        private Object[] deserializeArgs(RedisSerializer serializer, Object[] args) {
-            if (serializer == null || args == null) {
-                return args;
-            }
-            Object[] result = new Object[args.length];
-            for (int i = 0; i < args.length; i++) {
-                Object arg = args[i];
-                if (arg instanceof byte[]) {
-                    result[i] = serializer.deserialize((byte[]) arg);
-                } else {
-                    result[i] = arg;
-                }
-            }
-            return result;
-        }
-
-        private static class RedisInvocation {
-            Class<?> cls;
-            String method;
-            String maybeKey;
-            Object[] args;
-            Object result;
-            float valueLen;
-
-            String getReadableSize() {
-                if (valueLen <= 0) {
-                    return "0 B";
-                }
-                String[] units = new String[]{"B", "KB", "MB", "GB", "TB"};
-                int digitGroups = (int) (Math.log10(valueLen) / Math.log10(1024));
-                return String.format("%.1f %s", valueLen / Math.pow(1024, digitGroups), units[digitGroups]);
-            }
         }
     }
 
@@ -169,45 +117,33 @@ class RedisMoniLogInterceptor {
         private final MoniLogProperties.RedisProperties redisProperties;
 
         @Around("execution(public org.redisson.api.R* org.redisson.api.RedissonClient+.*(..))")
-        private Object interceptXxlJob(ProceedingJoinPoint pjp) throws Throwable {
-            System.out.println("拦截到RedissonClient中方法的执行...");
+        private Object interceptRedisson(ProceedingJoinPoint pjp) throws Throwable {
             long start = System.currentTimeMillis();
             Object result = pjp.proceed();
-            if (result instanceof RMap
-                    || result instanceof RSet
-                    || result instanceof RList
-                    || result instanceof RBucket
-                    || result instanceof RBuckets
-                    || result instanceof RLock) {
-                System.out.println("返回结果需要被代理一下");
-                MoniLogParams p = new MoniLogParams();
-                MethodSignature signature = (MethodSignature) pjp.getSignature();
-                Method method = signature.getMethod();
-                p.setServiceCls(method.getDeclaringClass());
-                p.setService(method.getDeclaringClass().getSimpleName());
-                p.setAction(method.getName());
-                p.setInput(pjp.getArgs());
-                p.setCost(start); //取结果时再减掉此值
-                p.setSuccess(true);
-                p.setLogPoint(LogPoint.redis);
-                p.setMsgCode(ErrorEnum.SUCCESS.name());
-                p.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
-                return ProxyUtils.getProxy(result, new RedissonResultProxy(p));
+            boolean isTargetResult = result instanceof RMap || result instanceof RSet || result instanceof RList || result instanceof RBucket || result instanceof RBuckets || result instanceof RLock;
+            if (!isTargetResult) {
+                return result;
             }
-            return result;
+            MoniLogParams p = new MoniLogParams();
+            MethodSignature signature = (MethodSignature) pjp.getSignature();
+            Method method = signature.getMethod();
+            p.setServiceCls(method.getDeclaringClass());
+            p.setService(method.getDeclaringClass().getSimpleName());
+            p.setAction(method.getName());
+            p.setInput(pjp.getArgs());
+            p.setCost(start); //取结果时再减掉此值
+            p.setSuccess(true);
+            p.setLogPoint(LogPoint.redis);
+            p.setMsgCode(ErrorEnum.SUCCESS.name());
+            p.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
+            return ProxyUtils.getProxy(result, new RedissonResultProxy(p, redisProperties));
         }
     }
 
     @AllArgsConstructor
     private static class RedissonResultProxy implements MethodInterceptor {
-        private static final Set<String> TARGET_METHODS = Sets.newHashSet(
-                "get", "getAndDelete", "getAndSet", "getAndExpire", "getAndClearExpire",
-                "put", "putIfAbsent", "putIfExists", "randomEntries", "randomKeys", "addAndGet", "containsKey", "containsValue", "remove", "replace", "putAll",
-                "fastPut", "fastRemove", "fastReplace", "fastPutIfAbsent", "fastPutIfExists", "readAllKeySet", "readAllValues", "readAllEntrySet", "readAllMap",
-                "keySet", "values", "entrySet", "addAfter", "addBefore", "fastSet", "readAll", "range", "random", "removeRandom", "tryAdd",
-                "set", "trySet", "setAndKeepTTL", "setIfAbsent", "setIfExists", "compareAndSet", "tryLock", "lock", "tryLock", "lockInterruptibly"
-        );
         private final MoniLogParams p;
+        private final MoniLogProperties.RedisProperties redisProperties;
 
         /**
          * 调用CommandAsyncExecutor的方法
@@ -216,12 +152,13 @@ class RedisMoniLogInterceptor {
         public Object invoke(MethodInvocation invocation) throws Throwable {
             Method method = invocation.getMethod();
             String methodName = method.getName();
-            if (!TARGET_METHODS.contains(methodName) || p == null) {
+            if (!TARGET_REDISSON_METHODS.contains(methodName) || p == null) {
                 return invocation.proceed();
             }
-            Object ret;
+            Object ret = null;
             try {
                 ret = invocation.proceed();
+                p.setOutput(ret);
                 return ret;
             } catch (Throwable e) {
                 p.setException(e);
@@ -232,22 +169,72 @@ class RedisMoniLogInterceptor {
                 throw e;
             } finally {
                 p.setCost(System.currentTimeMillis() - p.getCost());
-//                RedisInvocation ri = parseRedisInvocation(invocation, ret);
-//                p.setInput(ri.args);
-//                p.setOutput(ri.result);
-//                p.setServiceCls(ri.cls);
-//                p.setService(ri.cls.getSimpleName());
-//                p.setAction(ri.method);
-//                if (ri.valueLen > 0 && ri.valueLen > redisProperties.getWarnForValueLength() * ONE_KB) {
-//                    log.error("redis_value_size_too_large, {}.{}[key={}], size: {}({})", p.getService(), p.getAction(), ri.maybeKey, ri.valueLen, ri.getReadableSize());
-//                }
+                String maybeKey = parserRedissonMaybeKey(p.getInput());
+                if (ret != null && StringUtils.isNotBlank(maybeKey)) {
+                    long valueLen = 0;
+                    try {
+                        valueLen = RamUsageEstimator.sizeOf(ret);
+                    } catch (Exception e) {
+                        MoniLogUtil.innerDebug("parseRedissonResult length error", e);
+                    }
+                    if (valueLen > 0 && valueLen > redisProperties.getWarnForValueLength() * ONE_KB) {
+                        log.error("redis_value_size_too_large, {}.{}[key={}], size: {}({})", p.getService(), p.getAction(), maybeKey, valueLen, RamUsageEstimator.humanReadableUnits(valueLen));
+                    }
+                }
                 String msgPrefix = "";
-//                if (StringUtils.isNotBlank(ri.maybeKey)) {
-//                    msgPrefix = "[key=" + ri.maybeKey + "]";
-//                }
+                //与redisTemplate保持一致
+                if (StringUtils.isNotBlank(maybeKey)) {
+                    msgPrefix = "[key=" + maybeKey + "]";
+                }
                 p.setMsgInfo(msgPrefix + p.getMsgInfo());
                 MoniLogUtil.log(p);
             }
         }
+    }
+
+    private static class JedisInvocation {
+        Class<?> cls;
+        String method;
+        String maybeKey;
+        Object[] args;
+        Object result;
+        long valueLen;
+    }
+
+    private static Object[] deserializeRedis(RedisSerializer serializer, Object[] args) {
+        if (serializer == null || args == null) {
+            return args;
+        }
+        Object[] result = new Object[args.length];
+        for (int i = 0; i < args.length; i++) {
+            Object arg = args[i];
+            if (arg instanceof byte[]) {
+                result[i] = serializer.deserialize((byte[]) arg);
+            } else {
+                result[i] = arg;
+            }
+        }
+        return result;
+    }
+
+    private static String parseJedisMaybeKey(RedisSerializer serializer, Object[] args) {
+        if (args == null) {
+            return null;
+        }
+        //取参数中第一个byte[]类型的参数做为猜想的key
+        for (Object arg : args) {
+            if (arg instanceof byte[]) {
+                Object obj = serializer.deserialize((byte[]) arg);
+                return String.valueOf(obj);
+            }
+        }
+        return null;
+    }
+
+    private static String parserRedissonMaybeKey(Object[] input) {
+        if (input == null || input.length == 0 || !(input[0] instanceof String)) {
+            return null;
+        }
+        return (String) input[0];
     }
 }
