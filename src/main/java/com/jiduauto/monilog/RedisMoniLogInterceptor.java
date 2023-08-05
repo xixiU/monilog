@@ -151,6 +151,8 @@ class RedisMoniLogInterceptor {
             if (!TARGET_REDISSON_METHODS.contains(methodName) || p == null) {
                 return invocation.proceed();
             }
+            //e.g. : getBucket().set
+            p.setAction(p.getAction() + "()." + methodName);
             Object ret = null;
             try {
                 ret = invocation.proceed();
