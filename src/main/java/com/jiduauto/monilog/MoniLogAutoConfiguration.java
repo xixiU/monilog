@@ -112,7 +112,7 @@ class MoniLogAutoConfiguration {
 
     @ConditionalOnProperty(prefix = "monilog.redis", name = "enable", havingValue = "true", matchIfMissing = true)
     @ConditionalOnExpression("('${monilog.component.includes:*}'.equals('*') or '${monilog.component.includes}'.contains('redis')) and !('${monilog.component.excludes:}'.equals('*') or '${monilog.component.excludes:}'.contains('redis'))")
-    @ConditionalOnBean(type = "org.redisson.api.RedissonClient")
+    @ConditionalOnClass(name = "org.redisson.api.RedissonClient")
     @Bean
     RedisMoniLogInterceptor.RedissonInterceptor redissonInterceptor(MoniLogProperties moniLogProperties) {
         log.info(">>>monilog redis[redisson] start...");
