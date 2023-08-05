@@ -107,11 +107,17 @@ class RedisMoniLogInterceptor {
     }
 
     /**
-     * RedissonClient是异步的，且在javakit环境下，其client不受spring生命周期约束，因此拦截比较难实现。好在其有一个定义清晰的接口。因此其实的实现思路如下：
-     * 1. 基于普通AOP增强RedissonClient，拦截返回结果为RMap,RSet,RList,RBucket,RBuckets,RLock的所有方法：
-     * 1.1 正常执行原方法
-     * 1.2 对返回结果进行包装和增强,即：放入一个代理结果中去，这个代理结果中保存执行前的时间点信息、调用栈信息
-     * 1.3 再监控代理结果的执行
+     * RedissonClient是异步的，且在javakit环境下，其client不受spring生命周期约束，即不能在Spring处理bean的生命周期内进行拦截增强，
+     * 此外，它也不能像RedisTemplate那样在Spring启动准备工作妥当后再去增强RedisConnectionFactory，因为RedissonClient内部没有可被增强的连接器，
+     * 对RedissonClient的增强，目前只能用SpringAOP去实现(好在Redisson实现了一个定义清晰的接口)，但因为RedissonClient的方法都是异步的，所以即使做了
+     * AOP也并不能对RedissonClient本身做任何处理，只能对其特定方法的返回进行代理，并在创建代理对象前传入已经构造了一半的MonilogParams对象。
+     * 最后再拦截异步响应结果的代理对象的方法，并加以处理， 具体步骤如下：<br>
+     * <ol>
+     * <li> 基于普通AOP增强RedissonClient，拦截返回结果为RMap,RSet,RList,RBucket,RBuckets,RLock的所有方法：</li>
+     * <li> 正常执行原方法</li>
+     * <li> 对返回结果进行包装和增强,即：放入一个代理结果中去，这个代理结果中保存执行前的时间点信息、调用栈信息</li>
+     * <li> 再监控代理结果的执行</li>
+     * </ol>
      */
     @Aspect
     @AllArgsConstructor
