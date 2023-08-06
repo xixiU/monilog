@@ -1,8 +1,8 @@
 package com.jiduauto.monilog;
 
 import lombok.extern.slf4j.Slf4j;
+import org.aopalliance.intercept.Joinpoint;
 import org.apache.http.*;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.HttpContext;
 
@@ -13,23 +13,22 @@ import java.io.IOException;
  * @date 2023/07/31
  */
 @Slf4j
-public class XHttpClientBuilder extends HttpClientBuilder {
-    public XHttpClientBuilder() {
-        super();
+public class MoniHttpClientBuilder extends HttpClientBuilder {
+    //允许业务方使用此方法直接创建HttpClientBuilder
+    public static HttpClientBuilder create() {
+        return addInterceptors(new MoniHttpClientBuilder());
     }
 
-    public static XHttpClientBuilder create() {
-        return new XHttpClientBuilder();
+    static HttpClientBuilder getProxyBean(HttpClientBuilder bean) {
+        HttpClientBuilder builder = ProxyUtils.getProxy(bean, Joinpoint::proceed);
+        return addInterceptors(builder);
     }
 
-    @Override
-    public CloseableHttpClient build() {
-        this.addInterceptorFirst(new RequestInterceptor());
-        this.addInterceptorLast(new ResponseInterceptor());
-        return super.build();
+    private static HttpClientBuilder addInterceptors(HttpClientBuilder builder) {
+        return builder.addInterceptorFirst(new RequestInterceptor()).addInterceptorLast(new ResponseInterceptor());
     }
 
-    static class RequestInterceptor implements HttpRequestInterceptor {
+    private static class RequestInterceptor implements HttpRequestInterceptor {
         @Override
         public void process(HttpRequest httpRequest, HttpContext httpContext) throws HttpException, IOException {
             RequestLine requestLine = httpRequest.getRequestLine();
@@ -49,7 +48,7 @@ public class XHttpClientBuilder extends HttpClientBuilder {
         }
     }
 
-    static class ResponseInterceptor implements HttpResponseInterceptor {
+    private static class ResponseInterceptor implements HttpResponseInterceptor {
         @Override
         public void process(HttpResponse httpResponse, HttpContext httpContext) throws HttpException, IOException {
             MoniLogParams p = (MoniLogParams) httpContext.getAttribute("__MoniLogParams");
