@@ -14,6 +14,8 @@ import java.io.IOException;
  */
 @Slf4j
 public class MoniHttpClientBuilder extends HttpClientBuilder {
+    private static final String MONILOG_PARAMS_KEY = "__MoniLogParams";
+
     //允许业务方使用此方法直接创建HttpClientBuilder
     public static HttpClientBuilder create() {
         return addInterceptors(new MoniHttpClientBuilder());
@@ -44,14 +46,14 @@ public class MoniHttpClientBuilder extends HttpClientBuilder {
             p.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
             p.setLogPoint(LogPoint.http_client);
             p.setTags(TagBuilder.of("url", requestLine.getUri(), "method", requestLine.getMethod()).toArray());
-            httpContext.setAttribute("__MoniLogParams", p);
+            httpContext.setAttribute(MONILOG_PARAMS_KEY, p);
         }
     }
 
     private static class ResponseInterceptor implements HttpResponseInterceptor {
         @Override
         public void process(HttpResponse httpResponse, HttpContext httpContext) throws HttpException, IOException {
-            MoniLogParams p = (MoniLogParams) httpContext.getAttribute("__MoniLogParams");
+            MoniLogParams p = (MoniLogParams) httpContext.getAttribute(MONILOG_PARAMS_KEY);
             if (p == null) {
                 return;
             }
@@ -59,14 +61,14 @@ public class MoniHttpClientBuilder extends HttpClientBuilder {
                 p.setCost(System.currentTimeMillis() - p.getCost());
             }
             StatusLine statusLine = httpResponse.getStatusLine();
-            p.setSuccess(statusLine.getStatusCode() == HttpStatus.SC_OK);
+            p.setSuccess(statusLine.getStatusCode() < HttpStatus.SC_BAD_REQUEST);
             p.setMsgCode(String.valueOf(statusLine.getStatusCode()));
             log.info("httpclient monilog execute... to be implemented");
             //TODO
 //            p.setOutput();
 //            p.setMsgInfo();
 //            p.setException();
-            httpContext.removeAttribute("__MoniLogParams");
+            httpContext.removeAttribute(MONILOG_PARAMS_KEY);
             MoniLogUtil.log(p);
         }
     }
