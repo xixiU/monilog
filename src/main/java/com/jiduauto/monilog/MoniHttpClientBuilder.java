@@ -1,7 +1,6 @@
 package com.jiduauto.monilog;
 
 import lombok.extern.slf4j.Slf4j;
-import org.aopalliance.intercept.Joinpoint;
 import org.apache.http.*;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.HttpContext;
@@ -21,12 +20,7 @@ public class MoniHttpClientBuilder extends HttpClientBuilder {
         return addInterceptors(new MoniHttpClientBuilder());
     }
 
-    static HttpClientBuilder getProxyBean(HttpClientBuilder bean) {
-        HttpClientBuilder builder = ProxyUtils.getProxy(bean, Joinpoint::proceed);
-        return addInterceptors(builder);
-    }
-
-    private static HttpClientBuilder addInterceptors(HttpClientBuilder builder) {
+    static HttpClientBuilder addInterceptors(HttpClientBuilder builder) {
         return builder.addInterceptorFirst(new RequestInterceptor()).addInterceptorLast(new ResponseInterceptor());
     }
 
