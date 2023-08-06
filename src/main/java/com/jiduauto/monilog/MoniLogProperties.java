@@ -332,7 +332,7 @@ class MoniLogProperties implements InitializingBean {
         /**
          * 开启httpClient监控
          */
-        private boolean enable = false;
+        private boolean enable = true;
         /**
          * httpClient的详情日志输出级别，默认仅异常时输出
          */
