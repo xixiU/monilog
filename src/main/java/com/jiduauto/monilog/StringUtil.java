@@ -135,7 +135,25 @@ class StringUtil {
         for (Map.Entry<String, Collection<String>> entry : params.entrySet()) {
             String key = entry.getKey();
             Collection<String> values = entry.getValue();
-            if (org.apache.commons.lang3.StringUtils.isBlank(key) || CollectionUtils.isEmpty(values)) {
+            if (StringUtils.isBlank(key) || CollectionUtils.isEmpty(values)) {
+                continue;
+            }
+            if (queryString.length() > 0) {
+                queryString.append("&");
+            }
+            queryString.append(key)
+                    .append("=")
+                    .append(String.join(",", values));
+        }
+        return queryString.toString();
+    }
+
+    public static String encodeQueryStrings(Map<String, String[]> params) {
+        StringBuilder queryString = new StringBuilder();
+        for (Map.Entry<String, String[]> entry : params.entrySet()) {
+            String key = entry.getKey();
+            String[] values = entry.getValue();
+            if (StringUtils.isBlank(key) || values == null || values.length == 0) {
                 continue;
             }
             if (queryString.length() > 0) {

@@ -2,6 +2,8 @@ package com.jiduauto.monilog;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.*;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.HttpContext;
 
@@ -27,19 +29,34 @@ public class MoniHttpClientBuilder extends HttpClientBuilder {
     private static class RequestInterceptor implements HttpRequestInterceptor {
         @Override
         public void process(HttpRequest httpRequest, HttpContext httpContext) throws HttpException, IOException {
+            String targetHost = (String) httpContext.getAttribute(HttpClientContext.HTTP_TARGET_HOST);
+            String method = httpRequest.getRequestLine().getMethod();
             RequestLine requestLine = httpRequest.getRequestLine();
+            //header
+            Header[] allHeaders = httpRequest.getAllHeaders();
+            //body
+            //params
+            StackTraceElement st = ThreadUtil.getNextClassFromStack(MoniHttpClientBuilder.class, "org.apache");
+            Class<?> serviceCls = HttpClient.class;
+            String methodName = method;
+            if (st != null) {
+                try {
+                    serviceCls = Class.forName(st.getClassName());
+                    methodName = st.getMethodName();
+                } catch (Exception ignore) {
+                }
+            }
             MoniLogParams p = new MoniLogParams();
             p.setCost(System.currentTimeMillis());
-            //TODO
-//            p.setService();
-//            p.setAction();
-//            p.setServiceCls();
-//            p.setInput();
+            p.setServiceCls(serviceCls);
+            p.setService(p.getServiceCls().getSimpleName());
+            p.setAction(methodName);
+//            p.setInput(formatInput);
             p.setSuccess(true);
             p.setMsgCode(ErrorEnum.SUCCESS.name());
             p.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
             p.setLogPoint(LogPoint.http_client);
-            p.setTags(TagBuilder.of("url", requestLine.getUri(), "method", requestLine.getMethod()).toArray());
+            p.setTags(TagBuilder.of("url", targetHost, "method", method).toArray());
             httpContext.setAttribute(MONILOG_PARAMS_KEY, p);
         }
     }
@@ -57,7 +74,6 @@ public class MoniHttpClientBuilder extends HttpClientBuilder {
             StatusLine statusLine = httpResponse.getStatusLine();
             p.setSuccess(statusLine.getStatusCode() < HttpStatus.SC_BAD_REQUEST);
             p.setMsgCode(String.valueOf(statusLine.getStatusCode()));
-            log.info("httpclient monilog execute... to be implemented");
             //TODO
 //            p.setOutput();
 //            p.setMsgInfo();

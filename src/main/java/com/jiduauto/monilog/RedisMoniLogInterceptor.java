@@ -88,8 +88,13 @@ class RedisMoniLogInterceptor {
             JedisInvocation ri = new JedisInvocation();
             try {
                 StackTraceElement st = ThreadUtil.getNextClassFromStack(RedisTemplate.class, "org.springframework");
-                ri.cls = Class.forName(st.getClassName());
-                ri.method = st.getMethodName();
+                if (st != null) {
+                    ri.cls = Class.forName(st.getClassName());
+                    ri.method = st.getMethodName();
+                } else {
+                    ri.cls = invocation.getThis().getClass();
+                    ri.method = invocation.getMethod().getName();
+                }
             } catch (Exception ignore) {
                 ri.cls = invocation.getThis().getClass();
                 ri.method = invocation.getMethod().getName();

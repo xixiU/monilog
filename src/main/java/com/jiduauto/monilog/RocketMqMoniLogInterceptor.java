@@ -10,6 +10,7 @@ import org.apache.rocketmq.client.consumer.listener.*;
 import org.apache.rocketmq.client.hook.SendMessageContext;
 import org.apache.rocketmq.client.hook.SendMessageHook;
 import org.apache.rocketmq.client.impl.producer.DefaultMQProducerImpl;
+import org.apache.rocketmq.client.producer.MQProducer;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.client.producer.SendStatus;
 import org.apache.rocketmq.common.message.Message;
@@ -181,10 +182,18 @@ class RocketMqMoniLogInterceptor {
         public void sendMessageAfter(SendMessageContext context) {
             // 在发送完成后拦截，计算耗时并打印监控信息
             StackTraceElement st = ThreadUtil.getNextClassFromStack(DefaultMQProducerImpl.class, "org.apache.rocketmq", "org.springframework");
-            String clsName = st.getClassName();
+            String clsName;
+            String action;
+            if (st == null) {
+                clsName = MQProducer.class.getCanonicalName();
+                action = "send";
+            } else {
+                clsName = st.getClassName();
+                action = st.getMethodName();
+            }
             MoniLogParams logParams = new MoniLogParams();
             logParams.setLogPoint(LogPoint.rocketmq_producer);
-            logParams.setAction(st.getMethodName());
+            logParams.setAction(action);
             try {
                 logParams.setServiceCls(Class.forName(clsName));
                 logParams.setService(logParams.getServiceCls().getSimpleName());

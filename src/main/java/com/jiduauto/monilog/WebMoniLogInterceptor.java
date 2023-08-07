@@ -28,7 +28,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.jiduauto.monilog.StringUtil.checkPathMatch;
 
@@ -205,7 +204,6 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
 
     /**
      * 处理请求tag
-     *
      */
     private void dealRequestTags(HttpServletRequest request, MoniLogParams logParams, Map<String, String> requestHeaderMap, Map<String, String> requestBodyMap) {
         String[] oriTags = logParams.getTags();
@@ -241,22 +239,8 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
 
     private JSONObject formatRequestInfo(boolean isMultipart, HttpServletRequest request, Map<String, String> requestHeaderMap) {
         Map<String, String[]> parameterMap = request.getParameterMap();
-        String requestBodyParams = isMultipart ? "Binary data" : ((RequestWrapper)request).getBodyString();
-
-        JSONObject obj = new JSONObject();
-        if (StringUtils.isNotBlank(requestBodyParams)) {
-            Map<String, String> requestBodyMap = StringUtil.tryConvert2Map(requestBodyParams);
-            obj.put("body", requestBodyMap != null ? requestBodyMap : requestBodyParams);
-        }
-        if (MapUtils.isNotEmpty(parameterMap)) {
-            Map<String, Collection<String>> collected = parameterMap.entrySet().stream()
-                    .collect(Collectors.toMap(Map.Entry::getKey, item -> Arrays.asList(item.getValue())));
-            obj.put("query", StringUtil.encodeQueryString(collected));
-        }
-        if (MapUtils.isNotEmpty(requestHeaderMap)) {
-            obj.put("headers", requestHeaderMap);
-        }
-        return obj;
+        String requestBodyParams = isMultipart ? "Binary data" : ((RequestWrapper) request).getBodyString();
+        return HttpRequestData.of1(requestBodyParams, parameterMap, requestHeaderMap).toJSON();
     }
 
     private static String getResponseBody(ContentCachingResponseWrapper response) {

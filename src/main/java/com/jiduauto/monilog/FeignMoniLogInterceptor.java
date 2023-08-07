@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -19,7 +18,10 @@ import java.io.*;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author yp
@@ -80,12 +82,13 @@ class FeignMoniLogInterceptor {
             mlp.setService(m.getDeclaringClass().getSimpleName());
             mlp.setAction(m.getName());
 
-            StackTraceElement st = ThreadUtil.getNextClassFromStack(m.getDeclaringClass(), "feign","org.springframework");
+            StackTraceElement st = ThreadUtil.getNextClassFromStack(m.getDeclaringClass(), "feign", "org.springframework");
             if (st != null) {
                 String className = st.getClassName();
                 try {
                     mlp.setServiceCls(Class.forName(className));
-                } catch (Exception ignore) {}
+                } catch (Exception ignore) {
+                }
                 mlp.setService(mlp.getServiceCls().getSimpleName());
                 mlp.setAction(st.getMethodName());
             }
@@ -167,22 +170,7 @@ class FeignMoniLogInterceptor {
         String bodyParams = request.isBinary() ? "Binary data" : request.length() == 0 ? null : new String(request.body(), request.charset()).trim();
         Map<String, Collection<String>> queries = request.requestTemplate().queries();
         Map<String, Collection<String>> headers = request.headers();
-        JSONObject obj = new JSONObject();
-        if (StringUtils.isNotBlank(bodyParams)) {
-            JSON json = StringUtil.tryConvert2Json(bodyParams);
-            obj.put("body", json != null ? json : bodyParams);
-        }
-        if (MapUtils.isNotEmpty(queries)) {
-            obj.put("query", StringUtil.encodeQueryString(queries));
-        }
-        if (MapUtils.isNotEmpty(headers)) {
-            Map<String, String> headerMap = new HashMap<>();
-            for (Map.Entry<String, Collection<String>> me : headers.entrySet()) {
-                headerMap.put(me.getKey(), String.join(",", me.getValue()));
-            }
-            obj.put("headers", headerMap);
-        }
-        return obj;
+        return HttpRequestData.of2(bodyParams, queries, headers).toJSON();
     }
 
     private static class BufferingFeignClientResponse implements Closeable {
