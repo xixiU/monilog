@@ -64,14 +64,14 @@ class RedisMoniLogInterceptor {
             } finally {
                 p.setCost(System.currentTimeMillis() - start);
                 JedisInvocation ri = parseRedisInvocation(invocation, ret);
-                if (redisProperties.getLongRt() > 0 && p.getCost() > redisProperties.getLongRt()) {
-                    log.error("redis_cost_time_too_long, action: {}, key:{}, time:{}", p.getService() + "." + p.getAction(), ri.maybeKey, p.getCost());
-                }
                 p.setInput(ri.args);
                 p.setOutput(ri.result);
                 p.setServiceCls(ri.cls);
                 p.setService(ri.cls.getSimpleName());
                 p.setAction(ri.method);
+                if (redisProperties.getLongRt() > 0 && p.getCost() > redisProperties.getLongRt()) {
+                    log.error("redis_cost_time_too_long, action: {}, key:{}, time:{}", p.getService() + "." + p.getAction(), ri.maybeKey, p.getCost());
+                }
                 if (ri.valueLen > 0 && ri.valueLen > redisProperties.getWarnForValueLength() * ONE_KB) {
                     log.error("redis_value_size_too_large, {}.{}[key={}], size: {}", p.getService(), p.getAction(), ri.maybeKey, RamUsageEstimator.humanReadableUnits(ri.valueLen));
                 }
