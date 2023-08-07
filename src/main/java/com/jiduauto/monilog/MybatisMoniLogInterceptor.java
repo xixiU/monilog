@@ -49,7 +49,6 @@ class MybatisMoniLogInterceptor {
                 logParams.setService(invocationInfo.serviceCls.getSimpleName());
                 logParams.setAction(invocationInfo.methodName);
                 logParams.setInput(new String[]{invocationInfo.sql});
-                logParams.setTags(new String[]{"sql",invocationInfo.sql});
                 try {
                     obj = invocation.proceed();
                 } catch (Throwable t) {
@@ -62,7 +61,6 @@ class MybatisMoniLogInterceptor {
                 MoniLogProperties.MybatisProperties mybatisProperties = moniLogProperties.getMybatis();
                 if (mybatisProperties != null && mybatisProperties.getLongQueryTime() > 0 && costTime > mybatisProperties.getLongQueryTime()) {
                     MoniLogUtil.addCustomerMonitor(logParams, SQL_COST_TOO_LONG);
-//                    MetricMonitor.record(SQL_COST_TOO_LONG + MonitorType.RECORD.getMark());
                     log.error("sql_cost_time_too_long, sql{}, time:{}", invocationInfo.sql, costTime);
                 }
                 if (bizException == null) {
