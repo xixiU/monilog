@@ -164,7 +164,8 @@ class FeignMoniLogInterceptor {
     }
 
     private static JSONObject formatRequestInfo(Request request) {
-        String bodyParams = request.isBinary() ? "Binary data" : request.length() == 0 ? null : new String(request.body(), request.charset()).trim();
+        String bodyParams = isBinary(request) ? "Binary data" : request.length() == 0 ? null : new String(request.body(), request.charset()).trim();
+
         Map<String, Collection<String>> queries = request.requestTemplate().queries();
         Map<String, Collection<String>> headers = request.headers();
         JSONObject obj = new JSONObject();
@@ -183,6 +184,11 @@ class FeignMoniLogInterceptor {
             obj.put("headers", headerMap);
         }
         return obj;
+    }
+
+    private static boolean isBinary(Request request) {
+        byte[] body = request.body();
+        return request.charset() == null || body == null;
     }
 
     private static class BufferingFeignClientResponse implements Closeable {
