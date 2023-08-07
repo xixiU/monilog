@@ -85,7 +85,7 @@ public class MoniHttpClientBuilder extends HttpClientBuilder {
                 p.setLogPoint(LogPoint.http_client);
 
                 HttpHost host = (HttpHost) httpContext.getAttribute(HttpClientContext.HTTP_TARGET_HOST);
-                String targetHost = host == null ? null : String.valueOf(host.getAddress());
+                String targetHost = host == null ? null : host.getHostName() + (host.getPort() < 0 || host.getPort() == 80 ? "" : ":" + host.getPort());
                 p.setTags(TagBuilder.of("url", targetHost + path, "method", method).toArray());
                 httpContext.setAttribute(MONILOG_PARAMS_KEY, p);
             } catch (Exception e) {
@@ -136,8 +136,16 @@ public class MoniHttpClientBuilder extends HttpClientBuilder {
             }
             p.setOutput(jsonBody == null ? responseBody : jsonBody);
             if (jsonBody != null) {
-                ParsedResult pr = ResultParseUtil.parseResult(jsonBody, null, null);
-                p.setSuccess(pr.isSuccess());
+                MoniLogProperties prop = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
+                String defaultBoolExpr = null;
+                if (prop != null) {
+                    defaultBoolExpr = prop.getHttpclient().getDefaultBoolExpr();
+                }
+                ParsedResult pr = ResultParseUtil.parseResult(jsonBody, null, null, defaultBoolExpr, null, null);
+                if (p.isSuccess()) {
+                    //如果外层响应码是200，则再看内层是否成功
+                    p.setSuccess(pr.isSuccess());
+                }
                 if (StringUtils.isNotBlank(pr.getMsgCode())) {
                     p.setMsgCode(pr.getMsgCode());
                 }
@@ -149,7 +157,7 @@ public class MoniHttpClientBuilder extends HttpClientBuilder {
             MoniLogUtil.log(p);
         }
     }
-    
+
     private static boolean isUpstream(String method, String contentType) {
         return HttpPost.METHOD_NAME.equalsIgnoreCase(method) && contentType.toLowerCase(Locale.ENGLISH).startsWith("multipart/");
     }

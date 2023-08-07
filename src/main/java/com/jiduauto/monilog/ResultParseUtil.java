@@ -69,10 +69,8 @@ final class ResultParseUtil {
     private static String correctBoolExpr(String boolExpr) {
         if (StringUtils.isBlank(boolExpr)) {
             try {
-                MoniLogProperties moniLogProperties = SpringUtils.getBean(MoniLogProperties.class);
-                if (moniLogProperties != null) {
-                    boolExpr = moniLogProperties.getGlobalDefaultBoolExpr();
-                }
+                MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
+                boolExpr = moniLogProperties == null ? null : moniLogProperties.getGlobalDefaultBoolExpr();
             } catch (Exception ex) {
                 MoniLogUtil.innerDebug("getBean of MoniLogProperties error", ex);
             }
