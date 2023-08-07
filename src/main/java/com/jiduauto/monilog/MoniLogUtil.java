@@ -72,10 +72,10 @@ class MoniLogUtil {
             return;
         }
         // 操作操作信息
-        final String operationCostTooLong = "operation_cost_too_long";
-        MetricMonitor.record(name +operationCostTooLong + MonitorType.RECORD.getMark(), allTags);
+        String operationCostTooLongMonitorPrefix = BUSINESS_MONITOR_PREFIX + "_operation_cost_too_long" + logPoint.name();;
+        MetricMonitor.record( operationCostTooLongMonitorPrefix + MonitorType.RECORD.getMark(), allTags);
         // 耗时只打印基础tag
-        MetricMonitor.eventDruation(name + operationCostTooLong + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
+        MetricMonitor.eventDruation(operationCostTooLongMonitorPrefix + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
     }
 
 
