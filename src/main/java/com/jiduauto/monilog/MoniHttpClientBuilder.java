@@ -1,13 +1,22 @@
 package com.jiduauto.monilog;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.*;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.methods.HttpRequestWrapper;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.entity.BufferedHttpEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.HttpContext;
+import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author yp
@@ -29,11 +38,20 @@ public class MoniHttpClientBuilder extends HttpClientBuilder {
     private static class RequestInterceptor implements HttpRequestInterceptor {
         @Override
         public void process(HttpRequest httpRequest, HttpContext httpContext) throws HttpException, IOException {
-            String targetHost = (String) httpContext.getAttribute(HttpClientContext.HTTP_TARGET_HOST);
-            String method = httpRequest.getRequestLine().getMethod();
-            RequestLine requestLine = httpRequest.getRequestLine();
-            //header
-            Header[] allHeaders = httpRequest.getAllHeaders();
+            HttpUriRequest request;
+            if (httpRequest instanceof HttpRequestBase) {
+                request = ((HttpRequestBase) httpRequest);
+            } else if (httpRequest instanceof HttpRequestWrapper) {
+                request = (HttpRequestWrapper) httpRequest;
+            } else {
+                MoniLogUtil.innerDebug("unsupported httpRequestType:{}", httpRequest.getClass());
+                return;
+            }
+            String uri = request.getURI().toString(); //携带有参数的uri
+            String targetHost = String.valueOf(httpContext.getAttribute(HttpClientContext.HTTP_TARGET_HOST));
+            String method = request.getRequestLine().getMethod();
+            //headers
+            Map<String, String> headerMap = parseHeaders(request.getAllHeaders());
             //body
             //params
             StackTraceElement st = ThreadUtil.getNextClassFromStack(MoniHttpClientBuilder.class, "org.apache");
@@ -46,6 +64,7 @@ public class MoniHttpClientBuilder extends HttpClientBuilder {
                 } catch (Exception ignore) {
                 }
             }
+            boolean isUpload = false;
             MoniLogParams p = new MoniLogParams();
             p.setCost(System.currentTimeMillis());
             p.setServiceCls(serviceCls);
@@ -74,12 +93,68 @@ public class MoniHttpClientBuilder extends HttpClientBuilder {
             StatusLine statusLine = httpResponse.getStatusLine();
             p.setSuccess(statusLine.getStatusCode() < HttpStatus.SC_BAD_REQUEST);
             p.setMsgCode(String.valueOf(statusLine.getStatusCode()));
+
+            Header[] ct = httpResponse.getHeaders(HttpHeaders.CONTENT_TYPE);
+            //要判断响应类型，处理上传下载等特殊情况
+            for (Header h : httpResponse.getAllHeaders()) {
+                String name = h.getName();
+                String value = h.getValue();
+            }
+
+            HttpEntity entity = httpResponse.getEntity();
+            BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
+            String content = EntityUtils.toString(bufferedEntity);
+            httpResponse.setEntity(bufferedEntity);
+            boolean isDownload = false;
+
             //TODO
-//            p.setOutput();
+            p.setOutput(content);
 //            p.setMsgInfo();
 //            p.setException();
             httpContext.removeAttribute(MONILOG_PARAMS_KEY);
             MoniLogUtil.log(p);
         }
+    }
+
+
+    private boolean isDownstream() {
+        String header = getFirstHeader(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION);
+        return StringUtils.containsIgnoreCase(header, "attachment") || StringUtils.containsIgnoreCase(header, "filename");
+    }
+
+    private boolean isJson() {
+        if (isDownstream()) {
+            return false;
+        }
+        String header = getFirstHeader(org.springframework.http.HttpHeaders.CONTENT_TYPE);
+        return StringUtils.containsIgnoreCase(header, "application/json");
+    }
+
+    private String getFirstHeader(String name) {
+        if (headers() == null || StringUtils.isBlank(name)) {
+            return null;
+        }
+        for (Map.Entry<String, Collection<String>> me : headers().entrySet()) {
+            if (me.getKey().equalsIgnoreCase(name)) {
+                Collection<String> headers = me.getValue();
+                if (headers == null || headers.isEmpty()) {
+                    return null;
+                }
+                return headers.iterator().next();
+            }
+        }
+        return null;
+    }
+
+    private static Map<String, String> parseHeaders(Header[] allHeaders) {
+        Map<String, String> map = new HashMap<>();
+        if (allHeaders != null) {
+            for (Header h : allHeaders) {
+                String name = h.getName();
+                String value = h.getValue();
+                map.put(name, value);
+            }
+        }
+        return map;
     }
 }
