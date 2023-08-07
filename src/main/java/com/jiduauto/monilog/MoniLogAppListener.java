@@ -2,10 +2,6 @@ package com.jiduauto.monilog;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
-import org.redisson.api.RLockAsync;
-import org.redisson.api.RObjectAsync;
-import org.redisson.api.RedissonClient;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.context.event.ApplicationPreparedEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -15,7 +11,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import javax.annotation.Resource;
 import java.util.Map;
 
-import static com.jiduauto.monilog.MoniLogPostProcessor.REDISSON_CLIENT;
 import static com.jiduauto.monilog.MoniLogPostProcessor.REDIS_TEMPLATE;
 
 /**
@@ -30,9 +25,26 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
     @Override
     public void onApplicationEvent(ApplicationPreparedEvent event) {
         ConfigurableApplicationContext ctx = event.getApplicationContext();
+        //这里仅增加redisTemplate，不包括Redisson， Redisson的比较复杂，将通过Aop实现
         enhanceRedisTemplate(ctx);
-        enhanceRedissonClient(ctx);
     }
+
+    /**
+     * 对RedisTemplate的执行监控并不太容易，需要以曲线求国的方式进行
+     * 此方法对RedisTemplate进行增强，只所以将此操作放在Spring的PreparedEvent之后进行，是因为在javakit环境下，
+     * RedisTemplate实例是由javakit手动初始化并使用BeanFactory.registerSingleton来注册到Spring中去的，这样一来，
+     * 我们没有办法在Spring的任何生命周期回调函数中拿到这个bean，也就没办法对其在实例化阶段进行增强。另一方面，我们也没有办法对
+     * RedisTemplate进行AOP拦截，因为它执行Redis命令是通过RedisConnectionFactory的RedisConnection进行的，我们需要代理的是
+     * RedisConnection的执行命令，而不能是RedisTemplate或RedisConnectionFactory，而RedisConnection又不是一个SpringBean
+     * 所以声明式AOP的路是走不通的。 因此我们选择的方法只能是在Spring的PreparedEvent之后，通过为RedisConnectionFactory创建第一层代理，
+     * 然后拦截第一层代理对象中的getConnection方法，对此方法的返回值(RedisConnection)再进行代理，得到一个ConnectionProxy，然后再对
+     * ConnectionProxy的所有我们关心的redis指令进行拦截和监控 (耗时、大key等)。
+     * <p>
+     * 注意，为了让摘要(或详情)日志中输出的action信息更贴近业务，我们通过回溯线程栈的方式，跳过指定组件(org.springframework.*)后，
+     * 找到最贴近业务调用的目标服务作为监控的目标service和action
+     *
+     * @param ctx
+     */
 
     private void enhanceRedisTemplate(ConfigurableApplicationContext ctx) {
         if (null == MoniLogPostProcessor.getTargetCls(REDIS_TEMPLATE)) {
@@ -46,11 +58,7 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
             return;
         }
         log.info(">>>monilog redis[jedis] start...");
-        for (Map.Entry<String, RedisTemplate> me : templates.entrySet()) {
-            String beanName = me.getKey();
-            RedisTemplate template = me.getValue();
-            //如果redisConnectionFactory调用的是getConnection方法，则该方法返回的结果就是一个RedisConnection对象
-            //此时，我们把RedisConnection对象进行增强，让它在执行redis命令时，记录我们的监控数据
+        for (RedisTemplate template : templates.values()) {
             RedisConnectionFactory proxy = ProxyUtils.getProxy(template.getConnectionFactory(), invocation -> {
                 Object redisConn = invocation.proceed();
                 String methodName = invocation.getMethod().getName();
@@ -60,34 +68,6 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
                 return redisConn;
             });
             template.setConnectionFactory(proxy);
-        }
-    }
-
-    private void enhanceRedissonClient(ConfigurableApplicationContext ctx) {
-        if (null == MoniLogPostProcessor.getTargetCls(REDISSON_CLIENT)) {
-            return;
-        }
-        Map<String, RedissonClient> templates = ctx.getBeansOfType(RedissonClient.class);
-        if (MapUtils.isEmpty(templates)) {
-            return;
-        }
-        if (!moniLogProperties.isComponentEnable("redis", moniLogProperties.getRedis().isEnable())) {
-            return;
-        }
-        ConfigurableListableBeanFactory beanFactory = ctx.getBeanFactory();
-        log.info(">>>monilog redis[redisson] start...");
-        for (Map.Entry<String, RedissonClient> me : templates.entrySet()) {
-            String beanName = me.getKey();
-            RedissonClient client = me.getValue();
-            RedissonClient proxy = ProxyUtils.getProxy(client, invocation -> {
-                Object bucket = invocation.proceed(); //RObjectAsync/RLock...
-                if (bucket instanceof RObjectAsync || bucket instanceof RLockAsync) {
-                    return ProxyUtils.getProxy(bucket, new RedisMoniLogInterceptor.RedissonInterceptor(moniLogProperties.getRedis()));
-                }
-                return bucket;
-            });
-            beanFactory.destroyBean(beanName, client);
-            beanFactory.registerSingleton(beanName, proxy);
         }
     }
 }

@@ -60,7 +60,7 @@ class ReflectUtil {
         return annotation;
     }
 
-    public static Object invokeMethod(Object service, String methodName, Object... args) {
+    static Object invokeMethod(Object service, String methodName, Object... args) {
         if (args == null) {
             args = new Object[]{};
         }
@@ -73,12 +73,12 @@ class ReflectUtil {
         }
     }
 
-    public static Method getMethod(Object service, String methodName, Object[] args) {
+    private static Method getMethod(Object service, String methodName, Object[] args) {
         Class<?> ownerCls = service instanceof Class ? (Class<?>) service : service.getClass();
         return getClsMethod(ownerCls, methodName, args);
     }
 
-    public static Method getMethodWithoutException(Object service, String methodName, Object[] args) {
+    static Method getMethodWithoutException(Object service, String methodName, Object[] args) {
         Class<?> ownerCls = service instanceof Class ? (Class<?>) service : service.getClass();
         try {
             List<Method> list = getClsMethods(ownerCls, methodName, args);
@@ -88,7 +88,7 @@ class ReflectUtil {
         }
     }
 
-    public static Method getClsMethod(Class<?> cls, String methodName, Object[] args) {
+    private static Method getClsMethod(Class<?> cls, String methodName, Object[] args) {
         List<Method> list = getClsMethods(cls, methodName, args);
         if (CollectionUtils.isEmpty(list)) {
             throw new RuntimeException(new NoSuchMethodException("No such method:" + methodName));
@@ -157,7 +157,7 @@ class ReflectUtil {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> T convertType(Object arg, Type requiredType) {
+    static <T> T convertType(Object arg, Type requiredType) {
         if (arg == null) {
             return null;
         }
@@ -186,7 +186,7 @@ class ReflectUtil {
     }
 
     @SuppressWarnings("all")
-    public static <T> T getPropValue(Object obj, String name, boolean ignoreException) {
+    static <T> T getPropValue(Object obj, String name, boolean ignoreException) {
         try {
             Class cls = obj instanceof Class ? (Class) obj : obj.getClass();
             Field f = getField(cls, name, null);
@@ -204,8 +204,27 @@ class ReflectUtil {
         }
     }
 
+    @SuppressWarnings("all")
+    static void setPropValue(Object obj, String name, Object value, boolean ignoreException) {
+        try {
+            Class cls = obj instanceof Class ? (Class) obj : obj.getClass();
+            Field f = getField(cls, name, null);
+            if (f == null) {
+                throw new NoSuchFieldException("No such field[" + name + "] in " + cls.getCanonicalName());
+            }
+            f.setAccessible(true);
+            f.set(obj, value);
+        } catch (Throwable e) {
+            if (ignoreException) {
+                //...ignore
+            } else {
+                throw new RuntimeException(e);
+            }
+        }
+    }
 
-    public static Field getField(Class<?> cls, String name, Class<?> fieldCls) {
+
+    private static Field getField(Class<?> cls, String name, Class<?> fieldCls) {
         for (Class<?> superClass = cls; superClass != Object.class; superClass = superClass.getSuperclass()) {
             Field[] fields = superClass.getDeclaredFields();
             for (Field f : fields) {
@@ -223,7 +242,7 @@ class ReflectUtil {
     /**
      * 从运行时类型中提取指定类型所声明的泛型参数的实际类型
      */
-    public static Type[] getGenericParamType(Class<?> declaredClass, Class<?> thisCls) {
+    private static Type[] getGenericParamType(Class<?> declaredClass, Class<?> thisCls) {
         if (thisCls == null || thisCls == Object.class) {
             return null;
         }
@@ -267,7 +286,7 @@ class ReflectUtil {
     /**
      * 找到定义指定方法的原始接口
      */
-    public static Class<?> getInterfaceByGivenMethod(Method m) {
+    static Class<?> getInterfaceByGivenMethod(Method m) {
         Class<?> declaringClass = m.getDeclaringClass();
         if (declaringClass.isInterface()) {
             return declaringClass;
@@ -300,7 +319,7 @@ class ReflectUtil {
         return null;
     }
 
-    public static List<Class<?>> getAllInterfaces(Class<?> cls) {
+    private static List<Class<?>> getAllInterfaces(Class<?> cls) {
         List<Class<?>> list = new ArrayList<>();
         if (cls.isInterface()) {
             list.add(cls);

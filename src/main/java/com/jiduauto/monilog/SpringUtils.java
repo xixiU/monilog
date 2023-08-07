@@ -48,7 +48,7 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
      *
      * @return {@link ApplicationContext}
      */
-    public static ApplicationContext getApplicationContext() {
+    static ApplicationContext getApplicationContext() {
         return applicationContext;
     }
 
@@ -58,7 +58,7 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
      * @return {@link ListableBeanFactory}
      * @since 5.7.0
      */
-    public static ListableBeanFactory getBeanFactory() {
+    static ListableBeanFactory getBeanFactory() {
         return null == beanFactory ? applicationContext : beanFactory;
     }
 
@@ -69,11 +69,11 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
      * @param clazz Bean类
      * @return Bean对象
      */
-    public static <T> T getBean(Class<T> clazz) {
+    static <T> T getBean(Class<T> clazz) {
         return getBeanFactory().getBean(clazz);
     }
 
-    public static <T> T getBeanWithoutException(Class<T> clazz) {
+    static <T> T getBeanWithoutException(Class<T> clazz) {
         try {
             return getBeanFactory().getBean(clazz);
         } catch (Exception e) {
@@ -96,7 +96,7 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
         return applicationContext.getEnvironment().getProperty(key);
     }
 
-    public static String parseSpELValue(String spel) {
+    static String parseSpELValue(String spel) {
         return applicationContext.getEnvironment().resolvePlaceholders(spel);
     }
 
@@ -106,7 +106,7 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
      * @return 应用程序名称
      * @since 5.7.12
      */
-    public static String getApplicationName() {
+    static String getApplicationName() {
         String appName = getProperty("monilog.appName");
         if (StringUtils.isNotBlank(appName)) {
             return appName;
@@ -124,7 +124,7 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
      * @return 当前的环境配置
      * @since 5.3.3
      */
-    public static String[] getActiveProfiles() {
+    static String[] getActiveProfiles() {
         if (null == applicationContext) {
             return null;
         }
@@ -137,12 +137,12 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
      * @return 当前的环境配置
      * @since 5.3.3
      */
-    public static String getActiveProfile() {
+    static String getActiveProfile() {
         String[] activeProfiles = getActiveProfiles();
         return (activeProfiles == null || activeProfiles.length == 0) ? null : activeProfiles[0];
     }
 
-    public static boolean isTargetEnv(String... envs) {
+    static boolean isTargetEnv(String... envs) {
         String[] activeProfiles = getActiveProfiles();
         if (activeProfiles == null || envs == null || envs.length == 0) {
             return false;
