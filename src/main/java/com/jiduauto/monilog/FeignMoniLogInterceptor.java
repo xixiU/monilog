@@ -185,7 +185,6 @@ class FeignMoniLogInterceptor {
     }
 
     // com.netflix.feign:feign-core中没有request.length()方法
-
     private static int length(Request request) {
         byte[] data = request.body();
         return data != null ? data.length : 0;
