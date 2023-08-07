@@ -166,16 +166,21 @@ class FeignMoniLogInterceptor {
     private static JSONObject formatRequestInfo(Request request) {
         String bodyParams = isBinary(request) ? "Binary data" : length(request) == 0 ? null : new String(request.body(), request.charset()).trim();
 
-        Map<String, Collection<String>> queries = request.requestTemplate().queries();
         Map<String, Collection<String>> headers = request.headers();
         JSONObject obj = new JSONObject();
+
+        boolean hasRequestTemplate = SpringUtils.objectHasProperty(request, "requestTemplate");
+        if (hasRequestTemplate) {
+            Map<String, Collection<String>> queries = request.requestTemplate().queries();
+            if (MapUtils.isNotEmpty(queries)) {
+                obj.put("query", StringUtil.encodeQueryString(queries));
+            }
+        }
         if (StringUtils.isNotBlank(bodyParams)) {
             JSON json = StringUtil.tryConvert2Json(bodyParams);
             obj.put("body", json != null ? json : bodyParams);
         }
-        if (MapUtils.isNotEmpty(queries)) {
-            obj.put("query", StringUtil.encodeQueryString(queries));
-        }
+
         if (MapUtils.isNotEmpty(headers)) {
             Map<String, String> headerMap = new HashMap<>();
             for (Map.Entry<String, Collection<String>> me : headers.entrySet()) {
@@ -185,6 +190,7 @@ class FeignMoniLogInterceptor {
         }
         return obj;
     }
+
 
     // com.netflix.feign:feign-core中没有request.isBinary()方法
     private static boolean isBinary(Request request) {
