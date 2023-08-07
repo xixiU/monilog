@@ -12,9 +12,9 @@ import org.apache.http.entity.BufferedHttpEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
+import org.springframework.http.HttpHeaders;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,6 +48,7 @@ public class MoniHttpClientBuilder extends HttpClientBuilder {
                 return;
             }
             String uri = request.getURI().toString(); //携带有参数的uri
+
             String targetHost = String.valueOf(httpContext.getAttribute(HttpClientContext.HTTP_TARGET_HOST));
             String method = request.getRequestLine().getMethod();
             //headers
@@ -117,30 +118,26 @@ public class MoniHttpClientBuilder extends HttpClientBuilder {
     }
 
 
-    private boolean isDownstream() {
-        String header = getFirstHeader(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION);
+    private boolean isDownstream(Map<String, String> headers) {
+        String header = getFirstHeader(headers, HttpHeaders.CONTENT_DISPOSITION);
         return StringUtils.containsIgnoreCase(header, "attachment") || StringUtils.containsIgnoreCase(header, "filename");
     }
 
-    private boolean isJson() {
-        if (isDownstream()) {
+    private boolean isJson(Map<String, String> headers) {
+        if (isDownstream(headers)) {
             return false;
         }
-        String header = getFirstHeader(org.springframework.http.HttpHeaders.CONTENT_TYPE);
+        String header = getFirstHeader(headers, HttpHeaders.CONTENT_TYPE);
         return StringUtils.containsIgnoreCase(header, "application/json");
     }
 
-    private String getFirstHeader(String name) {
-        if (headers() == null || StringUtils.isBlank(name)) {
+    private String getFirstHeader(Map<String, String> headers, String name) {
+        if (headers == null || headers.isEmpty() || StringUtils.isBlank(name)) {
             return null;
         }
-        for (Map.Entry<String, Collection<String>> me : headers().entrySet()) {
+        for (Map.Entry<String, String> me : headers.entrySet()) {
             if (me.getKey().equalsIgnoreCase(name)) {
-                Collection<String> headers = me.getValue();
-                if (headers == null || headers.isEmpty()) {
-                    return null;
-                }
-                return headers.iterator().next();
+                return me.getValue();
             }
         }
         return null;
