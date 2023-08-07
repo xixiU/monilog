@@ -114,7 +114,7 @@ class MoniLogUtil {
         if (threshold<=0) {
             return false;
         }
-        return threshold>actualCost;
+        return threshold < actualCost;
     }
 
 
