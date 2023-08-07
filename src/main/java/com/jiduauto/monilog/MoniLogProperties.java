@@ -33,6 +33,12 @@ class MoniLogProperties implements InitializingBean {
      * 调试模式
      */
     private boolean debug = true;
+
+    /**
+     * 记录耗时长的操作
+     */
+    private boolean monitorLongRt = true;
+
     /**
      * 解析feign调用结果的默认表达式，默认校验返回编码是否等于0或者200有一个匹配即认为调用成功,多个表达式直接逗号分割.
      * 注意，如果表达式前以"+"开头，则表示在原有默认表达式的基础上追加，否则会覆盖原默认表达式
@@ -191,6 +197,12 @@ class MoniLogProperties implements InitializingBean {
          * 不监控的url清单，支持模糊路径如a/*， 默认值：/actuator/health, /misc/ping, /actuator/prometheus
          */
         private Set<String> urlBlackList = Sets.newHashSet("/actuator/health", "/misc/ping", "/actuator/prometheus");
+
+        /**
+         * web慢接口，单位毫秒.
+         */
+        private long longRt = 1000;
+
     }
 
     @Getter
@@ -216,6 +228,11 @@ class MoniLogProperties implements InitializingBean {
          * grpc出口流量的详情日志输出级别，默认仅异常时输出
          */
         private LogOutputLevel clientDetailLogLevel = LogOutputLevel.onException;
+
+        /**
+         * web慢接口，单位毫秒.
+         */
+        private long longRt = 1000;
     }
 
     @Getter
@@ -229,6 +246,11 @@ class MoniLogProperties implements InitializingBean {
          * xxljob的详情日志输出级别，默认仅异常时输出
          */
         private LogOutputLevel detailLogLevel = LogOutputLevel.onException;
+
+        /**
+         * xxljob慢接口，单位毫秒.
+         */
+        private long longRt = -1;
     }
 
     @Getter
@@ -256,6 +278,11 @@ class MoniLogProperties implements InitializingBean {
          * 不监控的url清单，支持模糊路径如a/*， 默认值：/actuator/health, /misc/ping, /actuator/prometheus
          */
         private Set<String> urlBlackList = Sets.newHashSet("/actuator/health", "/misc/ping", "/actuator/prometheus");
+
+        /**
+         * feign慢接口，单位毫秒.
+         */
+        private long longRt = 1000;
 
         public void resetDefaultBoolExpr(String globalDefaultBoolExpr) {
             this.defaultBoolExpr = ResultParser.mergeBoolExpr(globalDefaultBoolExpr, defaultBoolExpr);
@@ -302,6 +329,11 @@ class MoniLogProperties implements InitializingBean {
          * rocketmq发送者的详情日志输出级别，默认仅异常时输出
          */
         private LogOutputLevel producerDetailLogLevel = LogOutputLevel.onException;
+
+        /**
+         * rocketmq慢接口，单位毫秒.
+         */
+        private long longRt = -1;
     }
 
     @Getter
@@ -347,5 +379,10 @@ class MoniLogProperties implements InitializingBean {
          * 仅监控的url清单，支持模糊路径如a/*,仅当此配置不空且元素个数大于0时才生效
          */
         private Set<String> urlWhiteList;
+
+        /**
+         * httpClient慢接口，单位毫秒.
+         */
+        private long longRt = 1000;
     }
 }

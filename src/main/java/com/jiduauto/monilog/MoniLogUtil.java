@@ -1,6 +1,5 @@
 package com.jiduauto.monilog;
 
-import com.alibaba.fastjson.JSON;
 import com.metric.MetricMonitor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -14,6 +13,11 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 class MoniLogUtil {
+    /**
+     * 组件监控前缀
+     */
+    private static final String BUSINESS_MONITOR_PREFIX = "business_monitor_";
+
     private static MoniLogPrinter logPrinter = null;
     private static MoniLogProperties logProperties = null;
 
@@ -55,47 +59,64 @@ class MoniLogUtil {
         //TODO 这里在后边加入了自定义的tag，可能与全局监控混淆
         String[] allTags = systemTags.add(logParams.getTags()).toArray();
 
-        String name = StringUtil.BUSINESS_MONITOR_PREFIX + logPoint.name();
-//        addMonitor(name, allTags, logParams.getCost());
+        String name = BUSINESS_MONITOR_PREFIX + logPoint.name();
         MetricMonitor.record(name + MonitorType.RECORD.getMark(), allTags);
+        // 耗时只打印基础tag
         MetricMonitor.eventDruation(name + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
 
         if (logParams.isHasUserTag()) {
             name = name + "_" + logParams.getService() + "_" + logParams.getAction();
-//            addMonitor(name, allTags, logParams.getCost());
             MetricMonitor.eventDruation(name + MonitorType.TIMER.getMark(), allTags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
+        }
+        if (!checkRtMonitor(logParams)) {
+            return;
+        }
+        // 操作操作信息
+        String operationCostTooLongMonitorPrefix = BUSINESS_MONITOR_PREFIX + "operation_cost_too_long_" + logPoint.name();;
+        MetricMonitor.record( operationCostTooLongMonitorPrefix + MonitorType.RECORD.getMark(), allTags);
+        // 耗时只打印基础tag
+        MetricMonitor.eventDruation(operationCostTooLongMonitorPrefix + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
+    }
 
+
+    private static boolean checkRtMonitor(MoniLogParams logParams){
+        MoniLogProperties logProperties = getLogProperties();
+        if (logProperties == null || !logProperties.isMonitorLongRt()) {
+            return false;
+        }
+        LogPoint logPoint = logParams.getLogPoint();
+        if (logPoint == null) {
+            return false;
+        }
+        long cost = logParams.getCost();
+        if (cost <= 0) {
+            return false;
+        }
+        switch (logPoint) {
+            case xxljob:return exceedCostThreshold(logProperties.getXxljob().getLongRt(), cost);
+            case redis: return exceedCostThreshold(logProperties.getRedis().getLongRt(), cost);
+            case mybatis: return exceedCostThreshold(logProperties.getMybatis().getLongRt(), cost);
+            case grpc_client:
+            case grpc_server: return exceedCostThreshold(logProperties.getGrpc().getLongRt(), cost);
+            case http_client:
+            case http_server: return exceedCostThreshold(logProperties.getWeb().getLongRt(), cost);
+            case feign_client:
+            case feign_server:return exceedCostThreshold(logProperties.getFeign().getLongRt(), cost);
+            case rocketmq_consumer:
+            case rocketmq_producer: return exceedCostThreshold(logProperties.getRocketmq().getLongRt(), cost);
+            case unknown:
+            case user_define: return false;
+            default:return false;
         }
     }
 
-    //
-    public static void addCustomerMonitor(MoniLogParams logParams, String namePrefix) {
-        TagBuilder systemTags = getSystemTags(logParams);
-        String[] allTags = systemTags.add(logParams.getTags()).toArray();
-
-        try {
-            // 打record
-            MetricMonitor.record(namePrefix + MonitorType.RECORD.getMark(), allTags);
-            // 打耗时
-            MetricMonitor.eventDruation(namePrefix + MonitorType.TIMER.getMark(), allTags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
-        } catch (Exception e) {
-            MoniLogUtil.innerDebug("addMonitor error name:{}, tag:{}", namePrefix, JSON.toJSONString(allTags), e);
+    private static boolean exceedCostThreshold(long threshold, long actualCost){
+        if (threshold<=0) {
+            return false;
         }
-
+        return threshold < actualCost;
     }
 
-//
-//    private static void addMonitor(String namePrefix, String[] tags, long cost) {
-//        try {
-//            // 打record
-//            MetricMonitor.record(namePrefix + MonitorType.RECORD.getMark(), tags);
-//            // 打耗时
-//            MetricMonitor.eventDruation(namePrefix + MonitorType.TIMER.getMark(), tags).record(cost, TimeUnit.MILLISECONDS);
-//        } catch (Exception e) {
-//            MoniLogUtil.innerDebug("addMonitor error name:{}, tag:{}", namePrefix, JSON.toJSONString(tags), e);
-//        }
-//
-//    }
 
 
     /**
