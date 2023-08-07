@@ -1,13 +1,15 @@
 package com.jiduauto.monilog;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.*;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.client.methods.HttpRequestWrapper;
-import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.BufferedHttpEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.HttpContext;
@@ -15,8 +17,8 @@ import org.apache.http.util.EntityUtils;
 import org.springframework.http.HttpHeaders;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 /**
  * @author yp
@@ -37,47 +39,58 @@ public class MoniHttpClientBuilder extends HttpClientBuilder {
 
     private static class RequestInterceptor implements HttpRequestInterceptor {
         @Override
-        public void process(HttpRequest httpRequest, HttpContext httpContext) throws HttpException, IOException {
-            HttpUriRequest request;
-            if (httpRequest instanceof HttpRequestBase) {
-                request = ((HttpRequestBase) httpRequest);
-            } else if (httpRequest instanceof HttpRequestWrapper) {
-                request = (HttpRequestWrapper) httpRequest;
-            } else {
-                MoniLogUtil.innerDebug("unsupported httpRequestType:{}", httpRequest.getClass());
-                return;
-            }
-            String uri = request.getURI().toString(); //携带有参数的uri
-
-            String targetHost = String.valueOf(httpContext.getAttribute(HttpClientContext.HTTP_TARGET_HOST));
-            String method = request.getRequestLine().getMethod();
-            //headers
-            Map<String, String> headerMap = parseHeaders(request.getAllHeaders());
-            //body
-            //params
-            StackTraceElement st = ThreadUtil.getNextClassFromStack(MoniHttpClientBuilder.class, "org.apache");
-            Class<?> serviceCls = HttpClient.class;
-            String methodName = method;
-            if (st != null) {
-                try {
-                    serviceCls = Class.forName(st.getClassName());
-                    methodName = st.getMethodName();
-                } catch (Exception ignore) {
+        public void process(HttpRequest request, HttpContext httpContext) throws HttpException, IOException {
+            try {
+                String method = request.getRequestLine().getMethod();
+                String bodyParams = null;
+                if (request instanceof HttpEntityEnclosingRequest) {
+                    HttpEntity entity = ((HttpEntityEnclosingRequest) request).getEntity();
+                    String contentType = entity == null ? null : (entity.getContentType() == null ? null : entity.getContentType().getValue());
+                    if (entity != null) {
+                        if (isUpstream(method, contentType)) {
+                            bodyParams = "Binary Data";
+                        } else {
+                            BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
+                            bodyParams = EntityUtils.toString(bufferedEntity);
+                            ((HttpEntityEnclosingRequest) request).setEntity(bufferedEntity);
+                        }
+                    }
                 }
+                //携带有参数的uri
+                String[] uriAndParams = request.getRequestLine().getUri().split("\\?");
+                String path = uriAndParams[0];
+                List<NameValuePair> params = URLEncodedUtils.parse(uriAndParams.length > 1 ? uriAndParams[1] : null, StandardCharsets.UTF_8);
+                Map<String, Collection<String>> queryMap = parseParams(params);
+                Map<String, String> headerMap = parseHeaders(request.getAllHeaders());
+                JSONObject input = HttpRequestData.of3(bodyParams, queryMap, headerMap).toJSON();
+                StackTraceElement st = ThreadUtil.getNextClassFromStack(MoniHttpClientBuilder.class, "org.apache");
+                Class<?> serviceCls = HttpClient.class;
+                String methodName = method;
+                if (st != null) {
+                    try {
+                        serviceCls = Class.forName(st.getClassName());
+                        methodName = st.getMethodName();
+                    } catch (Exception ignore) {
+                    }
+                }
+                MoniLogParams p = new MoniLogParams();
+                p.setCost(System.currentTimeMillis());
+                p.setServiceCls(serviceCls);
+                p.setService(p.getServiceCls().getSimpleName());
+                p.setAction(methodName);
+                p.setInput(new Object[]{input});
+                p.setSuccess(true);
+                p.setMsgCode(ErrorEnum.SUCCESS.name());
+                p.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
+                p.setLogPoint(LogPoint.http_client);
+
+                HttpHost host = (HttpHost) httpContext.getAttribute(HttpClientContext.HTTP_TARGET_HOST);
+                String targetHost = host == null ? null : String.valueOf(host.getAddress());
+                p.setTags(TagBuilder.of("url", targetHost + path, "method", method).toArray());
+                httpContext.setAttribute(MONILOG_PARAMS_KEY, p);
+            } catch (Exception e) {
+                MoniLogUtil.innerDebug("HttpClient.RequestInterceptor.process error", e);
             }
-            boolean isUpload = false;
-            MoniLogParams p = new MoniLogParams();
-            p.setCost(System.currentTimeMillis());
-            p.setServiceCls(serviceCls);
-            p.setService(p.getServiceCls().getSimpleName());
-            p.setAction(methodName);
-//            p.setInput(formatInput);
-            p.setSuccess(true);
-            p.setMsgCode(ErrorEnum.SUCCESS.name());
-            p.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
-            p.setLogPoint(LogPoint.http_client);
-            p.setTags(TagBuilder.of("url", targetHost, "method", method).toArray());
-            httpContext.setAttribute(MONILOG_PARAMS_KEY, p);
         }
     }
 
@@ -94,53 +107,63 @@ public class MoniHttpClientBuilder extends HttpClientBuilder {
             StatusLine statusLine = httpResponse.getStatusLine();
             p.setSuccess(statusLine.getStatusCode() < HttpStatus.SC_BAD_REQUEST);
             p.setMsgCode(String.valueOf(statusLine.getStatusCode()));
-
-            Header[] ct = httpResponse.getHeaders(HttpHeaders.CONTENT_TYPE);
-            //要判断响应类型，处理上传下载等特殊情况
+            String contentType = null;
+            String contentDisposition = null;
             for (Header h : httpResponse.getAllHeaders()) {
                 String name = h.getName();
                 String value = h.getValue();
+                if (HttpHeaders.CONTENT_TYPE.equalsIgnoreCase(name)) {
+                    contentType = value;
+                }
+                if (HttpHeaders.CONTENT_DISPOSITION.equalsIgnoreCase(name)) {
+                    contentDisposition = value;
+                }
             }
-
-            HttpEntity entity = httpResponse.getEntity();
-            BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
-            String content = EntityUtils.toString(bufferedEntity);
-            httpResponse.setEntity(bufferedEntity);
-            boolean isDownload = false;
-
-            //TODO
-            p.setOutput(content);
-//            p.setMsgInfo();
-//            p.setException();
+            String responseBody;
+            JSON jsonBody = null;
+            if (isDownstream(contentDisposition)) {
+                responseBody = "Binary Data";
+            } else {
+                if (isJson(contentType)) {
+                    HttpEntity entity = httpResponse.getEntity();
+                    BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
+                    responseBody = EntityUtils.toString(bufferedEntity);
+                    jsonBody = StringUtil.tryConvert2Json(responseBody);
+                    httpResponse.setEntity(bufferedEntity);
+                } else {
+                    responseBody = "[content of\"" + contentType + "\"...]";
+                }
+            }
+            p.setOutput(jsonBody == null ? responseBody : jsonBody);
+            if (jsonBody != null) {
+                ParsedResult pr = ResultParseUtil.parseResult(jsonBody, null, null);
+                p.setSuccess(pr.isSuccess());
+                if (StringUtils.isNotBlank(pr.getMsgCode())) {
+                    p.setMsgCode(pr.getMsgCode());
+                }
+                if (StringUtils.isNotBlank(pr.getMsgInfo())) {
+                    p.setMsgInfo(pr.getMsgInfo());
+                }
+            }
             httpContext.removeAttribute(MONILOG_PARAMS_KEY);
             MoniLogUtil.log(p);
         }
     }
-
-
-    private boolean isDownstream(Map<String, String> headers) {
-        String header = getFirstHeader(headers, HttpHeaders.CONTENT_DISPOSITION);
-        return StringUtils.containsIgnoreCase(header, "attachment") || StringUtils.containsIgnoreCase(header, "filename");
+    
+    private static boolean isUpstream(String method, String contentType) {
+        return HttpPost.METHOD_NAME.equalsIgnoreCase(method) && contentType.toLowerCase(Locale.ENGLISH).startsWith("multipart/");
     }
 
-    private boolean isJson(Map<String, String> headers) {
-        if (isDownstream(headers)) {
+    private static boolean isDownstream(String contentDisposition) {
+        return StringUtils.isNotBlank(contentDisposition) &&
+                StringUtils.containsIgnoreCase(contentDisposition, "attachment") || StringUtils.containsIgnoreCase(contentDisposition, "filename");
+    }
+
+    private static boolean isJson(String contentType) {
+        if (isDownstream(contentType)) {
             return false;
         }
-        String header = getFirstHeader(headers, HttpHeaders.CONTENT_TYPE);
-        return StringUtils.containsIgnoreCase(header, "application/json");
-    }
-
-    private String getFirstHeader(Map<String, String> headers, String name) {
-        if (headers == null || headers.isEmpty() || StringUtils.isBlank(name)) {
-            return null;
-        }
-        for (Map.Entry<String, String> me : headers.entrySet()) {
-            if (me.getKey().equalsIgnoreCase(name)) {
-                return me.getValue();
-            }
-        }
-        return null;
+        return StringUtils.containsIgnoreCase(contentType, "application/json");
     }
 
     private static Map<String, String> parseHeaders(Header[] allHeaders) {
@@ -150,6 +173,21 @@ public class MoniHttpClientBuilder extends HttpClientBuilder {
                 String name = h.getName();
                 String value = h.getValue();
                 map.put(name, value);
+            }
+        }
+        return map;
+    }
+
+    private static Map<String, Collection<String>> parseParams(List<NameValuePair> params) {
+        Map<String, Collection<String>> map = new HashMap<>();
+        if (CollectionUtils.isNotEmpty(params)) {
+            for (NameValuePair param : params) {
+                Collection<String> list = map.get(param.getName());
+                if (list == null) {
+                    list = new ArrayList<>();
+                }
+                list.add(param.getValue());
+                map.put(param.getName(), list);
             }
         }
         return map;
