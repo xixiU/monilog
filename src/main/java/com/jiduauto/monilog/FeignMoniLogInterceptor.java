@@ -164,7 +164,7 @@ class FeignMoniLogInterceptor {
     }
 
     private static JSONObject formatRequestInfo(Request request) {
-        String bodyParams = isBinary(request) ? "Binary data" : request.length() == 0 ? null : new String(request.body(), request.charset()).trim();
+        String bodyParams = isBinary(request) ? "Binary data" : length(request) == 0 ? null : new String(request.body(), request.charset()).trim();
 
         Map<String, Collection<String>> queries = request.requestTemplate().queries();
         Map<String, Collection<String>> headers = request.headers();
@@ -186,9 +186,17 @@ class FeignMoniLogInterceptor {
         return obj;
     }
 
+    // com.netflix.feign:feign-core中没有request.isBinary()方法
     private static boolean isBinary(Request request) {
         byte[] body = request.body();
         return request.charset() == null || body == null;
+    }
+
+    // com.netflix.feign:feign-core中没有request.length()方法
+
+    private static int length(Request request) {
+        byte[] data = request.body();
+        return data != null ? data.length : 0;
     }
 
     private static class BufferingFeignClientResponse implements Closeable {
