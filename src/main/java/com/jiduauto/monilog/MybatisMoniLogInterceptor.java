@@ -14,7 +14,6 @@ import org.apache.ibatis.reflection.MetaObject;
 import org.apache.ibatis.reflection.SystemMetaObject;
 import org.apache.ibatis.session.ResultHandler;
 
-import javax.annotation.Resource;
 import java.lang.reflect.Proxy;
 import java.sql.Statement;
 
@@ -26,9 +25,6 @@ class MybatisMoniLogInterceptor {
     })
     @Slf4j
     static class MybatisInterceptor implements Interceptor {
-        private static final String SQL_COST_TOO_LONG = StringUtil.BUSINESS_MONITOR_PREFIX+"sqlCostTooLong";
-        @Resource
-        private MoniLogProperties moniLogProperties;
 
         @SneakyThrows
         @Override
@@ -57,12 +53,6 @@ class MybatisMoniLogInterceptor {
                 logParams.setOutput(obj);
                 costTime = System.currentTimeMillis() - nowTime + 1;
                 logParams.setCost(costTime);
-                // 超过时间阀值的，打印错误日志
-                MoniLogProperties.MybatisProperties mybatisProperties = moniLogProperties.getMybatis();
-                if (mybatisProperties != null && mybatisProperties.getLongRt() > 0 && costTime > mybatisProperties.getLongRt()) {
-                    MoniLogUtil.addCustomerMonitor(logParams, SQL_COST_TOO_LONG);
-                    log.error("sql_cost_time_too_long, sql:{}, time:{}", invocationInfo.sql, costTime);
-                }
                 if (bizException == null) {
                     return obj;
                 } else {
