@@ -169,7 +169,7 @@ class FeignMoniLogInterceptor {
     private static JSONObject formatRequestInfo(Request request) {
         String bodyParams = isBinary(request) ? "Binary data" : length(request) == 0 ? null : new String(request.body(), request.charset()).trim();
         Map<String, Collection<String>> headers = request.headers();
-        boolean hasRequestTemplate = SpringUtils.objectHasProperty(request, "requestTemplate");
+        boolean hasRequestTemplate = ReflectUtil.objectHasProperty(request, "requestTemplate");
         Map<String, Collection<String>> queries = null;
         if (hasRequestTemplate) {
             queries = request.requestTemplate().queries();
