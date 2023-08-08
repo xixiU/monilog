@@ -377,9 +377,9 @@ class MoniLogProperties implements InitializingBean {
         private Set<String> urlBlackList;
 
         /**
-         * 仅监控的url清单，支持模糊路径如a/*,仅当此配置不空且元素个数大于0时才生效
+         * 不监控的host清单，支持模糊路径如a/*,仅当此配置不空且元素个数大于0时才生效
          */
-        private Set<String> urlWhiteList;
+        private Set<String> hostBlackList;
 
         /**
          * 解析httpClient调用结果的默认表达式，默认校验返回编码是否等于0或者200有一个匹配即认为调用成功,多个表达式直接逗号分割.

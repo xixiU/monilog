@@ -2,6 +2,7 @@ package com.jiduauto.monilog;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -20,6 +21,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+import static com.jiduauto.monilog.StringUtil.checkPathMatch;
+
 /**
  * @author yp
  * @date 2023/07/31
@@ -27,8 +30,6 @@ import java.util.*;
 @Slf4j
 public final class MoniHttpClientBuilder {
     private static final String MONILOG_PARAMS_KEY = "__MoniLogParams";
-    private static final String MONILOG_REQ_INTERCEPATOR = "__MoniLogRequestInterceptor";
-    private static final String MONILOG_RESP_INTERCEPATOR = "__MoniLogResponseInterceptor";
 
     /**
      * 该方法不可修改，包括可见级别
@@ -43,11 +44,19 @@ public final class MoniHttpClientBuilder {
     private static class RequestInterceptor implements HttpRequestInterceptor {
         @Override
         public void process(HttpRequest request, HttpContext httpContext) throws HttpException, IOException {
-            if (httpContext.getAttribute(MONILOG_REQ_INTERCEPATOR) != null) {
+            RequestLine requestLine = request.getRequestLine();
+            HttpHost host = (HttpHost) httpContext.getAttribute(HttpClientContext.HTTP_TARGET_HOST);
+            String targetHost = host == null ? null : host.getHostName() + (host.getPort() < 0 || host.getPort() == 80 ? "" : ":" + host.getPort());
+            //携带有参数的uri
+            String[] uriAndParams = requestLine.getUri().split("\\?");
+            String path = uriAndParams[0];
+            StackTraceElement st = ThreadUtil.getNextClassFromStack(MoniHttpClientBuilder.class, "org.apache");
+            System.out.println("HttpClient target=============" + targetHost + path);
+            if (!isEnable(host, path, st.getClassName())) {
                 return;
             }
             try {
-                String method = request.getRequestLine().getMethod();
+                String method = requestLine.getMethod();
                 String bodyParams = null;
                 if (request instanceof HttpEntityEnclosingRequest) {
                     HttpEntity entity = ((HttpEntityEnclosingRequest) request).getEntity();
@@ -62,14 +71,10 @@ public final class MoniHttpClientBuilder {
                         }
                     }
                 }
-                //携带有参数的uri
-                String[] uriAndParams = request.getRequestLine().getUri().split("\\?");
-                String path = uriAndParams[0];
                 List<NameValuePair> params = URLEncodedUtils.parse(uriAndParams.length > 1 ? uriAndParams[1] : null, StandardCharsets.UTF_8);
                 Map<String, Collection<String>> queryMap = parseParams(params);
                 Map<String, String> headerMap = parseHeaders(request.getAllHeaders());
                 JSONObject input = HttpRequestData.of3(bodyParams, queryMap, headerMap).toJSON();
-                StackTraceElement st = ThreadUtil.getNextClassFromStack(MoniHttpClientBuilder.class, "org.apache");
                 Class<?> serviceCls = HttpClient.class;
                 String methodName = method;
                 if (st != null) {
@@ -90,14 +95,10 @@ public final class MoniHttpClientBuilder {
                 p.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
                 p.setLogPoint(LogPoint.http_client);
 
-                HttpHost host = (HttpHost) httpContext.getAttribute(HttpClientContext.HTTP_TARGET_HOST);
-                String targetHost = host == null ? null : host.getHostName() + (host.getPort() < 0 || host.getPort() == 80 ? "" : ":" + host.getPort());
                 p.setTags(TagBuilder.of("url", targetHost + path, "method", method).toArray());
                 httpContext.setAttribute(MONILOG_PARAMS_KEY, p);
             } catch (Exception e) {
                 MoniLogUtil.innerDebug("HttpClient.RequestInterceptor.process error", e);
-            } finally {
-                httpContext.setAttribute(MONILOG_REQ_INTERCEPATOR, 1);
             }
         }
     }
@@ -105,14 +106,10 @@ public final class MoniHttpClientBuilder {
     private static class ResponseInterceptor implements HttpResponseInterceptor {
         @Override
         public void process(HttpResponse httpResponse, HttpContext httpContext) throws HttpException, IOException {
-            if (httpContext.getAttribute(MONILOG_RESP_INTERCEPATOR) != null) {
-                return;
-            }
             MoniLogParams p = (MoniLogParams) httpContext.getAttribute(MONILOG_PARAMS_KEY);
             if (p == null) {
                 return;
             }
-            httpContext.setAttribute(MONILOG_RESP_INTERCEPATOR, 1);
             try {
                 if (p.getCost() > 0) {
                     p.setCost(System.currentTimeMillis() - p.getCost());
@@ -175,13 +172,39 @@ public final class MoniHttpClientBuilder {
         }
     }
 
+    private static boolean isEnable(HttpHost host, String path, String invokerClass) {
+        if (StringUtil.checkClassMatch(Lists.newArrayList(invokerClass), "com.ecwid.consul.transport.AbstractHttpTransport")) {
+            return false;
+        }
+        MoniLogProperties mp = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
+        if (mp == null || !mp.isEnable() || mp.getHttpclient() == null) {
+            return false;
+        }
+        MoniLogProperties.HttpClientProperties httpclient = mp.getHttpclient();
+        boolean enable = mp.isComponentEnable("httpclient", httpclient.isEnable());
+        if (!enable) {
+            return false;
+        }
+        Set<String> urlBlackList = httpclient.getUrlBlackList();
+        Set<String> hostBlackList = httpclient.getHostBlackList();
+        if (CollectionUtils.isEmpty(urlBlackList)) {
+            urlBlackList = new HashSet<>();
+        }
+        if (CollectionUtils.isEmpty(hostBlackList)) {
+            hostBlackList = new HashSet<>();
+        }
+        if (checkPathMatch(hostBlackList, host.getHostName()) || checkPathMatch(urlBlackList, path)) {
+            return false;
+        }
+        return true;
+    }
+
     private static boolean isUpstream(String method, String contentType) {
         return HttpPost.METHOD_NAME.equalsIgnoreCase(method) && contentType.toLowerCase(Locale.ENGLISH).startsWith("multipart/");
     }
 
     private static boolean isDownstream(String contentDisposition) {
-        return StringUtils.isNotBlank(contentDisposition) &&
-                StringUtils.containsIgnoreCase(contentDisposition, "attachment") || StringUtils.containsIgnoreCase(contentDisposition, "filename");
+        return StringUtils.isNotBlank(contentDisposition) && StringUtils.containsIgnoreCase(contentDisposition, "attachment") || StringUtils.containsIgnoreCase(contentDisposition, "filename");
     }
 
     private static boolean isJson(String contentType) {

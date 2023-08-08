@@ -19,13 +19,21 @@ import java.util.stream.Collectors;
 @Slf4j
 class StringUtil {
     private static final AntPathMatcher antPathMatcher = new AntPathMatcher();
+    private static final AntPathMatcher antClassMatcher = new AntPathMatcher(".");
+    public static boolean checkClassMatch(Collection<String> classList, String toCheck) {
+        return checkMatch(classList, toCheck, antClassMatcher);
+    }
 
     public static boolean checkPathMatch(Collection<String> pathList, String toCheckPath) {
-        if (CollectionUtils.isEmpty(pathList)) {
+        return checkMatch(pathList, toCheckPath, antPathMatcher);
+    }
+
+    private static boolean checkMatch(Collection<String> targets, String toCheck, AntPathMatcher matcher) {
+        if (CollectionUtils.isEmpty(targets)) {
             return false;
         }
-        for (String pattern : pathList) {
-            if (antPathMatcher.match(pattern, toCheckPath)) {
+        for (String pattern : targets) {
+            if (matcher.match(pattern, toCheck)) {
                 return true;
             }
         }
