@@ -19,8 +19,7 @@ final class MoniSpringRunListener implements SpringApplicationRunListener, Order
         String body = "com.jiduauto.monilog.MoniHttpClientBuilder.addInterceptors(this);";
         try {
             enhanceDefaultConstructor(clsName, "()V", body);
-        } catch (NotFoundException e) {
-            log.warn("failed to rebuild HttpClientBuilder class, {}", e.getMessage());
+        } catch (NotFoundException ignore) {
         } catch (Throwable e) {
             log.warn("failed to rebuild HttpClientBuilder class, {}", e.getMessage());
         }

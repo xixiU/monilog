@@ -11,7 +11,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.BufferedHttpEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
@@ -26,21 +25,10 @@ import java.util.*;
  * @date 2023/07/31
  */
 @Slf4j
-public class MoniHttpClientBuilder extends HttpClientBuilder {
+public final class MoniHttpClientBuilder {
     private static final String MONILOG_PARAMS_KEY = "__MoniLogParams";
     private static final String MONILOG_REQ_INTERCEPATOR = "__MoniLogRequestInterceptor";
     private static final String MONILOG_RESP_INTERCEPATOR = "__MoniLogResponseInterceptor";
-
-    //允许业务方使用此方法直接创建HttpClientBuilder
-    public static HttpClientBuilder create() {
-        return new MoniHttpClientBuilder();
-    }
-
-    @Override
-    public final CloseableHttpClient build() {
-        addInterceptors(this);
-        return super.build();
-    }
 
     /**
      * 该方法不可修改，包括可见级别

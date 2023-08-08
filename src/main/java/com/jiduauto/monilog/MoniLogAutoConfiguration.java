@@ -3,7 +3,6 @@ package com.jiduauto.monilog;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.interceptor.GrpcGlobalClientInterceptor;
 import net.devh.boot.grpc.server.interceptor.GrpcGlobalServerInterceptor;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.springframework.boot.autoconfigure.condition.*;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -117,21 +116,5 @@ class MoniLogAutoConfiguration {
         log.info(">>>monilog redis[redisson] start...");
         //redisson是异步api，拦截操作较为复杂，需要分步进行。通过下面的这个Interceptor的AOP来实现
         return new RedisMoniLogInterceptor.RedissonInterceptor(moniLogProperties.getRedis());
-    }
-
-    @Configuration
-    @ConditionalOnProperty(prefix = "monilog.httpclient", name = "enable", havingValue = "true", matchIfMissing = true)
-    @ConditionalOnExpression("('${monilog.component.includes:*}'.equals('*') or '${monilog.component.includes}'.contains('httpclient')) and !('${monilog.component.excludes:}'.equals('*') or '${monilog.component.excludes:}'.contains('httpclient'))")
-    @ConditionalOnClass(name = {"org.apache.http.client.HttpClient", "org.apache.http.impl.client.CloseableHttpClient", "org.apache.http.impl.client.HttpClientBuilder"})
-    static class HttpClientMoniLogConfiguration {
-        /**
-         * 注意，只有使用Spring容器中的HttpClientBuilder或使用MoniHttpClientBuilder创建的httpClient，拦截器才会生效
-         */
-        @Bean
-        @ConditionalOnMissingBean(HttpClientBuilder.class)
-        HttpClientBuilder httpClientBuilder() {
-            log.info(">>>monilog httpclient start...");
-            return MoniHttpClientBuilder.create();
-        }
     }
 }

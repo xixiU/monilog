@@ -65,9 +65,9 @@ class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered {
                 log.info(">>>monilog redis start skip...");
             }
         } else if (isTargetBean(bean, HTTP_CLIENT_BUILDER)) {
-            if (!(bean instanceof MoniHttpClientBuilder) && isComponentEnable("httpclient", moniLogProperties.getHttpclient().isEnable())) {
-                log.info(">>>monilog httpclient start...");
-                return MoniHttpClientBuilder.addInterceptors((HttpClientBuilder) bean);
+            if ((bean instanceof HttpClientBuilder) && isComponentEnable("httpclient", moniLogProperties.getHttpclient().isEnable())) {
+                //httpclient会在另外的地方进行增强
+                log.info(">>>monilog httpclient start skip...");
             }
         } else if (isTargetBean(bean, MQ_ADMIN) || isTargetBean(bean, MQ_LISTENER_CONTAINER)) {
             log.info(">>>monilog recoketmq start...");
