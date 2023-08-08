@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 class StringUtil {
     private static final AntPathMatcher antPathMatcher = new AntPathMatcher();
     private static final AntPathMatcher antClassMatcher = new AntPathMatcher(".");
+
     public static boolean checkClassMatch(Collection<String> classList, String toCheck) {
         return checkMatch(classList, toCheck, antClassMatcher);
     }
@@ -130,11 +131,16 @@ class StringUtil {
     }
 
     public static String[] processUserTag(String strMap, String[] oriTags) {
-        Map<String, String> jsonMap = StringUtil.tryConvert2Map(strMap);
-        if (MapUtils.isEmpty(jsonMap) || oriTags == null || oriTags.length == 0) {
-            return oriTags;
+        try {
+            Map<String, String> jsonMap = StringUtil.tryConvert2Map(strMap);
+            if (MapUtils.isEmpty(jsonMap) || oriTags == null || oriTags.length == 0) {
+                return oriTags;
+            }
+            return processUserTag(jsonMap, oriTags);
+        } catch (Exception e) {
+            MoniLogUtil.innerDebug("processUserTag process error", e);
         }
-        return processUserTag(jsonMap, oriTags);
+        return null;
     }
 
     public static String encodeQueryString(Map<String, Collection<String>> params) {
