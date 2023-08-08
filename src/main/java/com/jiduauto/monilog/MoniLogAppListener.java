@@ -26,7 +26,11 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
     public void onApplicationEvent(ApplicationPreparedEvent event) {
         ConfigurableApplicationContext ctx = event.getApplicationContext();
         //这里仅增加redisTemplate，不包括Redisson， Redisson的比较复杂，将通过Aop实现
-        enhanceRedisTemplate(ctx);
+        try {
+            enhanceRedisTemplate(ctx);
+        } catch (Throwable e) {
+            MoniLogUtil.innerDebug("enhanceRedisTemplate error", e);
+        }
     }
 
     /**
