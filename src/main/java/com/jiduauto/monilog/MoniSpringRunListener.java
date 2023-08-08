@@ -2,6 +2,7 @@ package com.jiduauto.monilog;
 
 import javassist.ClassPool;
 import javassist.CtClass;
+import javassist.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplicationRunListener;
 import org.springframework.core.Ordered;
@@ -19,6 +20,8 @@ public class MoniSpringRunListener implements SpringApplicationRunListener, Orde
                 ".addInterceptorLast(new com.jiduauto.monilog.MoniHttpClientBuilder.ResponseInterceptor());";
         try {
             enhanceDefaultConstructor(clsName, "(Ljava/lang/String;)V", body);
+        } catch (NotFoundException ignore) {
+
         } catch (Throwable e) {
             log.warn("failed to rebuild HttpClientBuilder class, {}", e.getMessage());
         }
@@ -30,29 +33,22 @@ public class MoniSpringRunListener implements SpringApplicationRunListener, Orde
         return Ordered.HIGHEST_PRECEDENCE;
     }
 
-    private static void enhanceDefaultConstructor(String clsName, String descriptor, String srcCode) {
-        try {
-            ClassPool classPool = ClassPool.getDefault();
-            CtClass ctCls = classPool.getCtClass(clsName);
-            ctCls.getConstructor(descriptor).setBody(srcCode);
-            ctCls.writeFile();
-            Class<?> targetCls = ctCls.toClass();
-            log.info("constructor of '{}' has bean enhanced...", targetCls.getCanonicalName());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    private static void enhanceDefaultConstructor(String clsName, String descriptor, String srcCode) throws Throwable {
+        ClassPool classPool = ClassPool.getDefault();
+        CtClass ctCls = classPool.getCtClass(clsName);
+        ctCls.getConstructor(descriptor).setBody(srcCode);
+        ctCls.writeFile();
+        Class<?> targetCls = ctCls.toClass();
+        log.info("constructor of '{}' has bean enhanced...", targetCls.getCanonicalName());
+
     }
 
-    private static void enhanceMethod(String clsName, String method, String newMethodBody) {
-        try {
-            ClassPool classPool = ClassPool.getDefault();
-            CtClass ctCls = classPool.getCtClass(clsName);
-            ctCls.getDeclaredMethod(method).setBody(newMethodBody);
-            ctCls.writeFile();
-            Class<?> targetCls = ctCls.toClass();
-            log.info("method[{}] of '{}' has bean enhanced...", method, targetCls.getCanonicalName());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    private static void enhanceMethod(String clsName, String method, String newMethodBody) throws Throwable {
+        ClassPool classPool = ClassPool.getDefault();
+        CtClass ctCls = classPool.getCtClass(clsName);
+        ctCls.getDeclaredMethod(method).setBody(newMethodBody);
+        ctCls.writeFile();
+        Class<?> targetCls = ctCls.toClass();
+        log.info("method[{}] of '{}' has bean enhanced...", method, targetCls.getCanonicalName());
     }
 }
