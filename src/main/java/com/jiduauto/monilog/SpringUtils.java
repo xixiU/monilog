@@ -8,8 +8,6 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-import java.lang.reflect.Field;
-
 /**
  * Spring(Spring boot)工具封装，包括：
  *
@@ -98,15 +96,6 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
         return applicationContext.getEnvironment().getProperty(key);
     }
 
-
-    public static boolean objectHasProperty(Object obj, String propertyName) {
-        try {
-            Field field = obj.getClass().getDeclaredField(propertyName);
-            return true;
-        } catch (NoSuchFieldException e) {
-            return false;
-        }
-    }
 
     static String parseSpELValue(String spel) {
         return applicationContext.getEnvironment().resolvePlaceholders(spel);

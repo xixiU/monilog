@@ -18,6 +18,15 @@ import java.util.stream.Collectors;
  * @author yepei
  */
 class ReflectUtil {
+
+    public static boolean objectHasProperty(Object obj, String propertyName) {
+        try {
+            Field field = obj.getClass().getDeclaredField(propertyName);
+            return true;
+        } catch (NoSuchFieldException e) {
+            return false;
+        }
+    }
     /**
      * //找到方法上的注解，如果找不到则向上找类上的，如果还找不到，则再向上找接口上的
      *
