@@ -207,7 +207,6 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             try {
                 handlerExecutionChain = mapping.getHandler(request);
             } catch (Exception e) {
-                MoniLogUtil.innerDebug("getHandlerMethod error", e);
                 continue;
             }
             if (handlerExecutionChain == null) {
