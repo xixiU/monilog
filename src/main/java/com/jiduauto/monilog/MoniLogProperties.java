@@ -155,6 +155,7 @@ class MoniLogProperties implements InitializingBean {
             httpclient.detailLogLevel = defaultLevel;
         }
         feign.resetDefaultBoolExpr(globalDefaultBoolExpr);
+        httpclient.resetDefaultBoolExpr(globalDefaultBoolExpr);
     }
 
     @Getter
@@ -284,7 +285,7 @@ class MoniLogProperties implements InitializingBean {
          */
         private long longRt = 1000;
 
-        public void resetDefaultBoolExpr(String globalDefaultBoolExpr) {
+        void resetDefaultBoolExpr(String globalDefaultBoolExpr) {
             this.defaultBoolExpr = ResultParser.mergeBoolExpr(globalDefaultBoolExpr, defaultBoolExpr);
         }
     }
@@ -362,7 +363,7 @@ class MoniLogProperties implements InitializingBean {
     @Setter
     static class HttpClientProperties {
         /**
-         * 开启httpClient监控
+         * 开启httpClient监控，注：只有被Spring容器托管的HttpClientBuilder，或者MoniHttpClientBuilder来创建的HttpClient才会生效
          */
         private boolean enable = true;
         /**
@@ -381,8 +382,18 @@ class MoniLogProperties implements InitializingBean {
         private Set<String> urlWhiteList;
 
         /**
+         * 解析httpClient调用结果的默认表达式，默认校验返回编码是否等于0或者200有一个匹配即认为调用成功,多个表达式直接逗号分割.
+         * 注意，如果表达式前以"+"开头，则表示在原有默认表达式的基础上追加，否则会覆盖原默认表达式
+         */
+        private String defaultBoolExpr = "+$.status==200";
+
+        /**
          * httpClient慢接口，单位毫秒.
          */
         private long longRt = 1000;
+
+        void resetDefaultBoolExpr(String globalDefaultBoolExpr) {
+            this.defaultBoolExpr = ResultParser.mergeBoolExpr(globalDefaultBoolExpr, defaultBoolExpr);
+        }
     }
 }
