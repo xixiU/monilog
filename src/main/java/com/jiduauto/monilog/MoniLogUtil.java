@@ -258,7 +258,8 @@ class MoniLogUtil {
         try {
             properties = SpringUtils.getBean(MoniLogProperties.class);
         } catch (Exception e) {
-            MoniLogUtil.innerDebug(":no MoniLogProperties instance found", e);
+            log.warn("__monilog_warn__:no MoniLogProperties instance found", e);
+            //注意，这里不能再调用innerDebug方法，容易出现死循环
         }
         return (logProperties = properties);
     }
