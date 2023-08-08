@@ -13,11 +13,9 @@ import org.springframework.core.Ordered;
  * @date 2023/08/08
  */
 @Slf4j
-public final class MoniSpringRunListener implements SpringApplicationRunListener, Ordered {
-
-    public MoniSpringRunListener(SpringApplication app, String[] args) {}
-
-    public MoniSpringRunListener() {}
+final class MoniSpringRunListener implements SpringApplicationRunListener, Ordered {
+    private MoniSpringRunListener(SpringApplication app, String[] args) {
+    }
 
     @Override
     public void starting() {
