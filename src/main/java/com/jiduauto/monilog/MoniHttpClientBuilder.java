@@ -28,6 +28,8 @@ import java.util.*;
 @Slf4j
 public class MoniHttpClientBuilder extends HttpClientBuilder {
     private static final String MONILOG_PARAMS_KEY = "__MoniLogParams";
+    private static final String MONILOG_REQ_INTERCEPATOR = "__MoniLogRequestInterceptor";
+    private static final String MONILOG_RESP_INTERCEPATOR = "__MoniLogResponseInterceptor";
 
     //允许业务方使用此方法直接创建HttpClientBuilder
     public static HttpClientBuilder create() {
@@ -47,6 +49,9 @@ public class MoniHttpClientBuilder extends HttpClientBuilder {
     private static class RequestInterceptor implements HttpRequestInterceptor {
         @Override
         public void process(HttpRequest request, HttpContext httpContext) throws HttpException, IOException {
+            if (httpContext.getAttribute(MONILOG_REQ_INTERCEPATOR) != null) {
+                return;
+            }
             try {
                 String method = request.getRequestLine().getMethod();
                 String bodyParams = null;
@@ -97,6 +102,8 @@ public class MoniHttpClientBuilder extends HttpClientBuilder {
                 httpContext.setAttribute(MONILOG_PARAMS_KEY, p);
             } catch (Exception e) {
                 MoniLogUtil.innerDebug("HttpClient.RequestInterceptor.process error", e);
+            } finally {
+                httpContext.setAttribute(MONILOG_REQ_INTERCEPATOR, 1);
             }
         }
     }
@@ -104,64 +111,73 @@ public class MoniHttpClientBuilder extends HttpClientBuilder {
     private static class ResponseInterceptor implements HttpResponseInterceptor {
         @Override
         public void process(HttpResponse httpResponse, HttpContext httpContext) throws HttpException, IOException {
+            if (httpContext.getAttribute(MONILOG_RESP_INTERCEPATOR) != null) {
+                return;
+            }
             MoniLogParams p = (MoniLogParams) httpContext.getAttribute(MONILOG_PARAMS_KEY);
             if (p == null) {
                 return;
             }
-            if (p.getCost() > 0) {
-                p.setCost(System.currentTimeMillis() - p.getCost());
-            }
-            StatusLine statusLine = httpResponse.getStatusLine();
-            p.setSuccess(statusLine.getStatusCode() < HttpStatus.SC_BAD_REQUEST);
-            p.setMsgCode(String.valueOf(statusLine.getStatusCode()));
-            String contentType = null;
-            String contentDisposition = null;
-            for (Header h : httpResponse.getAllHeaders()) {
-                String name = h.getName();
-                String value = h.getValue();
-                if (HttpHeaders.CONTENT_TYPE.equalsIgnoreCase(name)) {
-                    contentType = value;
+            httpContext.setAttribute(MONILOG_RESP_INTERCEPATOR, 1);
+            try {
+                if (p.getCost() > 0) {
+                    p.setCost(System.currentTimeMillis() - p.getCost());
                 }
-                if (HttpHeaders.CONTENT_DISPOSITION.equalsIgnoreCase(name)) {
-                    contentDisposition = value;
+                StatusLine statusLine = httpResponse.getStatusLine();
+                p.setSuccess(statusLine.getStatusCode() < HttpStatus.SC_BAD_REQUEST);
+                p.setMsgCode(String.valueOf(statusLine.getStatusCode()));
+                String contentType = null;
+                String contentDisposition = null;
+                for (Header h : httpResponse.getAllHeaders()) {
+                    String name = h.getName();
+                    String value = h.getValue();
+                    if (HttpHeaders.CONTENT_TYPE.equalsIgnoreCase(name)) {
+                        contentType = value;
+                    }
+                    if (HttpHeaders.CONTENT_DISPOSITION.equalsIgnoreCase(name)) {
+                        contentDisposition = value;
+                    }
                 }
-            }
-            String responseBody;
-            JSON jsonBody = null;
-            if (isDownstream(contentDisposition)) {
-                responseBody = "Binary Data";
-            } else {
-                if (isJson(contentType)) {
-                    HttpEntity entity = httpResponse.getEntity();
-                    BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
-                    responseBody = EntityUtils.toString(bufferedEntity);
-                    jsonBody = StringUtil.tryConvert2Json(responseBody);
-                    httpResponse.setEntity(bufferedEntity);
+                String responseBody;
+                JSON jsonBody = null;
+                if (isDownstream(contentDisposition)) {
+                    responseBody = "Binary Data";
                 } else {
-                    responseBody = "[content of\"" + contentType + "\"...]";
+                    if (isJson(contentType)) {
+                        HttpEntity entity = httpResponse.getEntity();
+                        BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
+                        responseBody = EntityUtils.toString(bufferedEntity);
+                        jsonBody = StringUtil.tryConvert2Json(responseBody);
+                        httpResponse.setEntity(bufferedEntity);
+                    } else {
+                        responseBody = "[content of\"" + contentType + "\"...]";
+                    }
                 }
+                p.setOutput(jsonBody == null ? responseBody : jsonBody);
+                if (jsonBody != null) {
+                    MoniLogProperties prop = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
+                    String defaultBoolExpr = null;
+                    if (prop != null) {
+                        defaultBoolExpr = prop.getHttpclient().getDefaultBoolExpr();
+                    }
+                    ParsedResult pr = ResultParseUtil.parseResult(jsonBody, null, null, defaultBoolExpr, null, null);
+                    if (p.isSuccess()) {
+                        //如果外层响应码是200，则再看内层是否成功
+                        p.setSuccess(pr.isSuccess());
+                    }
+                    if (StringUtils.isNotBlank(pr.getMsgCode())) {
+                        p.setMsgCode(pr.getMsgCode());
+                    }
+                    if (StringUtils.isNotBlank(pr.getMsgInfo())) {
+                        p.setMsgInfo(pr.getMsgInfo());
+                    }
+                }
+            } catch (Exception e) {
+                MoniLogUtil.innerDebug("HttpClient.ResponseInterceptor.process error", e);
+            } finally {
+                httpContext.removeAttribute(MONILOG_PARAMS_KEY);
+                MoniLogUtil.log(p);
             }
-            p.setOutput(jsonBody == null ? responseBody : jsonBody);
-            if (jsonBody != null) {
-                MoniLogProperties prop = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
-                String defaultBoolExpr = null;
-                if (prop != null) {
-                    defaultBoolExpr = prop.getHttpclient().getDefaultBoolExpr();
-                }
-                ParsedResult pr = ResultParseUtil.parseResult(jsonBody, null, null, defaultBoolExpr, null, null);
-                if (p.isSuccess()) {
-                    //如果外层响应码是200，则再看内层是否成功
-                    p.setSuccess(pr.isSuccess());
-                }
-                if (StringUtils.isNotBlank(pr.getMsgCode())) {
-                    p.setMsgCode(pr.getMsgCode());
-                }
-                if (StringUtils.isNotBlank(pr.getMsgInfo())) {
-                    p.setMsgInfo(pr.getMsgInfo());
-                }
-            }
-            httpContext.removeAttribute(MONILOG_PARAMS_KEY);
-            MoniLogUtil.log(p);
         }
     }
 
