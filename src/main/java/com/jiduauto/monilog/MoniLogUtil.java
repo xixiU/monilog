@@ -72,14 +72,15 @@ class MoniLogUtil {
             return;
         }
         // 操作操作信息
-        String operationCostTooLongMonitorPrefix = BUSINESS_MONITOR_PREFIX + "operation_cost_too_long_" + logPoint.name();;
-        MetricMonitor.record( operationCostTooLongMonitorPrefix + MonitorType.RECORD.getMark(), allTags);
+        String operationCostTooLongMonitorPrefix = BUSINESS_MONITOR_PREFIX + "operation_cost_too_long_" + logPoint.name();
+        ;
+        MetricMonitor.record(operationCostTooLongMonitorPrefix + MonitorType.RECORD.getMark(), allTags);
         // 耗时只打印基础tag
         MetricMonitor.eventDruation(operationCostTooLongMonitorPrefix + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
     }
 
 
-    private static boolean checkRtMonitor(MoniLogParams logParams){
+    private static boolean checkRtMonitor(MoniLogParams logParams) {
         MoniLogProperties logProperties = getLogProperties();
         if (logProperties == null || !logProperties.isMonitorLongRt()) {
             return false;
@@ -93,30 +94,38 @@ class MoniLogUtil {
             return false;
         }
         switch (logPoint) {
-            case xxljob:return exceedCostThreshold(logProperties.getXxljob().getLongRt(), cost);
-            case redis: return exceedCostThreshold(logProperties.getRedis().getLongRt(), cost);
-            case mybatis: return exceedCostThreshold(logProperties.getMybatis().getLongRt(), cost);
+            case xxljob:
+                return exceedCostThreshold(logProperties.getXxljob().getLongRt(), cost);
+            case redis:
+                return exceedCostThreshold(logProperties.getRedis().getLongRt(), cost);
+            case mybatis:
+                return exceedCostThreshold(logProperties.getMybatis().getLongRt(), cost);
             case grpc_client:
-            case grpc_server: return exceedCostThreshold(logProperties.getGrpc().getLongRt(), cost);
-            case http_client: return exceedCostThreshold(logProperties.getHttpclient().getLongRt(), cost);
-            case http_server: return exceedCostThreshold(logProperties.getWeb().getLongRt(), cost);
+            case grpc_server:
+                return exceedCostThreshold(logProperties.getGrpc().getLongRt(), cost);
+            case http_client:
+                return exceedCostThreshold(logProperties.getHttpclient().getLongRt(), cost);
+            case http_server:
+                return exceedCostThreshold(logProperties.getWeb().getLongRt(), cost);
             case feign_client:
-            case feign_server:return exceedCostThreshold(logProperties.getFeign().getLongRt(), cost);
+            case feign_server:
+                return exceedCostThreshold(logProperties.getFeign().getLongRt(), cost);
             case rocketmq_consumer:
-            case rocketmq_producer: return exceedCostThreshold(logProperties.getRocketmq().getLongRt(), cost);
+            case rocketmq_producer:
+                return exceedCostThreshold(logProperties.getRocketmq().getLongRt(), cost);
             case unknown:
             case user_define:
-            default:return false;
+            default:
+                return false;
         }
     }
 
-    private static boolean exceedCostThreshold(long threshold, long actualCost){
-        if (threshold<=0) {
+    private static boolean exceedCostThreshold(long threshold, long actualCost) {
+        if (threshold <= 0) {
             return false;
         }
         return threshold < actualCost;
     }
-
 
 
     /**
@@ -254,13 +263,7 @@ class MoniLogUtil {
         if (logProperties != null) {
             return logProperties;
         }
-        MoniLogProperties properties = null;
-        try {
-            properties = SpringUtils.getBean(MoniLogProperties.class);
-        } catch (Exception e) {
-            log.warn("__monilog_warn__:no MoniLogProperties instance found", e);
-            //注意，这里不能再调用innerDebug方法，容易出现死循环
-        }
+        MoniLogProperties properties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
         return (logProperties = properties);
     }
 }

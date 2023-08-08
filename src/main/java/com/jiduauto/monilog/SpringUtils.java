@@ -1,5 +1,6 @@
 package com.jiduauto.monilog;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ListableBeanFactory;
@@ -19,6 +20,7 @@ import org.springframework.context.ApplicationContextAware;
  * @author loolly
  * @since 5.1.0
  */
+@Slf4j
 class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
 
     /**
@@ -77,7 +79,8 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
         try {
             return getBeanFactory().getBean(clazz);
         } catch (Exception e) {
-            MoniLogUtil.innerDebug("SpringUtils.getBean failed", e);
+            //注意，这里不能再调用innerDebug方法，容易出现死循环
+            log.warn("__monilog_warn__SpringUtils.getBean failed", e);
             return null;
         }
     }
