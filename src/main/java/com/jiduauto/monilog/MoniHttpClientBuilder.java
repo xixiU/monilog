@@ -42,7 +42,13 @@ public class MoniHttpClientBuilder extends HttpClientBuilder {
         return super.build();
     }
 
-    static HttpClientBuilder addInterceptors(HttpClientBuilder builder) {
+    /**
+     * 该方法不可修改，包括可见级别
+     *
+     * @param builder
+     * @return
+     */
+    public static HttpClientBuilder addInterceptors(HttpClientBuilder builder) {
         return builder.addInterceptorFirst(new RequestInterceptor()).addInterceptorLast(new ResponseInterceptor());
     }
 
