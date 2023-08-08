@@ -4,6 +4,7 @@ import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringApplicationRunListener;
 import org.springframework.core.Ordered;
 
@@ -12,7 +13,12 @@ import org.springframework.core.Ordered;
  * @date 2023/08/08
  */
 @Slf4j
-public class MoniSpringRunListener implements SpringApplicationRunListener, Ordered {
+public final class MoniSpringRunListener implements SpringApplicationRunListener, Ordered {
+
+    public MoniSpringRunListener(SpringApplication app, String[] args) {}
+
+    public MoniSpringRunListener() {}
+
     @Override
     public void starting() {
         String clsName = "org.apache.http.impl.client.HttpClientBuilder";
