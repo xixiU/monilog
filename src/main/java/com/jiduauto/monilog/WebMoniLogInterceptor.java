@@ -12,7 +12,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.util.http.fileupload.servlet.ServletFileUpload;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.BeanFactoryUtils;
-import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
@@ -36,7 +35,6 @@ import static com.jiduauto.monilog.StringUtil.checkPathMatch;
 
 @Slf4j
 @AllArgsConstructor
-@Order()
 class WebMoniLogInterceptor extends OncePerRequestFilter {
     /**
      * 集度JNS请求时header中会带X-JIDU-SERVICENAME
@@ -142,7 +140,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
                 throw bizException;
             } else {
                 // 组件异常
-                MoniLogUtil.innerDebug("mybatisInterceptor process error", e);
+                MoniLogUtil.innerDebug( "webMoniLogInterceptor process error", e);
             }
         } finally {
             if (logParams.isSuccess() && StringUtils.isNotBlank(responseBodyStr) && isJson(requestHeaderMap)) {
