@@ -15,12 +15,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @date 2023/08/08
  */
 @Slf4j
-final class MoniSpringRunListener implements SpringApplicationRunListener, Ordered {
+final class MoniLogSpringRunListener implements SpringApplicationRunListener, Ordered {
     private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
 
-    private MoniSpringRunListener(SpringApplication app, String[] args) {
+    private MoniLogSpringRunListener(SpringApplication app, String[] args) {
         String clsName = "org.apache.http.impl.client.HttpClientBuilder";
-        String body = HttpClientInterceptor.class.getCanonicalName() + ".addInterceptors(this);";
+        String body = HttpClientMoniLogInterceptor.class.getCanonicalName() + ".addInterceptors(this);";
         try {
             enhanceDefaultConstructor(clsName, "()V", body);
         } catch (NotFoundException ignore) {
