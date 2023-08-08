@@ -28,7 +28,7 @@ import static com.jiduauto.monilog.StringUtil.checkPathMatch;
  * @date 2023/07/31
  */
 @Slf4j
-public final class MoniHttpClientBuilder {
+public final class HttpClientInterceptor {
     private static final String MONILOG_PARAMS_KEY = "__MoniLogParams";
 
     /**
@@ -50,8 +50,7 @@ public final class MoniHttpClientBuilder {
             //携带有参数的uri
             String[] uriAndParams = requestLine.getUri().split("\\?");
             String path = uriAndParams[0];
-            StackTraceElement st = ThreadUtil.getNextClassFromStack(MoniHttpClientBuilder.class, "org.apache");
-            System.out.println("HttpClient target=============" + targetHost + path);
+            StackTraceElement st = ThreadUtil.getNextClassFromStack(HttpClientInterceptor.class, "org.apache");
             if (!isEnable(host, path, st.getClassName())) {
                 return;
             }
