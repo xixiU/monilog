@@ -11,6 +11,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.BufferedHttpEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
@@ -30,7 +31,13 @@ public class MoniHttpClientBuilder extends HttpClientBuilder {
 
     //允许业务方使用此方法直接创建HttpClientBuilder
     public static HttpClientBuilder create() {
-        return addInterceptors(new MoniHttpClientBuilder());
+        return new MoniHttpClientBuilder();
+    }
+
+    @Override
+    public final CloseableHttpClient build() {
+        addInterceptors(this);
+        return super.build();
     }
 
     static HttpClientBuilder addInterceptors(HttpClientBuilder builder) {
