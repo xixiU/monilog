@@ -16,10 +16,9 @@ import org.springframework.core.Ordered;
 final class MoniSpringRunListener implements SpringApplicationRunListener, Ordered {
     private MoniSpringRunListener(SpringApplication app, String[] args) {
         String clsName = "org.apache.http.impl.client.HttpClientBuilder";
-        String body = "this.addInterceptorFirst(new com.jiduauto.monilog.MoniHttpClientBuilder.RequestInterceptor())" +
-                ".addInterceptorLast(new com.jiduauto.monilog.MoniHttpClientBuilder.ResponseInterceptor());";
+        String body = "com.jiduauto.monilog.MoniHttpClientBuilder.addInterceptors(this);";
         try {
-            enhanceDefaultConstructor(clsName, "(Ljava/lang/String;)V", body);
+            enhanceDefaultConstructor(clsName, "()V", body);
         } catch (NotFoundException e) {
             log.warn("failed to rebuild HttpClientBuilder class, {}", e.getMessage());
         } catch (Throwable e) {
