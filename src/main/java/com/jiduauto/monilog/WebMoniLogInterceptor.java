@@ -105,14 +105,11 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
 
         Exception bizException = null;
         try {
-            try{
+            try {
                 filterChain.doFilter(isMultipart ? request : wrapperRequest, wrapperResponse);
-            }catch (Exception e){
+            } catch (Exception e) {
                 // 业务异常
                 bizException = e;
-            }
-
-            if (bizException != null) {
                 throw bizException;
             }
             responseBodyStr = getResponseBody(wrapperResponse);
@@ -143,9 +140,9 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
                 logParams.setMsgCode(errorInfo.getErrorCode());
                 logParams.setMsgInfo(errorInfo.getErrorMsg());
                 throw bizException;
-            }else{
+            } else {
                 // 组件异常
-                MoniLogUtil.innerDebug( "mybatisInterceptor process error", e);
+                MoniLogUtil.innerDebug("mybatisInterceptor process error", e);
             }
         } finally {
             if (logParams.isSuccess() && StringUtils.isNotBlank(responseBodyStr) && isJson(requestHeaderMap)) {
