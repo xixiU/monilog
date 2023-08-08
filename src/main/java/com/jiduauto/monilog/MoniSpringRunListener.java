@@ -11,7 +11,7 @@ import org.springframework.core.Ordered;
  * @date 2023/08/08
  */
 @Slf4j
-class MoniSpringRunListener implements SpringApplicationRunListener, Ordered {
+public class MoniSpringRunListener implements SpringApplicationRunListener, Ordered {
     @Override
     public void starting() {
         String clsName = "org.apache.http.impl.client.HttpClientBuilder";
