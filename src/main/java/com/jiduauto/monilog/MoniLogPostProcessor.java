@@ -26,7 +26,6 @@ import java.util.Set;
 /**
  * spring bean的实例化过程参考：https://blog.csdn.net/m0_37588577/article/details/127639584
  */
-
 @Slf4j
 class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered {
     static final Map<String, Class<?>> CACHED_CLASS = new HashMap<>();

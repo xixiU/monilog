@@ -363,7 +363,7 @@ class MoniLogProperties implements InitializingBean {
     @Setter
     static class HttpClientProperties {
         /**
-         * 开启httpClient监控
+         * 开启httpClient监控，注：只有被Spring容器托管的HttpClientBuilder，或者MoniHttpClientBuilder来创建的HttpClient才会生效
          */
         private boolean enable = true;
         /**
