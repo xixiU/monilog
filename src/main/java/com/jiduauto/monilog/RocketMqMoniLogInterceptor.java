@@ -205,8 +205,8 @@ class RocketMqMoniLogInterceptor {
                 SendStatus status = sendResult == null ? null : sendResult.getSendStatus();
                 logParams.setOutput(sendResult);
                 logParams.setSuccess(context.getException() == null && status == SendStatus.SEND_OK);
-                logParams.setMsgCode(logParams.isSuccess() ? ErrorEnum.FAILED.name() : status.name());
-                logParams.setMsgInfo(logParams.isSuccess() ? ErrorEnum.FAILED.getMsg() : ErrorEnum.SUCCESS.getMsg());
+                logParams.setMsgCode(logParams.isSuccess() ? ErrorEnum.SUCCESS.name() : status == null ? ErrorEnum.SUCCESS.getMsg() : status.name());
+                logParams.setMsgInfo(logParams.isSuccess() ? ErrorEnum.SUCCESS.getMsg() : ErrorEnum.FAILED.getMsg());
                 Message message = context.getMessage();
                 logParams.setInput(new Object[]{new String(message.getBody(), StandardCharsets.UTF_8)});
                 logParams.setTags(TagBuilder.of("topic", message.getTopic(), "group", context.getProducerGroup(), "tag", message.getTags()).toArray());

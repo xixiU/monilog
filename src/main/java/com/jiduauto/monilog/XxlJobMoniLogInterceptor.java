@@ -22,7 +22,7 @@ class XxlJobMoniLogInterceptor {
     static IJobHandler getProxyBean(IJobHandler bean) {
         return ProxyUtils.getProxy(bean, invocation -> {
             Method method = invocation.getMethod();
-            if (method.getName().equals("execute")) {
+            if ("execute".equals(method.getName())) {
                 return MoniLogAop.processAround(invocation, buildLogParserForJob(), LogPoint.xxljob);
             }
             return invocation.proceed();

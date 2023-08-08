@@ -150,7 +150,12 @@ class RedisMoniLogInterceptor {
             p.setLogPoint(LogPoint.redis);
             p.setMsgCode(ErrorEnum.SUCCESS.name());
             p.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
-            return ProxyUtils.getProxy(result, new RedissonResultProxy(p, redisProperties));
+            try {
+                return ProxyUtils.getProxy(result, new RedissonResultProxy(p, redisProperties));
+            } catch (Throwable e) {
+                MoniLogUtil.innerDebug("interceptRedisson error", e);
+                return result;
+            }
         }
     }
 
