@@ -3,6 +3,7 @@ package com.jiduauto.monilog;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import lombok.AllArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.uadetector.UserAgentType;
 import org.apache.commons.collections4.CollectionUtils;
@@ -11,6 +12,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.util.http.fileupload.servlet.ServletFileUpload;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.BeanFactoryUtils;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
@@ -34,6 +36,7 @@ import static com.jiduauto.monilog.StringUtil.checkPathMatch;
 
 @Slf4j
 @AllArgsConstructor
+@Order()
 class WebMoniLogInterceptor extends OncePerRequestFilter {
     /**
      * 集度JNS请求时header中会带X-JIDU-SERVICENAME
@@ -42,6 +45,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
     private static final String USER_AGENT = "User-Agent";
     private final MoniLogProperties moniLogProperties;
 
+    @SneakyThrows
     @Override
     public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws IOException, ServletException {
         MoniLogProperties.WebProperties webProperties = moniLogProperties.getWeb();
@@ -99,8 +103,18 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             MoniLogUtil.innerDebug("dealRequestTags error", e);
         }
 
+        Exception bizException = null;
         try {
-            filterChain.doFilter(isMultipart ? request : wrapperRequest, wrapperResponse);
+            try{
+                filterChain.doFilter(isMultipart ? request : wrapperRequest, wrapperResponse);
+            }catch (Exception e){
+                // 业务异常
+                bizException = e;
+            }
+
+            if (bizException != null) {
+                throw bizException;
+            }
             responseBodyStr = getResponseBody(wrapperResponse);
             wrapperResponse.copyBodyToResponse();
             JSON json = StringUtil.tryConvert2Json(responseBodyStr);
@@ -121,12 +135,18 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
                 logParams.setSuccess(true);
             }
         } catch (Exception e) {
-            logParams.setSuccess(false);
-            logParams.setException(e);
-            ErrorInfo errorInfo = ExceptionUtil.parseException(e);
-            logParams.setMsgCode(errorInfo.getErrorCode());
-            logParams.setMsgInfo(errorInfo.getErrorMsg());
-            throw e;
+            // 业务异常
+            if (e == bizException) {
+                logParams.setSuccess(false);
+                logParams.setException(e);
+                ErrorInfo errorInfo = ExceptionUtil.parseException(e);
+                logParams.setMsgCode(errorInfo.getErrorCode());
+                logParams.setMsgInfo(errorInfo.getErrorMsg());
+                throw bizException;
+            }else{
+                // 组件异常
+                MoniLogUtil.innerDebug( "mybatisInterceptor process error", e);
+            }
         } finally {
             if (logParams.isSuccess() && StringUtils.isNotBlank(responseBodyStr) && isJson(requestHeaderMap)) {
                 logParams.setTags(StringUtil.processUserTag(responseBodyStr, logParams.getTags()));
