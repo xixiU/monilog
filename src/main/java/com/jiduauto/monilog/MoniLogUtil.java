@@ -98,14 +98,14 @@ class MoniLogUtil {
             case mybatis: return exceedCostThreshold(logProperties.getMybatis().getLongRt(), cost);
             case grpc_client:
             case grpc_server: return exceedCostThreshold(logProperties.getGrpc().getLongRt(), cost);
-            case http_client:
+            case http_client: return exceedCostThreshold(logProperties.getHttpclient().getLongRt(), cost);
             case http_server: return exceedCostThreshold(logProperties.getWeb().getLongRt(), cost);
             case feign_client:
             case feign_server:return exceedCostThreshold(logProperties.getFeign().getLongRt(), cost);
             case rocketmq_consumer:
             case rocketmq_producer: return exceedCostThreshold(logProperties.getRocketmq().getLongRt(), cost);
             case unknown:
-            case user_define: return false;
+            case user_define:
             default:return false;
         }
     }
