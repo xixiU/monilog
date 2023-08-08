@@ -37,8 +37,8 @@ public final class HttpClientMoniLogInterceptor {
      * @param builder
      * @return
      */
-    public static HttpClientBuilder addInterceptors(HttpClientBuilder builder) {
-        return builder.addInterceptorFirst(new RequestInterceptor()).addInterceptorLast(new ResponseInterceptor());
+    public static void addInterceptors(HttpClientBuilder builder) {
+        builder.addInterceptorFirst(new RequestInterceptor()).addInterceptorLast(new ResponseInterceptor());
     }
 
     private static class RequestInterceptor implements HttpRequestInterceptor {
