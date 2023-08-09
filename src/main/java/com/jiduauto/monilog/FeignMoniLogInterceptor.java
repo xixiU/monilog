@@ -289,8 +289,8 @@ class FeignMoniLogInterceptor {
 
         Response getResponse(String text,Charset charset) {
             try{
-                Class<?> aClass = Class.forName("feign.Response$ByteArrayBody");
-                Method orNull = aClass.getDeclaredMethod("orNull", String.class, Charset.class);
+                Class<?> cls = Class.forName("feign.Response$ByteArrayBody");
+                Method orNull = cls.getDeclaredMethod("orNull", String.class, Charset.class);
                 orNull.setAccessible(true);
                 Object body = orNull.invoke(null, text, charset);
                 // 通过反射获取Response.body,并修改值
