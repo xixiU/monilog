@@ -47,9 +47,17 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
     @Override
     public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws IOException, ServletException {
         MoniLogProperties.WebProperties webProperties = moniLogProperties.getWeb();
-        boolean isMultipart = ServletFileUpload.isMultipartContent(request);
+        boolean isMultipart = false;
         @Nullable
-        RequestWrapper wrapperRequest = isMultipart ? null : new RequestWrapper(request);
+        RequestWrapper wrapperRequest = null;
+        try{
+            isMultipart = ServletFileUpload.isMultipartContent(request);
+            wrapperRequest = isMultipart ? null : new RequestWrapper(request);
+        }catch (Exception e){
+            MoniLogUtil.innerDebug("check multipart error: {}", e.getMessage());
+            filterChain.doFilter(request, response);
+            return;
+        }
         String requestURI = request.getRequestURI();
 
         Set<String> urlBlackList = webProperties.getUrlBlackList();
