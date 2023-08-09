@@ -72,7 +72,7 @@ class MoniLogUtil {
             return;
         }
         // 操作操作信息
-        String operationCostTooLongMonitorPrefix = BUSINESS_MONITOR_PREFIX + "operation_cost_too_long_" + logPoint.name();
+        String operationCostTooLongMonitorPrefix = BUSINESS_MONITOR_PREFIX + "rt_too_long_" + logPoint.name();
         ;
         MetricMonitor.record(operationCostTooLongMonitorPrefix + MonitorType.RECORD.getMark(), allTags);
         // 耗时只打印基础tag
