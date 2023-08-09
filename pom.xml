@@ -135,6 +135,12 @@
             <version>${openfeign.version}</version>
             <scope>provided</scope>
         </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.netflix.feign</groupId>-->
+<!--            <artifactId>feign-core</artifactId>-->
+<!--            <version>8.18.0</version>-->
+<!--            <scope>provided</scope>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>net.devh</groupId>
             <artifactId>grpc-client-spring-boot-starter</artifactId>
