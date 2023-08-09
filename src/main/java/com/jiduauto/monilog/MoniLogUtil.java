@@ -57,7 +57,6 @@ class MoniLogUtil {
         if (logPoint == null) {
             logPoint = LogPoint.unknown;
         }
-        //TODO 这里在后边加入了自定义的tag，可能与全局监控混淆
         String[] allTags = systemTags.add(logParams.getTags()).toArray();
 
         String name = BUSINESS_MONITOR_PREFIX + logPoint.name();
@@ -74,7 +73,6 @@ class MoniLogUtil {
         }
         // 操作操作信息
         String operationCostTooLongMonitorPrefix = BUSINESS_MONITOR_PREFIX + "rt_too_long_" + logPoint.name();
-        ;
         MetricMonitor.record(operationCostTooLongMonitorPrefix + MonitorType.RECORD.getMark(), allTags);
         // 耗时只打印基础tag
         MetricMonitor.eventDruation(operationCostTooLongMonitorPrefix + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);

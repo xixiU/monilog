@@ -12,7 +12,7 @@ import java.util.Map;
  * @author yepei
  */
 final class ResultParseUtil {
-    public static ParsedResult parseResult(Object returnObj, ResultParseStrategy strategy, Throwable t, String boolExpr, String codeExpr, String msgExpr) {
+    static ParsedResult parseResult(Object returnObj, ResultParseStrategy strategy, Throwable t, String boolExpr, String codeExpr, String msgExpr) {
         boolExpr = correctBoolExpr(boolExpr);
         boolean noStrategy = strategy == null;
         Boolean parsedSucc = null;
@@ -86,7 +86,7 @@ final class ResultParseUtil {
     }
 
 
-    public static ParsedResult parseResult(Object returnObj, ResultParseStrategy strategy, Throwable t) {
+    static ParsedResult parseResult(Object returnObj, ResultParseStrategy strategy, Throwable t) {
         return parseResult(returnObj, strategy, t, null, null, null);
     }
 
@@ -108,7 +108,7 @@ final class ResultParseUtil {
      * @param resultJson
      * @param logParams
      */
-    public static void parseResultAndSet(LogParser cl, JSON resultJson, MoniLogParams logParams){
+    static void parseResultAndSet(LogParser cl, JSON resultJson, MoniLogParams logParams){
         //默认使用IfSuccess策略
         ResultParseStrategy rps = cl == null ? null : cl.resultParseStrategy();
         String boolExpr = cl == null ? null : cl.boolExpr();

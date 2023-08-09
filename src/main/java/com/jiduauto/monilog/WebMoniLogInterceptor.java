@@ -62,10 +62,10 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
         long startTime = System.currentTimeMillis();
         Map<String, String> requestHeaderMap = new HashMap<>();
         try {
-            String requestURI = request.getRequestURI();
+            String requestUri = request.getRequestURI();
 
             Set<String> urlBlackList = webProperties.getUrlBlackList();
-            if (checkPathMatch(urlBlackList, requestURI)) {
+            if (checkPathMatch(urlBlackList, requestUri)) {
                 filterChain.doFilter(request, response);
                 return;
             }
@@ -83,7 +83,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             logParams.setServiceCls(method.getBeanType());
             logParams.setService(method.getBeanType().getSimpleName());
             logParams.setAction(method.getMethod().getName());
-            TagBuilder tagBuilder = TagBuilder.of(tagList).add("url", requestURI).add("method", request.getMethod());
+            TagBuilder tagBuilder = TagBuilder.of(tagList).add("url", requestUri).add("method", request.getMethod());
             logParams.setTags(tagBuilder.toArray());
 
             requestHeaderMap = getRequestHeaders(request);
@@ -92,7 +92,6 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             logParams.setLogPoint(validateRequest(requestHeaderMap));
             JSONObject jsonObject = formatRequestInfo(isMultipart, request, requestHeaderMap);
             Object o = jsonObject.get("body");
-            // TODO rongjie.yuan  2023/8/9 11:16
             if (o instanceof Map) {
                 requestBodyMap.putAll((Map<String, Object>) o);
             }
@@ -105,24 +104,23 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             MoniLogUtil.innerDebug("dealRequestTags error", e);
         }
 
+        logParams.setSuccess(true);
         Exception bizException = null;
         try {
             ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(response);
             try {
                 filterChain.doFilter(request, wrapperResponse);
-                logParams.setSuccess(true);
             } catch (Exception e) {
                 // 业务异常
                 bizException = e;
                 throw bizException;
             }
             responseBodyStr = getResponseBody(wrapperResponse);
+            logParams.setOutput(responseBodyStr);
             wrapperResponse.copyBodyToResponse();
             JSON json = StringUtil.tryConvert2Json(responseBodyStr);
             if (json != null) {
                 logParams.setOutput(json);
-            }else{
-                logParams.setOutput(responseBodyStr);
             }
             if (json instanceof JSONObject) {
                 LogParser cl = ReflectUtil.getAnnotation(LogParser.class, method.getBeanType(), method.getMethod());

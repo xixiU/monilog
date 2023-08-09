@@ -3,7 +3,6 @@ package com.jiduauto.monilog;
 
 import com.alibaba.fastjson.JSON;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Resource;
 import java.util.Arrays;
@@ -20,11 +19,7 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         if (p == null) {
             return;
         }
-        Class<?> serviceCls = p.getServiceCls();
-        if (serviceCls == null) {
-            serviceCls = MoniLogUtil.class;
-        }
-        Logger logger = LoggerFactory.getLogger(serviceCls);
+        Logger logger = getLogger(p);
         String logPoint = p.getLogPoint().name();
         String service = p.getService();
         String action = p.getAction();
@@ -50,11 +45,7 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         if (p == null) {
             return;
         }
-        Class<?> serviceCls = p.getServiceCls();
-        if (serviceCls == null) {
-            serviceCls = MoniLogUtil.class;
-        }
-        Logger logger = LoggerFactory.getLogger(serviceCls);
+        Logger logger = getLogger(p);
         String logPoint = p.getLogPoint().name();
         String service = p.getService();
         String action = p.getAction();
