@@ -1,5 +1,6 @@
 package com.jiduauto.monilog;
 
+import com.alibaba.fastjson.JSON;
 import com.metric.MetricMonitor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -72,7 +73,7 @@ class MoniLogUtil {
             return;
         }
         // 操作操作信息
-        String operationCostTooLongMonitorPrefix = BUSINESS_MONITOR_PREFIX + "operation_cost_too_long_" + logPoint.name();
+        String operationCostTooLongMonitorPrefix = BUSINESS_MONITOR_PREFIX + "rt_too_long_" + logPoint.name();
         ;
         MetricMonitor.record(operationCostTooLongMonitorPrefix + MonitorType.RECORD.getMark(), allTags);
         // 耗时只打印基础tag
@@ -265,5 +266,23 @@ class MoniLogUtil {
         }
         MoniLogProperties properties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
         return (logProperties = properties);
+    }
+
+    /**
+     * 根据解析策略解析解析的结果，提取更加精确的业务信息
+     * @param cl
+     * @param resultJson
+     * @param logParams
+     */
+    public static void parseResult(LogParser cl, JSON resultJson, MoniLogParams logParams){
+        //默认使用IfSuccess策略
+        ResultParseStrategy rps = cl == null ? null : cl.resultParseStrategy();
+        String boolExpr = cl == null ? null : cl.boolExpr();
+        String codeExpr = cl == null ? null : cl.errorCodeExpr();
+        String msgExpr = cl == null ? null : cl.errorMsgExpr();
+        ParsedResult pr = ResultParseUtil.parseResult(resultJson, rps, null, boolExpr, codeExpr, msgExpr);
+        logParams.setSuccess(pr.isSuccess());
+        logParams.setMsgCode(pr.getMsgCode());
+        logParams.setMsgInfo(pr.getMsgInfo());
     }
 }
