@@ -75,7 +75,7 @@ class MoniLogAspectCtx {
         String boolExpr = cl == null ? null : cl.boolExpr();
         String codeExpr = cl == null ? null : cl.errorCodeExpr();
         String msgExpr = cl == null ? null : cl.errorMsgExpr();
-        this.parsedResult = ResultParseUtil.parseResultAndSet(result, rps, exception, boolExpr, codeExpr, msgExpr);
+        this.parsedResult = ResultParseUtil.parseResult(result, rps, exception, boolExpr, codeExpr, msgExpr);
         return this;
     }
 

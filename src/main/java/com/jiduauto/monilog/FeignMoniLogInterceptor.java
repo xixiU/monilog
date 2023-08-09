@@ -143,7 +143,7 @@ class FeignMoniLogInterceptor {
                         String boolExpr = cl == null ? specifiedBoolExpr : cl.boolExpr();
                         String codeExpr = cl == null ? null : cl.errorCodeExpr();
                         String msgExpr = cl == null ? null : cl.errorMsgExpr();
-                        ParsedResult parsedResult = ResultParseUtil.parseResultAndSet(json, rps, null, boolExpr, codeExpr, msgExpr);
+                        ParsedResult parsedResult = ResultParseUtil.parseResult(json, rps, null, boolExpr, codeExpr, msgExpr);
                         mlp.setSuccess(parsedResult.isSuccess());
                         mlp.setMsgCode(parsedResult.getMsgCode());
                         mlp.setMsgInfo(parsedResult.getMsgInfo());

@@ -12,7 +12,7 @@ import java.util.Map;
  * @author yepei
  */
 final class ResultParseUtil {
-    public static ParsedResult parseResultAndSet(Object returnObj, ResultParseStrategy strategy, Throwable t, String boolExpr, String codeExpr, String msgExpr) {
+    public static ParsedResult parseResult(Object returnObj, ResultParseStrategy strategy, Throwable t, String boolExpr, String codeExpr, String msgExpr) {
         boolExpr = correctBoolExpr(boolExpr);
         boolean noStrategy = strategy == null;
         Boolean parsedSucc = null;
@@ -86,8 +86,8 @@ final class ResultParseUtil {
     }
 
 
-    public static ParsedResult parseResultAndSet(Object returnObj, ResultParseStrategy strategy, Throwable t) {
-        return parseResultAndSet(returnObj, strategy, t, null, null, null);
+    public static ParsedResult parseResult(Object returnObj, ResultParseStrategy strategy, Throwable t) {
+        return parseResult(returnObj, strategy, t, null, null, null);
     }
 
     private static boolean isNotEmpty(Object o) {
@@ -114,7 +114,7 @@ final class ResultParseUtil {
         String boolExpr = cl == null ? null : cl.boolExpr();
         String codeExpr = cl == null ? null : cl.errorCodeExpr();
         String msgExpr = cl == null ? null : cl.errorMsgExpr();
-        ParsedResult pr = ResultParseUtil.parseResultAndSet(resultJson, rps, null, boolExpr, codeExpr, msgExpr);
+        ParsedResult pr = ResultParseUtil.parseResult(resultJson, rps, null, boolExpr, codeExpr, msgExpr);
         logParams.setSuccess(pr.isSuccess());
         logParams.setMsgCode(pr.getMsgCode());
         logParams.setMsgInfo(pr.getMsgInfo());
