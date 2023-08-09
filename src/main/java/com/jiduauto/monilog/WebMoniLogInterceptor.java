@@ -6,11 +6,9 @@ import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.uadetector.UserAgentType;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.util.http.fileupload.servlet.ServletFileUpload;
-import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -45,17 +43,16 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
 
     @SneakyThrows
     @Override
-    public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws IOException, ServletException {
+    public void doFilterInternal(@NonNull HttpServletRequest httpServletRequest, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws IOException, ServletException {
         MoniLogProperties.WebProperties webProperties = moniLogProperties.getWeb();
         boolean isMultipart;
-        @Nullable
-        RequestWrapper wrapperRequest;
+        HttpServletRequest request;
         try{
-            isMultipart = ServletFileUpload.isMultipartContent(request);
-            wrapperRequest = isMultipart ? null : new RequestWrapper(request);
+            isMultipart = ServletFileUpload.isMultipartContent(httpServletRequest);
+            request = isMultipart ? httpServletRequest : new RequestWrapper(httpServletRequest);
         }catch (Exception e){
             MoniLogUtil.innerDebug("check multipart error: {}", e.getMessage());
-            filterChain.doFilter(request, response);
+            filterChain.doFilter(httpServletRequest, response);
             return;
         }
 
@@ -68,14 +65,11 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             String requestURI = request.getRequestURI();
 
             Set<String> urlBlackList = webProperties.getUrlBlackList();
-            if (CollectionUtils.isEmpty(urlBlackList)) {
-                urlBlackList = new HashSet<>();
-            }
             if (checkPathMatch(urlBlackList, requestURI)) {
                 filterChain.doFilter(request, response);
                 return;
             }
-            method = getHandlerMethod(isMultipart ? request : wrapperRequest);
+            method = getHandlerMethod(request);
             if (method == null) {
                 filterChain.doFilter(request, response);
                 return;
@@ -96,8 +90,9 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
 
             Map<String, String> requestBodyMap = new HashMap<>();
             logParams.setLogPoint(validateRequest(requestHeaderMap));
-            JSONObject jsonObject = formatRequestInfo(isMultipart, isMultipart ? request : wrapperRequest, requestHeaderMap);
+            JSONObject jsonObject = formatRequestInfo(isMultipart, request, requestHeaderMap);
             Object o = jsonObject.get("body");
+            // TODO rongjie.yuan  2023/8/9 11:16
             if (o instanceof Map) {
                 requestBodyMap.putAll((Map<String, String>) o);
             }
@@ -105,7 +100,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             logParams.setMsgCode(ErrorEnum.SUCCESS.name());
             logParams.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
             logParams.setSuccess(true);
-            dealRequestTags(isMultipart ? request : wrapperRequest, logParams, requestHeaderMap, requestBodyMap);
+            dealRequestTags(request, logParams, requestHeaderMap, requestBodyMap);
         } catch (Exception e) {
             MoniLogUtil.innerDebug("dealRequestTags error", e);
         }
@@ -114,7 +109,8 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
         try {
             ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(response);
             try {
-                filterChain.doFilter(isMultipart ? request : wrapperRequest, wrapperResponse);
+                filterChain.doFilter(request, wrapperResponse);
+                logParams.setSuccess(true);
             } catch (Exception e) {
                 // 业务异常
                 bizException = e;
@@ -123,13 +119,14 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             responseBodyStr = getResponseBody(wrapperResponse);
             wrapperResponse.copyBodyToResponse();
             JSON json = StringUtil.tryConvert2Json(responseBodyStr);
+            if (json != null) {
+                logParams.setOutput(json);
+            }else{
+                logParams.setOutput(responseBodyStr);
+            }
             if (json instanceof JSONObject) {
                 LogParser cl = ReflectUtil.getAnnotation(LogParser.class, method.getBeanType(), method.getMethod());
                 MoniLogUtil.parseResult(cl, json, logParams);
-                logParams.setOutput(json);
-            } else {
-                logParams.setOutput(responseBodyStr);
-                logParams.setSuccess(true);
             }
         } catch (Exception e) {
             // 业务异常

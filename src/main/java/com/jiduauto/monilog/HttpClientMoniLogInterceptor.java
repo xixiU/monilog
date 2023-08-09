@@ -184,15 +184,6 @@ public final class HttpClientMoniLogInterceptor {
         Set<String> clientBlackList = httpclient.getClientBlackList();
         Set<String> urlBlackList = httpclient.getUrlBlackList();
         Set<String> hostBlackList = httpclient.getHostBlackList();
-        if (CollectionUtils.isEmpty(clientBlackList)) {
-            clientBlackList = new HashSet<>();
-        }
-        if (CollectionUtils.isEmpty(urlBlackList)) {
-            urlBlackList = new HashSet<>();
-        }
-        if (CollectionUtils.isEmpty(hostBlackList)) {
-            hostBlackList = new HashSet<>();
-        }
         return !checkClassMatch(clientBlackList, invokerClass) && !checkPathMatch(hostBlackList, host.getHostName()) && !checkPathMatch(urlBlackList, path);
     }
 
