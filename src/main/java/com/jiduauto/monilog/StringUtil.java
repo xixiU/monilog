@@ -160,4 +160,33 @@ class StringUtil {
         }
         return queryString.toString();
     }
+
+    /**
+     * 从url中提取query参数
+     * @param url
+     * @return
+     */
+    public static Map<String, Collection<String>> getQueryMap(String url) {
+        if (StringUtils.isBlank(url) || !url.contains("?"))  {
+            return null;
+        }
+        String query = url.substring(url.indexOf("?") + 1);
+        if (StringUtils.isBlank(query)) {
+            return null;
+        }
+        Map<String, Collection<String>> queryParams = new HashMap<>();
+        String[] pairs = query.split("&");
+        for (String pair : pairs) {
+            int idx = pair.indexOf("=");
+            String key = pair.substring(0, idx);
+            String value = pair.substring(idx + 1);
+            if (!queryParams.containsKey(key)) {
+                queryParams.put(key, new ArrayList<>());
+            }
+
+            queryParams.get(key).add(value);
+        }
+        return queryParams;
+    }
+
 }

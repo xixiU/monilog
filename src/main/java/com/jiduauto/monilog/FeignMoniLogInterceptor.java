@@ -234,12 +234,22 @@ class FeignMoniLogInterceptor {
     private static JSONObject formatRequestInfo(Request request) {
         String bodyParams = getBodyParams(request);
         Map<String, Collection<String>> headers = request.headers();
-        boolean hasRequestTemplate = ReflectUtil.objectHasProperty(request, "requestTemplate");
-        Map<String, Collection<String>> queries = null;
-        if (hasRequestTemplate) {
-            queries = request.requestTemplate().queries();
-        }
+        Map<String, Collection<String>> queries = getQuery(request);
         return HttpRequestData.of2(bodyParams, queries, headers).toJSON();
+    }
+
+    private static Map<String, Collection<String>> getQuery(Request request){
+        // com.netflix.feign根据feign.RequestTemplate.request原来可以看到query参数也会拼接到url中
+        Map<String, Collection<String>> queryMap = StringUtil.getQueryMap(request.url());
+        if (queryMap != null) {
+            return queryMap;
+        }
+        // openfeign加一个兜底逻辑可以从requestTemplate参数取值
+        boolean hasRequestTemplate = ReflectUtil.objectHasProperty(request, "requestTemplate");
+        if (hasRequestTemplate) {
+            return request.requestTemplate().queries();
+        }
+        return null;
     }
 
 
