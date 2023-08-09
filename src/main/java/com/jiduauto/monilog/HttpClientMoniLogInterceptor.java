@@ -193,10 +193,7 @@ public final class HttpClientMoniLogInterceptor {
         if (CollectionUtils.isEmpty(hostBlackList)) {
             hostBlackList = new HashSet<>();
         }
-        if (checkClassMatch(clientBlackList, invokerClass) || checkPathMatch(hostBlackList, host.getHostName()) || checkPathMatch(urlBlackList, path)) {
-            return false;
-        }
-        return true;
+        return !checkClassMatch(clientBlackList, invokerClass) && !checkPathMatch(hostBlackList, host.getHostName()) && !checkPathMatch(urlBlackList, path);
     }
 
     private static boolean isUpstream(String method, String contentType) {
