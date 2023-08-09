@@ -150,7 +150,7 @@ public final class HttpClientMoniLogInterceptor {
                     if (prop != null) {
                         defaultBoolExpr = prop.getHttpclient().getDefaultBoolExpr();
                     }
-                    ParsedResult pr = ResultParseUtil.parseResult(jsonBody, null, null, defaultBoolExpr, null, null);
+                    ParsedResult pr = ResultParseUtil.parseResultAndSet(jsonBody, null, null, defaultBoolExpr, null, null);
                     if (p.isSuccess()) {
                         //如果外层响应码是200，则再看内层是否成功
                         p.setSuccess(pr.isSuccess());

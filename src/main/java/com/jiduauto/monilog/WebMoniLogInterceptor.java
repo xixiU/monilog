@@ -88,13 +88,13 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
 
             requestHeaderMap = getRequestHeaders(request);
 
-            Map<String, String> requestBodyMap = new HashMap<>();
+            Map<String, Object> requestBodyMap = new HashMap<>();
             logParams.setLogPoint(validateRequest(requestHeaderMap));
             JSONObject jsonObject = formatRequestInfo(isMultipart, request, requestHeaderMap);
             Object o = jsonObject.get("body");
             // TODO rongjie.yuan  2023/8/9 11:16
             if (o instanceof Map) {
-                requestBodyMap.putAll((Map<String, String>) o);
+                requestBodyMap.putAll((Map<String, Object>) o);
             }
             logParams.setInput(new Object[]{jsonObject});
             logParams.setMsgCode(ErrorEnum.SUCCESS.name());
@@ -126,7 +126,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             }
             if (json instanceof JSONObject) {
                 LogParser cl = ReflectUtil.getAnnotation(LogParser.class, method.getBeanType(), method.getMethod());
-                MoniLogUtil.parseResult(cl, json, logParams);
+                ResultParseUtil.parseResultAndSet(cl, json, logParams);
             }
         } catch (Exception e) {
             // 业务异常
@@ -218,7 +218,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
     /**
      * 处理请求tag
      */
-    private void dealRequestTags(HttpServletRequest request, MoniLogParams logParams, Map<String, String> requestHeaderMap, Map<String, String> requestBodyMap) {
+    private void dealRequestTags(HttpServletRequest request, MoniLogParams logParams, Map<String, String> requestHeaderMap, Map<String, Object> requestBodyMap) {
         String[] oriTags = logParams.getTags();
         Map<String, String> headersMap = MapUtils.isNotEmpty(requestHeaderMap) ? requestHeaderMap : new HashMap<>();
 
@@ -299,20 +299,21 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
     }
 
 
-    private static String getMapValueIgnoreCase(Map<String, String> headerMap, String headerKey) {
+    private static String getMapValueIgnoreCase(Map<String, ?> headerMap, String headerKey) {
         if (MapUtils.isEmpty(headerMap) || StringUtils.isBlank(headerKey)) {
             return null;
         }
-        String userAgent = headerMap.get(headerKey);
-        if (StringUtils.isNotBlank(userAgent)) {
-            return userAgent;
+        Object userAgent = headerMap.get(headerKey);
+        if (userAgent != null) {
+            return userAgent.toString();
         }
         // 全小写
         userAgent = headerMap.get(headerKey.toLowerCase());
-        if (StringUtils.isNotBlank(userAgent)) {
-            return userAgent;
+        if (userAgent != null) {
+            return userAgent.toString();
         }
         // 全大写
-        return headerMap.get(headerKey.toUpperCase());
+        Object o = headerMap.get(headerKey.toUpperCase());
+        return o != null ?  o.toString() : null;
     }
 }

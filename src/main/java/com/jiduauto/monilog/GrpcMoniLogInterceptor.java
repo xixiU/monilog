@@ -122,7 +122,7 @@ class GrpcMoniLogInterceptor {
                         params.setOutput(json);
                         LogParser cl = (LogParser) context.get("logParser");
                         if (json instanceof JSON) {
-                            MoniLogUtil.parseResult(cl, (JSON)json, params);
+                            ResultParseUtil.parseResultAndSet(cl, (JSON)json, params);
                         }
                     }
                     super.onMessage(message);
@@ -213,7 +213,7 @@ class GrpcMoniLogInterceptor {
                     LogParser cl = (LogParser) context.get("logParser");
                     if (json instanceof JSON && cl != null) {
                         //尝试更精确的提取业务失败信息
-                        MoniLogUtil.parseResult(cl, (JSON)json, params);
+                        ResultParseUtil.parseResultAndSet(cl, (JSON)json, params);
                     }
                 }
                 super.sendMessage(message);
