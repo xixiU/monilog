@@ -73,12 +73,10 @@ class RequestWrapper extends HttpServletRequestWrapper {
 
         ByteArrayInputStream bis = new ByteArrayInputStream(body);
         return new ServletInputStream() {
-
             @Override
             public int read() {
                 return bis.read();
             }
-
             @Override
             public boolean isFinished() {
                 return false;
@@ -88,10 +86,8 @@ class RequestWrapper extends HttpServletRequestWrapper {
             public boolean isReady() {
                 return false;
             }
-
             @Override
             public void setReadListener(ReadListener readListener) {
-
             }
         };
     }

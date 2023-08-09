@@ -17,6 +17,7 @@ class MoniLogUtil {
      * 组件监控前缀
      */
     private static final String BUSINESS_MONITOR_PREFIX = "business_monitor_";
+    static final String INNER_DEBUG_PREFIX = "__monilog_warn__";
 
     private static MoniLogPrinter logPrinter = null;
     private static MoniLogProperties logProperties = null;
@@ -47,7 +48,7 @@ class MoniLogUtil {
         if (logProperties != null && !logProperties.isDebug()) {
             return;
         }
-        log.warn("__monilog_warn__ " + pattern, args);
+        log.warn(INNER_DEBUG_PREFIX + pattern, args);
     }
 
     private static void doMonitor(MoniLogParams logParams) {
