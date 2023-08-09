@@ -47,9 +47,9 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
     @Override
     public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws IOException, ServletException {
         MoniLogProperties.WebProperties webProperties = moniLogProperties.getWeb();
-        boolean isMultipart = false;
+        boolean isMultipart;
         @Nullable
-        RequestWrapper wrapperRequest = null;
+        RequestWrapper wrapperRequest;
         try{
             isMultipart = ServletFileUpload.isMultipartContent(request);
             wrapperRequest = isMultipart ? null : new RequestWrapper(request);
@@ -58,52 +58,53 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        String requestURI = request.getRequestURI();
 
-        Set<String> urlBlackList = webProperties.getUrlBlackList();
-        if (CollectionUtils.isEmpty(urlBlackList)) {
-            urlBlackList = new HashSet<>();
-        }
-        if (checkPathMatch(urlBlackList, requestURI)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-        HandlerMethod method = getHandlerMethod(isMultipart ? request : wrapperRequest);
-        if (method == null) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-        ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(response);
-
-        MoniLogTags logTags = ReflectUtil.getAnnotation(MoniLogTags.class, method.getBeanType(), method.getMethod());
-        List<String> tagList = StringUtil.getTagList(logTags);
-        long startTime = System.currentTimeMillis();
         String responseBodyStr = "";
         MoniLogParams logParams = new MoniLogParams();
-        if (tagList != null && tagList.size() > 1) {
-            logParams.setHasUserTag(true);
-        }
-        logParams.setServiceCls(method.getBeanType());
-        logParams.setService(method.getBeanType().getSimpleName());
-        logParams.setAction(method.getMethod().getName());
-        TagBuilder tagBuilder = TagBuilder.of(tagList).add("url", requestURI).add("method", request.getMethod());
-        logParams.setTags(tagBuilder.toArray());
-
-        Map<String, String> requestHeaderMap = getRequestHeaders(request);
-
-        Map<String, String> requestBodyMap = new HashMap<>();
-        logParams.setLogPoint(validateRequest(requestHeaderMap));
-        JSONObject jsonObject = formatRequestInfo(isMultipart, isMultipart ? request : wrapperRequest, requestHeaderMap);
-        Object o = jsonObject.get("body");
-        if (o instanceof Map) {
-            requestBodyMap.putAll((Map<String, String>) o);
-        }
-        logParams.setInput(new Object[]{jsonObject});
-        logParams.setMsgCode(ErrorEnum.SUCCESS.name());
-        logParams.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
-        logParams.setSuccess(true);
-
+        HandlerMethod method = null;
+        long startTime = System.currentTimeMillis();
+        Map<String, String> requestHeaderMap = new HashMap<>();
         try {
+            String requestURI = request.getRequestURI();
+
+            Set<String> urlBlackList = webProperties.getUrlBlackList();
+            if (CollectionUtils.isEmpty(urlBlackList)) {
+                urlBlackList = new HashSet<>();
+            }
+            if (checkPathMatch(urlBlackList, requestURI)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+            method = getHandlerMethod(isMultipart ? request : wrapperRequest);
+            if (method == null) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            MoniLogTags logTags = ReflectUtil.getAnnotation(MoniLogTags.class, method.getBeanType(), method.getMethod());
+            List<String> tagList = StringUtil.getTagList(logTags);
+            if (tagList != null && tagList.size() > 1) {
+                logParams.setHasUserTag(true);
+            }
+            logParams.setServiceCls(method.getBeanType());
+            logParams.setService(method.getBeanType().getSimpleName());
+            logParams.setAction(method.getMethod().getName());
+            TagBuilder tagBuilder = TagBuilder.of(tagList).add("url", requestURI).add("method", request.getMethod());
+            logParams.setTags(tagBuilder.toArray());
+
+            requestHeaderMap = getRequestHeaders(request);
+
+            Map<String, String> requestBodyMap = new HashMap<>();
+            logParams.setLogPoint(validateRequest(requestHeaderMap));
+            JSONObject jsonObject = formatRequestInfo(isMultipart, isMultipart ? request : wrapperRequest, requestHeaderMap);
+            Object o = jsonObject.get("body");
+            if (o instanceof Map) {
+                requestBodyMap.putAll((Map<String, String>) o);
+            }
+            logParams.setInput(new Object[]{jsonObject});
+            logParams.setMsgCode(ErrorEnum.SUCCESS.name());
+            logParams.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
+            logParams.setSuccess(true);
             dealRequestTags(isMultipart ? request : wrapperRequest, logParams, requestHeaderMap, requestBodyMap);
         } catch (Exception e) {
             MoniLogUtil.innerDebug("dealRequestTags error", e);
@@ -111,6 +112,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
 
         Exception bizException = null;
         try {
+            ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(response);
             try {
                 filterChain.doFilter(isMultipart ? request : wrapperRequest, wrapperResponse);
             } catch (Exception e) {
@@ -123,15 +125,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             JSON json = StringUtil.tryConvert2Json(responseBodyStr);
             if (json instanceof JSONObject) {
                 LogParser cl = ReflectUtil.getAnnotation(LogParser.class, method.getBeanType(), method.getMethod());
-                //尝试更精确的提取业务失败信息
-                ResultParseStrategy rps = cl == null ? null : cl.resultParseStrategy();//默认使用IfSuccess策略
-                String boolExpr = cl == null ? null : cl.boolExpr();
-                String codeExpr = cl == null ? null : cl.errorCodeExpr();
-                String msgExpr = cl == null ? null : cl.errorMsgExpr();
-                ParsedResult pr = ResultParseUtil.parseResult(json, rps, null, boolExpr, codeExpr, msgExpr);
-                logParams.setSuccess(pr.isSuccess());
-                logParams.setMsgCode(pr.getMsgCode());
-                logParams.setMsgInfo(pr.getMsgInfo());
+                MoniLogUtil.parseResult(cl, json, logParams);
                 logParams.setOutput(json);
             } else {
                 logParams.setOutput(responseBodyStr);
