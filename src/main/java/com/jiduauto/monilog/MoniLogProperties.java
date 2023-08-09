@@ -382,6 +382,11 @@ class MoniLogProperties implements InitializingBean {
         private Set<String> hostBlackList;
 
         /**
+         * 不监控的特定业务client类，支持模糊路径如com.ecwid.**，注意模糊匹配语法：?匹配单个字符，*匹配0个或多个字符，**匹配0个或多个目录
+         */
+        private Set<String> clientBlackList = Sets.newHashSet("com.ecwid.consul.**");
+
+        /**
          * 解析httpClient调用结果的默认表达式，默认校验返回编码是否等于0或者200有一个匹配即认为调用成功,多个表达式直接逗号分割.
          * 注意，如果表达式前以"+"开头，则表示在原有默认表达式的基础上追加，否则会覆盖原默认表达式
          */

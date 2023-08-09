@@ -31,7 +31,7 @@ class RequestWrapper extends HttpServletRequestWrapper {
     /**
      * 获取请求Body
      */
-    public String getBodyString(final ServletRequest request) {
+    public String getBodyString(ServletRequest request) {
         StringBuilder sb = new StringBuilder();
         try (InputStream inputStream = cloneInputStream(request.getInputStream());
              BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
@@ -71,7 +71,7 @@ class RequestWrapper extends HttpServletRequestWrapper {
     @Override
     public ServletInputStream getInputStream() {
 
-        final ByteArrayInputStream bis = new ByteArrayInputStream(body);
+        ByteArrayInputStream bis = new ByteArrayInputStream(body);
         return new ServletInputStream() {
 
             @Override
