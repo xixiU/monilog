@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Resource;
+import java.util.Arrays;
 
 /**
  * 默认日志打印方式
@@ -35,16 +36,13 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         String output = formatLongText(p.getOutput());
         Throwable ex = p.getException();
 
-        if (!p.isSuccess()) {
-            logger.error("monilog_detail_log[{}]-{}.{}|{}|{}|{}|{} input:{}, output:{}", logPoint, service, action, success, code, msg, rt, input, output, ex);
+        String[] tags = p.getTags();
+        String tagStr = tags == null || tags.length == 0 ? "" : "|" + Arrays.toString(tags);
+        if (ex != null) {
+            logger.error("monilog_detail_log[{}]-{}.{}|{}|{}|{}|{}{} input:{}, output:{}", logPoint, service, action, success, code, msg, rt, tagStr, input, output, ex);
             return;
         }
-        if (p.getTags() == null) {
-            logger.info("monilog_detail_log[{}]-{}.{}|{}|{}|{}|{} input:{}, output:{}", logPoint, service, action, success, code, msg, rt, input, output);
-        } else {
-            String tags = JSON.toJSONString(p.getTags());
-            logger.info("monilog_detail_log[{}]-{}.{}|{}|{}|{}|{} input:{}, output:{}, tags:{}", logPoint, service, action, success, code, msg, rt, input, output, tags);
-        }
+        logger.info("monilog_detail_log[{}]-{}.{}|{}|{}|{}|{}{} input:{}, output:{}", logPoint, service, action, success, code, msg, rt, tagStr, input, output);
     }
 
     @Override
@@ -63,12 +61,14 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         String success = p.isSuccess() ? "true" : "false";
         String code = p.getMsgCode();
         String msg = p.getMsgInfo();
+        String[] tags = p.getTags();
+        String tagStr = tags == null || tags.length == 0 ? "" : "|" + Arrays.toString(tags);
         String rt = p.getCost() + "ms";
-        if (!p.isSuccess()) {
-            logger.error("monilog_digest_log[{}]-{}.{}|{}|{}|{}|{}", logPoint, service, action, success, code, msg, rt);
+        if (p.getException() != null) {
+            logger.error("monilog_digest_log[{}]-{}.{}|{}|{}|{}|{}{}", logPoint, service, action, success, code, msg, rt, tagStr);
             return;
         }
-        logger.info("monilog_digest_log[{}]-{}.{}|{}|{}|{}|{}", logPoint, service, action, success, code, msg, rt);
+        logger.info("monilog_digest_log[{}]-{}.{}|{}|{}|{}|{}{}", logPoint, service, action, success, code, msg, rt, tagStr);
     }
 
     private String formatLongText(Object o) {
