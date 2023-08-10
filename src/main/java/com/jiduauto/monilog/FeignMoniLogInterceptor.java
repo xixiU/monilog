@@ -18,10 +18,7 @@ import java.io.*;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author yp
@@ -238,18 +235,19 @@ class FeignMoniLogInterceptor {
         return HttpRequestData.of2(bodyParams, queries, headers).toJSON();
     }
 
-    private static Map<String, Collection<String>> getQuery(Request request){
+    private static Map<String, Collection<String>> getQuery(Request request) {
         // com.netflix.feign根据feign.RequestTemplate.request原来可以看到query参数也会拼接到url中
         Map<String, Collection<String>> queryMap = StringUtil.getQueryMap(request.url());
-        if (queryMap != null) {
-            return queryMap;
+        if (queryMap == null) {
+            queryMap = new HashMap<>();
         }
         // openfeign加一个兜底逻辑可以从requestTemplate参数取值
         boolean hasRequestTemplate = ReflectUtil.objectHasProperty(request, "requestTemplate");
         if (hasRequestTemplate) {
-            return request.requestTemplate().queries();
+            Map<String, Collection<String>> queries = request.requestTemplate().queries();
+            queryMap.putAll(queries);
         }
-        return null;
+        return queryMap.isEmpty() ? null : queryMap;
     }
 
 
