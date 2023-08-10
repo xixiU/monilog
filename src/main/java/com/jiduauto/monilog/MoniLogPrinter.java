@@ -41,7 +41,7 @@ public interface MoniLogPrinter {
         String[] tags = p.getTags();
         String tagStr = tags == null || tags.length == 0 ? "" : "|" + Arrays.toString(tags);
         String rt = p.getCost() + "ms";
-        logger.error("monilog_rt_too_long_log[{}]-{}.{}|{}|{}|{}|{}{}", logPoint, service, action, success, code, msg, rt, tagStr);
+        logger.error("monilog_rt_too_long[{}]-{}.{}|{}|{}|{}|{}{}", logPoint, service, action, success, code, msg, rt, tagStr);
     }
 
     /**
