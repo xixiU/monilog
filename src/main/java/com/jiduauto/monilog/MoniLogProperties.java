@@ -237,7 +237,7 @@ class MoniLogProperties implements InitializingBean {
         private LogOutputLevel clientDetailLogLevel = LogOutputLevel.onException;
 
         /**
-         * web慢接口，单位毫秒.
+         * grpc慢接口，单位毫秒.
          */
         private long longRt = 1000;
     }
