@@ -165,6 +165,12 @@ class MoniLogProperties implements InitializingBean {
          * 流量出入口的的详情日志输出级别总开关，默认仅异常时输出
          */
         private LogOutputLevel detailLogLevel = LogOutputLevel.onException;
+
+        /**
+         * 慢操作日志输出开关，默认prometheus与日志均打印
+         */
+        private LogRtTooLongLevel rtTooLongLevel = LogRtTooLongLevel.both;
+
         /**
          * 默认详情日志打印最长的长度，目前仅限制了收集参数中的input与output的长度
          */
