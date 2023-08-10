@@ -53,6 +53,11 @@ class MoniLogUtil {
         if (logProperties != null && !logProperties.isDebug()) {
             return;
         }
+        String activeProfile = SpringUtils.getActiveProfile();
+        // 仅对dev,test生效，线上永远是false.
+        if (!"dev".equalsIgnoreCase(activeProfile) && !"test".equalsIgnoreCase(activeProfile)) {
+            return;
+        }
         log.warn(INNER_DEBUG_PREFIX + pattern, args);
     }
 
