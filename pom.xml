@@ -11,7 +11,7 @@
 
     <groupId>com.jiduauto.monilog</groupId>
     <artifactId>monilog</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.0.1</version>
     <modelVersion>4.0.0</modelVersion>
 
 
@@ -135,12 +135,6 @@
             <version>${openfeign.version}</version>
             <scope>provided</scope>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>com.netflix.feign</groupId>-->
-<!--            <artifactId>feign-core</artifactId>-->
-<!--            <version>8.18.0</version>-->
-<!--            <scope>provided</scope>-->
-<!--        </dependency>-->
         <dependency>
             <groupId>net.devh</groupId>
             <artifactId>grpc-client-spring-boot-starter</artifactId>
