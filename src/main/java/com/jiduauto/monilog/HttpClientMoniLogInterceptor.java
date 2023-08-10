@@ -2,7 +2,6 @@ package com.jiduauto.monilog;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -21,6 +20,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+import static com.jiduauto.monilog.StringUtil.checkClassMatch;
 import static com.jiduauto.monilog.StringUtil.checkPathMatch;
 
 /**
@@ -172,9 +172,6 @@ public final class HttpClientMoniLogInterceptor {
     }
 
     private static boolean isEnable(HttpHost host, String path, String invokerClass) {
-        if (StringUtil.checkClassMatch(Lists.newArrayList(invokerClass), "com.ecwid.consul.transport.AbstractHttpTransport")) {
-            return false;
-        }
         MoniLogProperties mp = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
         if (mp == null || !mp.isEnable() || mp.getHttpclient() == null) {
             return false;
@@ -184,18 +181,10 @@ public final class HttpClientMoniLogInterceptor {
         if (!enable) {
             return false;
         }
+        Set<String> clientBlackList = httpclient.getClientBlackList();
         Set<String> urlBlackList = httpclient.getUrlBlackList();
         Set<String> hostBlackList = httpclient.getHostBlackList();
-        if (CollectionUtils.isEmpty(urlBlackList)) {
-            urlBlackList = new HashSet<>();
-        }
-        if (CollectionUtils.isEmpty(hostBlackList)) {
-            hostBlackList = new HashSet<>();
-        }
-        if (checkPathMatch(hostBlackList, host.getHostName()) || checkPathMatch(urlBlackList, path)) {
-            return false;
-        }
-        return true;
+        return !checkClassMatch(clientBlackList, invokerClass) && !checkPathMatch(hostBlackList, host.getHostName()) && !checkPathMatch(urlBlackList, path);
     }
 
     private static boolean isUpstream(String method, String contentType) {

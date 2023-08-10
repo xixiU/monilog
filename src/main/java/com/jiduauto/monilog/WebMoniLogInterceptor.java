@@ -6,11 +6,9 @@ import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.uadetector.UserAgentType;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.util.http.fileupload.servlet.ServletFileUpload;
-import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -45,89 +43,88 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
 
     @SneakyThrows
     @Override
-    public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws IOException, ServletException {
+    public void doFilterInternal(@NonNull HttpServletRequest httpServletRequest, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws IOException, ServletException {
         MoniLogProperties.WebProperties webProperties = moniLogProperties.getWeb();
-        boolean isMultipart = ServletFileUpload.isMultipartContent(request);
-        @Nullable
-        RequestWrapper wrapperRequest = isMultipart ? null : new RequestWrapper(request);
-        String requestURI = request.getRequestURI();
-
-        Set<String> urlBlackList = webProperties.getUrlBlackList();
-        if (CollectionUtils.isEmpty(urlBlackList)) {
-            urlBlackList = new HashSet<>();
-        }
-        if (checkPathMatch(urlBlackList, requestURI)) {
-            filterChain.doFilter(request, response);
+        boolean isMultipart;
+        HttpServletRequest request;
+        try{
+            isMultipart = ServletFileUpload.isMultipartContent(httpServletRequest);
+            request = isMultipart ? httpServletRequest : new RequestWrapper(httpServletRequest);
+        }catch (Exception e){
+            MoniLogUtil.innerDebug("check multipart error: {}", e.getMessage());
+            filterChain.doFilter(httpServletRequest, response);
             return;
         }
-        HandlerMethod method = getHandlerMethod(isMultipart ? request : wrapperRequest);
-        if (method == null) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-        ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(response);
 
-        MoniLogTags logTags = ReflectUtil.getAnnotation(MoniLogTags.class, method.getBeanType(), method.getMethod());
-        List<String> tagList = StringUtil.getTagList(logTags);
-        long startTime = System.currentTimeMillis();
         String responseBodyStr = "";
         MoniLogParams logParams = new MoniLogParams();
-        if (tagList != null && tagList.size() > 1) {
-            logParams.setHasUserTag(true);
-        }
-        logParams.setServiceCls(method.getBeanType());
-        logParams.setService(method.getBeanType().getSimpleName());
-        logParams.setAction(method.getMethod().getName());
-        TagBuilder tagBuilder = TagBuilder.of(tagList).add("url", requestURI).add("method", request.getMethod());
-        logParams.setTags(tagBuilder.toArray());
-
-        Map<String, String> requestHeaderMap = getRequestHeaders(request);
-
-        Map<String, String> requestBodyMap = new HashMap<>();
-        logParams.setLogPoint(validateRequest(requestHeaderMap));
-        JSONObject jsonObject = formatRequestInfo(isMultipart, isMultipart ? request : wrapperRequest, requestHeaderMap);
-        Object o = jsonObject.get("body");
-        if (o instanceof Map) {
-            requestBodyMap.putAll((Map<String, String>) o);
-        }
-        logParams.setInput(new Object[]{jsonObject});
-        logParams.setMsgCode(ErrorEnum.SUCCESS.name());
-        logParams.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
-        logParams.setSuccess(true);
-
+        HandlerMethod method = null;
+        long startTime = System.currentTimeMillis();
+        Map<String, String> requestHeaderMap = new HashMap<>();
         try {
-            dealRequestTags(isMultipart ? request : wrapperRequest, logParams, requestHeaderMap, requestBodyMap);
+            String requestUri = request.getRequestURI();
+
+            Set<String> urlBlackList = webProperties.getUrlBlackList();
+            if (checkPathMatch(urlBlackList, requestUri)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+            method = getHandlerMethod(request);
+            if (method == null) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            MoniLogTags logTags = ReflectUtil.getAnnotation(MoniLogTags.class, method.getBeanType(), method.getMethod());
+            List<String> tagList = StringUtil.getTagList(logTags);
+            if (tagList != null && tagList.size() > 1) {
+                logParams.setHasUserTag(true);
+            }
+            logParams.setServiceCls(method.getBeanType());
+            logParams.setService(method.getBeanType().getSimpleName());
+            logParams.setAction(method.getMethod().getName());
+            TagBuilder tagBuilder = TagBuilder.of(tagList).add("url", requestUri).add("method", request.getMethod());
+            logParams.setTags(tagBuilder.toArray());
+
+            requestHeaderMap = getRequestHeaders(request);
+
+            Map<String, Object> requestBodyMap = new HashMap<>();
+            logParams.setLogPoint(validateRequest(requestHeaderMap));
+            JSONObject jsonObject = formatRequestInfo(isMultipart, request, requestHeaderMap);
+            Object o = jsonObject.get("body");
+            if (o instanceof Map) {
+                requestBodyMap.putAll((Map<String, Object>) o);
+            }
+            logParams.setInput(new Object[]{jsonObject});
+            logParams.setMsgCode(ErrorEnum.SUCCESS.name());
+            logParams.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
+            logParams.setSuccess(true);
+            dealRequestTags(request, logParams, requestHeaderMap, requestBodyMap);
         } catch (Exception e) {
             MoniLogUtil.innerDebug("dealRequestTags error", e);
         }
 
+        logParams.setSuccess(true);
         Exception bizException = null;
         try {
+            ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(response);
             try {
-                filterChain.doFilter(isMultipart ? request : wrapperRequest, wrapperResponse);
+                filterChain.doFilter(request, wrapperResponse);
             } catch (Exception e) {
                 // 业务异常
                 bizException = e;
                 throw bizException;
             }
             responseBodyStr = getResponseBody(wrapperResponse);
+            logParams.setOutput(responseBodyStr);
             wrapperResponse.copyBodyToResponse();
             JSON json = StringUtil.tryConvert2Json(responseBodyStr);
+            if (json != null) {
+                logParams.setOutput(json);
+            }
             if (json instanceof JSONObject) {
                 LogParser cl = ReflectUtil.getAnnotation(LogParser.class, method.getBeanType(), method.getMethod());
-                //尝试更精确的提取业务失败信息
-                ResultParseStrategy rps = cl == null ? null : cl.resultParseStrategy();//默认使用IfSuccess策略
-                String boolExpr = cl == null ? null : cl.boolExpr();
-                String codeExpr = cl == null ? null : cl.errorCodeExpr();
-                String msgExpr = cl == null ? null : cl.errorMsgExpr();
-                ParsedResult pr = ResultParseUtil.parseResult(json, rps, null, boolExpr, codeExpr, msgExpr);
-                logParams.setSuccess(pr.isSuccess());
-                logParams.setMsgCode(pr.getMsgCode());
-                logParams.setMsgInfo(pr.getMsgInfo());
-                logParams.setOutput(json);
-            } else {
-                logParams.setOutput(responseBodyStr);
-                logParams.setSuccess(true);
+                ResultParseUtil.parseResultAndSet(cl, json, logParams);
             }
         } catch (Exception e) {
             // 业务异常
@@ -219,7 +216,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
     /**
      * 处理请求tag
      */
-    private void dealRequestTags(HttpServletRequest request, MoniLogParams logParams, Map<String, String> requestHeaderMap, Map<String, String> requestBodyMap) {
+    private void dealRequestTags(HttpServletRequest request, MoniLogParams logParams, Map<String, String> requestHeaderMap, Map<String, Object> requestBodyMap) {
         String[] oriTags = logParams.getTags();
         Map<String, String> headersMap = MapUtils.isNotEmpty(requestHeaderMap) ? requestHeaderMap : new HashMap<>();
 
@@ -300,20 +297,21 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
     }
 
 
-    private static String getMapValueIgnoreCase(Map<String, String> headerMap, String headerKey) {
+    private static String getMapValueIgnoreCase(Map<String, ?> headerMap, String headerKey) {
         if (MapUtils.isEmpty(headerMap) || StringUtils.isBlank(headerKey)) {
             return null;
         }
-        String userAgent = headerMap.get(headerKey);
-        if (StringUtils.isNotBlank(userAgent)) {
-            return userAgent;
+        Object userAgent = headerMap.get(headerKey);
+        if (userAgent != null) {
+            return userAgent.toString();
         }
         // 全小写
         userAgent = headerMap.get(headerKey.toLowerCase());
-        if (StringUtils.isNotBlank(userAgent)) {
-            return userAgent;
+        if (userAgent != null) {
+            return userAgent.toString();
         }
         // 全大写
-        return headerMap.get(headerKey.toUpperCase());
+        Object o = headerMap.get(headerKey.toUpperCase());
+        return o != null ?  o.toString() : null;
     }
 }

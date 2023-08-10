@@ -18,10 +18,7 @@ import java.io.*;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author yp
@@ -67,6 +64,17 @@ class FeignMoniLogInterceptor {
             }
         }
 
+
+        /**
+         * 这里需要注入request是在业务逻辑执行之后调用，注意request与response流的消耗
+         * @param m
+         * @param request
+         * @param response
+         * @param cost
+         * @param ex
+         * @param feignProperties
+         * @return
+         */
         private Response doFeignInvocationRecord(Method m, Request request, Response response, long cost, Throwable ex, MoniLogProperties.FeignProperties feignProperties) {
             String requestURI = request.url();
             Set<String> urlBlackList = feignProperties == null ? new HashSet<>() : feignProperties.getUrlBlackList();
@@ -93,7 +101,7 @@ class FeignMoniLogInterceptor {
                 mlp.setAction(st.getMethodName());
             }
 
-            mlp.setTags(new String[]{"method", request.httpMethod().toString(), "url", requestURI});
+            mlp.setTags(new String[]{"method", getMethod(request), "url", requestURI});
 
             mlp.setCost(cost);
             mlp.setException(ex);
@@ -150,8 +158,8 @@ class FeignMoniLogInterceptor {
                     }
                 }
                 if (resultStr != null) {
-                    //重写将数据写入原始response中去
-                    ret = bufferedResp.getResponse().toBuilder().body(resultStr, charset).build();
+                    //重写将数据写入原始response的body中
+                    ret = bufferedResp.getResponse(resultStr, charset);
                 } else {
                     ret = bufferedResp.getResponse();
                 }
@@ -166,28 +174,103 @@ class FeignMoniLogInterceptor {
         }
     }
 
-    private static JSONObject formatRequestInfo(Request request) {
-        String bodyParams = isBinary(request) ? "Binary data" : length(request) == 0 ? null : new String(request.body(), request.charset()).trim();
-        Map<String, Collection<String>> headers = request.headers();
-        boolean hasRequestTemplate = ReflectUtil.objectHasProperty(request, "requestTemplate");
-        Map<String, Collection<String>> queries = null;
-        if (hasRequestTemplate) {
-            queries = request.requestTemplate().queries();
+
+    /**
+     * com.netflix.feign:feign-core 8.18.0 中没有调用的method与openfeign不同
+     * @see feign.Request
+     * openfeign定义如下
+    <blockquote><pre>
+    public final class feign.Request {
+    private final HttpMethod httpMethod;
+
+    private final String url;
+
+    private final Map<String, Collection<String>> headers;
+
+    private final Body body;
+
+    private final RequestTemplate requestTemplate;
+
+    public enum HttpMethod {
+    GET, HEAD, POST, PUT, DELETE, CONNECT, OPTIONS, TRACE, PATCH;
+    }
+    }
+     * </pre></blockquote><p>
+     *
+     * 而com.netflix.feign.Request定义如下：
+     * <blockquote><pre>
+     *    public final class com.netflix.feign.Request {
+     *   private final String method;
+     *
+     *   private final String url;
+     *
+     *   private final Map<String, Collection<String>> headers;
+     *
+     *   private final byte[] body;
+     *
+     *   private final Charset charset;
+     *
+     *   public static Request create(String method, String url, Map<String, Collection<String>> headers, byte[] body, Charset charset) {
+     *     return new Request(method, url, headers, body, charset);
+     *   }
+     * }
+     * @param request
+     * @return
+     */
+    private static String getMethod(Request request) {
+        // openfeign
+        boolean hasHttpMethod = ReflectUtil.objectHasProperty(request, "httpMethod");
+        if (hasHttpMethod) {
+            Object propValue = ReflectUtil.getPropValue(request, "httpMethod");
+            return propValue!= null ? propValue.toString() : null;
         }
+        // netflix
+        return ReflectUtil.getPropValue(request, "method","unknown");
+    }
+
+    private static JSONObject formatRequestInfo(Request request) {
+        String bodyParams = getBodyParams(request);
+        Map<String, Collection<String>> headers = request.headers();
+        Map<String, Collection<String>> queries = getQuery(request);
         return HttpRequestData.of2(bodyParams, queries, headers).toJSON();
     }
 
-
-    // com.netflix.feign:feign-core中没有request.isBinary()方法
-    private static boolean isBinary(Request request) {
-        byte[] body = request.body();
-        return request.charset() == null || body == null;
+    private static Map<String, Collection<String>> getQuery(Request request) {
+        // com.netflix.feign根据feign.RequestTemplate.request原来可以看到query参数也会拼接到url中
+        Map<String, Collection<String>> queryMap = StringUtil.getQueryMap(request.url());
+        if (queryMap == null) {
+            queryMap = new HashMap<>();
+        }
+        // openfeign加一个兜底逻辑可以从requestTemplate参数取值
+        boolean hasRequestTemplate = ReflectUtil.objectHasProperty(request, "requestTemplate");
+        if (hasRequestTemplate) {
+            Map<String, Collection<String>> queries = request.requestTemplate().queries();
+            queryMap.putAll(queries);
+        }
+        return queryMap.isEmpty() ? null : queryMap;
     }
 
-    // com.netflix.feign:feign-core中没有request.length()方法
-    private static int length(Request request) {
-        byte[] data = request.body();
-        return data != null ? data.length : 0;
+
+    // com.netflix.feign:feign-core 8.18.0 中没有request.isBinary()方法
+    private static boolean isBinary(byte[] body, Charset charset) {
+        return charset == null || body == null;
+    }
+
+    // com.netflix.feign:feign-core 8.18.0 中没有request.length()方法
+    private static int length(byte[] body) {
+        return body != null ? body.length : 0;
+    }
+
+    // 注意这里消耗的流
+    private static String getBodyParams(Request request){
+        byte[] body = request.body();
+        if (isBinary(body, request.charset())) {
+            return "Binary data";
+        }
+        if (length(body) == 0) {
+            return null;
+        }
+        return new String(body, request.charset()).trim();
     }
 
     private static class BufferingFeignClientResponse implements Closeable {
@@ -201,6 +284,21 @@ class FeignMoniLogInterceptor {
         Response getResponse() {
             return this.response;
         }
+
+        Response getResponse(String text,Charset charset) {
+            try{
+                Class<?> cls = Class.forName("feign.Response$ByteArrayBody");
+                Method orNull = cls.getDeclaredMethod("orNull", String.class, Charset.class);
+                orNull.setAccessible(true);
+                Object body = orNull.invoke(null, text, charset);
+                // 通过反射获取Response.body,并修改值
+                ReflectUtil.setPropValue(this.response,"body" ,body, true);
+            }catch (Exception e){
+                MoniLogUtil.innerDebug("setResponseBody error", e);
+            }
+            return this.response;
+        }
+
 
         int status() {
             return this.response.status();

@@ -122,15 +122,7 @@ class GrpcMoniLogInterceptor {
                         params.setOutput(json);
                         LogParser cl = (LogParser) context.get("logParser");
                         if (json instanceof JSON) {
-                            //尝试更精确的提取业务失败信息
-                            ResultParseStrategy rps = cl == null ? null : cl.resultParseStrategy();//默认使用IfSuccess策略
-                            String boolExpr = cl == null ? null : cl.boolExpr();
-                            String codeExpr = cl == null ? null : cl.errorCodeExpr();
-                            String msgExpr = cl == null ? null : cl.errorMsgExpr();
-                            ParsedResult pr = ResultParseUtil.parseResult(json, rps, null, boolExpr, codeExpr, msgExpr);
-                            params.setSuccess(pr.isSuccess());
-                            params.setMsgCode(pr.getMsgCode());
-                            params.setMsgInfo(pr.getMsgInfo());
+                            ResultParseUtil.parseResultAndSet(cl, (JSON)json, params);
                         }
                     }
                     super.onMessage(message);
@@ -221,14 +213,7 @@ class GrpcMoniLogInterceptor {
                     LogParser cl = (LogParser) context.get("logParser");
                     if (json instanceof JSON && cl != null) {
                         //尝试更精确的提取业务失败信息
-                        ResultParseStrategy rps = cl == null ? null : cl.resultParseStrategy();//默认使用IfSuccess策略
-                        String boolExpr = cl == null ? null : cl.boolExpr();
-                        String codeExpr = cl == null ? null : cl.errorCodeExpr();
-                        String msgExpr = cl == null ? null : cl.errorMsgExpr();
-                        ParsedResult pr = ResultParseUtil.parseResult(json, rps, null, boolExpr, codeExpr, msgExpr);
-                        params.setSuccess(pr.isSuccess());
-                        params.setMsgCode(pr.getMsgCode());
-                        params.setMsgInfo(pr.getMsgInfo());
+                        ResultParseUtil.parseResultAndSet(cl, (JSON)json, params);
                     }
                 }
                 super.sendMessage(message);

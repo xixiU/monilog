@@ -1,6 +1,7 @@
 package com.jiduauto.monilog;
 
 
+import com.alibaba.fastjson.JSON;
 import org.apache.commons.lang3.StringUtils;
 
 import java.lang.reflect.Array;
@@ -11,7 +12,7 @@ import java.util.Map;
  * @author yepei
  */
 final class ResultParseUtil {
-    public static ParsedResult parseResult(Object returnObj, ResultParseStrategy strategy, Throwable t, String boolExpr, String codeExpr, String msgExpr) {
+    static ParsedResult parseResult(Object returnObj, ResultParseStrategy strategy, Throwable t, String boolExpr, String codeExpr, String msgExpr) {
         boolExpr = correctBoolExpr(boolExpr);
         boolean noStrategy = strategy == null;
         Boolean parsedSucc = null;
@@ -85,7 +86,7 @@ final class ResultParseUtil {
     }
 
 
-    public static ParsedResult parseResult(Object returnObj, ResultParseStrategy strategy, Throwable t) {
+    static ParsedResult parseResult(Object returnObj, ResultParseStrategy strategy, Throwable t) {
         return parseResult(returnObj, strategy, t, null, null, null);
     }
 
@@ -99,5 +100,23 @@ final class ResultParseUtil {
         return (!(o instanceof Map) || ((Map<?, ?>) o).size() != 0)
                 && (!o.getClass().isArray() || Array.getLength(o) != 0)
                 && (!(o instanceof Collection) || ((Collection<?>) o).size() != 0);
+    }
+
+    /**
+     * 根据解析策略解析解析的结果，提取更加精确的业务信息
+     * @param cl
+     * @param resultJson
+     * @param logParams
+     */
+    static void parseResultAndSet(LogParser cl, JSON resultJson, MoniLogParams logParams){
+        //默认使用IfSuccess策略
+        ResultParseStrategy rps = cl == null ? null : cl.resultParseStrategy();
+        String boolExpr = cl == null ? null : cl.boolExpr();
+        String codeExpr = cl == null ? null : cl.errorCodeExpr();
+        String msgExpr = cl == null ? null : cl.errorMsgExpr();
+        ParsedResult pr = ResultParseUtil.parseResult(resultJson, rps, null, boolExpr, codeExpr, msgExpr);
+        logParams.setSuccess(pr.isSuccess());
+        logParams.setMsgCode(pr.getMsgCode());
+        logParams.setMsgInfo(pr.getMsgInfo());
     }
 }

@@ -17,6 +17,7 @@ class MoniLogUtil {
      * 组件监控前缀
      */
     private static final String BUSINESS_MONITOR_PREFIX = "business_monitor_";
+    static final String INNER_DEBUG_PREFIX = "__monilog_warn__";
 
     private static MoniLogPrinter logPrinter = null;
     private static MoniLogProperties logProperties = null;
@@ -26,6 +27,11 @@ class MoniLogUtil {
             doMonitor(logParams);
         } catch (Exception e) {
             innerDebug("doMonitor error", e);
+        }
+        try {
+            doRtTooLongMonitor(logParams);
+        } catch (Exception e) {
+            innerDebug("doRtTooLongMonitor error", e);
         }
         try {
             printDigestLog(logParams);
@@ -47,7 +53,12 @@ class MoniLogUtil {
         if (logProperties != null && !logProperties.isDebug()) {
             return;
         }
-        log.warn("__monilog_warn__ " + pattern, args);
+        String activeProfile = SpringUtils.getActiveProfile();
+        // 仅对dev,test生效，线上永远是false.
+        if (!"dev".equalsIgnoreCase(activeProfile) && !"test".equalsIgnoreCase(activeProfile)) {
+            return;
+        }
+        log.warn(INNER_DEBUG_PREFIX + pattern, args);
     }
 
     private static void doMonitor(MoniLogParams logParams) {
@@ -56,7 +67,6 @@ class MoniLogUtil {
         if (logPoint == null) {
             logPoint = LogPoint.unknown;
         }
-        //TODO 这里在后边加入了自定义的tag，可能与全局监控混淆
         String[] allTags = systemTags.add(logParams.getTags()).toArray();
 
         String name = BUSINESS_MONITOR_PREFIX + logPoint.name();
@@ -68,15 +78,34 @@ class MoniLogUtil {
             name = name + "_" + logParams.getService() + "_" + logParams.getAction();
             MetricMonitor.eventDruation(name + MonitorType.TIMER.getMark(), allTags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
         }
+
+    }
+
+    private static void doRtTooLongMonitor(MoniLogParams logParams){
         if (!checkRtMonitor(logParams)) {
             return;
         }
-        // 操作操作信息
-        String operationCostTooLongMonitorPrefix = BUSINESS_MONITOR_PREFIX + "operation_cost_too_long_" + logPoint.name();
-        ;
-        MetricMonitor.record(operationCostTooLongMonitorPrefix + MonitorType.RECORD.getMark(), allTags);
-        // 耗时只打印基础tag
-        MetricMonitor.eventDruation(operationCostTooLongMonitorPrefix + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
+        MoniLogProperties logProperties = getLogProperties();
+        if (logProperties == null || !logProperties.isMonitorLongRt()) {
+            return;
+        }
+        LogRtTooLongLevel rtTooLongLevel = logProperties.getPrinter().getRtTooLongLevel();
+        if (rtTooLongLevel == null || LogRtTooLongLevel.none.equals(rtTooLongLevel)) {
+            return;
+        }
+        TagBuilder systemTags = getSystemTags(logParams);
+        LogPoint logPoint = logParams.getLogPoint();
+        String[] allTags = systemTags.add(logParams.getTags()).toArray();
+        if (LogRtTooLongLevel.both.equals(rtTooLongLevel) || LogRtTooLongLevel.onlyPrometheus.equals(rtTooLongLevel)) {
+            // 操作操作信息
+            String operationCostTooLongMonitorPrefix = BUSINESS_MONITOR_PREFIX + "rt_too_long_" + logPoint.name();
+            MetricMonitor.record(operationCostTooLongMonitorPrefix + MonitorType.RECORD.getMark(), allTags);
+            // 耗时只打印基础tag
+            MetricMonitor.eventDruation(operationCostTooLongMonitorPrefix + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
+        }
+        if (LogRtTooLongLevel.both.equals(rtTooLongLevel) || LogRtTooLongLevel.onlyLogger.equals(rtTooLongLevel)) {
+            printRtTooLongLog(logParams);
+        }
     }
 
 
@@ -139,6 +168,19 @@ class MoniLogUtil {
             exceptionMsg = exceptionMsg.substring(0, maxLen) + "...";
         }
         return TagBuilder.of("result", success ? "success" : "error").add("application", SpringUtils.getApplicationName()).add("logPoint", logParams.getLogPoint().name()).add("env", SpringUtils.getActiveProfile()).add("service", logParams.getService()).add("action", logParams.getAction()).add("msgCode", logParams.getMsgCode()).add("cost", String.valueOf(logParams.getCost())).add("exception", exceptionMsg);
+    }
+
+    /**
+     * 打印慢操作日志
+     *
+     * @param logParams
+     */
+    private static void printRtTooLongLog(MoniLogParams logParams) {
+        MoniLogPrinter printer = getLogPrinter();
+        if (printer == null) {
+            return;
+        }
+        printer.logRtTooLong(logParams);
     }
 
     /**

@@ -213,6 +213,19 @@ class ReflectUtil {
         }
     }
 
+    static <T> T getPropValue(Object obj, String name){
+        return getPropValue(obj, name, true);
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T> T getPropValue(Object obj, String name, T defaultValue){
+        Object propValue = getPropValue(obj, name, true);
+        if (propValue != null) {
+            return (T)propValue;
+        }
+        return defaultValue;
+    }
+
     @SuppressWarnings("all")
     static void setPropValue(Object obj, String name, Object value, boolean ignoreException) {
         try {

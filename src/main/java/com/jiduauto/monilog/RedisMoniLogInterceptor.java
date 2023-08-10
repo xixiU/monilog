@@ -188,9 +188,6 @@ class RedisMoniLogInterceptor {
             } finally {
                 p.setCost(System.currentTimeMillis() - p.getCost());
                 String maybeKey = parserRedissonMaybeKey(p.getInput());
-                if (redisProperties.getLongRt() > 0 && p.getCost() > redisProperties.getLongRt()) {
-                    log.error("redis_cost_time_too_long, action: {}, key:{}, time:{}", p.getAction(), maybeKey, p.getCost());
-                }
                 if (ret != null && StringUtils.isNotBlank(maybeKey)) {
                     long valueLen = 0;
                     try {
