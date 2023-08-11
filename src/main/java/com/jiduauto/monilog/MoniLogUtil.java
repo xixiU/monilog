@@ -207,6 +207,10 @@ class MoniLogUtil {
         if (printer == null || properties == null) {
             return;
         }
+        if (properties.isDebug()) {
+            printer.logDetail(logParams);
+            return;
+        }
         MoniLogProperties.PrinterProperties printerCfg = properties.getPrinter();
         LogOutputLevel detailLogLevel = printerCfg.getDetailLogLevel();
         LogPoint logPoint = logParams.getLogPoint();
