@@ -287,8 +287,6 @@ class MoniLogUtil {
 
     /**
      * 校验是否在排除清单中,若返回true，则不需要打印摘要日志与详情日志
-     * @param logParams
-     * @return
      */
     private static boolean excludePrint(MoniLogParams logParams){
         MoniLogPrinter printer = getLogPrinter();
@@ -317,10 +315,7 @@ class MoniLogUtil {
         if (StringUtil.checkPathMatch(infoExcludeServices, logParams.getService())) {
             return true;
         }
-        if (StringUtil.checkPathMatch(infoExcludeActions, logParams.getAction())) {
-            return true;
-        }
-        return false;
+        return StringUtil.checkPathMatch(infoExcludeActions, logParams.getAction());
     }
 
     private static boolean printLevelCheckPass(LogOutputLevel detailLogLevel, MoniLogParams logParams){
