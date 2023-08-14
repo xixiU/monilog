@@ -66,7 +66,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
 
             Set<String> urlBlackList = webProperties.getUrlBlackList();
             if (checkPathMatch(urlBlackList, requestUri)) {
-                filterChain.doFilter(request, response);
+                filterChain.doFilter(request, response);  //TODO 如果这一行抛了业务异常，怎么办？
                 return;
             }
             method = getHandlerMethod(request);

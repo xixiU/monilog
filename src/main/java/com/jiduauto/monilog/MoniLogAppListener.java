@@ -46,10 +46,9 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
      * <p>
      * 注意，为了让摘要(或详情)日志中输出的action信息更贴近业务，我们通过回溯线程栈的方式，跳过指定组件(org.springframework.*)后，
      * 找到最贴近业务调用的目标服务作为监控的目标service和action
-     *
-     * @param ctx
      */
 
+    @SuppressWarnings("all")
     private void enhanceRedisTemplate(ConfigurableApplicationContext ctx) {
         if (null == MoniLogPostProcessor.getTargetCls(REDIS_TEMPLATE)) {
             return;

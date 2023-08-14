@@ -7,8 +7,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * 日志工具类
  * @author rongjie.yuan
- * @description: 日志工具类
  * @date 2023/7/17 16:42
  */
 @Slf4j
@@ -172,8 +172,6 @@ class MoniLogUtil {
 
     /**
      * 打印慢操作日志
-     *
-     * @param logParams
      */
     private static void printRtTooLongLog(MoniLogParams logParams) {
         MoniLogPrinter printer = getLogPrinter();
@@ -200,8 +198,6 @@ class MoniLogUtil {
     }
     /**
      * 打印摘要日志
-     *
-     * @param logParams
      */
     private static void printDigestLog(MoniLogParams logParams) {
         MoniLogPrinter printer = getLogPrinter();
@@ -217,8 +213,6 @@ class MoniLogUtil {
 
     /**
      * 打印详情日志
-     *
-     * @param logParams
      */
     private static void printDetailLog(MoniLogParams logParams) {
         MoniLogPrinter printer = getLogPrinter();

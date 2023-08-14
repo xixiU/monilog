@@ -13,7 +13,6 @@ import org.springframework.core.annotation.Order;
 
 /**
  * @author rongjie.yuan
- * @description: 启动类
  * @date 2023/7/28 17:06
  */
 @Configuration

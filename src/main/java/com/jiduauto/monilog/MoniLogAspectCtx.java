@@ -83,7 +83,7 @@ class MoniLogAspectCtx {
         return method.getName();
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("all")
     public <T> T getArgByType(Class<T> cls) {
         if (args == null || args.length == 0) {
             return null;
