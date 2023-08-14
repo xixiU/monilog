@@ -204,7 +204,6 @@ class MoniLogUtil {
         if (excludePrint(logParams)) {
             return;
         }
-
         boolean doPrinter = printLevelCheckPass(getDigestLogLevel(), logParams);
         if (doPrinter) {
             printer.logDigest(logParams);
@@ -295,7 +294,6 @@ class MoniLogUtil {
             return true;
         }
         if (properties.isDebug()) {
-            printer.logDetail(logParams);
             return true;
         }
         MoniLogProperties.PrinterProperties printerCfg = properties.getPrinter();
