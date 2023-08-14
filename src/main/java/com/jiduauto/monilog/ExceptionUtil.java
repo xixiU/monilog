@@ -3,8 +3,6 @@ package com.jiduauto.monilog;
 
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.net.UnknownHostException;
 import java.sql.SQLTimeoutException;
@@ -62,19 +60,6 @@ class ExceptionUtil {
         return msg;
     }
 
-    public static String getStackTrace(Throwable e, boolean removeLineSeparator) {
-        if (e == null) {
-            return null;
-        }
-        StringWriter writer = new StringWriter();
-        e.printStackTrace(new PrintWriter(writer, true));
-        String trace = writer.toString();
-        if (removeLineSeparator) {
-            trace = StringUtils.replace(trace, System.getProperty("line.separator"), "\\n");
-        }
-        return trace;
-    }
-
     private static boolean isTimeoutException(Throwable e) {
         if (e == null) {
             return false;
@@ -90,9 +75,6 @@ class ExceptionUtil {
 
     /**
      * 因为ReflectUtil将受检异常包装成了运行时异常，所以这里尝试找到真实异常
-     *
-     * @param e
-     * @return
      */
     public static Throwable getRealException(Throwable e) {
         if (e instanceof InvocationTargetException) {

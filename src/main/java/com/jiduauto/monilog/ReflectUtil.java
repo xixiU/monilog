@@ -28,13 +28,7 @@ class ReflectUtil {
         }
     }
     /**
-     * //找到方法上的注解，如果找不到则向上找类上的，如果还找不到，则再向上找接口上的
-     *
-     * @param annotationClass
-     * @param methodOwnedClass
-     * @param methods
-     * @param <T>
-     * @return
+     * 找到方法上的注解，如果找不到则向上找类上的，如果还找不到，则再向上找接口上的
      */
     static <T extends Annotation> T getAnnotation(Class<T> annotationClass, Class<?> methodOwnedClass, Method... methods) {
         assert methods != null && methods.length > 0;
@@ -107,13 +101,9 @@ class ReflectUtil {
 
     /**
      * 从当前类以及该类的父类、接口上寻找符合签名的方法(含非public方法)，找到一个就立即返回
-     * //getDeclaredMethods:获取当前类的所有方法；包括 protected/默认/private 修饰的方法；不包括父类 、接口 public 修饰的方法
-     * //getMethods：获取当前类或父类或父接口的 public 修饰的字段；包含接口中 default 修饰的方法
+     * getDeclaredMethods:获取当前类的所有方法；包括 protected/默认/private 修饰的方法；不包括父类 、接口 public 修饰的方法
+     * getMethods：获取当前类或父类或父接口的 public 修饰的字段；包含接口中 default 修饰的方法
      *
-     * @param cls
-     * @param methodName
-     * @param args
-     * @return
      */
     private static List<Method> getClsMethods(Class<?> cls, String methodName, Object[] args) {
         List<Method> results = new ArrayList<>();

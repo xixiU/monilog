@@ -46,7 +46,8 @@ class FeignMoniLogInterceptor {
             String methodName = m.getName();
             int parameterCount = m.getParameterCount();
             Class<?>[] parameterTypes = m.getParameterTypes();
-            boolean isTargetMethod = methodName.equals("execute") && parameterCount == 2 && parameterTypes[0] == Request.class && parameterTypes[1] == Request.Options.class;
+            String targetMethod = "execute";
+            boolean isTargetMethod = methodName.equals(targetMethod) && parameterCount == 2 && parameterTypes[0] == Request.class && parameterTypes[1] == Request.Options.class;
             if (!isTargetMethod) {
                 if (ex == null) {
                     return result;
@@ -67,21 +68,14 @@ class FeignMoniLogInterceptor {
 
         /**
          * 这里需要注入request是在业务逻辑执行之后调用，注意request与response流的消耗
-         * @param m
-         * @param request
-         * @param response
-         * @param cost
-         * @param ex
-         * @param feignProperties
-         * @return
          */
         private Response doFeignInvocationRecord(Method m, Request request, Response response, long cost, Throwable ex, MoniLogProperties.FeignProperties feignProperties) {
-            String requestURI = request.url();
+            String requestUri = request.url();
             Set<String> urlBlackList = feignProperties == null ? new HashSet<>() : feignProperties.getUrlBlackList();
             if (CollectionUtils.isEmpty(urlBlackList)) {
                 urlBlackList = new HashSet<>();
             }
-            if (StringUtil.checkPathMatch(urlBlackList, requestURI)) {
+            if (StringUtil.checkPathMatch(urlBlackList, requestUri)) {
                 return response;
             }
 
@@ -101,7 +95,7 @@ class FeignMoniLogInterceptor {
                 mlp.setAction(st.getMethodName());
             }
 
-            mlp.setTags(new String[]{"method", getMethod(request), "url", requestURI});
+            mlp.setTags(new String[]{"method", getMethod(request), "url", requestUri});
 
             mlp.setCost(cost);
             mlp.setException(ex);
@@ -125,7 +119,7 @@ class FeignMoniLogInterceptor {
             if (charset == null) {
                 charset = StandardCharsets.UTF_8;
             }
-            Response ret = null;
+            Response ret;
             try {
                 BufferingFeignClientResponse bufferedResp = new BufferingFeignClientResponse(response);
                 mlp.setSuccess(mlp.isSuccess() && response.status() < HttpStatus.BAD_REQUEST.value());
@@ -177,26 +171,27 @@ class FeignMoniLogInterceptor {
 
     /**
      * com.netflix.feign:feign-core 8.18.0 中没有调用的method与openfeign不同
+     *
      * @see feign.Request
      * openfeign定义如下
-    <blockquote><pre>
-    public final class feign.Request {
-    private final HttpMethod httpMethod;
-
-    private final String url;
-
-    private final Map<String, Collection<String>> headers;
-
-    private final Body body;
-
-    private final RequestTemplate requestTemplate;
-
-    public enum HttpMethod {
-    GET, HEAD, POST, PUT, DELETE, CONNECT, OPTIONS, TRACE, PATCH;
-    }
-    }
-     * </pre></blockquote><p>
+     * <blockquote><pre>
+     * public final class feign.Request {
+     * private final HttpMethod httpMethod;
      *
+     * private final String url;
+     *
+     * private final Map<String, Collection<String>> headers;
+     *
+     * private final Body body;
+     *
+     * private final RequestTemplate requestTemplate;
+     *
+     * public enum HttpMethod {
+     * GET, HEAD, POST, PUT, DELETE, CONNECT, OPTIONS, TRACE, PATCH;
+     * }
+     * }
+     * </pre></blockquote><p>
+     * <p>
      * 而com.netflix.feign.Request定义如下：
      * <blockquote><pre>
      *    public final class com.netflix.feign.Request {
@@ -214,18 +209,16 @@ class FeignMoniLogInterceptor {
      *     return new Request(method, url, headers, body, charset);
      *   }
      * }
-     * @param request
-     * @return
      */
     private static String getMethod(Request request) {
         // openfeign
         boolean hasHttpMethod = ReflectUtil.objectHasProperty(request, "httpMethod");
         if (hasHttpMethod) {
             Object propValue = ReflectUtil.getPropValue(request, "httpMethod");
-            return propValue!= null ? propValue.toString() : null;
+            return propValue != null ? propValue.toString() : null;
         }
         // netflix
-        return ReflectUtil.getPropValue(request, "method","unknown");
+        return ReflectUtil.getPropValue(request, "method", "unknown");
     }
 
     private static JSONObject formatRequestInfo(Request request) {
@@ -262,7 +255,7 @@ class FeignMoniLogInterceptor {
     }
 
     // 注意这里消耗的流
-    private static String getBodyParams(Request request){
+    private static String getBodyParams(Request request) {
         byte[] body = request.body();
         if (isBinary(body, request.charset())) {
             return "Binary data";
@@ -285,15 +278,15 @@ class FeignMoniLogInterceptor {
             return this.response;
         }
 
-        Response getResponse(String text,Charset charset) {
-            try{
+        Response getResponse(String text, Charset charset) {
+            try {
                 Class<?> cls = Class.forName("feign.Response$ByteArrayBody");
                 Method orNull = cls.getDeclaredMethod("orNull", String.class, Charset.class);
                 orNull.setAccessible(true);
                 Object body = orNull.invoke(null, text, charset);
                 // 通过反射获取Response.body,并修改值
-                ReflectUtil.setPropValue(this.response,"body" ,body, true);
-            }catch (Exception e){
+                ReflectUtil.setPropValue(this.response, "body", body, true);
+            } catch (Exception e) {
                 MoniLogUtil.innerDebug("setResponseBody error", e);
             }
             return this.response;

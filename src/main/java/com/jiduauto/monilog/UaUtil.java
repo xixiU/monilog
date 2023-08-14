@@ -6,12 +6,12 @@ import net.sf.uadetector.service.UADetectorServiceFactory;
 import org.apache.commons.lang3.StringUtils;
 
 class UaUtil {
-    private static final UserAgentStringParser parser = UADetectorServiceFactory.getResourceModuleParser();
+    private static final UserAgentStringParser PARSER = UADetectorServiceFactory.getResourceModuleParser();
     public static UserAgentType parseUserAgentType(String userAgent) {
         if (StringUtils.isBlank(userAgent)) {
             return UserAgentType.UNKNOWN;
         }
-        return parser.parse(userAgent).getType();
+        return PARSER.parse(userAgent).getType();
     }
 
 }

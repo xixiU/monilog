@@ -33,9 +33,6 @@ public final class HttpClientMoniLogInterceptor {
 
     /**
      * 该方法不可修改，包括可见级别
-     *
-     * @param builder
-     * @return
      */
     public static void addInterceptors(HttpClientBuilder builder) {
         builder.addInterceptorFirst(new RequestInterceptor()).addInterceptorLast(new ResponseInterceptor());
@@ -51,7 +48,7 @@ public final class HttpClientMoniLogInterceptor {
             String[] uriAndParams = requestLine.getUri().split("\\?");
             String path = uriAndParams[0];
             StackTraceElement st = ThreadUtil.getNextClassFromStack(HttpClientMoniLogInterceptor.class, "org.apache");
-            if (!isEnable(host, path, st.getClassName())) {
+            if (!isEnable(host, path, st == null ? null : st.getClassName())) {
                 return;
             }
             try {

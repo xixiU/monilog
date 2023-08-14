@@ -62,6 +62,7 @@ class GrpcMoniLogInterceptor {
                         context.put("logParser", logParser);
                     }
                 } catch (Exception e) {
+                    MoniLogUtil.innerDebug("GrpcMoniLogClientCall.start error", e);
                 }
 
                 params.setServiceCls(serviceCls);
@@ -177,6 +178,7 @@ class GrpcMoniLogInterceptor {
                     context.put("logParser", logParser);
                 }
             } catch (Exception e) {
+                MoniLogUtil.innerDebug("GrpcLogPrintServerInterceptor.interceptCall error", e);
             }
 
 

@@ -18,19 +18,19 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 class StringUtil {
-    private static final AntPathMatcher antPathMatcher = new AntPathMatcher();
-    private static final AntPathMatcher antClassMatcher = new AntPathMatcher(".");
+    private static final AntPathMatcher ANT_PATH_MATCHER = new AntPathMatcher();
+    private static final AntPathMatcher ANT_CLASS_MATCHER = new AntPathMatcher(".");
 
     public static boolean checkClassMatch(Collection<String> classList, String toCheck) {
-        return checkMatch(classList, toCheck, antClassMatcher);
+        return checkMatch(classList, toCheck, ANT_CLASS_MATCHER);
     }
 
     public static boolean checkPathMatch(Collection<String> pathList, String toCheckPath) {
-        return checkMatch(pathList, toCheckPath, antPathMatcher);
+        return checkMatch(pathList, toCheckPath, ANT_PATH_MATCHER);
     }
 
     private static boolean checkMatch(Collection<String> targets, String toCheck, AntPathMatcher matcher) {
-        if (CollectionUtils.isEmpty(targets)) {
+        if (CollectionUtils.isEmpty(targets) || StringUtils.isBlank(toCheck)) {
             return false;
         }
         for (String pattern : targets) {
@@ -43,9 +43,6 @@ class StringUtil {
 
     /**
      * 从注解中获取tag列表
-     *
-     * @param logTags
-     * @return
      */
     public static List<String> getTagList(MoniLogTags logTags) {
         if (logTags == null || logTags.tags() == null || logTags.tags().length == 0) {
@@ -163,8 +160,6 @@ class StringUtil {
 
     /**
      * 从url中提取query参数
-     * @param url
-     * @return
      */
     public static Map<String, Collection<String>> getQueryMap(String url) {
         if (StringUtils.isBlank(url) || !url.contains("?"))  {

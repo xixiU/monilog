@@ -6,7 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * @description: tag标记
+ * tag标记
  * @author rongjie.yuan
  * @date 2023/7/25 11:37
  */

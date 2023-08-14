@@ -97,16 +97,13 @@ final class ResultParseUtil {
         if (o instanceof CharSequence) {
             return !StringUtils.isBlank((CharSequence) o);
         }
-        return (!(o instanceof Map) || ((Map<?, ?>) o).size() != 0)
+        return (!(o instanceof Map) || !((Map<?, ?>) o).isEmpty())
                 && (!o.getClass().isArray() || Array.getLength(o) != 0)
-                && (!(o instanceof Collection) || ((Collection<?>) o).size() != 0);
+                && (!(o instanceof Collection) || !((Collection<?>) o).isEmpty());
     }
 
     /**
      * 根据解析策略解析解析的结果，提取更加精确的业务信息
-     * @param cl
-     * @param resultJson
-     * @param logParams
      */
     static void parseResultAndSet(LogParser cl, JSON resultJson, MoniLogParams logParams){
         //默认使用IfSuccess策略
