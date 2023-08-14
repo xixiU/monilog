@@ -219,6 +219,10 @@ class MoniLogUtil {
         if (excludePrint(logParams)) {
             return;
         }
+        if (properties.isDebug()) {
+            printer.logDetail(logParams);
+            return;
+        }
         MoniLogProperties.PrinterProperties printerCfg = properties.getPrinter();
         LogOutputLevel detailLogLevel = printerCfg.getDetailLogLevel();
         LogPoint logPoint = logParams.getLogPoint();
@@ -294,7 +298,7 @@ class MoniLogUtil {
             return true;
         }
         if (properties.isDebug()) {
-            return true;
+            return false;
         }
         MoniLogProperties.PrinterProperties printerCfg = properties.getPrinter();
         if (printerCfg == null || logParams == null) {
