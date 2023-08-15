@@ -40,7 +40,6 @@ class MoniLogAutoConfiguration {
     @Bean
     @ConditionalOnClass(name = {"org.springframework.data.redis.core.RedisTemplate"})
     MoniLogAppListener applicationPreparedListener() {
-        log.info(">>>monilog redis start...");
         return new MoniLogAppListener();
     }
 

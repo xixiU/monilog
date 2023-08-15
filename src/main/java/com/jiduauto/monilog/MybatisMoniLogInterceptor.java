@@ -27,7 +27,7 @@ class MybatisMoniLogInterceptor {
     })
     @Slf4j
     static class MybatisInterceptor implements Interceptor {
-        static final Map<String, Class<?>> CACHED_CLASS = new HashMap<>();
+        private static final Map<String, Class<?>> CACHED_CLASS = new HashMap<>();
 
 
         @SneakyThrows

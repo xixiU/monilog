@@ -7,7 +7,7 @@ ${AnsiColor.BLUE} |_|  |_|\___/|_| |_|_|_____\___/ \__, |
 ${AnsiColor.MAGENTA}                                  |___/
 ${AnsiColor.DEFAULT}Powered by Jidu-商业中台团队 version: ${AnsiColor.BRIGHT_GREEN} 1.0.2-SNAPSHOT
 ${AnsiColor.DEFAULT}current project: ${spring.application.name} current env: ${spring.profiles.active}
-${AnsiColor.DEFAULT}grafana大盘:https://grafana.jidudev.com/d/QMq2EUqVz/monilogxi-tong-quan-fang-wei-jian-kong?orgId=2&refresh=5s
+${AnsiColor.DEFAULT}Grafana大盘:https://grafana.jidudev.com/d/QMq2EUqVz/monilogxi-tong-quan-fang-wei-jian-kong?orgId=2&refresh=5s
 ${AnsiColor.DEFAULT}README:https://wiki.jiduauto.com/pages/viewpage.action?pageId=633398362
 ${AnsiColor.MAGENTA}-----------------------------------------------------
 ${AnsiColor.DEFAULT}

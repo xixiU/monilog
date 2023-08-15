@@ -23,7 +23,6 @@ class MoniLogProperties implements InitializingBean {
     /**
      * 服务名，默认取值：${spring.application.name}
      */
-    @Getter
     private String appName;
     /**
      * 开启核心监控，提供统一日志参数收集与aop参数收集.
