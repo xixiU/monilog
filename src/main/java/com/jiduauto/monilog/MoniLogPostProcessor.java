@@ -16,6 +16,7 @@ import org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -27,6 +28,7 @@ import java.util.Set;
  */
 @Slf4j
 @Component
+@ConditionalOnProperty(prefix = "monilog", name = "enable", matchIfMissing = true)
 class MoniLogPostProcessor implements BeanPostProcessor {
     static final Map<String, Class<?>> CACHED_CLASS = new HashMap<>();
     private static final String FEIGN_CLIENT = "feign.Client";
