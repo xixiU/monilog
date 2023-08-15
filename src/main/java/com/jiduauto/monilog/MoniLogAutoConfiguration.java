@@ -3,6 +3,7 @@ package com.jiduauto.monilog;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.interceptor.GrpcGlobalClientInterceptor;
 import net.devh.boot.grpc.server.interceptor.GrpcGlobalServerInterceptor;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.*;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -20,6 +21,7 @@ import org.springframework.core.annotation.Order;
 @ConditionalOnProperty(prefix = "monilog", name = "enable", matchIfMissing = true)
 @Slf4j
 @Import({SpringUtils.class})
+@AutoConfigureBefore({MoniLogPostProcessor.class})
 class MoniLogAutoConfiguration {
     @Order(Integer.MIN_VALUE)
     @Bean("__springUtils")
@@ -40,10 +42,10 @@ class MoniLogAutoConfiguration {
         return new MoniLogAppListener();
     }
 
-    @Bean
-    MoniLogPostProcessor moniLogPostProcessor(MoniLogProperties moniLogProperties) {
-        return new MoniLogPostProcessor(moniLogProperties);
-    }
+//    @Bean
+//    MoniLogPostProcessor moniLogPostProcessor(MoniLogProperties moniLogProperties) {
+//        return new MoniLogPostProcessor(moniLogProperties);
+//    }
 
     @Bean
     @ConditionalOnBean(MoniLogPrinter.class)
