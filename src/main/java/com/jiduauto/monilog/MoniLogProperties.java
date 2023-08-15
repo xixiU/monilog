@@ -6,7 +6,6 @@ import lombok.Setter;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.Set;
@@ -16,7 +15,6 @@ import java.util.Set;
  * @date 2023/07/12
  */
 @ConfigurationProperties("monilog")
-@ConditionalOnProperty(prefix = "monilog", name = "enable", matchIfMissing = true)
 @Getter
 @Setter
 class MoniLogProperties implements InitializingBean {
