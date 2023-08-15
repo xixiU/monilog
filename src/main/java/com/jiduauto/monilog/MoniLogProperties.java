@@ -23,6 +23,7 @@ class MoniLogProperties implements InitializingBean {
     /**
      * 服务名，默认取值：${spring.application.name}
      */
+    @Getter
     private String appName;
     /**
      * 开启核心监控，提供统一日志参数收集与aop参数收集.
@@ -107,6 +108,13 @@ class MoniLogProperties implements InitializingBean {
         return false;
     }
 
+    public String getAppName() {
+        if (SpringUtils.IS_READY && StringUtils.isBlank(this.appName)) {
+            System.setProperty("monilog.app-name", (this.appName = SpringUtils.getApplicationName()));
+        }
+        return this.appName;
+    }
+
     @Override
     public void afterPropertiesSet() throws Exception {
         if (printer.detailLogLevel == null) {
@@ -148,10 +156,7 @@ class MoniLogProperties implements InitializingBean {
         }
         feign.resetDefaultBoolExpr(globalDefaultBoolExpr);
         httpclient.resetDefaultBoolExpr(globalDefaultBoolExpr);
-
-        if (SpringUtils.IS_READY && StringUtils.isBlank(this.appName)) {
-            System.setProperty("monilog.app-name", (this.appName = SpringUtils.getApplicationName()));
-        }
+        getAppName();
     }
 
     @Getter
