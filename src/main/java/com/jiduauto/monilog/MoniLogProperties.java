@@ -23,6 +23,7 @@ class MoniLogProperties implements InitializingBean {
     /**
      * 服务名，默认取值：${spring.application.name}
      */
+    @Getter
     private String appName;
     /**
      * 开启核心监控，提供统一日志参数收集与aop参数收集.
@@ -89,14 +90,6 @@ class MoniLogProperties implements InitializingBean {
      */
     private HttpClientProperties httpclient = new HttpClientProperties();
 
-    public String getAppName() {
-        if (StringUtils.isNotBlank(this.appName)) {
-            return this.appName;
-        }
-        System.setProperty("monilog.app-name", (this.appName = SpringUtils.getApplicationName()));
-        return this.appName;
-    }
-
     boolean isComponentEnable(String componentName, Boolean componentEnable) {
         if (!Boolean.TRUE.equals(componentEnable)) {
             return false;
@@ -113,6 +106,19 @@ class MoniLogProperties implements InitializingBean {
             return !componentExcludes.contains("*") && !componentExcludes.contains(componentName);
         }
         return false;
+    }
+
+    public String getAppName() {
+        if (StringUtils.isNotBlank(this.appName)) {
+            return this.appName;
+        }
+        String app = System.getProperty("monilog.app-name");
+        if (SpringUtils.IS_READY) {
+            System.setProperty("monilog.app-name", (this.appName = SpringUtils.getApplicationName()));
+        } else if (StringUtils.isNotBlank(app)) {
+            return (this.appName = app);
+        }
+        return this.appName;
     }
 
     @Override
@@ -156,6 +162,7 @@ class MoniLogProperties implements InitializingBean {
         }
         feign.resetDefaultBoolExpr(globalDefaultBoolExpr);
         httpclient.resetDefaultBoolExpr(globalDefaultBoolExpr);
+        getAppName();
     }
 
     @Getter
