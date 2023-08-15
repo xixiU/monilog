@@ -27,8 +27,8 @@ class RedisMoniLogInterceptor {
 
     @AllArgsConstructor
     static class JedisTemplateInterceptor implements MethodInterceptor {
-        private final RedisSerializer keySerializer;
-        private final RedisSerializer valueSerializer;
+        private final RedisSerializer<?> keySerializer;
+        private final RedisSerializer<?> valueSerializer;
         private final MoniLogProperties.RedisProperties redisProperties;
 
         @Override
@@ -219,7 +219,7 @@ class RedisMoniLogInterceptor {
         long valueLen;
     }
 
-    private static Object[] deserializeRedis(RedisSerializer serializer, Object[] args) {
+    private static Object[] deserializeRedis(RedisSerializer<?> serializer, Object[] args) {
         if (serializer == null || args == null) {
             return args;
         }
@@ -235,7 +235,7 @@ class RedisMoniLogInterceptor {
         return result;
     }
 
-    private static String parseJedisMaybeKey(RedisSerializer serializer, Object[] args) {
+    private static String parseJedisMaybeKey(RedisSerializer<?> serializer, Object[] args) {
         if (args == null) {
             return null;
         }

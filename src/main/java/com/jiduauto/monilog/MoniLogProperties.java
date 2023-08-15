@@ -15,8 +15,8 @@ import java.util.Set;
  * @author yp
  * @date 2023/07/12
  */
-@ConfigurationProperties("monilog")
 @ConditionalOnProperty(prefix = "monilog", name = "enable", matchIfMissing = true)
+@ConfigurationProperties("monilog")
 @Getter
 @Setter
 class MoniLogProperties implements InitializingBean {
@@ -89,14 +89,6 @@ class MoniLogProperties implements InitializingBean {
      */
     private HttpClientProperties httpclient = new HttpClientProperties();
 
-    public String getAppName() {
-        if (StringUtils.isNotBlank(this.appName)) {
-            return this.appName;
-        }
-        System.setProperty("monilog.appName", (this.appName = SpringUtils.getApplicationName()));
-        return this.appName;
-    }
-
     boolean isComponentEnable(String componentName, Boolean componentEnable) {
         if (!Boolean.TRUE.equals(componentEnable)) {
             return false;
@@ -113,6 +105,19 @@ class MoniLogProperties implements InitializingBean {
             return !componentExcludes.contains("*") && !componentExcludes.contains(componentName);
         }
         return false;
+    }
+
+    public String getAppName() {
+        if (StringUtils.isNotBlank(this.appName)) {
+            return this.appName;
+        }
+        String app = System.getProperty("monilog.app-name");
+        if (SpringUtils.IS_READY) {
+            System.setProperty("monilog.app-name", (this.appName = SpringUtils.application));
+        } else if (StringUtils.isNotBlank(app)) {
+            return (this.appName = app);
+        }
+        return this.appName;
     }
 
     @Override
@@ -156,11 +161,17 @@ class MoniLogProperties implements InitializingBean {
         }
         feign.resetDefaultBoolExpr(globalDefaultBoolExpr);
         httpclient.resetDefaultBoolExpr(globalDefaultBoolExpr);
+        getAppName();
     }
 
     @Getter
     @Setter
     static class PrinterProperties {
+        /**
+         * 流量出入口的的摘要日志输出级别总开关，默认仅异常时输出
+         */
+        private LogOutputLevel digestLogLevel = LogOutputLevel.always;
+
         /**
          * 流量出入口的的详情日志输出级别总开关，默认仅异常时输出
          */

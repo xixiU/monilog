@@ -20,6 +20,7 @@ class ProxyUtils {
      * @param interceptor 代理方法
      * @return 代理类
      */
+    @SuppressWarnings("unchecked")
     static <T> T getProxy(T obj, MethodInterceptor interceptor) {
         ProxyFactory proxy = new ProxyFactory(obj);
         proxy.setProxyTargetClass(true);
@@ -31,6 +32,7 @@ class ProxyUtils {
         return copyAnnotation(anno, null);
     }
 
+    @SuppressWarnings("unchecked")
     static <T extends Annotation> T copyAnnotation(T origin, Map<String, Object> specifiedValues) {
         final String memberValuesFieldName = "memberValues";
         try {

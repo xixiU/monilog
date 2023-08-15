@@ -17,10 +17,6 @@ class ThreadUtil {
 
     /**
      * 从当前线程栈中，按先后顺序找到指定类的下一个类对应的栈帧，返回找到的第一个栈帧
-     *
-     * @param currentCls
-     * @param excludePkgPrefixs
-     * @return
      */
     static StackTraceElement getNextClassFromStack(Class<?> currentCls, String... excludePkgPrefixs) {
         if (currentCls == null) {

@@ -13,19 +13,16 @@ import java.util.Arrays;
 public interface MoniLogPrinter {
     /**
      * 打印摘要日志
-     * @param p
      */
     void logDigest(MoniLogParams p);
 
     /**
      * 打印详情日志
-     * @param p
      */
     void logDetail(MoniLogParams p);
 
     /**
      * 打印超时日志
-     * @param p
      */
     default void logRtTooLong(MoniLogParams p) {
         if (p == null) {
@@ -46,8 +43,6 @@ public interface MoniLogPrinter {
 
     /**
      * 获取logger实例，默认会取相关业务类的logger实例
-     * @param p
-     * @return
      */
     default Logger getLogger(MoniLogParams p) {
         Class<?> serviceCls = p == null ? MoniLogUtil.class : p.getServiceCls();

@@ -16,18 +16,18 @@ import org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.core.Ordered;
-import org.springframework.core.PriorityOrdered;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * spring bean的实例化过程参考：https://blog.csdn.net/m0_37588577/article/details/127639584
+ * spring bean的实例化过程参考：<a href="https://blog.csdn.net/m0_37588577/article/details/127639584">...</a>
  */
 @Slf4j
-class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered {
+class MoniLogPostProcessor implements BeanPostProcessor {
     static final Map<String, Class<?>> CACHED_CLASS = new HashMap<>();
     private static final String FEIGN_CLIENT = "feign.Client";
     private static final String XXL_JOB = "com.xxl.job.core.handler.IJobHandler";
@@ -130,11 +130,6 @@ class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered {
         } catch (Exception e) {
             return null;
         }
-    }
-
-    @Override
-    public int getOrder() {
-        return Ordered.HIGHEST_PRECEDENCE;
     }
 
 

@@ -13,7 +13,6 @@ import org.springframework.core.annotation.Order;
 
 /**
  * @author rongjie.yuan
- * @description: 启动类
  * @date 2023/7/28 17:06
  */
 @Configuration
@@ -22,6 +21,10 @@ import org.springframework.core.annotation.Order;
 @Slf4j
 @Import({SpringUtils.class})
 class MoniLogAutoConfiguration {
+    @Bean
+    MoniLogPostProcessor moniLogPostProcessor(MoniLogProperties moniLogProperties) {
+        return new MoniLogPostProcessor(moniLogProperties);
+    }
     @Order(Integer.MIN_VALUE)
     @Bean("__springUtils")
     SpringUtils springUtils() {
@@ -35,14 +38,9 @@ class MoniLogAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnClass(name = {"org.springframework.data.redis.core.RedisTemplate"})
     MoniLogAppListener applicationPreparedListener() {
-        log.info(">>>monilog mybatis start...");
         return new MoniLogAppListener();
-    }
-
-    @Bean
-    MoniLogPostProcessor moniLogPostProcessor(MoniLogProperties moniLogProperties) {
-        return new MoniLogPostProcessor(moniLogProperties);
     }
 
     @Bean
