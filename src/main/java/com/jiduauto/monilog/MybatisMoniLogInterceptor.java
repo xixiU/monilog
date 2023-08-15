@@ -16,6 +16,8 @@ import org.apache.ibatis.session.ResultHandler;
 
 import java.lang.reflect.Proxy;
 import java.sql.Statement;
+import java.util.HashMap;
+import java.util.Map;
 
 
 class MybatisMoniLogInterceptor {
@@ -25,6 +27,8 @@ class MybatisMoniLogInterceptor {
     })
     @Slf4j
     static class MybatisInterceptor implements Interceptor {
+        static final Map<String, Class<?>> CACHED_CLASS = new HashMap<>();
+
 
         @SneakyThrows
         @Override
@@ -97,7 +101,7 @@ class MybatisMoniLogInterceptor {
                     MetaObject metaObject = SystemMetaObject.forObject(statementHandler);
                     MappedStatement mappedStatement = (MappedStatement) metaObject.getValue("delegate.mappedStatement");
                     String mapperId = mappedStatement.getId();
-                    serviceCls = Class.forName(mapperId.substring(0, mapperId.lastIndexOf('.')));
+                    serviceCls = loadCls(mapperId.substring(0, mapperId.lastIndexOf('.')));
                     methodName = mapperId.substring(mapperId.lastIndexOf('.') + 1);
                     BoundSql boundSql = statementHandler.getBoundSql();
                     //去除sql中的注释、换行、多余空格等
@@ -111,6 +115,20 @@ class MybatisMoniLogInterceptor {
             info.methodName = methodName;
             info.sql = sql;
             return info;
+        }
+
+        private static Class<?> loadCls(String className){
+            Class<?> aClass = CACHED_CLASS.get(className);
+            if (aClass != null) {
+                return aClass;
+            }
+            try {
+                aClass = Class.forName(className);
+                CACHED_CLASS.put(className, aClass);
+            } catch (ClassNotFoundException ignored) {
+
+            }
+            return aClass;
         }
 
         private static Object getStatementHandlerObject(Invocation invocation) {
