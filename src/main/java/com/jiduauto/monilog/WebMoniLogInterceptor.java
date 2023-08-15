@@ -45,6 +45,10 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
     @Override
     public void doFilterInternal(@NonNull HttpServletRequest httpServletRequest, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws IOException, ServletException {
         MoniLogProperties.WebProperties webProperties = moniLogProperties.getWeb();
+        if (webProperties == null) {
+            filterChain.doFilter(httpServletRequest, response);
+            return;
+        }
         boolean isMultipart;
         HttpServletRequest request;
         try{
@@ -60,21 +64,27 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
         MoniLogParams logParams = new MoniLogParams();
         HandlerMethod method = null;
         long startTime = System.currentTimeMillis();
+
         Map<String, String> requestHeaderMap = new HashMap<>();
-        try {
-            String requestUri = request.getRequestURI();
+        String requestUri = request.getRequestURI();
+        Set<String> urlBlackList = webProperties.getUrlBlackList();
+        if (checkPathMatch(urlBlackList, requestUri)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-            Set<String> urlBlackList = webProperties.getUrlBlackList();
-            if (checkPathMatch(urlBlackList, requestUri)) {
-                filterChain.doFilter(request, response);  //TODO 如果这一行抛了业务异常，怎么办？
-                return;
-            }
+        try{
             method = getHandlerMethod(request);
-            if (method == null) {
-                filterChain.doFilter(request, response);
-                return;
-            }
+        }catch (Exception e) {
+            MoniLogUtil.innerDebug("getHandlerMethod error", e);
+        }
 
+        if (method == null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        try {
             MoniLogTags logTags = ReflectUtil.getAnnotation(MoniLogTags.class, method.getBeanType(), method.getMethod());
             List<String> tagList = StringUtil.getTagList(logTags);
             if (tagList != null && tagList.size() > 1) {
