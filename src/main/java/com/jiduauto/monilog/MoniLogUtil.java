@@ -23,6 +23,7 @@ class MoniLogUtil {
     private static final ExecutorService EXECUTOR = new ThreadPoolExecutor(10, 20,
             3L, TimeUnit.MINUTES, new ArrayBlockingQueue<>(100),
             new NamedThreadFactory("MoniLogUtil"), new ThreadPoolExecutor.CallerRunsPolicy());
+
     /**
      * 组件监控前缀
      */
@@ -67,7 +68,7 @@ class MoniLogUtil {
         if (logProperties != null && !logProperties.isDebug()) {
             return;
         }
-        String activeProfile = SpringUtils.getActiveProfile();
+        String activeProfile = SpringUtils.activeProfile;
         // 仅对dev,test生效，线上永远是false.
         if (!"dev".equalsIgnoreCase(activeProfile) && !"test".equalsIgnoreCase(activeProfile)) {
             return;
@@ -181,7 +182,7 @@ class MoniLogUtil {
         if (exceptionMsg.length() > maxLen) {
             exceptionMsg = exceptionMsg.substring(0, maxLen) + "...";
         }
-        return TagBuilder.of("result", success ? "success" : "error").add("application", SpringUtils.getApplicationName()).add("logPoint", logParams.getLogPoint().name()).add("env", SpringUtils.getActiveProfile()).add("service", logParams.getService()).add("action", logParams.getAction()).add("msgCode", logParams.getMsgCode()).add("cost", String.valueOf(logParams.getCost())).add("exception", exceptionMsg);
+        return TagBuilder.of("result", success ? "success" : "error").add("application", SpringUtils.application).add("logPoint", logParams.getLogPoint().name()).add("env", SpringUtils.activeProfile).add("service", logParams.getService()).add("action", logParams.getAction()).add("msgCode", logParams.getMsgCode()).add("cost", String.valueOf(logParams.getCost())).add("exception", exceptionMsg);
     }
 
     /**

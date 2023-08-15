@@ -114,7 +114,7 @@ class MoniLogProperties implements InitializingBean {
         }
         String app = System.getProperty("monilog.app-name");
         if (SpringUtils.IS_READY) {
-            System.setProperty("monilog.app-name", (this.appName = SpringUtils.getApplicationName()));
+            System.setProperty("monilog.app-name", (this.appName = SpringUtils.application));
         } else if (StringUtils.isNotBlank(app)) {
             return (this.appName = app);
         }

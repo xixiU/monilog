@@ -34,11 +34,26 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
     private static ApplicationContext applicationContext;
 
     static boolean IS_READY = false;
+
+    /**
+     * 应用名
+     */
+    public static String application = null;
+
+    /**
+     * 环境
+     */
+    public static String activeProfile = null;
+
+
     @SuppressWarnings("NullableProblems")
     @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
         SpringUtils.beanFactory = beanFactory;
         IS_READY |= applicationContext != null;
+        SpringUtils.application = getApplicationName();
+        SpringUtils.activeProfile = getActiveProfile();
+
     }
 
     @SuppressWarnings("NullableProblems")
