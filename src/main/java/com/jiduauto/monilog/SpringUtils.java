@@ -33,16 +33,22 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
      */
     private static ApplicationContext applicationContext;
 
+    private static boolean initialized = false;
+
     @SuppressWarnings("NullableProblems")
     @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
         SpringUtils.beanFactory = beanFactory;
+        initialized |= applicationContext != null;
+        setAppname();
     }
 
     @SuppressWarnings("NullableProblems")
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) {
         SpringUtils.applicationContext = applicationContext;
+        initialized |= beanFactory != null;
+        setAppname();
     }
 
     /**
@@ -159,5 +165,16 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
             }
         }
         return false;
+    }
+
+    private static void setAppname() {
+        if (!initialized) {
+            return;
+        }
+        MoniLogProperties bean = getBeanWithoutException(MoniLogProperties.class);
+        if (bean == null) {
+            return;
+        }
+        bean.getAppName();
     }
 }
