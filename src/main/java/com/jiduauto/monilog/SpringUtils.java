@@ -114,7 +114,7 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
      * @since 5.7.12
      */
     static String getApplicationName() {
-        String appName = getProperty("monilog.appName");
+        String appName = getProperty("monilog.app-name");
         if (StringUtils.isNotBlank(appName)) {
             return appName;
         }
