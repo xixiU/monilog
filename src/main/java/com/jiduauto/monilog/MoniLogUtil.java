@@ -181,15 +181,33 @@ class MoniLogUtil {
         printer.logRtTooLong(logParams);
     }
 
+    private static LogOutputLevel getDigestLogLevel(){
+        MoniLogProperties properties = getLogProperties();
+        if (properties == null) {
+            return LogOutputLevel.always;
+        }
+        MoniLogProperties.PrinterProperties printerCfg = properties.getPrinter();
+        if (printerCfg == null) {
+            return LogOutputLevel.always;
+        }
+        LogOutputLevel detailLogLevel = printerCfg.getDigestLogLevel();
+        if (detailLogLevel == null) {
+            return LogOutputLevel.always;
+        }
+        return detailLogLevel;
+    }
     /**
      * 打印摘要日志
      */
     private static void printDigestLog(MoniLogParams logParams) {
         MoniLogPrinter printer = getLogPrinter();
-        if (printer == null) {
+        if (excludePrint(logParams)) {
             return;
         }
-        printer.logDigest(logParams);
+        boolean doPrinter = printLevelCheckPass(getDigestLogLevel(), logParams);
+        if (doPrinter) {
+            printer.logDigest(logParams);
+        }
     }
 
     /**
@@ -198,7 +216,7 @@ class MoniLogUtil {
     private static void printDetailLog(MoniLogParams logParams) {
         MoniLogPrinter printer = getLogPrinter();
         MoniLogProperties properties = getLogProperties();
-        if (printer == null || properties == null) {
+        if (excludePrint(logParams)) {
             return;
         }
         if (properties.isDebug()) {
@@ -208,21 +226,6 @@ class MoniLogUtil {
         MoniLogProperties.PrinterProperties printerCfg = properties.getPrinter();
         LogOutputLevel detailLogLevel = printerCfg.getDetailLogLevel();
         LogPoint logPoint = logParams.getLogPoint();
-        if (logPoint == null) {
-            return;
-        }
-        Set<String> infoExcludeComponents = printerCfg.getInfoExcludeComponents();
-        Set<String> infoExcludeServices = printerCfg.getInfoExcludeServices();
-        Set<String> infoExcludeActions = printerCfg.getInfoExcludeActions();
-        if (StringUtil.checkPathMatch(infoExcludeComponents, logPoint.name())) {
-            return;
-        }
-        if (StringUtil.checkPathMatch(infoExcludeServices, logParams.getService())) {
-            return;
-        }
-        if (StringUtil.checkPathMatch(infoExcludeActions, logParams.getAction())) {
-            return;
-        }
 
         switch (logPoint) {
             case http_server:
@@ -265,21 +268,7 @@ class MoniLogUtil {
         if (detailLogLevel == null) {
             detailLogLevel = LogOutputLevel.onException;
         }
-        boolean doPrinter = false;
-        switch (detailLogLevel) {
-            case always:
-                doPrinter = true;
-                break;
-            case onFail:
-                doPrinter = !logParams.isSuccess() || logParams.getException() != null;
-                break;
-            case onException:
-                doPrinter = logParams.getException() != null;
-                break;
-            case none:
-            default:
-                break;
-        }
+        boolean doPrinter = printLevelCheckPass(detailLogLevel, logParams);
 
         if (doPrinter) {
             printer.logDetail(logParams);
@@ -297,6 +286,57 @@ class MoniLogUtil {
             MoniLogUtil.innerDebug(":no MoniLogPrinter instance found", e);
         }
         return (logPrinter = printer);
+    }
+
+    /**
+     * 校验是否在排除清单中,若返回true，则不需要打印摘要日志与详情日志
+     */
+    private static boolean excludePrint(MoniLogParams logParams){
+        MoniLogPrinter printer = getLogPrinter();
+        MoniLogProperties properties = getLogProperties();
+        if (printer == null || properties == null) {
+            return true;
+        }
+        if (properties.isDebug()) {
+            return false;
+        }
+        MoniLogProperties.PrinterProperties printerCfg = properties.getPrinter();
+        if (printerCfg == null || logParams == null) {
+            return true;
+        }
+        LogPoint logPoint = logParams.getLogPoint();
+        if (logPoint == null) {
+            return true;
+        }
+        Set<String> infoExcludeComponents = printerCfg.getInfoExcludeComponents();
+        Set<String> infoExcludeServices = printerCfg.getInfoExcludeServices();
+        Set<String> infoExcludeActions = printerCfg.getInfoExcludeActions();
+        if (StringUtil.checkPathMatch(infoExcludeComponents, logPoint.name())) {
+            return true;
+        }
+        if (StringUtil.checkPathMatch(infoExcludeServices, logParams.getService())) {
+            return true;
+        }
+        return StringUtil.checkPathMatch(infoExcludeActions, logParams.getAction());
+    }
+
+    private static boolean printLevelCheckPass(LogOutputLevel detailLogLevel, MoniLogParams logParams){
+        boolean doPrinter = false;
+        switch (detailLogLevel) {
+            case always:
+                doPrinter = true;
+                break;
+            case onFail:
+                doPrinter = !logParams.isSuccess() || logParams.getException() != null;
+                break;
+            case onException:
+                doPrinter = logParams.getException() != null;
+                break;
+            case none:
+            default:
+                break;
+        }
+        return doPrinter;
     }
 
     private static MoniLogProperties getLogProperties() {
