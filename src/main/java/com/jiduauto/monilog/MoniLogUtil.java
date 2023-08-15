@@ -1,9 +1,13 @@
 package com.jiduauto.monilog;
 
 import com.metric.MetricMonitor;
+import io.micrometer.core.instrument.util.NamedThreadFactory;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -14,6 +18,12 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 class MoniLogUtil {
     /**
+     * 线程的存活时间设置3min，避免频繁创建与销毁线程
+     */
+    private static final ExecutorService EXECUTOR = new ThreadPoolExecutor(10, 20,
+            3L, TimeUnit.MINUTES, new ArrayBlockingQueue<>(100),
+            new NamedThreadFactory("MoniLogUtil"), new ThreadPoolExecutor.CallerRunsPolicy());
+    /**
      * 组件监控前缀
      */
     private static final String BUSINESS_MONITOR_PREFIX = "business_monitor_";
@@ -23,6 +33,10 @@ class MoniLogUtil {
     private static MoniLogProperties logProperties = null;
 
     public static void log(MoniLogParams logParams) {
+        EXECUTOR.submit(()->syncLog(logParams));
+    }
+
+    private static void syncLog(MoniLogParams logParams){
         try {
             doMonitor(logParams);
         } catch (Exception e) {
