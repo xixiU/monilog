@@ -27,8 +27,6 @@ import java.util.Set;
  * spring bean的实例化过程参考：<a href="https://blog.csdn.net/m0_37588577/article/details/127639584">...</a>
  */
 @Slf4j
-@Component
-@ConditionalOnProperty(prefix = "monilog", name = "enable", matchIfMissing = true)
 class MoniLogPostProcessor implements BeanPostProcessor {
     static final Map<String, Class<?>> CACHED_CLASS = new HashMap<>();
     private static final String FEIGN_CLIENT = "feign.Client";
