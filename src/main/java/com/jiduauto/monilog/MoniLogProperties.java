@@ -126,15 +126,18 @@ class MoniLogProperties implements InitializingBean {
     public void afterPropertiesSet() throws Exception {
         ApplicationContext applicationContext = SpringUtils.getApplicationContext();
         BindResult<MoniLogProperties> monilogBindResult = Binder.get(applicationContext.getEnvironment()).bind("monilog", MoniLogProperties.class);
-        MoniLogProperties moniLogProperties = monilogBindResult.get();
-        Field[] fields = MoniLogProperties.class.getDeclaredFields();
-        for (Field field : fields) {
-            try {
-                field.setAccessible(true);
-                field.set(this, field.get(moniLogProperties));
-            } catch (IllegalAccessException e) {
-                // 处理异常
-                MoniLogUtil.innerDebug("afterPropertiesSet error", e);
+        if (monilogBindResult.isBound()) {
+            // 当存在属性值进行属性替换，防止配置不生效
+            MoniLogProperties moniLogProperties = monilogBindResult.get();
+            Field[] fields = MoniLogProperties.class.getDeclaredFields();
+            for (Field field : fields) {
+                try {
+                    field.setAccessible(true);
+                    field.set(this, field.get(moniLogProperties));
+                } catch (IllegalAccessException e) {
+                    // 处理异常
+                    MoniLogUtil.innerDebug("afterPropertiesSet error", e);
+                }
             }
         }
 
