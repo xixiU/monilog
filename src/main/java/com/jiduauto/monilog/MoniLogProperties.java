@@ -7,7 +7,11 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.BindResult;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.context.ApplicationContext;
 
+import java.lang.reflect.Field;
 import java.util.Set;
 
 /**
@@ -120,6 +124,20 @@ class MoniLogProperties implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
+        ApplicationContext applicationContext = SpringUtils.getApplicationContext();
+        BindResult<MoniLogProperties> monilogBindResult = Binder.get(applicationContext.getEnvironment()).bind("monilog", MoniLogProperties.class);
+        MoniLogProperties moniLogProperties = monilogBindResult.get();
+        Field[] fields = MoniLogProperties.class.getDeclaredFields();
+        for (Field field : fields) {
+            try {
+                field.setAccessible(true);
+                field.set(this, field.get(moniLogProperties));
+            } catch (IllegalAccessException e) {
+                // 处理异常
+                MoniLogUtil.innerDebug("afterPropertiesSet error", e);
+            }
+        }
+
         if (printer.detailLogLevel == null) {
             printer.detailLogLevel = LogOutputLevel.onException;
         }
@@ -161,6 +179,7 @@ class MoniLogProperties implements InitializingBean {
         httpclient.resetDefaultBoolExpr(globalDefaultBoolExpr);
         getAppName();
     }
+
 
     @Getter
     @Setter

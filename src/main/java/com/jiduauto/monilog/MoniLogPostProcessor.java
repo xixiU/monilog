@@ -16,8 +16,8 @@ import org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Component;
+import org.springframework.core.Ordered;
+import org.springframework.core.PriorityOrdered;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,7 +27,7 @@ import java.util.Set;
  * spring bean的实例化过程参考：<a href="https://blog.csdn.net/m0_37588577/article/details/127639584">...</a>
  */
 @Slf4j
-class MoniLogPostProcessor implements BeanPostProcessor {
+class MoniLogPostProcessor implements BeanPostProcessor ,PriorityOrdered{
     static final Map<String, Class<?>> CACHED_CLASS = new HashMap<>();
     private static final String FEIGN_CLIENT = "feign.Client";
     private static final String XXL_JOB = "com.xxl.job.core.handler.IJobHandler";
@@ -70,7 +70,7 @@ class MoniLogPostProcessor implements BeanPostProcessor {
                 log.info(">>>monilog httpclient start skip...");
             }
         } else if (isTargetBean(bean, MQ_ADMIN) || isTargetBean(bean, MQ_LISTENER_CONTAINER)) {
-            log.info(">>>monilog recoketmq start...");
+            log.info(">>>monilog rocket start...");
             MoniLogProperties.RocketMqProperties rocketmqProperties = moniLogProperties.getRocketmq();
             if (!rocketmqProperties.isEnable()) {
                 return bean;
@@ -147,5 +147,10 @@ class MoniLogPostProcessor implements BeanPostProcessor {
             } catch (Exception ignore) {
             }
         }
+    }
+
+    @Override
+    public int getOrder() {
+        return Ordered.HIGHEST_PRECEDENCE;
     }
 }
