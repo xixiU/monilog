@@ -34,3 +34,6 @@ build/
 /logs/
 *.log*
 *.txt
+
+### ###
+.DS_Store
