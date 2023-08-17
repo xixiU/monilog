@@ -35,7 +35,7 @@ class MoniLogBanner {
 
     public void printBanner() {
         Resource resource = resourceLoader.getResource(BANNER_LOCATION);
-        try(BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()));) {
+        try(BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 line = replacePlaceholders(line);
