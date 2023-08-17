@@ -70,7 +70,7 @@ class MoniLogPostProcessor implements BeanPostProcessor ,PriorityOrdered{
                 log.info(">>>monilog httpclient start skip...");
             }
         } else if (isTargetBean(bean, MQ_ADMIN) || isTargetBean(bean, MQ_LISTENER_CONTAINER)) {
-            log.info(">>>monilog rocket start...");
+            log.info(">>>monilog rocketmq start...");
             MoniLogProperties.RocketMqProperties rocketmqProperties = moniLogProperties.getRocketmq();
             if (!rocketmqProperties.isEnable()) {
                 return bean;

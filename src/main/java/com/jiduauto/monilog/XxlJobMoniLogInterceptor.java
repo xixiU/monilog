@@ -18,7 +18,7 @@ class XxlJobMoniLogInterceptor {
         return MoniLogAop.processAround(pjp, buildLogParserForJob(), LogPoint.xxljob);
     }
 
-    //注解继承式任务
+    //处理继承式任务
     static IJobHandler getProxyBean(IJobHandler bean) {
         return ProxyUtils.getProxy(bean, invocation -> {
             Method method = invocation.getMethod();
