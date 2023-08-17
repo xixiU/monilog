@@ -12,19 +12,26 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
  * @author yepei
  */
 class ReflectUtil {
+    private static final ConcurrentHashMap<String, Boolean> CACHE = new ConcurrentHashMap<>();
 
-    // TODO rongjie.yuan  2023/8/17 10:33 可以缓存优化
-    public static boolean objectHasProperty(Object obj, String propertyName) {
+    public static boolean objectHasProperty(Class<?> cls, String propertyName) {
+        String clsName = cls.getName();
         try {
-            Field field = obj.getClass().getDeclaredField(propertyName);
+            if (CACHE.containsKey(clsName)) {
+                return CACHE.get(clsName);
+            }
+            Field field = cls.getDeclaredField(propertyName);
+            CACHE.put(clsName, true);
             return true;
         } catch (NoSuchFieldException e) {
+            CACHE.put(clsName, false);
             return false;
         }
     }
