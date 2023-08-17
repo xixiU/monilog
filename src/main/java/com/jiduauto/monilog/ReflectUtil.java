@@ -22,7 +22,7 @@ class ReflectUtil {
     private static final ConcurrentHashMap<String, Boolean> CACHE = new ConcurrentHashMap<>();
 
     public static boolean objectHasProperty(Class<?> cls, String propertyName) {
-        String clsName = cls.getName();
+        String clsName = cls.getCanonicalName();
         try {
             if (CACHE.containsKey(clsName)) {
                 return CACHE.get(clsName);
