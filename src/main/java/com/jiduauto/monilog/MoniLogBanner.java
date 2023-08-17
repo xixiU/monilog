@@ -34,16 +34,14 @@ class MoniLogBanner {
     }
 
     public void printBanner() {
-        try {
-            Resource resource = resourceLoader.getResource(BANNER_LOCATION);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()));
+        Resource resource = resourceLoader.getResource(BANNER_LOCATION);
+        try(BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()));) {
             String line;
             while ((line = reader.readLine()) != null) {
                 line = replacePlaceholders(line);
                 line = AnsiOutput.toString(line); // 处理颜色设置
                 out.println(line);
             }
-            reader.close();
         } catch (IOException e) {
             // 处理异常
         }
