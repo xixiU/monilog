@@ -9,6 +9,7 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 
 /**
@@ -25,7 +26,7 @@ class MoniLogAutoConfiguration {
     MoniLogPostProcessor moniLogPostProcessor(MoniLogProperties moniLogProperties) {
         return new MoniLogPostProcessor(moniLogProperties);
     }
-    @Order(Integer.MIN_VALUE)
+    @Order(Ordered.HIGHEST_PRECEDENCE)
     @Bean("__springUtils")
     SpringUtils springUtils() {
         return new SpringUtils();
