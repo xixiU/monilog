@@ -12,6 +12,8 @@ import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.context.ApplicationContext;
 
 import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -32,7 +34,7 @@ class MoniLogProperties implements InitializingBean {
     private boolean enable = true;
 
     /**
-     * 调试模式
+     * 调试开关,仅对dev/test生效,其他所有环境写死false，打印框架异常。
      */
     private boolean debug = true;
 
@@ -40,6 +42,11 @@ class MoniLogProperties implements InitializingBean {
      * 记录耗时长的操作
      */
     private boolean monitorLongRt = true;
+
+    /**
+     * 是否开启 LOGO
+     */
+    private boolean banner = true;
 
     /**
      * 解析调用结果的默认表达式，默认校验返回编码是否等于0或者200有一个匹配即认为调用成功,多个表达式直接逗号分割.
@@ -181,6 +188,19 @@ class MoniLogProperties implements InitializingBean {
         feign.resetDefaultBoolExpr(globalDefaultBoolExpr);
         httpclient.resetDefaultBoolExpr(globalDefaultBoolExpr);
         getAppName();
+        // banner输出
+        printBanner();
+    }
+
+    private void printBanner() {
+        if (!banner) {
+            return;
+        }
+        Map<String, String> placeholders = new HashMap<>();
+        placeholders.put("spring.profiles.active", SpringUtils.activeProfile);
+        placeholders.put("spring.application.name", getAppName());
+        placeholders.put("monilog.version", MoniLogAutoConfiguration.class.getPackage().getImplementationVersion());
+        new MoniLogBanner(placeholders);
     }
 
 

@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
  */
 class ReflectUtil {
 
+    // TODO rongjie.yuan  2023/8/17 10:33 可以缓存优化
     public static boolean objectHasProperty(Object obj, String propertyName) {
         try {
             Field field = obj.getClass().getDeclaredField(propertyName);
@@ -63,23 +64,6 @@ class ReflectUtil {
         return annotation;
     }
 
-    static Object invokeMethod(Object service, String methodName, Object... args) {
-        if (args == null) {
-            args = new Object[]{};
-        }
-        Method method = getMethod(service, methodName, args);
-        method.setAccessible(true);
-        try {
-            return method.invoke(service, args);
-        } catch (Exception e) {
-            throw e instanceof RuntimeException ? (RuntimeException) e : new RuntimeException(e);
-        }
-    }
-
-    private static Method getMethod(Object service, String methodName, Object[] args) {
-        Class<?> ownerCls = service instanceof Class ? (Class<?>) service : service.getClass();
-        return getClsMethod(ownerCls, methodName, args);
-    }
 
     static Method getMethodWithoutException(Object service, String methodName, Object[] args) {
         Class<?> ownerCls = service instanceof Class ? (Class<?>) service : service.getClass();
@@ -89,14 +73,6 @@ class ReflectUtil {
         } catch (Throwable ignore) {
             return null;
         }
-    }
-
-    private static Method getClsMethod(Class<?> cls, String methodName, Object[] args) {
-        List<Method> list = getClsMethods(cls, methodName, args);
-        if (CollectionUtils.isEmpty(list)) {
-            throw new RuntimeException(new NoSuchMethodException("No such method:" + methodName));
-        }
-        return list.get(0);
     }
 
     /**
@@ -155,6 +131,7 @@ class ReflectUtil {
         return true;
     }
 
+    // TODO rongjie.yuan  2023/8/17 10:33 可以缓存优化
     @SuppressWarnings("unchecked")
     static <T> T convertType(Object arg, Type requiredType) {
         if (arg == null) {
