@@ -89,7 +89,7 @@ class MoniLogUtil {
         if (logProperties == null || !logProperties.isMonitorLongRt()) {
             return;
         }
-        LogLongRtLevel rtTooLongLevel = logProperties.getPrinter().getRtTooLongLevel();
+        LogLongRtLevel rtTooLongLevel = logProperties.getPrinter().getLongRtLevel();
         if (rtTooLongLevel == null || LogLongRtLevel.none.equals(rtTooLongLevel)) {
             return;
         }
