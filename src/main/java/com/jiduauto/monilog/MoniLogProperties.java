@@ -242,7 +242,7 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         /**
          * 慢操作日志输出开关，默认prometheus与日志均打印
          */
-        private LogRtTooLongLevel rtTooLongLevel = LogRtTooLongLevel.both;
+        private LogLongRtLevel longRtLevel = LogLongRtLevel.both;
 
         /**
          * 默认详情日志打印最长的长度，目前仅限制了收集参数中的input与output的长度

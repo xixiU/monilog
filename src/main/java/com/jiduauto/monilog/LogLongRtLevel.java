@@ -5,6 +5,6 @@ package com.jiduauto.monilog;
  * @author rongjie.yuan
  * @date 2023/8/10 11:14
  */
-public enum LogRtTooLongLevel {
+public enum LogLongRtLevel {
     onlyLogger,onlyPrometheus,both,none;
 }

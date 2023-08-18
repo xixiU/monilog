@@ -89,21 +89,21 @@ class MoniLogUtil {
         if (logProperties == null || !logProperties.isMonitorLongRt()) {
             return;
         }
-        LogRtTooLongLevel rtTooLongLevel = logProperties.getPrinter().getRtTooLongLevel();
-        if (rtTooLongLevel == null || LogRtTooLongLevel.none.equals(rtTooLongLevel)) {
+        LogLongRtLevel rtTooLongLevel = logProperties.getPrinter().getRtTooLongLevel();
+        if (rtTooLongLevel == null || LogLongRtLevel.none.equals(rtTooLongLevel)) {
             return;
         }
         TagBuilder systemTags = getSystemTags(logParams);
         LogPoint logPoint = logParams.getLogPoint();
         String[] allTags = systemTags.add(logParams.getTags()).toArray();
-        if (LogRtTooLongLevel.both.equals(rtTooLongLevel) || LogRtTooLongLevel.onlyPrometheus.equals(rtTooLongLevel)) {
+        if (LogLongRtLevel.both.equals(rtTooLongLevel) || LogLongRtLevel.onlyPrometheus.equals(rtTooLongLevel)) {
             // 操作操作信息
             String operationCostTooLongMonitorPrefix = BUSINESS_MONITOR_PREFIX + "rt_too_long_" + logPoint.name();
             MetricMonitor.record(operationCostTooLongMonitorPrefix + MonitorType.RECORD.getMark(), allTags);
             // 耗时只打印基础tag
             MetricMonitor.eventDruation(operationCostTooLongMonitorPrefix + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
         }
-        if (LogRtTooLongLevel.both.equals(rtTooLongLevel) || LogRtTooLongLevel.onlyLogger.equals(rtTooLongLevel)) {
+        if (LogLongRtLevel.both.equals(rtTooLongLevel) || LogLongRtLevel.onlyLogger.equals(rtTooLongLevel)) {
             printLongRtLog(logParams);
         }
     }
@@ -234,8 +234,7 @@ class MoniLogUtil {
             printer.logDetail(logParams);
             return;
         }
-        MoniLogProperties.PrinterProperties printerCfg = properties.getPrinter();
-        LogOutputLevel detailLogLevel = printerCfg.getDetailLogLevel();
+        LogOutputLevel detailLogLevel = null;
         LogPoint logPoint = logParams.getLogPoint();
 
         switch (logPoint) {
@@ -277,7 +276,8 @@ class MoniLogUtil {
                 break;
         }
         if (detailLogLevel == null) {
-            detailLogLevel = LogOutputLevel.onException;
+            MoniLogProperties.PrinterProperties printerCfg = properties.getPrinter();
+            detailLogLevel = printerCfg.getDetailLogLevel();
         }
         boolean doPrinter = printLevelCheckPass(detailLogLevel, logParams);
 
