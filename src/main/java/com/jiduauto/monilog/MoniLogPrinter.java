@@ -23,8 +23,6 @@ public interface MoniLogPrinter {
 
     /**
      * 日志前缀
-     *
-     * @return
      */
     default String getLogPrefix() {
         return SpringUtils.LOG_PREFIX;
