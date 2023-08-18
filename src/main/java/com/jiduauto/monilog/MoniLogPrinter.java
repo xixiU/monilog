@@ -20,6 +20,11 @@ public interface MoniLogPrinter {
     void logDetail(MoniLogParams p);
 
     /**
+     * 打印慢日志
+     */
+    void logLongRt(MoniLogParams p);
+
+    /**
      * 打印大值监控日志
      *
      * @param logParams 执行上下文
@@ -33,11 +38,6 @@ public interface MoniLogPrinter {
     default String getLogPrefix() {
         return SpringUtils.LOG_PREFIX;
     }
-
-    /**
-     * 打印慢日志
-     */
-    void logLongRt(MoniLogParams p);
 
     /**
      * 获取logger实例，默认会取相关业务类的logger实例
