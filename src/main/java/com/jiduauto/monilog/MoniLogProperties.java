@@ -151,43 +151,6 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
     @Override
     public void afterPropertiesSet() throws Exception {
         bindValue();
-        if (printer.detailLogLevel == null) {
-            printer.detailLogLevel = LogOutputLevel.onException;
-        }
-        LogOutputLevel defaultLevel = printer.detailLogLevel;
-        if (web.detailLogLevel == null) {
-            web.detailLogLevel = defaultLevel;
-        }
-        if (grpc.clientDetailLogLevel == null) {
-            grpc.clientDetailLogLevel = defaultLevel;
-        }
-        if (grpc.serverDetailLogLevel == null) {
-            grpc.serverDetailLogLevel = defaultLevel;
-        }
-        if (xxljob.detailLogLevel == null) {
-            xxljob.detailLogLevel = defaultLevel;
-        }
-        if (feign.clientDetailLogLevel == null) {
-            feign.clientDetailLogLevel = defaultLevel;
-        }
-        if (feign.serverDetailLogLevel == null) {
-            feign.serverDetailLogLevel = defaultLevel;
-        }
-        if (mybatis.detailLogLevel == null) {
-            mybatis.detailLogLevel = defaultLevel;
-        }
-        if (rocketmq.consumerDetailLogLevel == null) {
-            rocketmq.consumerDetailLogLevel = defaultLevel;
-        }
-        if (rocketmq.producerDetailLogLevel == null) {
-            rocketmq.producerDetailLogLevel = defaultLevel;
-        }
-        if (redis.detailLogLevel == null) {
-            redis.detailLogLevel = defaultLevel;
-        }
-        if (httpclient.detailLogLevel == null) {
-            httpclient.detailLogLevel = defaultLevel;
-        }
         feign.resetDefaultBoolExpr(globalDefaultBoolExpr);
         httpclient.resetDefaultBoolExpr(globalDefaultBoolExpr);
         getAppName();
