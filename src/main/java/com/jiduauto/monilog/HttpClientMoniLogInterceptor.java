@@ -24,6 +24,7 @@ import static com.jiduauto.monilog.StringUtil.checkClassMatch;
 import static com.jiduauto.monilog.StringUtil.checkPathMatch;
 
 /**
+ * 该类签名不可修改，包括可见级别，否则将导致HttpClient拦截失效
  * @author yp
  * @date 2023/07/31
  */
@@ -32,7 +33,7 @@ public final class HttpClientMoniLogInterceptor {
     private static final String MONILOG_PARAMS_KEY = "__MoniLogParams";
 
     /**
-     * 该方法不可修改，包括可见级别
+     * 该方法不可修改，包括可见级别，否则将导致HttpClient拦截失效
      */
     public static void addInterceptors(HttpClientBuilder builder) {
         builder.addInterceptorFirst(new RequestInterceptor()).addInterceptorLast(new ResponseInterceptor());
