@@ -94,11 +94,12 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         if (redisConf == null || !redisConf.isEnable() || redisConf.getWarnForValueLength() <= 0) {
             return;
         }
-        long valueLen = 0;
+        long valueLen;
         try {
             valueLen = RamUsageEstimator.sizeOf(p.getOutput());
         } catch (Exception e) {
             MoniLogUtil.innerDebug("parseResultSize error", e);
+            return;
         }
         Logger logger = getLogger(p);
         if (valueLen > 0 && valueLen > redisConf.getWarnForValueLength() * ONE_KB) {
