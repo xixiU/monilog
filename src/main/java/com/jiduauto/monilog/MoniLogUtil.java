@@ -178,7 +178,7 @@ class MoniLogUtil {
         if (printer == null) {
             return;
         }
-        printer.logLongRt(logParams);
+        printer.logRtTooLong(logParams);
     }
 
     private static LogOutputLevel getDigestLogLevel(){

@@ -24,7 +24,7 @@ public interface MoniLogPrinter {
     /**
      * 打印超时日志
      */
-    default void logLongRt(MoniLogParams p) {
+    default void logRtTooLong(MoniLogParams p) {
         if (p == null) {
             return;
         }
