@@ -281,7 +281,7 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         /**
          * web慢接口，单位毫秒.
          */
-        private long longRt = 1000;
+        private long longRt = 2000;
 
     }
 
@@ -312,7 +312,7 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         /**
          * grpc慢接口，单位毫秒.
          */
-        private long longRt = 1000;
+        private long longRt = 2000;
     }
 
     @Getter
@@ -362,7 +362,7 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         /**
          * feign慢接口，单位毫秒.
          */
-        private long longRt = 1000;
+        private long longRt = 2000;
 
         void resetDefaultBoolExpr(String globalDefaultBoolExpr) {
             this.defaultBoolExpr = ResultParser.mergeBoolExpr(globalDefaultBoolExpr, defaultBoolExpr);
@@ -474,7 +474,7 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         /**
          * httpClient慢接口，单位毫秒.
          */
-        private long longRt = 1000;
+        private long longRt = 2000;
 
         void resetDefaultBoolExpr(String globalDefaultBoolExpr) {
             this.defaultBoolExpr = ResultParser.mergeBoolExpr(globalDefaultBoolExpr, defaultBoolExpr);
