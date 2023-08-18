@@ -151,43 +151,6 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
     @Override
     public void afterPropertiesSet() throws Exception {
         bindValue();
-        if (printer.detailLogLevel == null) {
-            printer.detailLogLevel = LogOutputLevel.onException;
-        }
-        LogOutputLevel defaultLevel = printer.detailLogLevel;
-        if (web.detailLogLevel == null) {
-            web.detailLogLevel = defaultLevel;
-        }
-        if (grpc.clientDetailLogLevel == null) {
-            grpc.clientDetailLogLevel = defaultLevel;
-        }
-        if (grpc.serverDetailLogLevel == null) {
-            grpc.serverDetailLogLevel = defaultLevel;
-        }
-        if (xxljob.detailLogLevel == null) {
-            xxljob.detailLogLevel = defaultLevel;
-        }
-        if (feign.clientDetailLogLevel == null) {
-            feign.clientDetailLogLevel = defaultLevel;
-        }
-        if (feign.serverDetailLogLevel == null) {
-            feign.serverDetailLogLevel = defaultLevel;
-        }
-        if (mybatis.detailLogLevel == null) {
-            mybatis.detailLogLevel = defaultLevel;
-        }
-        if (rocketmq.consumerDetailLogLevel == null) {
-            rocketmq.consumerDetailLogLevel = defaultLevel;
-        }
-        if (rocketmq.producerDetailLogLevel == null) {
-            rocketmq.producerDetailLogLevel = defaultLevel;
-        }
-        if (redis.detailLogLevel == null) {
-            redis.detailLogLevel = defaultLevel;
-        }
-        if (httpclient.detailLogLevel == null) {
-            httpclient.detailLogLevel = defaultLevel;
-        }
         feign.resetDefaultBoolExpr(globalDefaultBoolExpr);
         httpclient.resetDefaultBoolExpr(globalDefaultBoolExpr);
         getAppName();
@@ -242,12 +205,12 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         /**
          * 慢操作日志输出开关，默认prometheus与日志均打印
          */
-        private LogRtTooLongLevel rtTooLongLevel = LogRtTooLongLevel.both;
+        private LogLongRtLevel longRtLevel = LogLongRtLevel.both;
 
         /**
          * 默认详情日志打印最长的长度，目前仅限制了收集参数中的input与output的长度
          */
-        private Integer maxTextLen = 5000;
+        private Integer maxTextLen = 10000;
         /**
          * 默认info详情日志打印的排除切点类型列表，默认为空，即所有类型的都会打印
          */
@@ -272,7 +235,7 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         /**
          * http(非rpc类)入口流量的详情日志输出级别，默认仅异常时输出
          */
-        private LogOutputLevel detailLogLevel = LogOutputLevel.onException;
+        private LogOutputLevel detailLogLevel;
         /**
          * 不监控的url清单，支持模糊路径如a/*， 默认值：/actuator/health, /misc/ping, /actuator/prometheus
          */
@@ -281,7 +244,7 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         /**
          * web慢接口，单位毫秒.
          */
-        private long longRt = 1000;
+        private long longRt = 2000;
 
     }
 
@@ -303,16 +266,16 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         /**
          * grpc入口流量的详情日志输出级别，默认仅异常时输出
          */
-        private LogOutputLevel serverDetailLogLevel = LogOutputLevel.onException;
+        private LogOutputLevel serverDetailLogLevel;
         /**
          * grpc出口流量的详情日志输出级别，默认仅异常时输出
          */
-        private LogOutputLevel clientDetailLogLevel = LogOutputLevel.onException;
+        private LogOutputLevel clientDetailLogLevel;
 
         /**
          * grpc慢接口，单位毫秒.
          */
-        private long longRt = 1000;
+        private long longRt = 2000;
     }
 
     @Getter
@@ -325,7 +288,7 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         /**
          * xxljob的详情日志输出级别，默认仅异常时输出
          */
-        private LogOutputLevel detailLogLevel = LogOutputLevel.onException;
+        private LogOutputLevel detailLogLevel;
 
         /**
          * xxljob慢接口，单位毫秒.
@@ -343,11 +306,11 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         /**
          * feign入口流量的详情日志输出级别，默认仅异常时输出
          */
-        private LogOutputLevel serverDetailLogLevel = LogOutputLevel.onException;
+        private LogOutputLevel serverDetailLogLevel;
         /**
          * feign出口流量的详情日志输出级别，默认仅异常时输出
          */
-        private LogOutputLevel clientDetailLogLevel = LogOutputLevel.onException;
+        private LogOutputLevel clientDetailLogLevel;
         /**
          * 解析feign调用结果的默认表达式，默认校验返回编码是否等于0或者200有一个匹配即认为调用成功,多个表达式直接逗号分割.
          * 注意，如果表达式前以"+"开头，则表示在原有默认表达式的基础上追加，否则会覆盖原默认表达式
@@ -362,7 +325,7 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         /**
          * feign慢接口，单位毫秒.
          */
-        private long longRt = 1000;
+        private long longRt = 2000;
 
         void resetDefaultBoolExpr(String globalDefaultBoolExpr) {
             this.defaultBoolExpr = ResultParser.mergeBoolExpr(globalDefaultBoolExpr, defaultBoolExpr);
@@ -379,7 +342,7 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         /**
          * mybatis的详情日志输出级别，默认仅异常时输出
          */
-        private LogOutputLevel detailLogLevel = LogOutputLevel.onException;
+        private LogOutputLevel detailLogLevel;
         /**
          * mybatis慢sql阈值，单位毫秒.
          */
@@ -404,11 +367,11 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         /**
          * rocketmq消费者的详情日志输出级别，默认仅异常时输出
          */
-        private LogOutputLevel consumerDetailLogLevel = LogOutputLevel.onException;
+        private LogOutputLevel consumerDetailLogLevel;
         /**
          * rocketmq发送者的详情日志输出级别，默认仅异常时输出
          */
-        private LogOutputLevel producerDetailLogLevel = LogOutputLevel.onException;
+        private LogOutputLevel producerDetailLogLevel;
 
         /**
          * rocketmq慢接口，单位毫秒.
@@ -426,7 +389,7 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         /**
          * redis的详情日志输出级别，默认仅异常时输出
          */
-        private LogOutputLevel detailLogLevel = LogOutputLevel.onException;
+        private LogOutputLevel detailLogLevel;
         /**
          * redis大值监控日志输出阀值，单位: KB， 默认:10KB， 即超过5KB的缓存，将打印error日志(注意，仅对redis的读取类接口的结果大小做监控)
          */
@@ -448,7 +411,7 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         /**
          * httpClient的详情日志输出级别，默认仅异常时输出
          */
-        private LogOutputLevel detailLogLevel = LogOutputLevel.onException;
+        private LogOutputLevel detailLogLevel;
 
         /**
          * 不监控的url清单，支持模糊路径如a/*
@@ -474,7 +437,7 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         /**
          * httpClient慢接口，单位毫秒.
          */
-        private long longRt = 1000;
+        private long longRt = 2000;
 
         void resetDefaultBoolExpr(String globalDefaultBoolExpr) {
             this.defaultBoolExpr = ResultParser.mergeBoolExpr(globalDefaultBoolExpr, defaultBoolExpr);
