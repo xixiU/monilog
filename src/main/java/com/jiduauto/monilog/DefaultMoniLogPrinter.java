@@ -2,10 +2,15 @@ package com.jiduauto.monilog;
 
 
 import com.alibaba.fastjson.JSON;
+import com.carrotsearch.sizeof.RamUsageEstimator;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
 import javax.annotation.Resource;
 import java.util.Arrays;
+
+import static com.carrotsearch.sizeof.RamUsageEstimator.ONE_KB;
+
 
 /**
  * 默认日志打印方式
@@ -34,10 +39,10 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         String[] tags = p.getTags();
         String tagStr = tags == null || tags.length == 0 ? "" : "|" + Arrays.toString(tags);
         if (ex != null) {
-            logger.error("monilog_detail_log[{}]-{}.{}|{}|{}|{}|{}{} input:{}, output:{}", logPoint, service, action, success, code, msg, rt, tagStr, input, output, ex);
+            logger.error("{}detail_log[{}]-{}.{}|{}|{}|{}|{}{} input:{}, output:{}", getLogPrefix(), logPoint, service, action, success, code, msg, rt, tagStr, input, output, ex);
             return;
         }
-        logger.info("monilog_detail_log[{}]-{}.{}|{}|{}|{}|{}{} input:{}, output:{}", logPoint, service, action, success, code, msg, rt, tagStr, input, output);
+        logger.info("{}detail_log[{}]-{}.{}|{}|{}|{}|{}{} input:{}, output:{}", getLogPrefix(), logPoint, service, action, success, code, msg, rt, tagStr, input, output);
     }
 
     @Override
@@ -56,10 +61,50 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         String tagStr = tags == null || tags.length == 0 ? "" : "|" + Arrays.toString(tags);
         String rt = p.getCost() + "ms";
         if (p.getException() != null) {
-            logger.error("monilog_digest_log[{}]-{}.{}|{}|{}|{}|{}{}", logPoint, service, action, success, code, msg, rt, tagStr);
+            logger.error("{}digest_log[{}]-{}.{}|{}|{}|{}|{}{}", getLogPrefix(), logPoint, service, action, success, code, msg, rt, tagStr);
             return;
         }
-        logger.info("monilog_digest_log[{}]-{}.{}|{}|{}|{}|{}{}", logPoint, service, action, success, code, msg, rt, tagStr);
+        logger.info("{}digest_log[{}]-{}.{}|{}|{}|{}|{}{}", getLogPrefix(), logPoint, service, action, success, code, msg, rt, tagStr);
+    }
+
+    @Override
+    public void logLongRt(MoniLogParams p) {
+        if (p == null) {
+            return;
+        }
+        Logger logger = getLogger(p);
+        String logPoint = p.getLogPoint().name();
+        String service = p.getService();
+        String action = p.getAction();
+        String success = p.isSuccess() ? "true" : "false";
+        String code = p.getMsgCode();
+        String msg = p.getMsgInfo();
+        String[] tags = p.getTags();
+        String tagStr = tags == null || tags.length == 0 ? "" : "|" + Arrays.toString(tags);
+        String rt = p.getCost() + "ms";
+        logger.error("{}rt_too_long[{}]-{}.{}|{}|{}|{}|{}{}", getLogPrefix(), logPoint, service, action, success, code, msg, rt, tagStr);
+    }
+
+    @Override
+    public void logLargeSize(MoniLogParams p, String key) {
+        if (p == null || p.getLogPoint() != LogPoint.redis || p.getOutput() == null || StringUtils.isBlank(key)) {
+            return;
+        }
+        MoniLogProperties.RedisProperties redisConf = moniLogProperties.getRedis();
+        if (redisConf == null || !redisConf.isEnable() || redisConf.getWarnForValueLength() <= 0) {
+            return;
+        }
+        long valueLen;
+        try {
+            valueLen = RamUsageEstimator.sizeOf(p.getOutput());
+        } catch (Exception e) {
+            MoniLogUtil.innerDebug("parseResultSize error", e);
+            return;
+        }
+        Logger logger = getLogger(p);
+        if (valueLen > 0 && valueLen > redisConf.getWarnForValueLength() * ONE_KB) {
+            logger.error("{}size_too_large[{}]-{}.{}[key={}], size: {}", getLogPrefix(), p.getLogPoint(), p.getService(), p.getAction(), key, RamUsageEstimator.humanReadableUnits(valueLen));
+        }
     }
 
     private String formatLongText(Object o) {

@@ -9,11 +9,14 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.BindResult;
 import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationListener;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -23,7 +26,7 @@ import java.util.Set;
 @ConfigurationProperties("monilog")
 @Getter
 @Setter
-class MoniLogProperties implements InitializingBean {
+class MoniLogProperties implements InitializingBean , ApplicationListener<EnvironmentChangeEvent> {
     /**
      * 服务名，默认取值：${spring.application.name}
      */
@@ -37,6 +40,11 @@ class MoniLogProperties implements InitializingBean {
      * 调试开关,仅对dev/test生效,其他所有环境写死false，打印框架异常。
      */
     private boolean debug = true;
+
+    /**
+     * Monilog日志前缀(不支持运行时修改), 默认值: monilog_
+     */
+    private String logPrefix = "monilog_";
 
     /**
      * 记录耗时长的操作
@@ -130,24 +138,19 @@ class MoniLogProperties implements InitializingBean {
     }
 
     @Override
-    public void afterPropertiesSet() throws Exception {
-        ApplicationContext applicationContext = SpringUtils.getApplicationContext();
-        BindResult<MoniLogProperties> monilogBindResult = Binder.get(applicationContext.getEnvironment()).bind("monilog", MoniLogProperties.class);
-        if (monilogBindResult.isBound()) {
-            // 当存在属性值进行属性替换，防止配置不生效
-            MoniLogProperties moniLogProperties = monilogBindResult.get();
-            Field[] fields = MoniLogProperties.class.getDeclaredFields();
-            for (Field field : fields) {
-                try {
-                    field.setAccessible(true);
-                    field.set(this, field.get(moniLogProperties));
-                } catch (IllegalAccessException e) {
-                    // 处理异常
-                    MoniLogUtil.innerDebug("afterPropertiesSet error", e);
-                }
-            }
+    public void onApplicationEvent(EnvironmentChangeEvent environmentChangeEvent) {
+        if (environmentChangeEvent.getKeys() == null) {
+            return;
         }
+        Optional<String> moniLogPropertiesChange = environmentChangeEvent.getKeys().stream().filter(item -> item.contains("monilog")).findFirst();
+        if (moniLogPropertiesChange.isPresent()) {
+            bindValue();
+        }
+    }
 
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        bindValue();
         if (printer.detailLogLevel == null) {
             printer.detailLogLevel = LogOutputLevel.onException;
         }
@@ -192,6 +195,25 @@ class MoniLogProperties implements InitializingBean {
         printBanner();
     }
 
+    private void bindValue(){
+        ApplicationContext applicationContext = SpringUtils.getApplicationContext();
+        BindResult<MoniLogProperties> monilogBindResult = Binder.get(applicationContext.getEnvironment()).bind("monilog", MoniLogProperties.class);
+        if (!monilogBindResult.isBound()) {
+            return;
+        }
+        // 当存在属性值进行属性替换，防止配置不生效
+        MoniLogProperties moniLogProperties = monilogBindResult.get();
+        Field[] fields = MoniLogProperties.class.getDeclaredFields();
+        for (Field field : fields) {
+            try {
+                field.setAccessible(true);
+                field.set(this, field.get(moniLogProperties));
+            } catch (IllegalAccessException e) {
+                // 处理异常
+                MoniLogUtil.innerDebug("afterPropertiesSet error", e);
+            }
+        }
+    }
     private void printBanner() {
         if (!banner) {
             return;

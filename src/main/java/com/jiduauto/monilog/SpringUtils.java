@@ -45,14 +45,17 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
      */
     public static String activeProfile = null;
 
+    /**
+     * 日志前缀
+     */
+    public static String LOG_PREFIX = "monilog_";
+
 
     @SuppressWarnings("NullableProblems")
     @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
         SpringUtils.beanFactory = beanFactory;
         IS_READY |= applicationContext != null;
-        SpringUtils.application = getApplicationName();
-        SpringUtils.activeProfile = getActiveProfile();
 
     }
 
@@ -61,6 +64,9 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
     public void setApplicationContext(ApplicationContext applicationContext) {
         SpringUtils.applicationContext = applicationContext;
         IS_READY |= beanFactory != null;
+        SpringUtils.application = getApplicationName();
+        SpringUtils.activeProfile = getActiveProfile();
+        SpringUtils.LOG_PREFIX = getLogPrefix();
     }
 
     /**
@@ -120,6 +126,14 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
 
     static String parseSpELValue(String spel) {
         return applicationContext.getEnvironment().resolvePlaceholders(spel);
+    }
+
+    private static String getLogPrefix() {
+        String prefix = getProperty("monilog.log-prefix");
+        if (StringUtils.isNotBlank(prefix)) {
+            return prefix;
+        }
+        return LOG_PREFIX;
     }
 
     /**

@@ -4,8 +4,6 @@ package com.jiduauto.monilog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-
 /**
  * @author yp
  * @date 2023/07/12
@@ -22,23 +20,23 @@ public interface MoniLogPrinter {
     void logDetail(MoniLogParams p);
 
     /**
-     * 打印超时日志
+     * 打印慢日志
      */
-    default void logRtTooLong(MoniLogParams p) {
-        if (p == null) {
-            return;
-        }
-        Logger logger = getLogger(p);
-        String logPoint = p.getLogPoint().name();
-        String service = p.getService();
-        String action = p.getAction();
-        String success = p.isSuccess() ? "true" : "false";
-        String code = p.getMsgCode();
-        String msg = p.getMsgInfo();
-        String[] tags = p.getTags();
-        String tagStr = tags == null || tags.length == 0 ? "" : "|" + Arrays.toString(tags);
-        String rt = p.getCost() + "ms";
-        logger.error("monilog_rt_too_long[{}]-{}.{}|{}|{}|{}|{}{}", logPoint, service, action, success, code, msg, rt, tagStr);
+    void logLongRt(MoniLogParams p);
+
+    /**
+     * 打印大值监控日志
+     *
+     * @param logParams 执行上下文
+     * @param key       关联key
+     */
+    void logLargeSize(MoniLogParams logParams, String key);
+
+    /**
+     * 日志前缀
+     */
+    default String getLogPrefix() {
+        return SpringUtils.LOG_PREFIX;
     }
 
     /**
