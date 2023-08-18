@@ -210,7 +210,7 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         /**
          * 默认详情日志打印最长的长度，目前仅限制了收集参数中的input与output的长度
          */
-        private Integer maxTextLen = 5000;
+        private Integer maxTextLen = 10000;
         /**
          * 默认info详情日志打印的排除切点类型列表，默认为空，即所有类型的都会打印
          */
