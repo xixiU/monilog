@@ -22,6 +22,15 @@ public interface MoniLogPrinter {
     void logDetail(MoniLogParams p);
 
     /**
+     * 日志前缀
+     *
+     * @return
+     */
+    default String getLogPrefix() {
+        return SpringUtils.LOG_PREFIX;
+    }
+
+    /**
      * 打印超时日志
      */
     default void logLongRt(MoniLogParams p) {
@@ -38,7 +47,7 @@ public interface MoniLogPrinter {
         String[] tags = p.getTags();
         String tagStr = tags == null || tags.length == 0 ? "" : "|" + Arrays.toString(tags);
         String rt = p.getCost() + "ms";
-        logger.error("monilog_rt_too_long[{}]-{}.{}|{}|{}|{}|{}{}", logPoint, service, action, success, code, msg, rt, tagStr);
+        logger.error("{}rt_too_long[{}]-{}.{}|{}|{}|{}|{}{}", getLogPrefix(), logPoint, service, action, success, code, msg, rt, tagStr);
     }
 
     /**

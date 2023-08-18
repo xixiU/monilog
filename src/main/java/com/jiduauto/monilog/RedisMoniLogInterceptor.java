@@ -193,7 +193,7 @@ class RedisMoniLogInterceptor {
                         MoniLogUtil.innerDebug("parseRedissonResult length error", e);
                     }
                     if (valueLen > 0 && valueLen > redisProperties.getWarnForValueLength() * ONE_KB) {
-                        log.error("redis_value_size_too_large, {}.{}[key={}], size: {}", p.getService(), p.getAction(), maybeKey, RamUsageEstimator.humanReadableUnits(valueLen));
+                        log.error("{}size_too_large[{}]-{}.{}[key={}], size: {}", SpringUtils.LOG_PREFIX, p.getLogPoint(), p.getService(), p.getAction(), maybeKey, RamUsageEstimator.humanReadableUnits(valueLen));
                     }
                 }
                 String msgPrefix = "";

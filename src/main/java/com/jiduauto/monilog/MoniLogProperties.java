@@ -42,6 +42,11 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
     private boolean debug = true;
 
     /**
+     * Monilog日志前缀(不支持运行时修改), 默认值: monilog_
+     */
+    private String logPrefix = "monilog_";
+
+    /**
      * 记录耗时长的操作
      */
     private boolean monitorLongRt = true;
