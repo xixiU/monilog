@@ -278,6 +278,9 @@ class MoniLogUtil {
         if (detailLogLevel == null) {
             MoniLogProperties.PrinterProperties printerCfg = properties.getPrinter();
             detailLogLevel = printerCfg.getDetailLogLevel();
+            if (detailLogLevel == null) {
+                detailLogLevel = LogOutputLevel.onException;
+            }
         }
         boolean doPrinter = printLevelCheckPass(detailLogLevel, logParams);
 
