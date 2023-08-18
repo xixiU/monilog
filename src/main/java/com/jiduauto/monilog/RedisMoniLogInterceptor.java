@@ -1,7 +1,6 @@
 package com.jiduauto.monilog;
 
 
-import com.carrotsearch.sizeof.RamUsageEstimator;
 import com.google.common.collect.Sets;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +20,6 @@ import java.util.Set;
 
 @Slf4j
 class RedisMoniLogInterceptor {
-    private static final long ONE_KB = 2 << 19;
     private static final Set<String> SKIP_METHODS_FOR_JEDIS = Sets.newHashSet("isPipelined", "close", "isClosed", "getNativeConnection", "isQueueing", "closePipeline");
     private static final Set<String> TARGET_REDISSON_METHODS = Sets.newHashSet("get", "getAndDelete", "getAndSet", "getAndExpire", "getAndClearExpire", "put", "putIfAbsent", "putIfExists", "randomEntries", "randomKeys", "addAndGet", "containsKey", "containsValue", "remove", "replace", "putAll", "fastPut", "fastRemove", "fastReplace", "fastPutIfAbsent", "fastPutIfExists", "readAllKeySet", "readAllValues", "readAllEntrySet", "readAllMap", "keySet", "values", "entrySet", "addAfter", "addBefore", "fastSet", "readAll", "range", "random", "removeRandom", "tryAdd", "set", "trySet", "setAndKeepTTL", "setIfAbsent", "setIfExists", "compareAndSet", "tryLock", "lock", "tryLock", "lockInterruptibly");
 
@@ -69,9 +67,7 @@ class RedisMoniLogInterceptor {
                 p.setServiceCls(ri.cls);
                 p.setService(ri.cls.getSimpleName());
                 p.setAction(ri.method);
-                if (ri.valueLen > 0 && ri.valueLen > redisProperties.getWarnForValueLength() * ONE_KB) {
-                    log.error("{}size_too_large[{}]-{}.{}[key={}], size: {}", SpringUtils.LOG_PREFIX, p.getLogPoint(), p.getService(), p.getAction(), ri.maybeKey, RamUsageEstimator.humanReadableUnits(ri.valueLen));
-                }
+                MoniLogUtil.printLargeSizeLog(p, ri.maybeKey);
                 String msgPrefix = "";
                 if (StringUtils.isNotBlank(ri.maybeKey)) {
                     msgPrefix = "[key=" + ri.maybeKey + "]";
@@ -97,7 +93,6 @@ class RedisMoniLogInterceptor {
                 ri.method = invocation.getMethod().getName();
             }
             try {
-                ri.valueLen = RamUsageEstimator.sizeOf(ret);
                 ri.args = deserializeRedis(keySerializer, invocation.getArguments());
                 ri.maybeKey = parseJedisMaybeKey(keySerializer, invocation.getArguments());
                 ri.result = deserializeRedis(valueSerializer, new Object[]{ret});
@@ -185,17 +180,7 @@ class RedisMoniLogInterceptor {
             } finally {
                 p.setCost(System.currentTimeMillis() - p.getCost());
                 String maybeKey = parserRedissonMaybeKey(p.getInput());
-                if (ret != null && StringUtils.isNotBlank(maybeKey)) {
-                    long valueLen = 0;
-                    try {
-                        valueLen = RamUsageEstimator.sizeOf(ret);
-                    } catch (Exception e) {
-                        MoniLogUtil.innerDebug("parseRedissonResult length error", e);
-                    }
-                    if (valueLen > 0 && valueLen > redisProperties.getWarnForValueLength() * ONE_KB) {
-                        log.error("{}size_too_large[{}]-{}.{}[key={}], size: {}", SpringUtils.LOG_PREFIX, p.getLogPoint(), p.getService(), p.getAction(), maybeKey, RamUsageEstimator.humanReadableUnits(valueLen));
-                    }
-                }
+                MoniLogUtil.printLargeSizeLog(p, maybeKey);
                 String msgPrefix = "";
                 //与redisTemplate保持一致
                 if (StringUtils.isNotBlank(maybeKey)) {
@@ -213,7 +198,6 @@ class RedisMoniLogInterceptor {
         String maybeKey;
         Object[] args;
         Object result;
-        long valueLen;
     }
 
     private static Object[] deserializeRedis(RedisSerializer<?> serializer, Object[] args) {

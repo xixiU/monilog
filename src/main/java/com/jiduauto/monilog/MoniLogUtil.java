@@ -104,7 +104,7 @@ class MoniLogUtil {
             MetricMonitor.eventDruation(operationCostTooLongMonitorPrefix + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
         }
         if (LogRtTooLongLevel.both.equals(rtTooLongLevel) || LogRtTooLongLevel.onlyLogger.equals(rtTooLongLevel)) {
-            printRtTooLongLog(logParams);
+            printLongRtLog(logParams);
         }
     }
 
@@ -173,12 +173,23 @@ class MoniLogUtil {
     /**
      * 打印慢操作日志
      */
-    private static void printRtTooLongLog(MoniLogParams logParams) {
+    static void printLongRtLog(MoniLogParams logParams) {
         MoniLogPrinter printer = getLogPrinter();
         if (printer == null) {
             return;
         }
         printer.logLongRt(logParams);
+    }
+
+    /**
+     * 打印慢操作日志
+     */
+    static void printLargeSizeLog(MoniLogParams logParams, String key) {
+        MoniLogPrinter printer = getLogPrinter();
+        if (printer == null) {
+            return;
+        }
+        printer.logLargeSize(logParams, key);
     }
 
     private static LogOutputLevel getDigestLogLevel(){
