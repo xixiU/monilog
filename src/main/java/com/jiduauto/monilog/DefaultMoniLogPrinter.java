@@ -39,10 +39,10 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         String[] tags = p.getTags();
         String tagStr = tags == null || tags.length == 0 ? "" : "|" + Arrays.toString(tags);
         if (ex != null) {
-            logger.error("{}detail_log[{}]-{}.{}|{}|{}|{}|{}{} input:{}, output:{}", getLogPrefix(), logPoint, service, action, success, code, msg, rt, tagStr, input, output, ex);
+            logger.error("{}detail_log[{}]-{}.{}|{}|{}|{}|{}{} input:{}, output:{}", getLogPrefix(), logPoint, service, action, success, code, rt, msg,  tagStr, input, output, ex);
             return;
         }
-        logger.info("{}detail_log[{}]-{}.{}|{}|{}|{}|{}{} input:{}, output:{}", getLogPrefix(), logPoint, service, action, success, code, msg, rt, tagStr, input, output);
+        logger.info("{}detail_log[{}]-{}.{}|{}|{}|{}|{}{} input:{}, output:{}", getLogPrefix(), logPoint, service, action, success, code, rt, msg,  tagStr, input, output);
     }
 
     @Override
@@ -61,10 +61,10 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         String tagStr = tags == null || tags.length == 0 ? "" : "|" + Arrays.toString(tags);
         String rt = p.getCost() + "ms";
         if (p.getException() != null) {
-            logger.error("{}digest_log[{}]-{}.{}|{}|{}|{}|{}{}", getLogPrefix(), logPoint, service, action, success, code, msg, rt, tagStr);
+            logger.error("{}digest_log[{}]-{}.{}|{}|{}|{}|{}{}", getLogPrefix(), logPoint, service, action, success, code, rt, msg,  tagStr);
             return;
         }
-        logger.info("{}digest_log[{}]-{}.{}|{}|{}|{}|{}{}", getLogPrefix(), logPoint, service, action, success, code, msg, rt, tagStr);
+        logger.info("{}digest_log[{}]-{}.{}|{}|{}|{}|{}{}", getLogPrefix(), logPoint, service, action, success, code, rt, msg,  tagStr);
     }
 
     @Override
@@ -82,7 +82,7 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         String[] tags = p.getTags();
         String tagStr = tags == null || tags.length == 0 ? "" : "|" + Arrays.toString(tags);
         String rt = p.getCost() + "ms";
-        logger.error("{}rt_too_long[{}]-{}.{}|{}|{}|{}|{}{}", getLogPrefix(), logPoint, service, action, success, code, msg, rt, tagStr);
+        logger.error("{}rt_too_long[{}]-{}.{}|{}|{}|{}|{}{}", getLogPrefix(), logPoint, service, action, success, code, rt, msg,  tagStr);
     }
 
     @Override
