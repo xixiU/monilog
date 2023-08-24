@@ -15,6 +15,7 @@ import org.apache.ibatis.reflection.SystemMetaObject;
 import org.apache.ibatis.session.ResultHandler;
 
 import java.lang.reflect.Proxy;
+import java.sql.Connection;
 import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,6 +23,7 @@ import java.util.Map;
 
 class MybatisMoniLogInterceptor {
     @Intercepts({
+            @Signature(type = StatementHandler.class, method = "prepare", args = {Connection.class, Integer.class}),
             @Signature(type = StatementHandler.class, method = "query", args = {Statement.class, ResultHandler.class}),
             @Signature(type = StatementHandler.class, method = "update", args = {Statement.class})
     })
