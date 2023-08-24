@@ -40,10 +40,10 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         String[] tags = p.getTags();
         String tagStr = tags == null || tags.length == 0 ? "" : "|" + Arrays.toString(tags);
         if (ex != null) {
-            logger.error(DETAIL_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, code, rt, msg, tagStr, input, output, ex);
+            logger.error(DETAIL_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr, input, output, ex);
             return;
         }
-        logger.info(DETAIL_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, code, rt, msg, tagStr, input, output);
+        logger.info(DETAIL_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr, input, output);
     }
 
     @Override
@@ -62,10 +62,10 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         String tagStr = tags == null || tags.length == 0 ? "" : "|" + Arrays.toString(tags);
         String rt = p.getCost() + "ms";
         if (p.getException() != null) {
-            logger.error(DIGEST_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, code, rt, msg, tagStr);
+            logger.error(DIGEST_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
             return;
         }
-        logger.info(DIGEST_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, code, rt, msg, tagStr);
+        logger.info(DIGEST_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
     }
 
     @Override
@@ -83,7 +83,7 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         String[] tags = p.getTags();
         String tagStr = tags == null || tags.length == 0 ? "" : "|" + Arrays.toString(tags);
         String rt = p.getCost() + "ms";
-        logger.error(LONG_RT_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, code, rt, msg, tagStr);
+        logger.error(LONG_RT_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
     }
 
     @Override
