@@ -13,7 +13,6 @@ import org.apache.rocketmq.client.impl.producer.DefaultMQProducerImpl;
 import org.apache.rocketmq.client.producer.MQProducer;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.client.producer.SendStatus;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageExt;
@@ -33,7 +32,6 @@ import java.util.Objects;
 import java.util.function.BiFunction;
 
 class RocketMqMoniLogInterceptor {
-    private static final Integer zipCompressLevel= Integer.parseInt(System.getProperty(MixAll.MESSAGE_COMPRESS_LEVEL, "5"));
     @AllArgsConstructor
     protected static class EnhancedListenerConcurrently implements MessageListenerConcurrently {
         private final MessageListenerConcurrently delegate;
