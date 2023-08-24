@@ -1,13 +1,18 @@
 package com.jiduauto.monilog;
 
+import com.carrotsearch.sizeof.RamUsageEstimator;
 import com.metric.MetricMonitor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static com.carrotsearch.sizeof.RamUsageEstimator.ONE_KB;
+
 /**
  * 日志工具类
+ *
  * @author rongjie.yuan
  * @date 2023/7/17 16:42
  */
@@ -81,7 +86,7 @@ class MoniLogUtil {
 
     }
 
-    private static void doRtTooLongMonitor(MoniLogParams logParams){
+    private static void doRtTooLongMonitor(MoniLogParams logParams) {
         if (!checkRtMonitor(logParams)) {
             return;
         }
@@ -184,15 +189,35 @@ class MoniLogUtil {
     /**
      * 打印慢操作日志
      */
-    static void printLargeSizeLog(MoniLogParams logParams, String key) {
+    static void printLargeSizeLog(MoniLogParams p, String key) {
         MoniLogPrinter printer = getLogPrinter();
         if (printer == null) {
             return;
         }
-        printer.logLargeSize(logParams, key);
+        if (p == null || p.getLogPoint() != LogPoint.redis || p.getOutput() == null || StringUtils.isBlank(key)) {
+            return;
+        }
+        MoniLogProperties moniLogProperties = getLogProperties();
+        if (moniLogProperties == null) {
+            return;
+        }
+        MoniLogProperties.RedisProperties redisConf = moniLogProperties.getRedis();
+        if (redisConf == null || !redisConf.isEnable() || redisConf.getWarnForValueLength() <= 0) {
+            return;
+        }
+        long valueLen;
+        try {
+            valueLen = RamUsageEstimator.sizeOf(p.getOutput());
+        } catch (Exception e) {
+            MoniLogUtil.innerDebug("parseResultSize error", e);
+            return;
+        }
+        if (valueLen > 0 && valueLen > redisConf.getWarnForValueLength() * ONE_KB) {
+            printer.logLargeSize(p, key, valueLen);
+        }
     }
 
-    private static LogOutputLevel getDigestLogLevel(){
+    private static LogOutputLevel getDigestLogLevel() {
         MoniLogProperties properties = getLogProperties();
         if (properties == null) {
             return LogOutputLevel.always;
@@ -207,6 +232,7 @@ class MoniLogUtil {
         }
         return detailLogLevel;
     }
+
     /**
      * 打印摘要日志
      */
@@ -305,7 +331,7 @@ class MoniLogUtil {
     /**
      * 校验是否在排除清单中,若返回true，则不需要打印摘要日志与详情日志
      */
-    private static boolean excludePrint(MoniLogParams logParams){
+    private static boolean excludePrint(MoniLogParams logParams) {
         MoniLogPrinter printer = getLogPrinter();
         MoniLogProperties properties = getLogProperties();
         if (printer == null || properties == null) {
@@ -334,7 +360,7 @@ class MoniLogUtil {
         return StringUtil.checkPathMatch(infoExcludeActions, logParams.getAction());
     }
 
-    private static boolean printLevelCheckPass(LogOutputLevel detailLogLevel, MoniLogParams logParams){
+    private static boolean printLevelCheckPass(LogOutputLevel detailLogLevel, MoniLogParams logParams) {
         boolean doPrinter = false;
         switch (detailLogLevel) {
             case always:
