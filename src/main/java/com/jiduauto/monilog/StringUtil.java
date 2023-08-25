@@ -29,6 +29,19 @@ class StringUtil {
         return checkMatch(pathList, toCheckPath, ANT_PATH_MATCHER);
     }
 
+    public static boolean checkListItemContains(Collection<String> itemList, String toCheck) {
+        if (CollectionUtils.isEmpty(itemList)) {
+            return false;
+        }
+        for (String item : itemList) {
+            if (item.contains(toCheck)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
     private static boolean checkMatch(Collection<String> targets, String toCheck, AntPathMatcher matcher) {
         if (CollectionUtils.isEmpty(targets) || StringUtils.isBlank(toCheck)) {
             return false;

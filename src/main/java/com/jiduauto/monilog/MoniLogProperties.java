@@ -225,12 +225,12 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         private Set<String> excludeActions;
 
         /**
-         * 日志打印的排除错误类清单，通过错误的canonicalName类名判断。默认为空，即所有错误的都会打印,支持模糊匹配
+         * 日志打印的排除错误类清单，通过错误的canonicalName类名判断，使用contains判断。默认为空，即所有错误的都会打印
          */
         private Set<String> excludeExceptions;
 
         /**
-         * 日志打印的排除错误关键词清单，默认为空，即所有错误的都会打印,支持模糊匹配
+         * 日志打印的排除错误关键词清单,使用contains判断。默认为空，即所有错误的都会打印
          */
         private Set<String> excludeKeyWords;
     }

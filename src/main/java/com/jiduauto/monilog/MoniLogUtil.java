@@ -367,11 +367,11 @@ class MoniLogUtil {
             return false;
         }
         // 关键词匹配错误
-        if (StringUtil.checkPathMatch(excludeKeyWords, exception.getMessage())) {
+        if (StringUtil.checkListItemContains(excludeKeyWords, exception.getMessage())) {
             return true;
         }
-        // 关键词匹配错误
-        return StringUtil.checkPathMatch(exceptions, exception.getClass().getCanonicalName());
+        // 匹配错误类
+        return StringUtil.checkListItemContains(exceptions, exception.getClass().getCanonicalName());
     }
 
     private static boolean printLevelCheckPass(LogOutputLevel detailLogLevel, MoniLogParams logParams) {
