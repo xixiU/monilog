@@ -183,7 +183,7 @@ class MoniLogUtil {
     }
 
     /**
-     * 打印慢操作日志
+     * 打印大值日志
      */
     static void printLargeSizeLog(MoniLogParams p, String key) {
         MoniLogPrinter printer = getLogPrinter();
