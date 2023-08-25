@@ -23,10 +23,6 @@ import java.util.Map;
 
 
 class MybatisMoniLogInterceptor {
-    //    @Intercepts({
-//            @Signature(type = StatementHandler.class, method = "query", args = {Statement.class, ResultHandler.class}),
-//            @Signature(type = StatementHandler.class, method = "update", args = {Statement.class})
-//    })
     @Intercepts({
             @Signature(type = Executor.class, method = "query", args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class, CacheKey.class, BoundSql.class}),
             @Signature(type = Executor.class, method = "query", args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class}),
