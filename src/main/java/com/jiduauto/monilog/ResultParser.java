@@ -99,6 +99,9 @@ final class ResultParser {
             jsonpaths = Default_Bool_Expr;
         }
         ParsedInfo<Boolean> parsed = parseByPaths(obj, jsonpaths, Boolean.class);
+        //与其它的判别逻辑不同的是，对于bool类型的结果， 如果实际结果与判别式不兼容，则返回false，而不是null。
+        //因为这种类型字段会影响下游ResultParseStrategy的结果，而且即使与判别式不兼容也至少表明匹配到了路径中的同名字段，
+        //例如: 判别式是：$.success=true，但响应结果中success=1，此时的判别结果应当是false，而不是null
         return parsed == null ? null : parsed.isExpectCompatible() && Boolean.TRUE.equals(parsed.getResult());
     }
 
