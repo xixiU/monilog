@@ -61,7 +61,7 @@ final class ResultParser {
             jsonpaths = Default_ErrCode_Expr;
         }
         ParsedInfo<String> parsed = parseByPaths(obj, jsonpaths, String.class);
-        return parsed == null || !parsed.isExpectValid() ? null : parsed.getResult();
+        return parsed == null ? null : parsed.getCompatibleResult();
     }
 
     public static Integer parseIntCode(Object obj, @Nullable String jsonpaths) {
@@ -69,7 +69,7 @@ final class ResultParser {
             jsonpaths = Default_ErrCode_Expr;
         }
         ParsedInfo<Integer> parsed = parseByPaths(obj, jsonpaths, Integer.class);
-        return parsed == null || !parsed.isExpectValid() ? null : parsed.getResult();
+        return parsed == null ? null : parsed.getCompatibleResult();
     }
 
     public static String parseErrMsg(Object obj, @Nullable String jsonpaths) {
@@ -80,7 +80,7 @@ final class ResultParser {
             jsonpaths = Default_ErrMsg_Expr;
         }
         ParsedInfo<String> parsed = parseByPaths(obj, jsonpaths, String.class);
-        return parsed == null || !parsed.isExpectValid() ? null : parsed.getResult();
+        return parsed == null ? null : parsed.getCompatibleResult();
     }
 
     public static boolean parseBoolVal(Object obj, @Nullable String jsonpaths, boolean defaultVal) {
@@ -99,7 +99,7 @@ final class ResultParser {
             jsonpaths = Default_Bool_Expr;
         }
         ParsedInfo<Boolean> parsed = parseByPaths(obj, jsonpaths, Boolean.class);
-        return parsed == null ? null : (parsed.isExpectValid() ? parsed.getResult() : false);
+        return parsed == null ? null : parsed.isExpectCompatible() && Boolean.TRUE.equals(parsed.getResult());
     }
 
     public static <T> ParsedInfo<T> parseByPaths(Object obj, @NotNull String jsonpaths, @NotNull Class<T> resultCls) {
@@ -107,7 +107,7 @@ final class ResultParser {
     }
 
     /**
-     * 从多个备选路径中依次解析结果，返回第一个找到的结果
+     * 从多个备选路径中依次解析结果，返回找到的第一个最匹配的结果
      */
     private static <T> ParsedInfo<T> parseByPaths(Object obj, @NotNull List<String> jsonpaths, @NotNull Class<T> resultCls) {
         if (obj == null) {
@@ -115,22 +115,25 @@ final class ResultParser {
         }
         Preconditions.checkArgument(CollectionUtils.isNotEmpty(jsonpaths), "解析路径不能为空");
         List<ParsedInfo<T>> parsedList = new ArrayList<>();
+        List<ParsedInfo<T>> notCompatible = new ArrayList<>();
         for (String path : jsonpaths) {
             ParsedInfo<T> ret = parse(obj, path, resultCls);
-            if (ret != null) {
-                T val = ret.getResult();
-                if (!ret.isExpectValid()) {//结果不兼容，则一定不是期望结果
-                    continue;
-                }
-                if (val != null) {//结果是兼容类型，且成功匹配到值
-                    return ret;
-                } else {//结果类型兼容，但值是空的，表示没取到。例如$.getMsg()，匹配到路径了，但结果中值是null
-                    parsedList.add(ret);
-                }
+            if (ret == null) {
+                continue;
+            }
+            if (!ret.isExpectCompatible()) {//结果不兼容，则一定不是期望结果
+                notCompatible.add(ret);
+                continue;
+            }
+            T val = ret.getResult();
+            if (ParsedInfo.isBool(resultCls) && val != null && (Boolean) val) {
+                return ret;
+            } else {//结果类型兼容，但值是空的，表示没取到。例如$.getMsg()，匹配到路径了，但结果中值是null
+                parsedList.add(ret);
             }
         }
         //如果均未找到符合期望的，但有字段被成功匹配，则返回匹配到的第一个
-        return parsedList.isEmpty() ? null : parsedList.get(0);
+        return parsedList.isEmpty() ? (notCompatible.isEmpty() ? null : notCompatible.get(0)) : parsedList.get(0);
     }
 
     /**
@@ -175,7 +178,8 @@ final class ResultParser {
         if (!isMethod) {
             try {
                 Object val = JSONPath.eval(obj, path);
-                return new TempResult(val, val != null); //这种情况下，如果值未找到，也可能是path不存在，因此不能因为val==null就把foundPath置为true
+                boolean foundPath = val != null || JSONPath.contains(obj, path);
+                return new TempResult(val, foundPath);
             } catch (Throwable e) {
                 MoniLogUtil.innerDebug("resultParser evalVal error, obj:{}, path:{}", JSON.toJSONString(obj), path, e);
             }
@@ -219,12 +223,6 @@ final class ResultParser {
     private static class TempResult {
         Object value;
         boolean foundPath;
-
-
-        public TempResult() {
-            this(null, true);
-        }
-
         public TempResult(Object value) {
             this(value, true);
         }
