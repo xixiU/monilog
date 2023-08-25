@@ -167,12 +167,8 @@ class MoniLogUtil {
      */
     private static TagBuilder getSystemTags(MoniLogParams logParams) {
         boolean success = logParams.isSuccess() && logParams.getException() == null;
-        String exceptionMsg = logParams.getException() == null ? "null" : ExceptionUtil.getErrorMsg(logParams.getException());
-        int maxLen = 30;
-        if (exceptionMsg.length() > maxLen) {
-            exceptionMsg = exceptionMsg.substring(0, maxLen) + "...";
-        }
-        return TagBuilder.of("result", success ? "success" : "error").add("application", SpringUtils.application).add("logPoint", logParams.getLogPoint().name()).add("env", SpringUtils.activeProfile).add("service", logParams.getService()).add("action", logParams.getAction()).add("msgCode", logParams.getMsgCode()).add("cost", String.valueOf(logParams.getCost())).add("exception", exceptionMsg);
+        String exception = logParams.getException() == null ? "null" : logParams.getException().getClass().getSimpleName();
+        return TagBuilder.of("result", success ? "success" : "error").add("application", SpringUtils.application).add("logPoint", logParams.getLogPoint().name()).add("env", SpringUtils.activeProfile).add("service", logParams.getService()).add("action", logParams.getAction()).add("msgCode", logParams.getMsgCode()).add("cost", String.valueOf(logParams.getCost())).add("exception", exception);
     }
 
     /**
