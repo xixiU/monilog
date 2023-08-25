@@ -13,6 +13,10 @@ import java.util.Map;
  */
 final class ResultParseUtil {
     static ParsedResult parseResult(Object returnObj, ResultParseStrategy strategy, Throwable t, String boolExpr, String codeExpr, String msgExpr) {
+        if (t != null) {//有异常
+            ErrorInfo errorInfo = ExceptionUtil.parseException(t);
+            return new ParsedResult(false, errorInfo.getErrorCode(), errorInfo.getErrorMsg());
+        }
         boolExpr = correctBoolExpr(boolExpr);
         boolean noStrategy = strategy == null;
         Boolean parsedSucc = null;
@@ -26,11 +30,6 @@ final class ResultParseUtil {
                 //如果未指定判定策略，且默认的策略又计算不出结果，则将策略置为非异常
                 strategy = ResultParseStrategy.IfNotException;
             }
-        }
-
-        if (t != null) {//有异常
-            ErrorInfo errorInfo = ExceptionUtil.parseException(t);
-            return new ParsedResult(false, errorInfo.getErrorCode(), errorInfo.getErrorMsg());
         }
 
         boolean succ = true;
