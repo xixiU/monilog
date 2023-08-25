@@ -183,7 +183,7 @@ class MoniLogUtil {
     }
 
     /**
-     * 打印慢操作日志
+     * 打印大值日志
      */
     static void printLargeSizeLog(MoniLogParams p, String key) {
         MoniLogPrinter printer = getLogPrinter();
@@ -344,16 +344,34 @@ class MoniLogUtil {
         if (logPoint == null) {
             return true;
         }
-        Set<String> infoExcludeComponents = printerCfg.getInfoExcludeComponents();
-        Set<String> infoExcludeServices = printerCfg.getInfoExcludeServices();
-        Set<String> infoExcludeActions = printerCfg.getInfoExcludeActions();
-        if (StringUtil.checkPathMatch(infoExcludeComponents, logPoint.name())) {
+
+        Set<String> exceptions = printerCfg.getExcludeExceptions();
+        Set<String> excludeKeyWords = printerCfg.getExcludeKeyWords();
+
+        if (StringUtil.checkPathMatch(printerCfg.getExcludeComponents(), logPoint.name())) {
             return true;
         }
-        if (StringUtil.checkPathMatch(infoExcludeServices, logParams.getService())) {
+        if (StringUtil.checkPathMatch(printerCfg.getExcludeServices(), logParams.getService())) {
             return true;
         }
-        return StringUtil.checkPathMatch(infoExcludeActions, logParams.getAction());
+        if (StringUtil.checkPathMatch(printerCfg.getExcludeActions(), logParams.getAction())) {
+            return true;
+        }
+        // 关键词匹配msgInfo
+        if (StringUtil.checkPathMatch(excludeKeyWords, logParams.getMsgInfo())) {
+            return true;
+        }
+        // 基于错误的判断
+        Throwable exception = logParams.getException();
+        if (exception == null) {
+            return false;
+        }
+        // 关键词匹配错误
+        if (StringUtil.checkPathMatch(excludeKeyWords, exception.getMessage())) {
+            return true;
+        }
+        // 关键词匹配错误
+        return StringUtil.checkPathMatch(exceptions, exception.getClass().getCanonicalName());
     }
 
     private static boolean printLevelCheckPass(LogOutputLevel detailLogLevel, MoniLogParams logParams) {

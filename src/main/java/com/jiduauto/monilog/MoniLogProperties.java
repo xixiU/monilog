@@ -212,17 +212,27 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
          */
         private Integer maxTextLen = 10000;
         /**
-         * 默认info详情日志打印的排除切点类型列表，默认为空，即所有类型的都会打印
+         * 日志打印的排除切点类型列表，默认为空，即所有类型的都会打印
          */
-        private Set<String> infoExcludeComponents;
+        private Set<String> excludeComponents;
         /**
-         * 默认info详情日志打印的排除服务列表，默认为空，即所有方法的都会打印,支持模糊匹配
+         * 日志打印的排除服务列表，默认为空，即所有方法的都会打印,支持模糊匹配
          */
-        private Set<String> infoExcludeServices;
+        private Set<String> excludeServices;
         /**
-         * 默认info日志打印的排除方法清单，默认为空，即所有服务的都会打印,支持模糊匹配
+         *日志打印的排除方法清单，默认为空，即所有服务的都会打印,支持模糊匹配
          */
-        private Set<String> infoExcludeActions;
+        private Set<String> excludeActions;
+
+        /**
+         * 日志打印的排除错误类清单，通过错误的canonicalName类名判断。默认为空，即所有错误的都会打印,支持模糊匹配
+         */
+        private Set<String> excludeExceptions;
+
+        /**
+         * 日志打印的排除错误关键词清单，默认为空，即所有错误的都会打印,支持模糊匹配
+         */
+        private Set<String> excludeKeyWords;
     }
 
     @Getter
