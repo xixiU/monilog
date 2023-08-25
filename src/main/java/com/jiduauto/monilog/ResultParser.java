@@ -135,7 +135,7 @@ final class ResultParser {
                 parsedList.add(ret);
             }
         }
-        //如果均未找到符合期望的，但有字段被成功匹配，则返回匹配到的第一个
+        //如果均未找到符合期望的，但有字段名被遍历到过，则返回最匹配到那个结果
         return parsedList.isEmpty() ? (notCompatible.isEmpty() ? null : notCompatible.get(0)) : parsedList.get(0);
     }
 
