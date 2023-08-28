@@ -16,7 +16,7 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
     private static final String DETAIL_LOG_PATTERN = "{}detail_log[{}]-{}.{}|{}|{}|{}|{}{} input:{}, output:{}";
     private static final String DIGEST_LOG_PATTERN = "{}digest_log[{}]-{}.{}|{}|{}|{}|{}{}";
     private static final String LONG_RT_LOG_PATTERN = "{}rt_too_long[{}]-{}.{}|{}|{}|{}|{}{}";
-    private static final String LARGE_SIZE_LOG_PATTERN = "{}size_too_large[{}]-{}.{}[key={}], size: {}";
+    private static final String LARGE_SIZE_LOG_PATTERN = "{}size_too_large[{}]-{}.{}[key={}], size: {}, rt:{}";
     @Resource
     private MoniLogProperties moniLogProperties;
 
@@ -92,7 +92,8 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
             return;
         }
         String readableSize = RamUsageEstimator.humanReadableUnits(sizeInBytes);
-        getLogger(p).error(LARGE_SIZE_LOG_PATTERN, getLogPrefix(), p.getLogPoint(), p.getService(), p.getAction(), key, readableSize);
+        String rt = p.getCost() + "ms";
+        getLogger(p).error(LARGE_SIZE_LOG_PATTERN, getLogPrefix(), p.getLogPoint(), p.getService(), p.getAction(), key, readableSize, rt);
     }
 
     private String formatLongText(Object o) {
