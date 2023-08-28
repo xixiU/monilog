@@ -19,5 +19,5 @@ public enum ResultParseStrategy {
     /**
      * 基于执行时是否发生异常来判定结果是否成功
      */
-    IfNotException
+    IfNotException;
 }

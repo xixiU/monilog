@@ -13,11 +13,17 @@ import org.apache.rocketmq.client.impl.producer.DefaultMQProducerImpl;
 import org.apache.rocketmq.client.producer.MQProducer;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.client.producer.SendStatus;
+import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.spring.annotation.RocketMQMessageListener;
 import org.apache.rocketmq.spring.core.RocketMQListener;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -208,7 +214,7 @@ class RocketMqMoniLogInterceptor {
                 logParams.setMsgCode(logParams.isSuccess() ? ErrorEnum.SUCCESS.name() : status == null ? ErrorEnum.SUCCESS.getMsg() : status.name());
                 logParams.setMsgInfo(logParams.isSuccess() ? ErrorEnum.SUCCESS.getMsg() : ErrorEnum.FAILED.getMsg());
                 Message message = context.getMessage();
-                logParams.setInput(new Object[]{new String(message.getBody(), StandardCharsets.UTF_8)});
+                logParams.setInput(new Object[]{getMqBody(message)});
                 logParams.setTags(TagBuilder.of("topic", message.getTopic(), "group", context.getProducerGroup(), "tag", message.getTags()).toArray());
                 MoniLogUtil.log(logParams);
             } catch (Exception e) {
@@ -216,4 +222,45 @@ class RocketMqMoniLogInterceptor {
             }
         }
     }
+
+    private static String getMqBody(Message message){
+        Charset charset = StandardCharsets.UTF_8;
+        byte[] body = message.getBody();
+        String mqBody = new String(body, charset);
+        if (hasInvalidCharacters(body,charset)) {
+            byte[] uncompress ;
+            try {
+                uncompress = UtilAll.uncompress(body);
+            } catch (IOException e) {
+                return mqBody;
+            }
+            return new String(uncompress, charset);
+        }
+        return mqBody;
+
+    }
+
+
+    /**
+     * 获取消息体
+     * org.apache.rocketmq.client.impl.producer.DefaultMQProducerImpl#tryToCompressMessage(org.apache.rocketmq.common.message.Message)
+     * 大于4096字节的字符串会压缩。由于此标记没有记录在content中，通过判断字符串是否乱码进行解压缩。
+     *
+     * @param bytes 字符数组
+     * @param charset 编码
+     * @return 乱码返回true，否者返回false
+     */
+    public static boolean hasInvalidCharacters(byte[] bytes, Charset charset) {
+        CharsetDecoder decoder = charset.newDecoder();
+        decoder.onMalformedInput(CodingErrorAction.REPORT);
+        decoder.onUnmappableCharacter(CodingErrorAction.REPORT);
+
+        try {
+            decoder.decode(ByteBuffer.wrap(bytes));
+            return false; // 字符串没有乱码
+        } catch (Exception e) {
+            return true; // 字符串有乱码
+        }
+    }
+
 }

@@ -29,6 +29,19 @@ class StringUtil {
         return checkMatch(pathList, toCheckPath, ANT_PATH_MATCHER);
     }
 
+    public static boolean checkListItemContains(Collection<String> itemList, String toCheck) {
+        if (CollectionUtils.isEmpty(itemList)) {
+            return false;
+        }
+        for (String item : itemList) {
+            if (item.contains(toCheck)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
     private static boolean checkMatch(Collection<String> targets, String toCheck, AntPathMatcher matcher) {
         if (CollectionUtils.isEmpty(targets) || StringUtils.isBlank(toCheck)) {
             return false;
@@ -45,11 +58,11 @@ class StringUtil {
      * 从注解中获取tag列表
      */
     public static List<String> getTagList(MoniLogTags logTags) {
-        if (logTags == null || logTags.tags() == null || logTags.tags().length == 0) {
+        if (logTags == null || logTags.value() == null || logTags.value().length == 0) {
             return new ArrayList<>();
         }
-        if (logTags.tags().length % 2 == 0) {
-            return Arrays.stream(logTags.tags()).map(String::trim).collect(Collectors.toList());
+        if (logTags.value().length % 2 == 0) {
+            return Arrays.stream(logTags.value()).map(String::trim).collect(Collectors.toList());
         } else {
             // prometheus tag是key,value结构，非偶数tag prometheus上报会报错，这里只打一行日志提醒
             log.error("tags length must be double，tags：{}", JSON.toJSONString(logTags));

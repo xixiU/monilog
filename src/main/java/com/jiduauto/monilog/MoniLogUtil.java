@@ -1,13 +1,18 @@
 package com.jiduauto.monilog;
 
+import com.carrotsearch.sizeof.RamUsageEstimator;
 import com.metric.MetricMonitor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static com.carrotsearch.sizeof.RamUsageEstimator.ONE_KB;
+
 /**
  * 日志工具类
+ *
  * @author rongjie.yuan
  * @date 2023/7/17 16:42
  */
@@ -81,7 +86,7 @@ class MoniLogUtil {
 
     }
 
-    private static void doRtTooLongMonitor(MoniLogParams logParams){
+    private static void doRtTooLongMonitor(MoniLogParams logParams) {
         if (!checkRtMonitor(logParams)) {
             return;
         }
@@ -162,12 +167,8 @@ class MoniLogUtil {
      */
     private static TagBuilder getSystemTags(MoniLogParams logParams) {
         boolean success = logParams.isSuccess() && logParams.getException() == null;
-        String exceptionMsg = logParams.getException() == null ? "null" : ExceptionUtil.getErrorMsg(logParams.getException());
-        int maxLen = 30;
-        if (exceptionMsg.length() > maxLen) {
-            exceptionMsg = exceptionMsg.substring(0, maxLen) + "...";
-        }
-        return TagBuilder.of("result", success ? "success" : "error").add("application", SpringUtils.application).add("logPoint", logParams.getLogPoint().name()).add("env", SpringUtils.activeProfile).add("service", logParams.getService()).add("action", logParams.getAction()).add("msgCode", logParams.getMsgCode()).add("cost", String.valueOf(logParams.getCost())).add("exception", exceptionMsg);
+        String exception = logParams.getException() == null ? "null" : logParams.getException().getClass().getSimpleName();
+        return TagBuilder.of("result", success ? "success" : "error").add("application", SpringUtils.application).add("logPoint", logParams.getLogPoint().name()).add("env", SpringUtils.activeProfile).add("service", logParams.getService()).add("action", logParams.getAction()).add("msgCode", logParams.getMsgCode()).add("cost", String.valueOf(logParams.getCost())).add("exception", exception);
     }
 
     /**
@@ -182,17 +183,37 @@ class MoniLogUtil {
     }
 
     /**
-     * 打印慢操作日志
+     * 打印大值日志
      */
-    static void printLargeSizeLog(MoniLogParams logParams, String key) {
+    static void printLargeSizeLog(MoniLogParams p, String key) {
         MoniLogPrinter printer = getLogPrinter();
         if (printer == null) {
             return;
         }
-        printer.logLargeSize(logParams, key);
+        if (p == null || p.getLogPoint() != LogPoint.redis || p.getOutput() == null || StringUtils.isBlank(key)) {
+            return;
+        }
+        MoniLogProperties moniLogProperties = getLogProperties();
+        if (moniLogProperties == null) {
+            return;
+        }
+        MoniLogProperties.RedisProperties redisConf = moniLogProperties.getRedis();
+        if (redisConf == null || !redisConf.isEnable() || redisConf.getWarnForValueLength() <= 0) {
+            return;
+        }
+        long valueLen;
+        try {
+            valueLen = RamUsageEstimator.sizeOf(p.getOutput());
+        } catch (Exception e) {
+            MoniLogUtil.innerDebug("parseResultSize error", e);
+            return;
+        }
+        if (valueLen > 0 && valueLen > redisConf.getWarnForValueLength() * ONE_KB) {
+            printer.logLargeSize(p, key, valueLen);
+        }
     }
 
-    private static LogOutputLevel getDigestLogLevel(){
+    private static LogOutputLevel getDigestLogLevel() {
         MoniLogProperties properties = getLogProperties();
         if (properties == null) {
             return LogOutputLevel.always;
@@ -207,6 +228,7 @@ class MoniLogUtil {
         }
         return detailLogLevel;
     }
+
     /**
      * 打印摘要日志
      */
@@ -305,7 +327,7 @@ class MoniLogUtil {
     /**
      * 校验是否在排除清单中,若返回true，则不需要打印摘要日志与详情日志
      */
-    private static boolean excludePrint(MoniLogParams logParams){
+    private static boolean excludePrint(MoniLogParams logParams) {
         MoniLogPrinter printer = getLogPrinter();
         MoniLogProperties properties = getLogProperties();
         if (printer == null || properties == null) {
@@ -322,19 +344,37 @@ class MoniLogUtil {
         if (logPoint == null) {
             return true;
         }
-        Set<String> infoExcludeComponents = printerCfg.getInfoExcludeComponents();
-        Set<String> infoExcludeServices = printerCfg.getInfoExcludeServices();
-        Set<String> infoExcludeActions = printerCfg.getInfoExcludeActions();
-        if (StringUtil.checkPathMatch(infoExcludeComponents, logPoint.name())) {
+
+        Set<String> exceptions = printerCfg.getExcludeExceptions();
+        Set<String> excludeKeyWords = printerCfg.getExcludeKeyWords();
+
+        if (StringUtil.checkPathMatch(printerCfg.getExcludeComponents(), logPoint.name())) {
             return true;
         }
-        if (StringUtil.checkPathMatch(infoExcludeServices, logParams.getService())) {
+        if (StringUtil.checkPathMatch(printerCfg.getExcludeServices(), logParams.getService())) {
             return true;
         }
-        return StringUtil.checkPathMatch(infoExcludeActions, logParams.getAction());
+        if (StringUtil.checkPathMatch(printerCfg.getExcludeActions(), logParams.getAction())) {
+            return true;
+        }
+        // 关键词匹配msgInfo
+        if (StringUtil.checkPathMatch(excludeKeyWords, logParams.getMsgInfo())) {
+            return true;
+        }
+        // 基于错误的判断
+        Throwable exception = logParams.getException();
+        if (exception == null) {
+            return false;
+        }
+        // 关键词匹配错误
+        if (StringUtil.checkListItemContains(excludeKeyWords, exception.getMessage())) {
+            return true;
+        }
+        // 匹配错误类
+        return StringUtil.checkListItemContains(exceptions, exception.getClass().getCanonicalName());
     }
 
-    private static boolean printLevelCheckPass(LogOutputLevel detailLogLevel, MoniLogParams logParams){
+    private static boolean printLevelCheckPass(LogOutputLevel detailLogLevel, MoniLogParams logParams) {
         boolean doPrinter = false;
         switch (detailLogLevel) {
             case always:

@@ -27,10 +27,11 @@ public interface MoniLogPrinter {
     /**
      * 打印大值监控日志
      *
-     * @param logParams 执行上下文
-     * @param key       关联key
+     * @param logParams    执行上下文
+     * @param key          关联key
+     * @param sizeInBytes  实际大小：bytes
      */
-    void logLargeSize(MoniLogParams logParams, String key);
+    void logLargeSize(MoniLogParams logParams, String key, long sizeInBytes);
 
     /**
      * 日志前缀
