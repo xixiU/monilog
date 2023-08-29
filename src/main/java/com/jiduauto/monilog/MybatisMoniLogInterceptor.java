@@ -141,7 +141,7 @@ class MybatisMoniLogInterceptor {
             return info;
         }
 
-        public static void setServiceClsAndMethodName(MappedStatement mappedStatement, MybatisInvocationInfo info) {
+        private static void setServiceClsAndMethodName(MappedStatement mappedStatement, MybatisInvocationInfo info) {
             String mapperId = mappedStatement.getId();
             info.serviceCls = loadCls(mapperId.substring(0, mapperId.lastIndexOf('.')));
             info.methodName = mapperId.substring(mapperId.lastIndexOf('.') + 1);
