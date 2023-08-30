@@ -22,7 +22,7 @@ import static com.jiduauto.monilog.MoniLogUtil.INNER_DEBUG_PREFIX;
 final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered {
     private static final String HTTP_SYNC_CLIENT = "org.apache.http.impl.client.CloseableHttpClient";
     private static final String HTTP_ASYNC_CLIENT_EXCHANGE_HANDLER = "org.apache.http.impl.nio.client.AbstractClientExchangeHandler";
-    private static final Map<String, AtomicBoolean> map = new HashMap<String, AtomicBoolean>() {{
+    private static final Map<String, AtomicBoolean> FLAGS = new HashMap<String, AtomicBoolean>() {{
         put(HTTP_CLIENT_BUILDER, new AtomicBoolean());
         put(HTTP_SYNC_CLIENT, new AtomicBoolean());
         put(HTTP_ASYNC_CLIENT_BUILDER, new AtomicBoolean());
@@ -59,7 +59,7 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
     }
 
     private static void enhanceDefaultConstructor(String clsName, String srcCode) throws Throwable {
-        if (map.get(clsName).get()) {
+        if (FLAGS.get(clsName).get()) {
             return;
         }
 
@@ -69,12 +69,12 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
         ctCls.writeFile();
         Class<?> targetCls = ctCls.toClass();
         log.info("constructor of '{}' has bean enhanced...", targetCls.getCanonicalName());
-        map.get(clsName).set(true);
+        FLAGS.get(clsName).set(true);
 
     }
 
     private static void doEnhanceSyncErrorHandler(String cls) {
-        if (map.get(cls).get()) {
+        if (FLAGS.get(cls).get()) {
             return;
         }
         String newMethod = "private org.apache.http.client.methods.CloseableHttpResponse _doExecute(" +
@@ -105,14 +105,14 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
             ctCls.writeFile();
             Class<?> targetCls = ctCls.toClass();
             log.info("method of '{}' has bean enhanced...", targetCls.getCanonicalName());
-            map.get(cls).set(true);
+            FLAGS.get(cls).set(true);
         } catch (Throwable e) {
             log.warn(INNER_DEBUG_PREFIX + "failed to rebuild {} class, {}", cls, e.getMessage());
         }
     }
 
     private static void doEnhanceAsyncErrorHandler(String cls) {
-        if (map.get(cls).get()) {
+        if (FLAGS.get(cls).get()) {
             return;
         }
         String body = "{if(this.closed.compareAndSet(false, true)){" +
@@ -128,7 +128,7 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
             ctCls.writeFile();
             Class<?> targetCls = ctCls.toClass();
             log.info("method of '{}' has bean enhanced...", targetCls.getCanonicalName());
-            map.get(cls).set(true);
+            FLAGS.get(cls).set(true);
         } catch (Throwable e) {
             log.warn(INNER_DEBUG_PREFIX + "failed to rebuild {} class, {}", cls, e.getMessage());
         }
