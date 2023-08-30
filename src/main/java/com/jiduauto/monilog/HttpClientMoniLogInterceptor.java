@@ -183,7 +183,7 @@ public final class HttpClientMoniLogInterceptor {
 
     /**
      * HttpClient在执行异常时的回调方法
-     * 注意：该类不可修改，包括可见级别，否则将导致AsyncHttpClient及HttpClient在异常时拦截失效
+     * 注意：该类不可修改，包括可见级别，否则将导致HttpClient在异常时拦截失效
      * 该方法不可抛异常
      */
     public static void onFailed(Throwable ex, HttpContext ctx) {
