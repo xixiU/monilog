@@ -73,11 +73,10 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
 
     }
 
-    private static void doEnhanceSyncErrorHandler(String httpSyncClient) {
-        if (map.get(httpSyncClient).get()) {
+    private static void doEnhanceSyncErrorHandler(String cls) {
+        if (map.get(cls).get()) {
             return;
         }
-        //新增一个私有方法
         String newMethod = "private org.apache.http.client.methods.CloseableHttpResponse _doExecute(" +
                 "org.apache.http.HttpHost target," +
                 "org.apache.http.HttpRequest request," +
@@ -87,7 +86,6 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
                 "try {return doExecute(target,request,context);} catch(Throwable e){" +
                 HttpClientMoniLogInterceptor.class.getCanonicalName() +
                 ".onFailed(e, context);throw e;}}";
-        //修改三个方法
         String desc1 = "(Lorg/apache/http/HttpHost;Lorg/apache/http/HttpRequest;Lorg/apache/http/protocol/HttpContext;)Lorg/apache/http/client/methods/CloseableHttpResponse;";
         String desc2 = "(Lorg/apache/http/client/methods/HttpUriRequest;Lorg/apache/http/protocol/HttpContext;)Lorg/apache/http/client/methods/CloseableHttpResponse;";
         String desc3 = "(Lorg/apache/http/HttpHost;Lorg/apache/http/HttpRequest;)Lorg/apache/http/client/methods/CloseableHttpResponse;";
@@ -96,7 +94,7 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
         String body3 = "{return _doExecute($1, $2, null);}";
         try {
             ClassPool classPool = ClassPool.getDefault();
-            CtClass ctCls = classPool.getCtClass(httpSyncClient);
+            CtClass ctCls = classPool.getCtClass(cls);
             CtMethod newCtm = CtNewMethod.make(newMethod, ctCls);
             ctCls.addMethod(newCtm);
 
@@ -107,14 +105,14 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
             ctCls.writeFile();
             Class<?> targetCls = ctCls.toClass();
             log.info("method of '{}' has bean enhanced...", targetCls.getCanonicalName());
-            map.get(httpSyncClient).set(true);
+            map.get(cls).set(true);
         } catch (Throwable e) {
-            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild {} class, {}", httpSyncClient, e.getMessage());
+            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild {} class, {}", cls, e.getMessage());
         }
     }
 
-    private static void doEnhanceAsyncErrorHandler(String httpAsyncClientExchangeHandler) {
-        if (map.get(httpAsyncClientExchangeHandler).get()) {
+    private static void doEnhanceAsyncErrorHandler(String cls) {
+        if (map.get(cls).get()) {
             return;
         }
         String body = "{if(this.closed.compareAndSet(false, true)){" +
@@ -123,26 +121,16 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
                 "try {this.executionFailed($1);} finally " +
                 "{this.discardConnection();this.releaseResources();}}}";
         try {
-            String descriptor = "(Ljava/lang/Exception;)V";
             ClassPool classPool = ClassPool.getDefault();
-            CtClass ctCls = classPool.getCtClass(httpAsyncClientExchangeHandler);
-            CtMethod method = ctCls.getMethod("failed", descriptor);
+            CtClass ctCls = classPool.getCtClass(cls);
+            CtMethod method = ctCls.getMethod("failed", "(Ljava/lang/Exception;)V");
             method.setBody(body);
             ctCls.writeFile();
             Class<?> targetCls = ctCls.toClass();
             log.info("method of '{}' has bean enhanced...", targetCls.getCanonicalName());
-            map.get(httpAsyncClientExchangeHandler).set(true);
+            map.get(cls).set(true);
         } catch (Throwable e) {
-            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild {} class, {}", httpAsyncClientExchangeHandler, e.getMessage());
+            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild {} class, {}", cls, e.getMessage());
         }
-    }
-
-    private static void enhanceMethod(String clsName, String method, String newMethodBody) throws Throwable {
-        ClassPool classPool = ClassPool.getDefault();
-        CtClass ctCls = classPool.getCtClass(clsName);
-        ctCls.getDeclaredMethod(method).setBody(newMethodBody);
-        ctCls.writeFile();
-        Class<?> targetCls = ctCls.toClass();
-        log.info("method[{}] of '{}' has bean enhanced...", method, targetCls.getCanonicalName());
     }
 }
