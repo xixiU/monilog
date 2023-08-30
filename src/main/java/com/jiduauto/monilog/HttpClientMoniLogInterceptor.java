@@ -35,14 +35,16 @@ public final class HttpClientMoniLogInterceptor {
     private static final String MONILOG_PARAMS_KEY = "__MoniLogParams";
 
     /**
-     * 该方法不可修改，包括可见级别，否则将导致HttpClient拦截失效
+     * 为HttpClient注册拦截器
+     * 注：该方法不可修改，包括可见级别，否则将导致HttpClient拦截失效
      */
     public static void addInterceptorsForBuilder(HttpClientBuilder builder) {
         builder.addInterceptorFirst(new RequestInterceptor()).addInterceptorLast(new ResponseInterceptor());
     }
 
     /**
-     * 该方法不可修改，包括可见级别，否则将导致HttpClient拦截失效
+     * 为AsyncHttpClient注册拦截器，注意，此处注册的拦截器仅能处理正常返回的情况，对于异常情况(如超时)则由onAsyncFailed方法处理
+     * 注：该方法不可修改，包括可见级别，否则将导致HttpClient拦截失效
      */
     public static void addInterceptorsForAsyncBuilder(HttpAsyncClientBuilder builder) {
         builder.addInterceptorFirst(new RequestInterceptor()).addInterceptorLast(new ResponseInterceptor());
@@ -176,6 +178,25 @@ public final class HttpClientMoniLogInterceptor {
                 MoniLogUtil.log(p);
             }
         }
+    }
+
+
+    /**
+     * 同步client在执行异常时的回调方法
+     * 注意：该类不可修改，包括可见级别，否则将导致AsyncHttpClient拦截失效
+     * 该方法不可抛异常
+     */
+    public static void onSyncFailed(Throwable ex, HttpContext context) {
+        System.out.println(" this is failed exception : " + ex.getMessage());
+    }
+
+    /**
+     * 异步client在执行异常时的回调方法
+     * 注意：该类不可修改，包括可见级别，否则将导致AsyncHttpClient拦截失效
+     * 该方法不可抛异常
+     */
+    public static void onAsyncFailed(Throwable ex, HttpContext context) {
+        System.out.println(" this is failed exception : " + ex.getMessage());
     }
 
     private static boolean isEnable(HttpHost host, String path, String invokerClass) {
