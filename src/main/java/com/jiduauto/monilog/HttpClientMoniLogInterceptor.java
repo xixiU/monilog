@@ -35,7 +35,7 @@ public final class HttpClientMoniLogInterceptor {
     private static final String MONILOG_PARAMS_KEY = "__MoniLogParams";
 
     /**
-     * 为HttpClient注册拦截器
+     * 为HttpClient注册拦截器, 注意，此处注册的拦截器仅能处理正常返回的情况，对于异常情况(如超时)则由onFailed方法处理
      * 注：该方法不可修改，包括可见级别，否则将导致HttpClient拦截失效
      */
     public static void addInterceptorsForBuilder(HttpClientBuilder builder) {
@@ -43,7 +43,7 @@ public final class HttpClientMoniLogInterceptor {
     }
 
     /**
-     * 为AsyncHttpClient注册拦截器，注意，此处注册的拦截器仅能处理正常返回的情况，对于异常情况(如超时)则由onAsyncFailed方法处理
+     * 为AsyncHttpClient注册拦截器，注意，此处注册的拦截器仅能处理正常返回的情况，对于异常情况(如超时)则由onFailed方法处理
      * 注：该方法不可修改，包括可见级别，否则将导致HttpClient拦截失效
      */
     public static void addInterceptorsForAsyncBuilder(HttpAsyncClientBuilder builder) {
