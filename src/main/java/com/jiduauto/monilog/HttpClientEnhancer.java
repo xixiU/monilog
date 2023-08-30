@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.jiduauto.monilog.MoniLogPostProcessor.HTTP_ASYNC_CLIENT_BUILDER;
 import static com.jiduauto.monilog.MoniLogPostProcessor.HTTP_CLIENT_BUILDER;
+import static com.jiduauto.monilog.MoniLogUtil.INNER_DEBUG_PREFIX;
 
 /**
  * @author yp
@@ -49,23 +50,22 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
     private static boolean doEnhance(String clsName, String helperMethod) {
         String body = HttpClientMoniLogInterceptor.class.getCanonicalName() + "." + helperMethod + "(this);";
         try {
-            enhanceDefaultConstructor(clsName, "()V", body);
+            enhanceDefaultConstructor(clsName, body);
             return true;
-        } catch (NotFoundException ignore) {
         } catch (Throwable e) {
-            log.warn("failed to rebuild {} class, {}", clsName, e.getMessage());
+            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild {} class, {}", clsName, e.getMessage());
         }
         return false;
     }
 
-    private static void enhanceDefaultConstructor(String clsName, String descriptor, String srcCode) throws Throwable {
+    private static void enhanceDefaultConstructor(String clsName, String srcCode) throws Throwable {
         if (map.get(clsName).get()) {
             return;
         }
 
         ClassPool classPool = ClassPool.getDefault();
         CtClass ctCls = classPool.getCtClass(clsName);
-        ctCls.getConstructor(descriptor).setBody(srcCode);
+        ctCls.getConstructor("()V").setBody(srcCode);
         ctCls.writeFile();
         Class<?> targetCls = ctCls.toClass();
         log.info("constructor of '{}' has bean enhanced...", targetCls.getCanonicalName());
@@ -83,9 +83,10 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
                 "org.apache.http.HttpRequest request," +
                 "org.apache.http.protocol.HttpContext context)" +
                 "throws java.io.IOException,org.apache.http.client.ClientProtocolException{" +
+                "if(context==null)context=new org.apache.http.protocol.BasicHttpContext();" +
                 "try {return doExecute(target,request,context);} catch(Throwable e){" +
                 HttpClientMoniLogInterceptor.class.getCanonicalName() +
-                ".onSyncFailed(e, context);throw e;}}";
+                ".onFailed(e, context);throw e;}}";
         //修改三个方法
         String desc1 = "(Lorg/apache/http/HttpHost;Lorg/apache/http/HttpRequest;Lorg/apache/http/protocol/HttpContext;)Lorg/apache/http/client/methods/CloseableHttpResponse;";
         String desc2 = "(Lorg/apache/http/client/methods/HttpUriRequest;Lorg/apache/http/protocol/HttpContext;)Lorg/apache/http/client/methods/CloseableHttpResponse;";
@@ -108,7 +109,7 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
             log.info("method of '{}' has bean enhanced...", targetCls.getCanonicalName());
             map.get(httpSyncClient).set(true);
         } catch (Throwable e) {
-            log.warn("failed to rebuild {} class, {}", httpSyncClient, e.getMessage());
+            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild {} class, {}", httpSyncClient, e.getMessage());
         }
     }
 
@@ -118,7 +119,7 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
         }
         String body = "{if(this.closed.compareAndSet(false, true)){" +
                 HttpClientMoniLogInterceptor.class.getCanonicalName() +
-                ".onAsyncFailed($1, this.localContext);" +
+                ".onFailed($1, this.localContext);" +
                 "try {this.executionFailed($1);} finally " +
                 "{this.discardConnection();this.releaseResources();}}}";
         try {
@@ -132,7 +133,7 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
             log.info("method of '{}' has bean enhanced...", targetCls.getCanonicalName());
             map.get(httpAsyncClientExchangeHandler).set(true);
         } catch (Throwable e) {
-            log.warn("failed to rebuild {} class, {}", httpAsyncClientExchangeHandler, e.getMessage());
+            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild {} class, {}", httpAsyncClientExchangeHandler, e.getMessage());
         }
     }
 

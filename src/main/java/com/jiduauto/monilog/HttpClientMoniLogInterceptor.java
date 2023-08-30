@@ -183,20 +183,32 @@ public final class HttpClientMoniLogInterceptor {
 
     /**
      * 同步client在执行异常时的回调方法
-     * 注意：该类不可修改，包括可见级别，否则将导致AsyncHttpClient拦截失效
+     * 注意：该类不可修改，包括可见级别，否则将导致AsyncHttpClient及HttpClient在异常时拦截失效
      * 该方法不可抛异常
      */
-    public static void onSyncFailed(Throwable ex, HttpContext context) {
-        System.out.println(" this is failed exception : " + ex.getMessage());
-    }
-
-    /**
-     * 异步client在执行异常时的回调方法
-     * 注意：该类不可修改，包括可见级别，否则将导致AsyncHttpClient拦截失效
-     * 该方法不可抛异常
-     */
-    public static void onAsyncFailed(Throwable ex, HttpContext context) {
-        System.out.println(" this is failed exception : " + ex.getMessage());
+    public static void onFailed(Throwable ex, HttpContext ctx) {
+        MoniLogParams p = ctx == null ? null : (MoniLogParams) ctx.getAttribute(MONILOG_PARAMS_KEY);
+        if (p == null) {
+            return;
+        }
+        try {
+            if (p.getCost() > 0) {
+                p.setCost(System.currentTimeMillis() - p.getCost());
+            }
+            p.setSuccess(false);
+            ErrorInfo errorInfo = ExceptionUtil.parseException(ex);
+            if (errorInfo == null) {
+                errorInfo = ErrorInfo.of(ErrorEnum.SYSTEM_ERROR.name(), "HttpClientExecuteFailed");
+            }
+            p.setMsgCode(errorInfo.getErrorCode());
+            p.setMsgInfo(errorInfo.getErrorMsg());
+            p.setException(ex);
+        } catch (Throwable e) {
+            MoniLogUtil.innerDebug("HttpClient.execute error", e);
+        } finally {
+            ctx.removeAttribute(MONILOG_PARAMS_KEY);
+            MoniLogUtil.log(p);
+        }
     }
 
     private static boolean isEnable(HttpHost host, String path, String invokerClass) {
