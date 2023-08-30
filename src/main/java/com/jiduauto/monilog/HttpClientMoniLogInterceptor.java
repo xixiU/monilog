@@ -12,6 +12,7 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.BufferedHttpEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.springframework.http.HttpHeaders;
@@ -25,6 +26,7 @@ import static com.jiduauto.monilog.StringUtil.checkPathMatch;
 
 /**
  * 该类签名不可修改，包括可见级别，否则将导致HttpClient拦截失效
+ *
  * @author yp
  * @date 2023/07/31
  */
@@ -35,7 +37,14 @@ public final class HttpClientMoniLogInterceptor {
     /**
      * 该方法不可修改，包括可见级别，否则将导致HttpClient拦截失效
      */
-    public static void addInterceptors(HttpClientBuilder builder) {
+    public static void addInterceptorsForBuilder(HttpClientBuilder builder) {
+        builder.addInterceptorFirst(new RequestInterceptor()).addInterceptorLast(new ResponseInterceptor());
+    }
+
+    /**
+     * 该方法不可修改，包括可见级别，否则将导致HttpClient拦截失效
+     */
+    public static void addInterceptorsForAsyncBuilder(HttpAsyncClientBuilder builder) {
         builder.addInterceptorFirst(new RequestInterceptor()).addInterceptorLast(new ResponseInterceptor());
     }
 
