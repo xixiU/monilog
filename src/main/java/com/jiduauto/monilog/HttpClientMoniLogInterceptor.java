@@ -182,7 +182,7 @@ public final class HttpClientMoniLogInterceptor {
 
 
     /**
-     * 同步client在执行异常时的回调方法
+     * HttpClient在执行异常时的回调方法
      * 注意：该类不可修改，包括可见级别，否则将导致AsyncHttpClient及HttpClient在异常时拦截失效
      * 该方法不可抛异常
      */
