@@ -31,10 +31,14 @@ class MoniLogUtil {
      * 添加接入组件信息上报，仅上报基础信息，当前接入的版本，接入的应用，环境
      */
     static void addSystemRecord(){
-        TagBuilder tag = TagBuilder.of("application", SpringUtils.application)
-                .add("env", SpringUtils.activeProfile)
-                .add("version", MoniLogAutoConfiguration.class.getPackage().getImplementationVersion());
-        MetricMonitor.record(BUSINESS_MONITOR_PREFIX + "sysVersion", tag.toArray());
+        try {
+            TagBuilder tag = TagBuilder.of("application", SpringUtils.application)
+                    .add("env", SpringUtils.activeProfile)
+                    .add("version", MoniLogAutoConfiguration.class.getPackage().getImplementationVersion());
+            MetricMonitor.record(BUSINESS_MONITOR_PREFIX + "sysVersion", tag.toArray());
+        } catch (Exception e) {
+            innerDebug("addSystemRecord error", e);
+        }
 
     }
 
