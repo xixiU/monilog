@@ -30,6 +30,8 @@ class MoniLogUtil {
     private static MoniLogPrinter logPrinter = null;
     private static MoniLogProperties logProperties = null;
 
+    private static final Timer TIMER = new Timer();
+
     static {
         addSysRecord();
     }
@@ -38,9 +40,7 @@ class MoniLogUtil {
      * 添加系统方法指标，每6小时打印一条系统信息
      */
     private static void addSysRecord(){
-        Timer timer = new Timer();
-
-        // 设置任务的初始延迟时间为3分钟，防止应用启动过程中反复执行
+        // 设置任务的初始延迟时间为3分钟，防止应用启动过程中执行
         long delay = 3 * 60 * 1000;
 
         // 设置任务的执行间隔时间为6小时
@@ -48,13 +48,11 @@ class MoniLogUtil {
         TimerTask timerTask = new TimerTask() {
             @Override
             public void run() {
-                // 在这里定义要执行的任务
                 MoniLogUtil.addSystemRecord();
             }
         };
         try {
-            // 使用Timer的schedule方法设置定时任务
-            timer.schedule(timerTask, delay, period);
+            TIMER.schedule(timerTask, delay, period);
         } catch (Exception e) {
             MoniLogUtil.innerDebug("addSysRecord error", e);
         }
