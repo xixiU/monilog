@@ -34,7 +34,7 @@ class MoniLogUtil {
         TagBuilder tag = TagBuilder.of("application", SpringUtils.application)
                 .add("env", SpringUtils.activeProfile)
                 .add("version", MoniLogAutoConfiguration.class.getPackage().getImplementationVersion());
-        MetricMonitor.record(BUSINESS_MONITOR_PREFIX + "monilog", tag.toArray());
+        MetricMonitor.record(BUSINESS_MONITOR_PREFIX + "system", tag.toArray());
 
     }
 
