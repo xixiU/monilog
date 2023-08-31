@@ -58,7 +58,7 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
             ctCls.getConstructor("()V").setBody(body);
             ctCls.writeFile();
             Class<?> targetCls = ctCls.toClass();
-            log.info("constructor of '{}' has bean enhanced...", targetCls.getCanonicalName());
+            log.info("constructor of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(clsName).set(true);
             return true;
         } catch (Throwable e) {
@@ -98,7 +98,7 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
 
             ctCls.writeFile();
             Class<?> targetCls = ctCls.toClass();
-            log.info("method of '{}' has bean enhanced...", targetCls.getCanonicalName());
+            log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(clsName).set(true);
         } catch (Throwable e) {
             log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", clsName, e.getMessage());
@@ -121,7 +121,7 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
             method.setBody(body);
             ctCls.writeFile();
             Class<?> targetCls = ctCls.toClass();
-            log.info("method of '{}' has bean enhanced...", targetCls.getCanonicalName());
+            log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(cls).set(true);
         } catch (Throwable e) {
             log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", cls, e.getMessage());
