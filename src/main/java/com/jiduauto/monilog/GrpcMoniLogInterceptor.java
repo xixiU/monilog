@@ -151,7 +151,7 @@ class GrpcMoniLogInterceptor {
                     params.setSuccess(false);
                     params.setMsgInfo(status.getDescription());
                     params.setMsgCode(status.getCode().name());
-                    params.setException(status.asException());
+                    params.setException(new StatusRuntimeException(status, trailers));
                 }
                 super.onClose(status, trailers);
                 MoniLogUtil.log(params);
