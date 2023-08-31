@@ -12,10 +12,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 
-import javax.annotation.PostConstruct;
-import java.util.Timer;
-import java.util.TimerTask;
-
 /**
  * @author rongjie.yuan
  * @date 2023/7/28 17:06
@@ -121,29 +117,4 @@ class MoniLogAutoConfiguration {
         return new RedisMoniLogInterceptor.RedissonInterceptor(moniLogProperties.getRedis());
     }
 
-
-    /**
-     * 添加系统方法指标，每6小时打印一条系统信息
-     */
-    @PostConstruct
-    @Bean
-    public Timer addSystemRecordTimerTask() {
-        Timer timer = new Timer();
-
-        // 设置任务的初始延迟时间为3分钟，防止应用启动过程中反复执行
-        long delay = 3 * 60 * 1000;
-
-        // 设置任务的执行间隔时间为6小时
-        long period = 6 * 60 * 60 * 1000;
-        TimerTask timerTask = new TimerTask() {
-            @Override
-            public void run() {
-                // 在这里定义要执行的任务
-                MoniLogUtil.addSystemRecord();
-            }
-        };
-        // 使用Timer的schedule方法设置定时任务
-        timer.schedule(timerTask, delay, period);
-        return timer;
-    }
 }
