@@ -156,6 +156,7 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         getAppName();
         // banner输出
         printBanner();
+        MoniLogUtil.addSystemRecord();
     }
 
     private void bindValue(){
