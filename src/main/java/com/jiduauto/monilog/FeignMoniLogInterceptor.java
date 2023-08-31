@@ -212,7 +212,7 @@ class FeignMoniLogInterceptor {
      */
     private static String getMethod(Request request) {
         // openfeign
-        boolean hasHttpMethod = ReflectUtil.objectHasProperty(request.getClass(), "httpMethod");
+        boolean hasHttpMethod = ReflectUtil.hasProperty(request.getClass(), "httpMethod");
         if (hasHttpMethod) {
             Object propValue = ReflectUtil.getPropValue(request, "httpMethod");
             return propValue != null ? propValue.toString() : null;
@@ -235,7 +235,7 @@ class FeignMoniLogInterceptor {
             queryMap = new HashMap<>();
         }
         // openfeign加一个兜底逻辑可以从requestTemplate参数取值
-        boolean hasRequestTemplate = ReflectUtil.objectHasProperty(request.getClass(), "requestTemplate");
+        boolean hasRequestTemplate = ReflectUtil.hasProperty(request.getClass(), "requestTemplate");
         if (hasRequestTemplate) {
             Map<String, Collection<String>> queries = request.requestTemplate().queries();
             queryMap.putAll(queries);

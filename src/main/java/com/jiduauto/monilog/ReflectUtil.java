@@ -19,22 +19,30 @@ import java.util.stream.Collectors;
  * @author yepei
  */
 class ReflectUtil {
-    private static final ConcurrentHashMap<String, Boolean> CACHE = new ConcurrentHashMap<>();
+    private static final Map<String, Set<String>> PROP_CACHE = new ConcurrentHashMap<>();
 
-    public static boolean objectHasProperty(Class<?> cls, String propertyName) {
+    private static final Map<String, Field> FIELD_CACHE = new ConcurrentHashMap<>();
+    private static final Map<Method, Class<?>> METHOD_OWNER_CACHE = new ConcurrentHashMap<>();
+
+    public static boolean hasProperty(Class<?> cls, String propertyName) {
         String clsName = cls.getCanonicalName();
         try {
-            if (CACHE.containsKey(clsName)) {
-                return CACHE.get(clsName);
+            Set<String> properties = PROP_CACHE.get(clsName);
+            if (properties != null && properties.contains(propertyName)) {
+                return true;
             }
             Field field = cls.getDeclaredField(propertyName);
-            CACHE.put(clsName, true);
+            if (properties == null) {
+                properties = new HashSet<>();
+            }
+            properties.add(propertyName);
+            PROP_CACHE.put(clsName, properties);
             return true;
         } catch (NoSuchFieldException e) {
-            CACHE.put(clsName, false);
             return false;
         }
     }
+
     /**
      * 找到方法上的注解，如果找不到则向上找类上的，如果还找不到，则再向上找接口上的
      */
@@ -86,7 +94,6 @@ class ReflectUtil {
      * 从当前类以及该类的父类、接口上寻找符合签名的方法(含非public方法)，找到一个就立即返回
      * getDeclaredMethods:获取当前类的所有方法；包括 protected/默认/private 修饰的方法；不包括父类 、接口 public 修饰的方法
      * getMethods：获取当前类或父类或父接口的 public 修饰的字段；包含接口中 default 修饰的方法
-     *
      */
     private static List<Method> getClsMethods(Class<?> cls, String methodName, Object[] args) {
         List<Method> results = new ArrayList<>();
@@ -117,16 +124,16 @@ class ReflectUtil {
         return results;
     }
 
-    private static boolean matchMethod(Method e, String methodName, Object[] args) {
-        if (!e.getName().equals(methodName)) {
+    private static boolean matchMethod(Method method, String methodName, Object[] args) {
+        if (!method.getName().equals(methodName)) {
             return false;
         }
         int paramCount = args == null ? 0 : args.length;
-        if (e.getParameterCount() != paramCount) {
+        if (method.getParameterCount() != paramCount) {
             return false;
         }
         if (paramCount > 0) {
-            Type[] parameterTypes = e.getGenericParameterTypes();
+            Type[] parameterTypes = method.getGenericParameterTypes();
             for (int i = 0; i < paramCount; i++) {
                 Object arg = args[i];
                 Type type = parameterTypes[i];
@@ -138,7 +145,6 @@ class ReflectUtil {
         return true;
     }
 
-    // TODO rongjie.yuan  2023/8/17 10:33 可以缓存优化
     @SuppressWarnings("unchecked")
     static <T> T convertType(Object arg, Type requiredType) {
         if (arg == null) {
@@ -187,15 +193,15 @@ class ReflectUtil {
         }
     }
 
-    static <T> T getPropValue(Object obj, String name){
+    static <T> T getPropValue(Object obj, String name) {
         return getPropValue(obj, name, true);
     }
 
     @SuppressWarnings("unchecked")
-    static <T> T getPropValue(Object obj, String name, T defaultValue){
+    static <T> T getPropValue(Object obj, String name, T defaultValue) {
         Object propValue = getPropValue(obj, name, true);
         if (propValue != null) {
-            return (T)propValue;
+            return (T) propValue;
         }
         return defaultValue;
     }
@@ -221,6 +227,11 @@ class ReflectUtil {
 
 
     private static Field getField(Class<?> cls, String name, Class<?> fieldCls) {
+        String key = cls.getCanonicalName() + "_" + name + "_" + (fieldCls == null ? "null" : fieldCls.getCanonicalName());
+        if (FIELD_CACHE.containsKey(key)) {
+            return FIELD_CACHE.get(key);
+        }
+
         for (Class<?> superClass = cls; superClass != Object.class; superClass = superClass.getSuperclass()) {
             Field[] fields = superClass.getDeclaredFields();
             for (Field f : fields) {
@@ -228,6 +239,7 @@ class ReflectUtil {
                     continue;
                 }
                 if (f.getName().equals(name)) {
+                    FIELD_CACHE.put(key, f);
                     return f;
                 }
             }
@@ -287,6 +299,9 @@ class ReflectUtil {
         if (declaringClass.isInterface()) {
             return declaringClass;
         }
+        if (METHOD_OWNER_CACHE.containsKey(m)) {
+            return METHOD_OWNER_CACHE.get(m);
+        }
         List<Class<?>> allInterfaces = getAllInterfaces(declaringClass);
         if (CollectionUtils.isEmpty(allInterfaces)) {
             return null;
@@ -294,7 +309,9 @@ class ReflectUtil {
         for (Class<?> c : allInterfaces) {
             try {
                 Method method = c.getMethod(m.getName(), m.getParameterTypes());
-                return method.getDeclaringClass();
+                Class<?> cls = method.getDeclaringClass();
+                METHOD_OWNER_CACHE.put(m, cls);
+                return cls;
             } catch (NoSuchMethodException e) {
                 //处理泛型实现的情况
                 Method[] methods = c.getMethods();
@@ -306,6 +323,7 @@ class ReflectUtil {
                     if (genericParamType != null) {
                         Set<Type> typeSets = Sets.newHashSet(genericParamType);
                         if (typeSets.containsAll(Arrays.asList(m.getParameterTypes()))) {
+                            METHOD_OWNER_CACHE.put(m, c);
                             return c;
                         }
                     }

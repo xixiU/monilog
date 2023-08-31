@@ -59,7 +59,9 @@ class GrpcMoniLogInterceptor {
                         List<Method> list = Arrays.stream(serviceCls.getMethods()).filter(e -> ste.getMethodName().equals(e.getName())).collect(Collectors.toList());
                         Method[] array = list.toArray(new Method[]{});
                         LogParser logParser = ReflectUtil.getAnnotation(LogParser.class, serviceCls, array);
-                        context.put("logParser", logParser);
+                        if (logParser != null) {
+                            context.put("logParser", logParser);
+                        }
                     }
                 } catch (Exception e) {
                     MoniLogUtil.innerDebug("GrpcMoniLogClientCall.start error", e);
@@ -149,6 +151,7 @@ class GrpcMoniLogInterceptor {
                     params.setSuccess(false);
                     params.setMsgInfo(status.getDescription());
                     params.setMsgCode(status.getCode().name());
+                    params.setException(new StatusRuntimeException(status, trailers));
                 }
                 super.onClose(status, trailers);
                 MoniLogUtil.log(params);
@@ -175,7 +178,9 @@ class GrpcMoniLogInterceptor {
                     List<Method> list = Arrays.stream(serviceCls.getMethods()).filter(e -> ste.getMethodName().equals(e.getName())).collect(Collectors.toList());
                     Method[] array = list.toArray(new Method[]{});
                     LogParser logParser = ReflectUtil.getAnnotation(LogParser.class, serviceCls, array);
-                    context.put("logParser", logParser);
+                    if (logParser != null) {
+                        context.put("logParser", logParser);
+                    }
                 }
             } catch (Exception e) {
                 MoniLogUtil.innerDebug("GrpcLogPrintServerInterceptor.interceptCall error", e);

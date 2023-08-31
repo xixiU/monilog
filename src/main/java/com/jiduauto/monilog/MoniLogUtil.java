@@ -6,6 +6,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 import static com.carrotsearch.sizeof.RamUsageEstimator.ONE_KB;
@@ -18,6 +20,7 @@ import static com.carrotsearch.sizeof.RamUsageEstimator.ONE_KB;
  */
 @Slf4j
 class MoniLogUtil {
+
     /**
      * 组件监控前缀
      */
@@ -27,7 +30,50 @@ class MoniLogUtil {
     private static MoniLogPrinter logPrinter = null;
     private static MoniLogProperties logProperties = null;
 
-    public static void log(MoniLogParams logParams) {
+    private static final Timer TIMER = new Timer();
+
+    static {
+        addSysRecord();
+    }
+
+    /**
+     * 添加系统方法指标，每6小时打印一条系统信息
+     */
+    private static void addSysRecord(){
+        // 设置任务的初始延迟时间为3分钟，防止应用启动过程中执行
+        long delay = 3 * 60 * 1000;
+
+        // 设置任务的执行间隔时间为6小时
+        long period = 6 * 60 * 60 * 1000;
+        TimerTask timerTask = new TimerTask() {
+            @Override
+            public void run() {
+                MoniLogUtil.addSystemRecord();
+            }
+        };
+        try {
+            TIMER.schedule(timerTask, delay, period);
+        } catch (Exception e) {
+            MoniLogUtil.innerDebug("addSysRecord error", e);
+        }
+    }
+
+    /**
+     * 添加接入组件信息上报，仅上报基础信息，当前接入的版本，接入的应用，环境
+     */
+    static void addSystemRecord(){
+        try {
+            TagBuilder tag = TagBuilder.of("application", SpringUtils.application)
+                    .add("env", SpringUtils.activeProfile)
+                    .add("version", MoniLogAutoConfiguration.class.getPackage().getImplementationVersion());
+            MetricMonitor.record(BUSINESS_MONITOR_PREFIX + "sysVersion", tag.toArray());
+        } catch (Exception e) {
+            innerDebug("addSystemRecord error", e);
+        }
+
+    }
+
+    static void log(MoniLogParams logParams) {
         try {
             doMonitor(logParams);
         } catch (Exception e) {

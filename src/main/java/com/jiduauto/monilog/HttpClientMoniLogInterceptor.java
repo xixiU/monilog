@@ -12,6 +12,7 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.BufferedHttpEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.springframework.http.HttpHeaders;
@@ -25,6 +26,7 @@ import static com.jiduauto.monilog.StringUtil.checkPathMatch;
 
 /**
  * 该类签名不可修改，包括可见级别，否则将导致HttpClient拦截失效
+ *
  * @author yp
  * @date 2023/07/31
  */
@@ -33,9 +35,18 @@ public final class HttpClientMoniLogInterceptor {
     private static final String MONILOG_PARAMS_KEY = "__MoniLogParams";
 
     /**
-     * 该方法不可修改，包括可见级别，否则将导致HttpClient拦截失效
+     * 为HttpClient注册拦截器, 注意，此处注册的拦截器仅能处理正常返回的情况，对于异常情况(如超时)则由onFailed方法处理
+     * 注：该方法不可修改，包括可见级别，否则将导致HttpClient拦截失效
      */
-    public static void addInterceptors(HttpClientBuilder builder) {
+    public static void addInterceptorsForBuilder(HttpClientBuilder builder) {
+        builder.addInterceptorFirst(new RequestInterceptor()).addInterceptorLast(new ResponseInterceptor());
+    }
+
+    /**
+     * 为AsyncHttpClient注册拦截器，注意，此处注册的拦截器仅能处理正常返回的情况，对于异常情况(如超时)则由onFailed方法处理
+     * 注：该方法不可修改，包括可见级别，否则将导致HttpClient拦截失效
+     */
+    public static void addInterceptorsForAsyncBuilder(HttpAsyncClientBuilder builder) {
         builder.addInterceptorFirst(new RequestInterceptor()).addInterceptorLast(new ResponseInterceptor());
     }
 
@@ -166,6 +177,37 @@ public final class HttpClientMoniLogInterceptor {
                 httpContext.removeAttribute(MONILOG_PARAMS_KEY);
                 MoniLogUtil.log(p);
             }
+        }
+    }
+
+
+    /**
+     * HttpClient在执行异常时的回调方法
+     * 注意：该类不可修改，包括可见级别，否则将导致HttpClient在异常时拦截失效
+     * 该方法不可抛异常
+     */
+    public static void onFailed(Throwable ex, HttpContext ctx) {
+        MoniLogParams p = ctx == null ? null : (MoniLogParams) ctx.getAttribute(MONILOG_PARAMS_KEY);
+        if (p == null) {
+            return;
+        }
+        try {
+            if (p.getCost() > 0) {
+                p.setCost(System.currentTimeMillis() - p.getCost());
+            }
+            p.setSuccess(false);
+            ErrorInfo errorInfo = ExceptionUtil.parseException(ex);
+            if (errorInfo == null) {
+                errorInfo = ErrorInfo.of(ErrorEnum.SYSTEM_ERROR.name(), "HttpClientExecuteFailed");
+            }
+            p.setMsgCode(errorInfo.getErrorCode());
+            p.setMsgInfo(errorInfo.getErrorMsg());
+            p.setException(ex);
+        } catch (Throwable e) {
+            MoniLogUtil.innerDebug("HttpClient.execute error", e);
+        } finally {
+            ctx.removeAttribute(MONILOG_PARAMS_KEY);
+            MoniLogUtil.log(p);
         }
     }
 

@@ -27,12 +27,13 @@ import java.util.Set;
  * spring bean的实例化过程参考：<a href="https://blog.csdn.net/m0_37588577/article/details/127639584">...</a>
  */
 @Slf4j
-class MoniLogPostProcessor implements BeanPostProcessor ,PriorityOrdered{
+class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered {
     static final Map<String, Class<?>> CACHED_CLASS = new HashMap<>();
     private static final String FEIGN_CLIENT = "feign.Client";
     private static final String XXL_JOB = "com.xxl.job.core.handler.IJobHandler";
     private static final String MQ_ADMIN = "org.apache.rocketmq.client.MQAdmin";
-    private static final String HTTP_CLIENT_BUILDER = "org.apache.http.impl.client.HttpClientBuilder";
+    static final String HTTP_CLIENT_BUILDER = "org.apache.http.impl.client.HttpClientBuilder";
+    static final String HTTP_ASYNC_CLIENT_BUILDER = "org.apache.http.impl.nio.client.HttpAsyncClientBuilder";
     private static final String MQ_LISTENER_CONTAINER = "org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer";
     private static final String REDIS_CONN_FACTORY = "org.springframework.data.redis.connection.RedisConnectionFactory";
     static final String REDIS_TEMPLATE = "org.springframework.data.redis.core.RedisTemplate";
@@ -64,7 +65,7 @@ class MoniLogPostProcessor implements BeanPostProcessor ,PriorityOrdered{
                 //redisTemplate以及redisson比较特殊，分是在MoniLogAppListener以及RedissonInterceptor中处理
                 log.info(">>>monilog redis start skip...");
             }
-        } else if (isTargetBean(bean, HTTP_CLIENT_BUILDER)) {
+        } else if (isTargetBean(bean, HTTP_CLIENT_BUILDER) || isTargetBean(bean, HTTP_ASYNC_CLIENT_BUILDER)) {
             if ((bean instanceof HttpClientBuilder) && isComponentEnable("httpclient", moniLogProperties.getHttpclient().isEnable())) {
                 //httpclient会在另外的地方进行增强
                 log.info(">>>monilog httpclient start skip...");
@@ -139,7 +140,7 @@ class MoniLogPostProcessor implements BeanPostProcessor ,PriorityOrdered{
     }
 
     private static void loadClass() {
-        Set<String> clsNames = Sets.newHashSet(FEIGN_CLIENT, XXL_JOB, MQ_ADMIN, HTTP_CLIENT_BUILDER, MQ_LISTENER_CONTAINER, REDIS_CONN_FACTORY, REDIS_TEMPLATE, REDISSON_CLIENT);
+        Set<String> clsNames = Sets.newHashSet(FEIGN_CLIENT, XXL_JOB, MQ_ADMIN, HTTP_CLIENT_BUILDER, HTTP_ASYNC_CLIENT_BUILDER, MQ_LISTENER_CONTAINER, REDIS_CONN_FACTORY, REDIS_TEMPLATE, REDISSON_CLIENT);
         for (String clsName : clsNames) {
             try {
                 Class<?> cls = Class.forName(clsName);
