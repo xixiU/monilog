@@ -62,7 +62,7 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
             FLAGS.get(clsName).set(true);
             return true;
         } catch (Throwable e) {
-            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild {} class, {}", clsName, e.getMessage());
+            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", clsName, e.getMessage());
         }
         return false;
     }
@@ -101,7 +101,7 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
             log.info("method of '{}' has bean enhanced...", targetCls.getCanonicalName());
             FLAGS.get(clsName).set(true);
         } catch (Throwable e) {
-            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild {} class, {}", clsName, e.getMessage());
+            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", clsName, e.getMessage());
         }
     }
 
@@ -124,7 +124,7 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
             log.info("method of '{}' has bean enhanced...", targetCls.getCanonicalName());
             FLAGS.get(cls).set(true);
         } catch (Throwable e) {
-            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild {} class, {}", cls, e.getMessage());
+            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", cls, e.getMessage());
         }
     }
 }
