@@ -26,7 +26,7 @@
         <opentelemetry.log.version>1.0.14</opentelemetry.log.version>
 
         <spring-boot-stater.version>2.3.12.RELEASE</spring-boot-stater.version>
-        <monitor-spring-boot-starter.version>0.0.6</monitor-spring-boot-starter.version>
+        <monitor-spring-boot-starter.version>1.1.1</monitor-spring-boot-starter.version>
         <xxl.job.version>2.2.0</xxl.job.version>
         <rocketmq.starter.version>2.2.0</rocketmq.starter.version>
         <mybatis.starter.version>3.0.2</mybatis.starter.version>
@@ -45,6 +45,12 @@
             <groupId>com.jidu.monitor</groupId>
             <artifactId>monitor-spring-boot-starter</artifactId>
             <version>${monitor-spring-boot-starter.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>grpc-netty-shaded</artifactId>
+                    <groupId>io.grpc</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.jiduauto.common</groupId>
