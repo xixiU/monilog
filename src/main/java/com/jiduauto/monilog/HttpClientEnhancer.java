@@ -48,9 +48,18 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
 
 
     private static boolean doEnhance(String clsName, String helperMethod) {
-        String body = HttpClientMoniLogInterceptor.class.getCanonicalName() + "." + helperMethod + "(this);";
+        if (FLAGS.get(clsName).get()) {
+            return true;
+        }
         try {
-            enhanceDefaultConstructor(clsName, body);
+            String body = HttpClientMoniLogInterceptor.class.getCanonicalName() + "." + helperMethod + "(this);";
+            ClassPool classPool = ClassPool.getDefault();
+            CtClass ctCls = classPool.getCtClass(clsName);
+            ctCls.getConstructor("()V").setBody(body);
+            ctCls.writeFile();
+            Class<?> targetCls = ctCls.toClass();
+            log.info("constructor of '{}' has bean enhanced...", targetCls.getCanonicalName());
+            FLAGS.get(clsName).set(true);
             return true;
         } catch (Throwable e) {
             log.warn(INNER_DEBUG_PREFIX + "failed to rebuild {} class, {}", clsName, e.getMessage());
@@ -58,23 +67,8 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
         return false;
     }
 
-    private static void enhanceDefaultConstructor(String clsName, String srcCode) throws Throwable {
+    private static void doEnhanceSyncErrorHandler(String clsName) {
         if (FLAGS.get(clsName).get()) {
-            return;
-        }
-
-        ClassPool classPool = ClassPool.getDefault();
-        CtClass ctCls = classPool.getCtClass(clsName);
-        ctCls.getConstructor("()V").setBody(srcCode);
-        ctCls.writeFile();
-        Class<?> targetCls = ctCls.toClass();
-        log.info("constructor of '{}' has bean enhanced...", targetCls.getCanonicalName());
-        FLAGS.get(clsName).set(true);
-
-    }
-
-    private static void doEnhanceSyncErrorHandler(String cls) {
-        if (FLAGS.get(cls).get()) {
             return;
         }
         String newMethod = "private org.apache.http.client.methods.CloseableHttpResponse _doExecute(" +
@@ -94,7 +88,7 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
         String body3 = "{return _doExecute($1, $2, null);}";
         try {
             ClassPool classPool = ClassPool.getDefault();
-            CtClass ctCls = classPool.getCtClass(cls);
+            CtClass ctCls = classPool.getCtClass(clsName);
             CtMethod newCtm = CtNewMethod.make(newMethod, ctCls);
             ctCls.addMethod(newCtm);
 
@@ -105,9 +99,9 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
             ctCls.writeFile();
             Class<?> targetCls = ctCls.toClass();
             log.info("method of '{}' has bean enhanced...", targetCls.getCanonicalName());
-            FLAGS.get(cls).set(true);
+            FLAGS.get(clsName).set(true);
         } catch (Throwable e) {
-            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild {} class, {}", cls, e.getMessage());
+            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild {} class, {}", clsName, e.getMessage());
         }
     }
 
