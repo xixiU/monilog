@@ -30,7 +30,7 @@ class MoniLogUtil {
     /**
      * 添加接入组件信息上报，仅上报基础信息，当前接入的版本，接入的应用，环境
      */
-    public static void addSystemRecord(){
+    static void addSystemRecord(){
         TagBuilder tag = TagBuilder.of("application", SpringUtils.application)
                 .add("env", SpringUtils.activeProfile)
                 .add("version", MoniLogAutoConfiguration.class.getPackage().getImplementationVersion());
@@ -38,7 +38,7 @@ class MoniLogUtil {
 
     }
 
-    public static void log(MoniLogParams logParams) {
+    static void log(MoniLogParams logParams) {
         try {
             doMonitor(logParams);
         } catch (Exception e) {
