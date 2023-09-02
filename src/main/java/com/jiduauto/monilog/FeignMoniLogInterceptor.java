@@ -24,8 +24,10 @@ import java.util.*;
  */
 @Slf4j
 public final class FeignMoniLogInterceptor {
+
     /**
-     * 这里需要注入request是在业务逻辑执行之后调用，注意request与response流的消耗
+     * 为Client.execte()注册拦截器, 此处是通过Javassist将处理后的结果直接传入，打点调用结果需要注意request与response流的消耗
+     * 注：该方法不可修改，包括可见级别，否则将导致HttpClient拦截失效
      */
     public static Response doFeignInvocationRecord(Method m, Request request, Response response, long cost, Throwable ex) {
         MoniLogProperties properties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);

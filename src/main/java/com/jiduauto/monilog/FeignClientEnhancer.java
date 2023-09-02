@@ -30,13 +30,11 @@ public class FeignClientEnhancer implements SpringApplicationRunListener, Ordere
             return;
         }
         doEnhanceFeignClient();
-
         SpringApplicationRunListener.super.starting();
     }
 
 
-    //   "java.lang.reflect.Method m = Client.Default.class.getDeclaredMethod(\"execute\",feign.Request.class, feign.Response.class);" +
-    private static boolean doEnhanceFeignClient() {
+    private static void doEnhanceFeignClient() {
         String newMethod = "{" +
             "Throwable bizException = null;" +
             "feign.Response response= null;" +
@@ -70,7 +68,6 @@ public class FeignClientEnhancer implements SpringApplicationRunListener, Ordere
         } catch (Throwable e) {
             log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", FEIGN_CLIENT, e.getMessage());
         }
-        return false;
     }
 
     @Override
