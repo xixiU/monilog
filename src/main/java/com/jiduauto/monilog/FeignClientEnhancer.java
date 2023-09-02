@@ -59,8 +59,9 @@ public class FeignClientEnhancer implements SpringApplicationRunListener, Ordere
             CtClass ctCls = classPool.getCtClass(FEIGN_CLIENT);
             CtClass[] nestedClasses = ctCls.getNestedClasses();
             nestedClasses[1].getDeclaredMethod("execute").setBody(newMethod);
-            ctCls.writeFile();
-            Class<?> targetCls = ctCls.toClass();
+            nestedClasses[1].writeFile();
+            Class<?> targetCls = nestedClasses[1].toClass();
+
             log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(FEIGN_CLIENT).set(true);
         } catch (Throwable e) {
