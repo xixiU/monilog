@@ -6,8 +6,6 @@ import feign.Client;
 import feign.Request;
 import feign.Response;
 import lombok.extern.slf4j.Slf4j;
-import org.aopalliance.intercept.MethodInterceptor;
-import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpHeaders;
@@ -25,154 +23,115 @@ import java.util.*;
  * @date 2023/07/24
  */
 @Slf4j
-class FeignMoniLogInterceptor {
-    static Client getProxyBean(Client bean) {
-        return ProxyUtils.getProxy(bean, new FeignExecuteInterceptor());
-    }
+public final class FeignMoniLogInterceptor {
+    /**
+     * 这里需要注入request是在业务逻辑执行之后调用，注意request与response流的消耗
+     */
+    public static Response doFeignInvocationRecord(Method m, Request request, Response response, long cost, Throwable ex) {
+        MoniLogProperties properties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
+        MoniLogProperties.FeignProperties feignProperties = properties == null ? null : properties.getFeign();
+        String requestUri = request.url();
+        Set<String> urlBlackList = feignProperties == null ? new HashSet<>() : feignProperties.getUrlBlackList();
+        if (CollectionUtils.isEmpty(urlBlackList)) {
+            urlBlackList = new HashSet<>();
+        }
+        if (StringUtil.checkPathMatch(urlBlackList, requestUri)) {
+            return response;
+        }
 
-    private static class FeignExecuteInterceptor implements MethodInterceptor {
-        @Override
-        public Object invoke(MethodInvocation invocation) throws Throwable {
-            long start = System.currentTimeMillis();
-            Object result = null;
-            Throwable ex = null;
+        MoniLogParams mlp = new MoniLogParams();
+        mlp.setServiceCls(m.getDeclaringClass());
+        mlp.setService(m.getDeclaringClass().getSimpleName());
+        mlp.setAction(m.getName());
+
+        StackTraceElement st = ThreadUtil.getNextClassFromStack(Client.class, "feign", "org.springframework","com.netflix","rx","com.jiduauto.monilog");
+        if (st != null) {
+            String className = st.getClassName();
             try {
-                result = invocation.proceed();
-            } catch (Throwable t) {
-                ex = t;
+                mlp.setServiceCls(Class.forName(className));
+            } catch (Exception ignore) {
             }
-            long cost = System.currentTimeMillis() - start;
-            Method m = invocation.getMethod();
-            String methodName = m.getName();
-            int parameterCount = m.getParameterCount();
-            Class<?>[] parameterTypes = m.getParameterTypes();
-            String targetMethod = "execute";
-            boolean isTargetMethod = methodName.equals(targetMethod) && parameterCount == 2 && parameterTypes[0] == Request.class && parameterTypes[1] == Request.Options.class;
-            if (!isTargetMethod) {
-                if (ex == null) {
-                    return result;
-                } else {
-                    throw ex;
-                }
+            mlp.setService(mlp.getServiceCls().getSimpleName());
+            mlp.setAction(st.getMethodName());
+        }
+
+        mlp.setTags(new String[]{"method", getMethod(request), "url", requestUri});
+
+        mlp.setCost(cost);
+        mlp.setException(ex);
+        mlp.setSuccess(ex == null && response.status() < HttpStatus.BAD_REQUEST.value());
+        mlp.setLogPoint(LogPoint.feign_client);
+        mlp.setInput(new Object[]{formatRequestInfo(request)});
+        mlp.setMsgCode(ErrorEnum.SUCCESS.name());
+        mlp.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
+        if (ex != null) {
+            mlp.setSuccess(false);
+            ErrorInfo errorInfo = ExceptionUtil.parseException(ex);
+            if (errorInfo != null) {
+                mlp.setMsgCode(errorInfo.getErrorCode());
+                mlp.setMsgInfo(errorInfo.getErrorMsg());
             }
-            MoniLogProperties properties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
-            Response ret = (Response) result;
-            ret = doFeignInvocationRecord(m, (Request) (invocation.getArguments()[0]), ret, cost, ex, properties == null ? null : properties.getFeign());
-            if (ex == null) {
-                return ret;
+            MoniLogUtil.log(mlp);
+            return response;
+        }
+        //包装响应
+        Charset charset = request.charset();
+        if (charset == null) {
+            charset = StandardCharsets.UTF_8;
+        }
+        Response ret;
+        try {
+            BufferingFeignClientResponse bufferedResp = new BufferingFeignClientResponse(response);
+            mlp.setSuccess(mlp.isSuccess() && response.status() < HttpStatus.BAD_REQUEST.value());
+            if (!mlp.isSuccess()) {
+                mlp.setMsgCode(String.valueOf(bufferedResp.status()));
+                mlp.setMsgInfo(ErrorEnum.FAILED.getMsg());
+            }
+            String resultStr = null;
+            if (bufferedResp.isDownstream()) {
+                mlp.setOutput("Binary data");
             } else {
-                throw ex;
+                resultStr = bufferedResp.body(); //读掉原始response中的数据
+                mlp.setOutput(resultStr);
             }
+            if (resultStr != null && bufferedResp.isJson()) {
+                Object json = JSON.parse(resultStr);
+                if (json != null) {
+                    mlp.setOutput(json);
+                    LogParser cl = ReflectUtil.getAnnotation(LogParser.class, mlp.getServiceCls(), m);
+                    //尝试更精确的提取业务失败信息
+                    String specifiedBoolExpr = StringUtils.trimToNull(feignProperties == null ? null : feignProperties.getDefaultBoolExpr());
+                    ResultParseStrategy rps = cl == null ? null : cl.resultParseStrategy();//默认使用IfSuccess策略
+                    String boolExpr = cl == null ? specifiedBoolExpr : cl.boolExpr();
+                    String codeExpr = cl == null ? null : cl.errorCodeExpr();
+                    String msgExpr = cl == null ? null : cl.errorMsgExpr();
+                    ParsedResult parsedResult = ResultParseUtil.parseResult(json, rps, null, boolExpr, codeExpr, msgExpr);
+                    mlp.setSuccess(parsedResult.isSuccess());
+                    mlp.setMsgCode(parsedResult.getMsgCode());
+                    mlp.setMsgInfo(parsedResult.getMsgInfo());
+                }
+            }
+            if (resultStr != null) {
+                //重写将数据写入原始response的body中
+                ret = bufferedResp.getResponse(resultStr, charset);
+            } else {
+                ret = bufferedResp.getResponse();
+            }
+            bufferedResp.close();
+        } catch (Exception e) {
+            MoniLogUtil.innerDebug("doFeignInvocationRecord2 error", e);
+            ret = response;
+        } finally {
+            MoniLogUtil.log(mlp);
         }
-
-
-        /**
-         * 这里需要注入request是在业务逻辑执行之后调用，注意request与response流的消耗
-         */
-        private Response doFeignInvocationRecord(Method m, Request request, Response response, long cost, Throwable ex, MoniLogProperties.FeignProperties feignProperties) {
-            String requestUri = request.url();
-            Set<String> urlBlackList = feignProperties == null ? new HashSet<>() : feignProperties.getUrlBlackList();
-            if (CollectionUtils.isEmpty(urlBlackList)) {
-                urlBlackList = new HashSet<>();
-            }
-            if (StringUtil.checkPathMatch(urlBlackList, requestUri)) {
-                return response;
-            }
-
-            MoniLogParams mlp = new MoniLogParams();
-            mlp.setServiceCls(m.getDeclaringClass());
-            mlp.setService(m.getDeclaringClass().getSimpleName());
-            mlp.setAction(m.getName());
-
-            StackTraceElement st = ThreadUtil.getNextClassFromStack(m.getDeclaringClass(), "feign", "org.springframework");
-            if (st != null) {
-                String className = st.getClassName();
-                try {
-                    mlp.setServiceCls(Class.forName(className));
-                } catch (Exception ignore) {
-                }
-                mlp.setService(mlp.getServiceCls().getSimpleName());
-                mlp.setAction(st.getMethodName());
-            }
-
-            mlp.setTags(new String[]{"method", getMethod(request), "url", requestUri});
-
-            mlp.setCost(cost);
-            mlp.setException(ex);
-            mlp.setSuccess(ex == null && response.status() < HttpStatus.BAD_REQUEST.value());
-            mlp.setLogPoint(LogPoint.feign_client);
-            mlp.setInput(new Object[]{formatRequestInfo(request)});
-            mlp.setMsgCode(ErrorEnum.SUCCESS.name());
-            mlp.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
-            if (ex != null) {
-                mlp.setSuccess(false);
-                ErrorInfo errorInfo = ExceptionUtil.parseException(ex);
-                if (errorInfo != null) {
-                    mlp.setMsgCode(errorInfo.getErrorCode());
-                    mlp.setMsgInfo(errorInfo.getErrorMsg());
-                }
-                MoniLogUtil.log(mlp);
-                return response;
-            }
-            //包装响应
-            Charset charset = request.charset();
-            if (charset == null) {
-                charset = StandardCharsets.UTF_8;
-            }
-            Response ret;
-            try {
-                BufferingFeignClientResponse bufferedResp = new BufferingFeignClientResponse(response);
-                mlp.setSuccess(mlp.isSuccess() && response.status() < HttpStatus.BAD_REQUEST.value());
-                if (!mlp.isSuccess()) {
-                    mlp.setMsgCode(String.valueOf(bufferedResp.status()));
-                    mlp.setMsgInfo(ErrorEnum.FAILED.getMsg());
-                }
-                String resultStr = null;
-                if (bufferedResp.isDownstream()) {
-                    mlp.setOutput("Binary data");
-                } else {
-                    resultStr = bufferedResp.body(); //读掉原始response中的数据
-                    mlp.setOutput(resultStr);
-                }
-                if (resultStr != null && bufferedResp.isJson()) {
-                    Object json = JSON.parse(resultStr);
-                    if (json != null) {
-                        mlp.setOutput(json);
-                        LogParser cl = ReflectUtil.getAnnotation(LogParser.class, mlp.getServiceCls(), m);
-                        //尝试更精确的提取业务失败信息
-                        String specifiedBoolExpr = StringUtils.trimToNull(feignProperties == null ? null : feignProperties.getDefaultBoolExpr());
-                        ResultParseStrategy rps = cl == null ? null : cl.resultParseStrategy();//默认使用IfSuccess策略
-                        String boolExpr = cl == null ? specifiedBoolExpr : cl.boolExpr();
-                        String codeExpr = cl == null ? null : cl.errorCodeExpr();
-                        String msgExpr = cl == null ? null : cl.errorMsgExpr();
-                        ParsedResult parsedResult = ResultParseUtil.parseResult(json, rps, null, boolExpr, codeExpr, msgExpr);
-                        mlp.setSuccess(parsedResult.isSuccess());
-                        mlp.setMsgCode(parsedResult.getMsgCode());
-                        mlp.setMsgInfo(parsedResult.getMsgInfo());
-                    }
-                }
-                if (resultStr != null) {
-                    //重写将数据写入原始response的body中
-                    ret = bufferedResp.getResponse(resultStr, charset);
-                } else {
-                    ret = bufferedResp.getResponse();
-                }
-                bufferedResp.close();
-            } catch (Exception e) {
-                MoniLogUtil.innerDebug("doFeignInvocationRecord error", e);
-                ret = response;
-            } finally {
-                MoniLogUtil.log(mlp);
-            }
-            return ret;
-        }
+        return ret;
     }
 
 
     /**
      * com.netflix.feign:feign-core 8.18.0 中没有调用的method与openfeign不同
      *
-     * @see feign.Request
+     * @see Request
      * openfeign定义如下
      * <blockquote><pre>
      * public final class feign.Request {
