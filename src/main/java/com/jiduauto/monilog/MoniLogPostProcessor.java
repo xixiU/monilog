@@ -2,7 +2,6 @@ package com.jiduauto.monilog;
 
 import com.google.common.collect.Sets;
 import com.xxl.job.core.handler.IJobHandler;
-import feign.Client;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
@@ -51,12 +50,7 @@ class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered {
         if (!moniLogProperties.isEnable()) {
             return bean;
         }
-        if (isTargetBean(bean, FEIGN_CLIENT)) {
-            if (isComponentEnable("feign", moniLogProperties.getFeign().isEnable())) {
-                log.info(">>>monilog feign start...");
-                return FeignMoniLogInterceptor.getProxyBean((Client) bean);
-            }
-        } else if (isTargetBean(bean, XXL_JOB)) {
+        if (isTargetBean(bean, XXL_JOB)) {
             if (isComponentEnable("xxljob", moniLogProperties.getXxljob().isEnable())) {
                 return XxlJobMoniLogInterceptor.getProxyBean((IJobHandler) bean);
             }

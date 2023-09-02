@@ -116,5 +116,4 @@ class MoniLogAutoConfiguration {
         //redisson是异步api，拦截操作较为复杂，需要分步进行。通过下面的这个Interceptor的AOP来实现
         return new RedisMoniLogInterceptor.RedissonInterceptor(moniLogProperties.getRedis());
     }
-
 }
