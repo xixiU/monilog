@@ -51,7 +51,7 @@ public class FeignClientEnhancer implements SpringApplicationRunListener, Ordere
                 "long cost = endTime-startTime;"+
                 FeignMoniLogInterceptor.class.getCanonicalName() + ".doFeignInvocationRecord(m, $1, response, cost, bizException);" +
                 "}catch(Throwable e){"+
-                    "System.out.println(\"doFeignInvocationRecord2 error\"+e);}"+
+                    "System.out.println(\"doFeignInvocationRecord error\"+e);}"+
             "}" +
             "return response;}";
         try {
