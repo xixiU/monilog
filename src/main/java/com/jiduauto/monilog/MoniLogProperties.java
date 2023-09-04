@@ -404,7 +404,7 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         /**
          * redis大值监控日志输出阀值，单位: KB， 默认:10KB， 即超过5KB的缓存，将打印error日志(注意，仅对redis的读取类接口的结果大小做监控)
          */
-        private float warnForValueLength = 10;
+        private float warnForValueLength = 50;
 
         /**
          * redis慢rt阈值，单位毫秒. 默认100ms
