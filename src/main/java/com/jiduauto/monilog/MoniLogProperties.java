@@ -186,7 +186,7 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         placeholders.put("spring.profiles.active", SpringUtils.activeProfile);
         placeholders.put("spring.application.name", getAppName());
         placeholders.put("monilog.version", MoniLogAutoConfiguration.class.getPackage().getImplementationVersion());
-        new MoniLogBanner(placeholders);
+        new MoniLogBanner(placeholders).printBanner();
     }
 
 
