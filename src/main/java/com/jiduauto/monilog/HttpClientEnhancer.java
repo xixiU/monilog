@@ -56,7 +56,7 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
             ClassPool classPool = ClassPool.getDefault();
             CtClass ctCls = classPool.getCtClass(clsName);
             ctCls.getConstructor("()V").setBody(body);
-            ctCls.writeFile();
+            //ctCls.writeFile();
             Class<?> targetCls = ctCls.toClass();
             log.info("constructor of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(clsName).set(true);
@@ -96,7 +96,7 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
             ctCls.getMethod("execute", desc2).setBody(body2);
             ctCls.getMethod("execute", desc3).setBody(body3);
 
-            ctCls.writeFile();
+            //ctCls.writeFile();
             Class<?> targetCls = ctCls.toClass();
             log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(clsName).set(true);
