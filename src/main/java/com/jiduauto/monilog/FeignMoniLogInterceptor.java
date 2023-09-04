@@ -117,7 +117,7 @@ public final class FeignMoniLogInterceptor {
                     mlp.setOutput(json);
                     LogParser cl = ReflectUtil.getAnnotation(LogParser.class, mlp.getServiceCls(), m);
                     //尝试更精确的提取业务失败信息
-                    String specifiedBoolExpr = StringUtils.trimToNull(feignProperties == null ? null : feignProperties.getDefaultBoolExpr());
+                    String specifiedBoolExpr = StringUtils.trimToNull(feignProperties.getDefaultBoolExpr());
                     ResultParseStrategy rps = cl == null ? null : cl.resultParseStrategy();//默认使用IfSuccess策略
                     String boolExpr = cl == null ? specifiedBoolExpr : cl.boolExpr();
                     String codeExpr = cl == null ? null : cl.errorCodeExpr();
