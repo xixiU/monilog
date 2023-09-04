@@ -151,7 +151,7 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
                 "long cost = System.currentTimeMillis()-startTime;"+
                 FeignMoniLogInterceptor.class.getCanonicalName() + ".doFeignInvocation($1, response, cost, bizException);" +
                 "}" +
-                "if(ex != null){throw ex;}"+
+                "if(bizException != null){throw ex;}"+
                 "return response;}";
         try {
             ClassPool classPool = ClassPool.getDefault();
