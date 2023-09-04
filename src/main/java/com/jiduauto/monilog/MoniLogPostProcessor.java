@@ -47,14 +47,14 @@ class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered {
             if (isComponentEnable("xxljob", moniLogProperties.getXxljob().isEnable())) {
                 return XxlJobMoniLogInterceptor.getProxyBean((IJobHandler) bean);
             }
-        }  else if (isTargetBean(bean, MQ_ADMIN) || isTargetBean(bean, MQ_LISTENER_CONTAINER)) {
+        }  else if (isTargetBean(bean, MQ_ADMIN) || isTargetBean(bean, MQ_LISTENER_CONTAINER) ) {
             log.info(">>>monilog rocketmq start...");
             MoniLogProperties.RocketMqProperties rocketmqProperties = moniLogProperties.getRocketmq();
             if (!rocketmqProperties.isEnable()) {
                 return bean;
             }
-            boolean consumerEnable = rocketmqProperties.isConsumerEnable();
-            boolean producerEnable = rocketmqProperties.isProducerEnable();
+            boolean consumerEnable = isComponentEnable("rocketmq",rocketmqProperties.isConsumerEnable());
+            boolean producerEnable = isComponentEnable("rocketmq",rocketmqProperties.isProducerEnable());
             //不使用rocketmq-starter时
             if (bean instanceof DefaultMQPushConsumer && consumerEnable) {
                 DefaultMQPushConsumer consumer = (DefaultMQPushConsumer) bean;
