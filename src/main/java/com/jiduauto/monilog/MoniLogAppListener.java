@@ -63,7 +63,7 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
         log.info(">>>monilog redis[jedis] start...");
         for (RedisTemplate template : templates.values()) {
             RedisConnectionFactory proxy = ProxyUtils.getProxy(template.getConnectionFactory(), invocation -> {
-                Object redisConn = invocation.proceed();
+                Object redisConn = invocation.proceed(); //TODO 这一句代码可能取不到连接
                 String methodName = invocation.getMethod().getName();
                 if (methodName.equals("getConnection")) {
                     return ProxyUtils.getProxy(redisConn, new RedisMoniLogInterceptor.JedisTemplateInterceptor(template.getKeySerializer(), template.getValueSerializer(), moniLogProperties.getRedis()));
