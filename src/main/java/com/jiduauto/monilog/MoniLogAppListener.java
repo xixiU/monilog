@@ -11,14 +11,14 @@ import org.springframework.data.redis.core.RedisTemplate;
 import javax.annotation.Resource;
 import java.util.Map;
 
-import static com.jiduauto.monilog.MoniLogPostProcessor.REDIS_TEMPLATE;
-
 /**
  * @author yp
  * @date 2023/08/04
  */
 @Slf4j
 class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent> {
+    private static final String REDIS_TEMPLATE = "org.springframework.data.redis.core.RedisTemplate";
+
     @Resource
     private MoniLogProperties moniLogProperties;
 
@@ -63,12 +63,19 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
         log.info(">>>monilog redis[jedis] start...");
         for (RedisTemplate template : templates.values()) {
             RedisConnectionFactory proxy = ProxyUtils.getProxy(template.getConnectionFactory(), invocation -> {
-                Object redisConn = invocation.proceed();
                 String methodName = invocation.getMethod().getName();
-                if (methodName.equals("getConnection")) {
-                    return ProxyUtils.getProxy(redisConn, new RedisMoniLogInterceptor.JedisTemplateInterceptor(template.getKeySerializer(), template.getValueSerializer(), moniLogProperties.getRedis()));
+                if (!methodName.equals("getConnection")) {
+                    return invocation.proceed();
                 }
-                return redisConn;
+                long start = System.currentTimeMillis();
+                Object conn = null;
+                try {
+                    conn = invocation.proceed();
+                } catch (Throwable e) {
+                    RedisMoniLogInterceptor.JedisTemplateInterceptor.recordException(e, invocation, System.currentTimeMillis() - start, template, moniLogProperties.getRedis());
+                    throw e;
+                }
+                return ProxyUtils.getProxy(conn, new RedisMoniLogInterceptor.JedisTemplateInterceptor(template.getKeySerializer(), template.getValueSerializer(), moniLogProperties.getRedis()));
             });
             template.setConnectionFactory(proxy);
         }

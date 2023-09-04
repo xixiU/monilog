@@ -24,14 +24,29 @@ import java.util.*;
  */
 @Slf4j
 public final class FeignMoniLogInterceptor {
-
     /**
-     * 为Client.execte()注册拦截器, 此处是通过Javassist将处理后的结果直接传入，打点调用结果需要注意request与response流的消耗
+     * 为Client.execute()注册拦截器, 此处是通过Javassist将处理后的结果直接传入
      * 注：该方法不可修改，包括可见级别，否则将导致HttpClient拦截失效
      */
-    public static Response doFeignInvocationRecord(Method m, Request request, Response response, long cost, Throwable ex) {
+    public static Response doRecord(Request request, Response response, long cost, Throwable ex){
+        try{
+            Method execute = Client.Default.class.getDeclaredMethod("execute", Request.class, Request.Options.class);
+            doFeignInvocationRecord(execute , request, response, cost, ex);
+        }catch (Throwable e){
+            MoniLogUtil.innerDebug("doFeignInvocationRecord error", e);
+        }
+        return response;
+    }
+
+    /**
+     * 需要注意request与response流的消耗
+     */
+    private static Response doFeignInvocationRecord(Method m, Request request, Response response, long cost, Throwable ex) {
         MoniLogProperties properties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
         MoniLogProperties.FeignProperties feignProperties = properties == null ? null : properties.getFeign();
+        if (feignProperties == null || !properties.isComponentEnable("feign", feignProperties.isEnable())) {
+            return response;
+        }
         String requestUri = request.url();
         Set<String> urlBlackList = feignProperties == null ? new HashSet<>() : feignProperties.getUrlBlackList();
         if (CollectionUtils.isEmpty(urlBlackList)) {
@@ -46,7 +61,7 @@ public final class FeignMoniLogInterceptor {
         mlp.setService(m.getDeclaringClass().getSimpleName());
         mlp.setAction(m.getName());
 
-        StackTraceElement st = ThreadUtil.getNextClassFromStack(Client.class, "feign", "org.springframework","com.netflix","rx","com.jiduauto.monilog");
+        StackTraceElement st = ThreadUtil.getNextClassFromStack(Client.class, "feign", "org.springframework", "com.netflix", "rx", "com.jiduauto.monilog");
         if (st != null) {
             String className = st.getClassName();
             try {

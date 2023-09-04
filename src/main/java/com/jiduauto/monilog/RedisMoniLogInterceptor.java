@@ -77,7 +77,41 @@ class RedisMoniLogInterceptor {
             }
         }
 
+        static void recordException(Throwable e, MethodInvocation invocation, long cost, RedisTemplate template, MoniLogProperties.RedisProperties redis) {
+            MoniLogParams p = new MoniLogParams();
+            try {
+                p.setCost(cost);
+                p.setLogPoint(LogPoint.redis);
+                p.setException(e);
+                p.setSuccess(false);
+
+                ErrorInfo errorInfo = ExceptionUtil.parseException(e);
+                p.setMsgCode(errorInfo.getErrorCode());
+                p.setMsgInfo(errorInfo.getErrorMsg());
+
+                JedisInvocation ri = parseRedisInvocation(invocation, template.getKeySerializer(), template.getValueSerializer(), null);
+                p.setInput(ri.args);
+                p.setOutput(ri.result);
+                p.setServiceCls(ri.cls);
+                p.setService(ri.cls.getSimpleName());
+                p.setAction(ri.method);
+
+                String msgPrefix = "";
+                if (StringUtils.isNotBlank(ri.maybeKey)) {
+                    msgPrefix = "[key=" + ri.maybeKey + "]";
+                }
+                p.setMsgInfo(msgPrefix + p.getMsgInfo());
+                MoniLogUtil.log(p);
+            } catch (Throwable ex) {
+                MoniLogUtil.innerDebug("redis {}.{} {} failed, {}", p.getService(), p.getAction(), p.getMsgInfo(), e.getMessage());
+            }
+        }
+
         private JedisInvocation parseRedisInvocation(MethodInvocation invocation, Object ret) {
+            return parseRedisInvocation(invocation, keySerializer, valueSerializer, ret);
+        }
+
+        private static JedisInvocation parseRedisInvocation(MethodInvocation invocation, RedisSerializer<?> keySerializer, RedisSerializer<?> valueSerializer, Object ret) {
             JedisInvocation ri = new JedisInvocation();
             try {
                 StackTraceElement st = ThreadUtil.getNextClassFromStack(RedisTemplate.class, "org.springframework");
@@ -95,7 +129,7 @@ class RedisMoniLogInterceptor {
             try {
                 ri.args = deserializeRedis(keySerializer, invocation.getArguments());
                 ri.maybeKey = parseJedisMaybeKey(keySerializer, invocation.getArguments());
-                ri.result = deserializeRedis(valueSerializer, new Object[]{ret});
+                ri.result = ret == null ? null : deserializeRedis(valueSerializer, new Object[]{ret});
             } catch (Exception e) {
                 MoniLogUtil.innerDebug("parseRedisInvocation-deserialize error", e);
             }

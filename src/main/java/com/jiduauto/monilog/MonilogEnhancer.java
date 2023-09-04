@@ -1,43 +1,47 @@
 package com.jiduauto.monilog;
 
-import javassist.*;
+import javassist.ClassPool;
+import javassist.CtClass;
+import javassist.CtMethod;
+import javassist.CtNewMethod;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringApplicationRunListener;
 import org.springframework.core.Ordered;
 
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.jiduauto.monilog.MoniLogPostProcessor.HTTP_ASYNC_CLIENT_BUILDER;
-import static com.jiduauto.monilog.MoniLogPostProcessor.HTTP_CLIENT_BUILDER;
 import static com.jiduauto.monilog.MoniLogUtil.INNER_DEBUG_PREFIX;
-
 /**
  * @author yp
  * @date 2023/08/08
  */
 @Slf4j
-final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered {
+final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
     private static final String HTTP_SYNC_CLIENT = "org.apache.http.impl.client.CloseableHttpClient";
     private static final String HTTP_ASYNC_CLIENT_EXCHANGE_HANDLER = "org.apache.http.impl.nio.client.AbstractClientExchangeHandler";
+
+    private static final String HTTP_ASYNC_CLIENT_BUILDER = "org.apache.http.impl.nio.client.HttpAsyncClientBuilder";
+
+    private static final String HTTP_CLIENT_BUILDER = "org.apache.http.impl.client.HttpClientBuilder";
+
+    private static final String FEIGN_CLIENT = "feign.Client";
+
     private static final Map<String, AtomicBoolean> FLAGS = new HashMap<String, AtomicBoolean>() {{
         put(HTTP_CLIENT_BUILDER, new AtomicBoolean());
         put(HTTP_SYNC_CLIENT, new AtomicBoolean());
         put(HTTP_ASYNC_CLIENT_BUILDER, new AtomicBoolean());
         put(HTTP_ASYNC_CLIENT_EXCHANGE_HANDLER, new AtomicBoolean());
+        put(FEIGN_CLIENT, new AtomicBoolean());
     }};
 
-    private HttpClientEnhancer(SpringApplication app, String[] args) {
-        boolean success = doEnhance(HTTP_CLIENT_BUILDER, "addInterceptorsForBuilder");
-        if (success) {
-            doEnhanceSyncErrorHandler(HTTP_SYNC_CLIENT);
-        }
-        success = doEnhance(HTTP_ASYNC_CLIENT_BUILDER, "addInterceptorsForAsyncBuilder");
-        if (success) {
-            doEnhanceAsyncErrorHandler(HTTP_ASYNC_CLIENT_EXCHANGE_HANDLER);
-        }
+    private MonilogEnhancer(SpringApplication app, String[] args) {
+        enhanceHttpClient();
+        enhanceFeignClient();
         SpringApplicationRunListener.super.starting();
     }
 
@@ -47,7 +51,7 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
     }
 
 
-    private static boolean doEnhance(String clsName, String helperMethod) {
+    private static boolean doEnhanceHttp(String clsName, String helperMethod) {
         if (FLAGS.get(clsName).get()) {
             return true;
         }
@@ -56,7 +60,7 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
             ClassPool classPool = ClassPool.getDefault();
             CtClass ctCls = classPool.getCtClass(clsName);
             ctCls.getConstructor("()V").setBody(body);
-            //ctCls.writeFile();
+//            ctCls.writeFile();
             Class<?> targetCls = ctCls.toClass();
             log.info("constructor of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(clsName).set(true);
@@ -96,7 +100,7 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
             ctCls.getMethod("execute", desc2).setBody(body2);
             ctCls.getMethod("execute", desc3).setBody(body3);
 
-            //ctCls.writeFile();
+//            ctCls.writeFile();
             Class<?> targetCls = ctCls.toClass();
             log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(clsName).set(true);
@@ -119,12 +123,58 @@ final class HttpClientEnhancer implements SpringApplicationRunListener, Ordered 
             CtClass ctCls = classPool.getCtClass(cls);
             CtMethod method = ctCls.getMethod("failed", "(Ljava/lang/Exception;)V");
             method.setBody(body);
-            ctCls.writeFile();
+//            ctCls.writeFile();
             Class<?> targetCls = ctCls.toClass();
             log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(cls).set(true);
         } catch (Throwable e) {
             log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", cls, e.getMessage());
+        }
+    }
+
+    private static void enhanceHttpClient(){
+        boolean success = doEnhanceHttp(HTTP_CLIENT_BUILDER, "addInterceptorsForBuilder");
+        if (success) {
+            doEnhanceSyncErrorHandler(HTTP_SYNC_CLIENT);
+        }
+        success = doEnhanceHttp(HTTP_ASYNC_CLIENT_BUILDER, "addInterceptorsForAsyncBuilder");
+        if (success) {
+            doEnhanceAsyncErrorHandler(HTTP_ASYNC_CLIENT_EXCHANGE_HANDLER);
+        }
+    }
+
+    private static void enhanceFeignClient() {
+        if (FLAGS.get(FEIGN_CLIENT).get()) {
+            return;
+        }
+        String newMethod = "{" +
+                "Throwable bizException = null;" +
+                "feign.Response response= null;" +
+                "long startTime = System.currentTimeMillis();" +
+                "try{" +
+                "response = this.convertResponse(this.convertAndSend($1, $2), $1);" +
+                "}catch(Throwable e){" +
+                "      bizException = e;" +
+                "}finally{" +
+                "long cost = System.currentTimeMillis()-startTime;"+
+                FeignMoniLogInterceptor.class.getCanonicalName() + ".doRecord($1, response, cost, bizException);" +
+                "}" +
+                "if(bizException != null){throw bizException;}"+
+                "return response;}";
+        try {
+            ClassPool classPool = ClassPool.getDefault();
+            CtClass ctCls = classPool.getCtClass(FEIGN_CLIENT);
+            CtClass[] nestedClasses = ctCls.getNestedClasses();
+            Arrays.sort(nestedClasses, Comparator.comparing(CtClass::getName));
+            // 里面有两个内部类，第一个是Default，第二个是Proxy
+            nestedClasses[0].getDeclaredMethod("execute").setBody(newMethod);
+//            nestedClasses[1].writeFile();
+            Class<?> targetCls = nestedClasses[0].toClass();
+
+            log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            FLAGS.get(FEIGN_CLIENT).set(true);
+        } catch (Throwable e) {
+            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", FEIGN_CLIENT, e.getMessage());
         }
     }
 }
