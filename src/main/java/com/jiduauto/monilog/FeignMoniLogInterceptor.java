@@ -48,7 +48,7 @@ public final class FeignMoniLogInterceptor {
             return response;
         }
         String requestUri = request.url();
-        Set<String> urlBlackList = feignProperties == null ? new HashSet<>() : feignProperties.getUrlBlackList();
+        Set<String> urlBlackList = feignProperties.getUrlBlackList();
         if (CollectionUtils.isEmpty(urlBlackList)) {
             urlBlackList = new HashSet<>();
         }
