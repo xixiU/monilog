@@ -102,7 +102,7 @@ class RedisMoniLogInterceptor {
                 }
                 p.setMsgInfo(msgPrefix + p.getMsgInfo());
                 MoniLogUtil.log(p);
-            } catch (Exception ex) {
+            } catch (Throwable ex) {
                 MoniLogUtil.innerDebug("redis {}.{} {} failed, {}", p.getService(), p.getAction(), p.getMsgInfo(), e.getMessage());
             }
         }
