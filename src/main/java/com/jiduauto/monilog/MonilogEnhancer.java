@@ -1,9 +1,6 @@
 package com.jiduauto.monilog;
 
-import javassist.ClassPool;
-import javassist.CtClass;
-import javassist.CtMethod;
-import javassist.CtNewMethod;
+import javassist.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringApplicationRunListener;
@@ -59,6 +56,7 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
         try {
             String body = HttpClientMoniLogInterceptor.class.getCanonicalName() + "." + helperMethod + "(this);";
             ClassPool classPool = ClassPool.getDefault();
+            classPool.insertClassPath(new ClassClassPath(MonilogEnhancer.class));
             CtClass ctCls = classPool.getCtClass(clsName);
             ctCls.getConstructor("()V").setBody(body);
 //            ctCls.writeFile();
@@ -93,6 +91,7 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
         String body3 = "{return _doExecute($1, $2, null);}";
         try {
             ClassPool classPool = ClassPool.getDefault();
+            classPool.insertClassPath(new ClassClassPath(MonilogEnhancer.class));
             CtClass ctCls = classPool.getCtClass(clsName);
             CtMethod newCtm = CtNewMethod.make(newMethod, ctCls);
             ctCls.addMethod(newCtm);
@@ -122,6 +121,7 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
         try {
             ClassPool classPool = ClassPool.getDefault();
             CtClass ctCls = classPool.getCtClass(cls);
+            classPool.insertClassPath(new ClassClassPath(MonilogEnhancer.class));
             CtMethod method = ctCls.getMethod("failed", "(Ljava/lang/Exception;)V");
             method.setBody(body);
 //            ctCls.writeFile();
@@ -164,6 +164,7 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
                 "return response;}";
         try {
             ClassPool classPool = ClassPool.getDefault();
+            classPool.insertClassPath(new ClassClassPath(MonilogEnhancer.class));
             CtClass ctCls = classPool.getCtClass(FEIGN_CLIENT);
             CtClass[] nestedClasses = ctCls.getNestedClasses();
             Arrays.sort(nestedClasses, Comparator.comparing(CtClass::getName));
