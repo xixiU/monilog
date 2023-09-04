@@ -145,20 +145,11 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
         if (FLAGS.get(FEIGN_CLIENT).get()) {
             return;
         }
-        String newMethod = "{" +
-                "Throwable bizException = null;" +
-                "feign.Response response= null;" +
+        String newMethod = "{Throwable ex = null; feign.Response ret = null;" +
                 "long startTime = System.currentTimeMillis();" +
-                "try{" +
-                "response = this.convertResponse(this.convertAndSend($1, $2), $1);" +
-                "}catch(Throwable e){" +
-                "      bizException = e;" +
-                "}finally{" +
-                "long cost = System.currentTimeMillis()-startTime;" +
-                FeignMoniLogInterceptor.class.getCanonicalName() + ".doRecord($1, response, cost, bizException);" +
-                "}" +
-                "if(bizException != null){throw bizException;}" +
-                "return response;}";
+                "try {ret = this.convertResponse(this.convertAndSend($1, $2), $1);} catch(Throwable e){ex = e;} finally {" +
+                "ret=" + FeignMoniLogInterceptor.class.getCanonicalName() + ".doRecord($1, ret, System.currentTimeMillis()-startTime, ex);" +
+                "if (ex != null) {throw ex;}}return ret;}";
         try {
             CtClass ctCls = getClass(FEIGN_CLIENT);
             CtClass[] nestedClasses = ctCls.getNestedClasses();
