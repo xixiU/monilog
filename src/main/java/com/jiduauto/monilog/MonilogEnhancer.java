@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.jiduauto.monilog.MoniLogUtil.INNER_DEBUG_PREFIX;
+
 /**
  * @author yp
  * @date 2023/08/08
@@ -66,7 +67,7 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
             FLAGS.get(clsName).set(true);
             return true;
         } catch (Throwable e) {
-            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", clsName, e.getMessage());
+            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", clsName, e.getMessage(), e);
         }
         return false;
     }
@@ -105,7 +106,7 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
             log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(clsName).set(true);
         } catch (Throwable e) {
-            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", clsName, e.getMessage());
+            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", clsName, e.getMessage(), e);
         }
     }
 
@@ -128,11 +129,11 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
             log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(cls).set(true);
         } catch (Throwable e) {
-            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", cls, e.getMessage());
+            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", cls, e.getMessage(), e);
         }
     }
 
-    private static void enhanceHttpClient(){
+    private static void enhanceHttpClient() {
         boolean success = doEnhanceHttp(HTTP_CLIENT_BUILDER, "addInterceptorsForBuilder");
         if (success) {
             doEnhanceSyncErrorHandler(HTTP_SYNC_CLIENT);
@@ -156,10 +157,10 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
                 "}catch(Throwable e){" +
                 "      bizException = e;" +
                 "}finally{" +
-                "long cost = System.currentTimeMillis()-startTime;"+
+                "long cost = System.currentTimeMillis()-startTime;" +
                 FeignMoniLogInterceptor.class.getCanonicalName() + ".doRecord($1, response, cost, bizException);" +
                 "}" +
-                "if(bizException != null){throw bizException;}"+
+                "if(bizException != null){throw bizException;}" +
                 "return response;}";
         try {
             ClassPool classPool = ClassPool.getDefault();
@@ -174,7 +175,7 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
             log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(FEIGN_CLIENT).set(true);
         } catch (Throwable e) {
-            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", FEIGN_CLIENT, e.getMessage());
+            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", FEIGN_CLIENT, e.getMessage(), e);
         }
     }
 }
