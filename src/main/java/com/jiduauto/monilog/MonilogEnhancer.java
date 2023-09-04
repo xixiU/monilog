@@ -34,16 +34,8 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
     }};
 
     private MonilogEnhancer(SpringApplication app, String[] args) {
-        boolean success = doEnhance(HTTP_CLIENT_BUILDER, "addInterceptorsForBuilder");
-        if (success) {
-            doEnhanceSyncErrorHandler(HTTP_SYNC_CLIENT);
-        }
-        success = doEnhance(HTTP_ASYNC_CLIENT_BUILDER, "addInterceptorsForAsyncBuilder");
-        if (success) {
-            doEnhanceAsyncErrorHandler(HTTP_ASYNC_CLIENT_EXCHANGE_HANDLER);
-        }
-
-        doEnhanceFeignClient();
+        enhanceHttpClient();
+        enhanceFeignClient();
         SpringApplicationRunListener.super.starting();
     }
 
@@ -53,7 +45,7 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
     }
 
 
-    private static boolean doEnhance(String clsName, String helperMethod) {
+    private static boolean doEnhanceHttp(String clsName, String helperMethod) {
         if (FLAGS.get(clsName).get()) {
             return true;
         }
@@ -134,7 +126,18 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
         }
     }
 
-    private static void doEnhanceFeignClient() {
+    private static void enhanceHttpClient(){
+        boolean success = doEnhanceHttp(HTTP_CLIENT_BUILDER, "addInterceptorsForBuilder");
+        if (success) {
+            doEnhanceSyncErrorHandler(HTTP_SYNC_CLIENT);
+        }
+        success = doEnhanceHttp(HTTP_ASYNC_CLIENT_BUILDER, "addInterceptorsForAsyncBuilder");
+        if (success) {
+            doEnhanceAsyncErrorHandler(HTTP_ASYNC_CLIENT_EXCHANGE_HANDLER);
+        }
+    }
+
+    private static void enhanceFeignClient() {
         if (FLAGS.get(FEIGN_CLIENT).get()) {
             return;
         }
@@ -152,6 +155,7 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
                 "long cost = endTime-startTime;"+
                 FeignMoniLogInterceptor.class.getCanonicalName() + ".doFeignInvocation($1, response, cost, bizException);" +
                 "}" +
+                "if(ex != null){throw ex;}"+
                 "return response;}";
         try {
             ClassPool classPool = ClassPool.getDefault();
