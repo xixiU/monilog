@@ -49,7 +49,7 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
     }
 
 
-    private static CtClass getClass(String clsName) throws NotFoundException {
+    private static CtClass getCtClass(String clsName) throws NotFoundException {
         ClassPool classPool = ClassPool.getDefault();
         classPool.appendClassPath(new LoaderClassPath(Thread.currentThread().getContextClassLoader()));
         return classPool.getCtClass(clsName);
@@ -61,7 +61,7 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
         }
         try {
             String body = HttpClientMoniLogInterceptor.class.getCanonicalName() + "." + helperMethod + "(this);";
-            CtClass ctCls = getClass(clsName);
+            CtClass ctCls = getCtClass(clsName);
             ctCls.getConstructor("()V").setBody(body);
             Class<?> targetCls = ctCls.toClass();
             log.info("constructor of '{}' has bean enhanced.", targetCls.getCanonicalName());
@@ -93,7 +93,7 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
         String body2 = "{org.apache.http.util.Args.notNull($1, \"HTTP request\");return _doExecute(determineTarget($1), $1, $2);}";
         String body3 = "{return _doExecute($1, $2, null);}";
         try {
-            CtClass ctCls = getClass(clsName);
+            CtClass ctCls = getCtClass(clsName);
             CtMethod newCtm = CtNewMethod.make(newMethod, ctCls);
             ctCls.addMethod(newCtm);
 
@@ -119,7 +119,7 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
                 "try {this.executionFailed($1);} finally " +
                 "{this.discardConnection();this.releaseResources();}}}";
         try {
-            CtClass ctCls = getClass(cls);
+            CtClass ctCls = getCtClass(cls);
             CtMethod method = ctCls.getMethod("failed", "(Ljava/lang/Exception;)V");
             method.setBody(body);
             Class<?> targetCls = ctCls.toClass();
@@ -150,7 +150,7 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
                 "ret=" + FeignMoniLogInterceptor.class.getCanonicalName() + ".doRecord($1, ret, System.currentTimeMillis()-startTime, ex);" +
                 "if (ex != null) {throw ex;}}return ret;}";
         try {
-            CtClass ctCls = getClass(FEIGN_CLIENT);
+            CtClass ctCls = getCtClass(FEIGN_CLIENT);
             CtClass[] nestedClasses = ctCls.getNestedClasses();
             Arrays.sort(nestedClasses, Comparator.comparing(CtClass::getName));
             // 里面有两个内部类，第一个是Default，第二个是Proxy
