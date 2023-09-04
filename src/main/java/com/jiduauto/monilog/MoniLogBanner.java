@@ -13,6 +13,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /**
@@ -23,19 +24,18 @@ import java.util.Map;
  */
 class MoniLogBanner {
     private static final String BANNER_LOCATION = "classpath:monilogbanner.txt";
-    private final ResourceLoader resourceLoader= new DefaultResourceLoader((ClassLoader)null);
+    private final ResourceLoader resourceLoader = new DefaultResourceLoader(null);
     private final Map<String, String> placeholders;
 
     private final PrintStream out = System.out;
 
-    public MoniLogBanner(Map<String, String> placeholders) {
+    MoniLogBanner(Map<String, String> placeholders) {
         this.placeholders = placeholders;
-        printBanner();
     }
 
-    public void printBanner() {
+    void printBanner() {
         Resource resource = resourceLoader.getResource(BANNER_LOCATION);
-        try(BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 line = replacePlaceholders(line);

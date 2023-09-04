@@ -186,7 +186,7 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         placeholders.put("spring.profiles.active", SpringUtils.activeProfile);
         placeholders.put("spring.application.name", getAppName());
         placeholders.put("monilog.version", MoniLogAutoConfiguration.class.getPackage().getImplementationVersion());
-        new MoniLogBanner(placeholders);
+        new MoniLogBanner(placeholders).printBanner();
     }
 
 
@@ -255,7 +255,7 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         /**
          * web慢接口，单位毫秒.
          */
-        private long longRt = 2000;
+        private long longRt = 3000;
 
     }
 
@@ -286,7 +286,7 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         /**
          * grpc慢接口，单位毫秒.
          */
-        private long longRt = 2000;
+        private long longRt = 3000;
     }
 
     @Getter
@@ -336,7 +336,7 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         /**
          * feign慢接口，单位毫秒.
          */
-        private long longRt = 2000;
+        private long longRt = 3000;
 
         void resetDefaultBoolExpr(String globalDefaultBoolExpr) {
             this.defaultBoolExpr = ResultParser.mergeBoolExpr(globalDefaultBoolExpr, defaultBoolExpr);
@@ -404,7 +404,7 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         /**
          * redis大值监控日志输出阀值，单位: KB， 默认:10KB， 即超过5KB的缓存，将打印error日志(注意，仅对redis的读取类接口的结果大小做监控)
          */
-        private float warnForValueLength = 10;
+        private float warnForValueLength = 50;
 
         /**
          * redis慢rt阈值，单位毫秒. 默认100ms
@@ -448,7 +448,7 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         /**
          * httpClient慢接口，单位毫秒.
          */
-        private long longRt = 2000;
+        private long longRt = 3000;
 
         void resetDefaultBoolExpr(String globalDefaultBoolExpr) {
             this.defaultBoolExpr = ResultParser.mergeBoolExpr(globalDefaultBoolExpr, defaultBoolExpr);

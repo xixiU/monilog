@@ -91,7 +91,7 @@ class MoniLogAutoConfiguration {
         log.info(">>>monilog web start...");
         FilterRegistrationBean<WebMoniLogInterceptor> filterRegBean = new FilterRegistrationBean<>();
         filterRegBean.setFilter(new WebMoniLogInterceptor(moniLogProperties));
-        filterRegBean.setOrder(Integer.MAX_VALUE);
+        filterRegBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
         filterRegBean.setEnabled(Boolean.TRUE);
         filterRegBean.setName("webMoniLogInterceptor");
         filterRegBean.setAsyncSupported(Boolean.TRUE);
@@ -116,5 +116,4 @@ class MoniLogAutoConfiguration {
         //redisson是异步api，拦截操作较为复杂，需要分步进行。通过下面的这个Interceptor的AOP来实现
         return new RedisMoniLogInterceptor.RedissonInterceptor(moniLogProperties.getRedis());
     }
-
 }
