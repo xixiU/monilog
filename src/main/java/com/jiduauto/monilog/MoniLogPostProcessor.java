@@ -29,10 +29,7 @@ class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered {
     static final Map<String, Class<?>> CACHED_CLASS = new HashMap<>();
     private static final String XXL_JOB = "com.xxl.job.core.handler.IJobHandler";
     private static final String MQ_ADMIN = "org.apache.rocketmq.client.MQAdmin";
-    static final String HTTP_CLIENT_BUILDER = "org.apache.http.impl.client.HttpClientBuilder";
-    static final String HTTP_ASYNC_CLIENT_BUILDER = "org.apache.http.impl.nio.client.HttpAsyncClientBuilder";
     private static final String MQ_LISTENER_CONTAINER = "org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer";
-    static final String REDIS_TEMPLATE = "org.springframework.data.redis.core.RedisTemplate";
     private final MoniLogProperties moniLogProperties;
 
     MoniLogPostProcessor(MoniLogProperties moniLogProperties) {
@@ -120,7 +117,7 @@ class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered {
     }
 
     private static void loadClass() {
-        Set<String> clsNames = Sets.newHashSet( XXL_JOB, MQ_ADMIN, HTTP_CLIENT_BUILDER, HTTP_ASYNC_CLIENT_BUILDER, MQ_LISTENER_CONTAINER, REDIS_TEMPLATE);
+        Set<String> clsNames = Sets.newHashSet( XXL_JOB, MQ_ADMIN,  MQ_LISTENER_CONTAINER);
         for (String clsName : clsNames) {
             try {
                 Class<?> cls = Class.forName(clsName);

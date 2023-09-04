@@ -15,8 +15,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.jiduauto.monilog.MoniLogPostProcessor.HTTP_ASYNC_CLIENT_BUILDER;
-import static com.jiduauto.monilog.MoniLogPostProcessor.HTTP_CLIENT_BUILDER;
 import static com.jiduauto.monilog.MoniLogUtil.INNER_DEBUG_PREFIX;
 /**
  * @author yp
@@ -26,6 +24,10 @@ import static com.jiduauto.monilog.MoniLogUtil.INNER_DEBUG_PREFIX;
 final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
     private static final String HTTP_SYNC_CLIENT = "org.apache.http.impl.client.CloseableHttpClient";
     private static final String HTTP_ASYNC_CLIENT_EXCHANGE_HANDLER = "org.apache.http.impl.nio.client.AbstractClientExchangeHandler";
+
+    private static final String HTTP_ASYNC_CLIENT_BUILDER = "org.apache.http.impl.nio.client.HttpAsyncClientBuilder";
+
+    private static final String HTTP_CLIENT_BUILDER = "org.apache.http.impl.client.HttpClientBuilder";
 
     private static final String FEIGN_CLIENT = "feign.Client";
 

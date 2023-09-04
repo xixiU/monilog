@@ -11,14 +11,14 @@ import org.springframework.data.redis.core.RedisTemplate;
 import javax.annotation.Resource;
 import java.util.Map;
 
-import static com.jiduauto.monilog.MoniLogPostProcessor.REDIS_TEMPLATE;
-
 /**
  * @author yp
  * @date 2023/08/04
  */
 @Slf4j
 class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent> {
+    private static final String REDIS_TEMPLATE = "org.springframework.data.redis.core.RedisTemplate";
+
     @Resource
     private MoniLogProperties moniLogProperties;
 
