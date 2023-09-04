@@ -1,16 +1,22 @@
 package com.jiduauto.monilog;
 
-import javassist.*;
+import javassist.ClassPool;
+import javassist.CtClass;
+import javassist.CtMethod;
+import javassist.CtNewMethod;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringApplicationRunListener;
 import org.springframework.core.Ordered;
 
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.jiduauto.monilog.MoniLogPostProcessor.*;
+import static com.jiduauto.monilog.MoniLogPostProcessor.HTTP_ASYNC_CLIENT_BUILDER;
+import static com.jiduauto.monilog.MoniLogPostProcessor.HTTP_CLIENT_BUILDER;
 import static com.jiduauto.monilog.MoniLogUtil.INNER_DEBUG_PREFIX;
 /**
  * @author yp
@@ -151,15 +157,17 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
                 "long cost = System.currentTimeMillis()-startTime;"+
                 FeignMoniLogInterceptor.class.getCanonicalName() + ".doFeignInvocation($1, response, cost, bizException);" +
                 "}" +
-                "if(bizException != null){throw ex;}"+
+                "if(bizException != null){throw bizException;}"+
                 "return response;}";
         try {
             ClassPool classPool = ClassPool.getDefault();
             CtClass ctCls = classPool.getCtClass(FEIGN_CLIENT);
             CtClass[] nestedClasses = ctCls.getNestedClasses();
-            nestedClasses[1].getDeclaredMethod("execute").setBody(newMethod);
+            Arrays.sort(nestedClasses, Comparator.comparing(CtClass::getName));
+            // 里面有两个内部类，第一个是Default，第二个是Proxy
+            nestedClasses[0].getDeclaredMethod("execute").setBody(newMethod);
 //            nestedClasses[1].writeFile();
-            Class<?> targetCls = nestedClasses[1].toClass();
+            Class<?> targetCls = nestedClasses[0].toClass();
 
             log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(FEIGN_CLIENT).set(true);
