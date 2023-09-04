@@ -3,7 +3,6 @@ package com.jiduauto.monilog;
 import com.google.common.collect.Sets;
 import com.xxl.job.core.handler.IJobHandler;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.MessageListener;
@@ -54,17 +53,7 @@ class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered {
             if (isComponentEnable("xxljob", moniLogProperties.getXxljob().isEnable())) {
                 return XxlJobMoniLogInterceptor.getProxyBean((IJobHandler) bean);
             }
-        } else if (isTargetBean(bean, REDIS_TEMPLATE)) {
-            if (isComponentEnable("redis", moniLogProperties.getRedis().isEnable())) {
-                //redisTemplate以及redisson比较特殊，分是在MoniLogAppListener以及RedissonInterceptor中处理
-                log.info(">>>monilog redis start skip...");
-            }
-        } else if (isTargetBean(bean, HTTP_CLIENT_BUILDER) || isTargetBean(bean, HTTP_ASYNC_CLIENT_BUILDER)) {
-            if ((bean instanceof HttpClientBuilder) && isComponentEnable("httpclient", moniLogProperties.getHttpclient().isEnable())) {
-                //httpclient会在另外的地方进行增强
-                log.info(">>>monilog httpclient start skip...");
-            }
-        } else if (isTargetBean(bean, MQ_ADMIN) || isTargetBean(bean, MQ_LISTENER_CONTAINER)) {
+        }  else if (isTargetBean(bean, MQ_ADMIN) || isTargetBean(bean, MQ_LISTENER_CONTAINER)) {
             log.info(">>>monilog rocketmq start...");
             MoniLogProperties.RocketMqProperties rocketmqProperties = moniLogProperties.getRocketmq();
             if (!rocketmqProperties.isEnable()) {
