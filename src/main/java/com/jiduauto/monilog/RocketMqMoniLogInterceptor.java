@@ -187,7 +187,7 @@ class RocketMqMoniLogInterceptor {
         @Override
         public void sendMessageAfter(SendMessageContext context) {
             // 在发送完成后拦截，计算耗时并打印监控信息
-            StackTraceElement st = ThreadUtil.getNextClassFromStack(DefaultMQProducerImpl.class, "org.apache.rocketmq", "org.springframework");
+            StackTraceElement st = ThreadUtil.getNextClassFromStack(DefaultMQProducerImpl.class);
             String clsName;
             String action;
             if (st == null) {

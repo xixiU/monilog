@@ -310,7 +310,6 @@ class MoniLogUtil {
                 break;
             case http_client:
                 detailLogLevel = properties.getHttpclient().getDetailLogLevel();
-
                 break;
             case feign_server:
                 detailLogLevel = properties.getFeign().getServerDetailLogLevel();

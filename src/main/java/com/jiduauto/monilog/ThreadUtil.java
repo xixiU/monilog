@@ -4,6 +4,7 @@ package com.jiduauto.monilog;
 import com.google.common.collect.Sets;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -11,6 +12,9 @@ import java.util.Set;
  * @date 2023/07/26
  */
 class ThreadUtil {
+    //遍历线程栈找业务类时需要排除掉的包(类)前缀
+    private final static Set<String> DEFAULT_EXCLUDE_PKGS = Sets.newHashSet("com.sun.proxy.$Proxy", "java.lang.reflect", "sun.reflect", "org.springframework", "org.apache", "com.jiduauto.monilog");
+
     static StackTraceElement getNextClassFromStack(Class<?> currentCls) {
         return getNextClassFromStack(currentCls, null);
     }
@@ -22,7 +26,7 @@ class ThreadUtil {
         if (currentCls == null) {
             return null;
         }
-        Set<String> excludes = Sets.newHashSet("com.sun.proxy.$Proxy", "java.lang.reflect", "sun.reflect");
+        Set<String> excludes = new HashSet<>(DEFAULT_EXCLUDE_PKGS);
         if (excludePkgPrefixs != null) {
             excludes.addAll(Arrays.asList(excludePkgPrefixs));
         }

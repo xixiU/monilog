@@ -59,7 +59,7 @@ public final class HttpClientMoniLogInterceptor {
             //携带有参数的uri
             String[] uriAndParams = requestLine.getUri().split("\\?");
             String path = uriAndParams[0];
-            StackTraceElement st = ThreadUtil.getNextClassFromStack(HttpClientMoniLogInterceptor.class, "org.apache");
+            StackTraceElement st = ThreadUtil.getNextClassFromStack(HttpClientMoniLogInterceptor.class);
             if (!isEnable(host, path, st == null ? null : st.getClassName())) {
                 return;
             }

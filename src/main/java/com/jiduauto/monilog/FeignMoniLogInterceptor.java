@@ -61,7 +61,7 @@ public final class FeignMoniLogInterceptor {
         mlp.setService(m.getDeclaringClass().getSimpleName());
         mlp.setAction(m.getName());
 
-        StackTraceElement st = ThreadUtil.getNextClassFromStack(Client.class, "feign", "org.springframework", "com.netflix", "rx", "com.jiduauto.monilog");
+        StackTraceElement st = ThreadUtil.getNextClassFromStack(Client.class, "feign", "com.netflix", "rx");
         if (st != null) {
             String className = st.getClassName();
             try {
