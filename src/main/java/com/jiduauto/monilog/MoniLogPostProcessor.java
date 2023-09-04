@@ -27,7 +27,6 @@ import java.util.Set;
 @Slf4j
 class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered {
     static final Map<String, Class<?>> CACHED_CLASS = new HashMap<>();
-    private static final String FEIGN_CLIENT = "feign.Client";
     private static final String XXL_JOB = "com.xxl.job.core.handler.IJobHandler";
     private static final String MQ_ADMIN = "org.apache.rocketmq.client.MQAdmin";
     static final String HTTP_CLIENT_BUILDER = "org.apache.http.impl.client.HttpClientBuilder";
@@ -123,7 +122,7 @@ class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered {
     }
 
     private static void loadClass() {
-        Set<String> clsNames = Sets.newHashSet(FEIGN_CLIENT, XXL_JOB, MQ_ADMIN, HTTP_CLIENT_BUILDER, HTTP_ASYNC_CLIENT_BUILDER, MQ_LISTENER_CONTAINER, REDIS_CONN_FACTORY, REDIS_TEMPLATE, REDISSON_CLIENT);
+        Set<String> clsNames = Sets.newHashSet( XXL_JOB, MQ_ADMIN, HTTP_CLIENT_BUILDER, HTTP_ASYNC_CLIENT_BUILDER, MQ_LISTENER_CONTAINER, REDIS_CONN_FACTORY, REDIS_TEMPLATE, REDISSON_CLIENT);
         for (String clsName : clsNames) {
             try {
                 Class<?> cls = Class.forName(clsName);

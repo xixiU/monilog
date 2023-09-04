@@ -10,10 +10,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.jiduauto.monilog.MoniLogPostProcessor.HTTP_ASYNC_CLIENT_BUILDER;
-import static com.jiduauto.monilog.MoniLogPostProcessor.HTTP_CLIENT_BUILDER;
+import static com.jiduauto.monilog.MoniLogPostProcessor.*;
 import static com.jiduauto.monilog.MoniLogUtil.INNER_DEBUG_PREFIX;
-
 /**
  * @author yp
  * @date 2023/08/08
