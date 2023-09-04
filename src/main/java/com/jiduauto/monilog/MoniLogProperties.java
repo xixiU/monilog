@@ -3,6 +3,7 @@ package com.jiduauto.monilog;
 import com.google.common.collect.Sets;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
@@ -26,7 +27,8 @@ import java.util.Set;
 @ConfigurationProperties("monilog")
 @Getter
 @Setter
-class MoniLogProperties implements InitializingBean , ApplicationListener<EnvironmentChangeEvent> {
+@Slf4j
+class MoniLogProperties implements InitializingBean, ApplicationListener<EnvironmentChangeEvent> {
     /**
      * 服务名，默认取值：${spring.application.name}
      */
@@ -62,11 +64,11 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
      */
     private String globalDefaultBoolExpr = "+$.code==0,$.code==200";
     /**
-     * 监控开启组件清单，默认为*，目前支持feign,grpc,mybatis,rocketmq,web,xxljob，可以一键设置开启.
+     * 监控开启组件清单，默认为*，目前支持feign,grpc,mybatis,rocketmq,web,xxljob,httpclient，可以一键设置开启.
      */
     private Set<String> componentIncludes = Sets.newHashSet("*");
     /**
-     * 监控不开启组件清单，默认为为空，目前支持feign,grpc,mybatis,rocketmq,web,xxljob，可以一键设置不开启.
+     * 监控不开启组件清单，默认为为空，目前支持feign,grpc,mybatis,rocketmq,web,xxljob,httpclient，可以一键设置不开启.
      */
     private Set<String> componentExcludes;
     /**
@@ -157,9 +159,15 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         // banner输出
         printBanner();
         MoniLogUtil.addSystemRecord();
+        if (isComponentEnable("feign", feign.isEnable())) {
+            log.info(">>>monilog feign start...");
+        }
+        if (isComponentEnable("httpclient", httpclient.isEnable())) {
+            log.info(">>>monilog httpclient start...");
+        }
     }
 
-    private void bindValue(){
+    private void bindValue() {
         ApplicationContext applicationContext = SpringUtils.getApplicationContext();
         BindResult<MoniLogProperties> monilogBindResult = Binder.get(applicationContext.getEnvironment()).bind("monilog", MoniLogProperties.class);
         if (!monilogBindResult.isBound()) {
@@ -178,6 +186,7 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
             }
         }
     }
+
     private void printBanner() {
         if (!banner) {
             return;
@@ -221,7 +230,7 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
          */
         private Set<String> excludeServices;
         /**
-         *日志打印的排除方法清单，默认为空，即所有服务的都会打印,支持模糊匹配
+         * 日志打印的排除方法清单，默认为空，即所有服务的都会打印,支持模糊匹配
          */
         private Set<String> excludeActions;
 

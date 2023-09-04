@@ -89,12 +89,14 @@ class MoniLogAutoConfiguration {
     @Bean
     FilterRegistrationBean<WebMoniLogInterceptor> webMoniLogInterceptor(MoniLogProperties moniLogProperties) {
         log.info(">>>monilog web start...");
+        //TODO feign_server ???
         FilterRegistrationBean<WebMoniLogInterceptor> filterRegBean = new FilterRegistrationBean<>();
         filterRegBean.setFilter(new WebMoniLogInterceptor(moniLogProperties));
         filterRegBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
         filterRegBean.setEnabled(Boolean.TRUE);
         filterRegBean.setName("webMoniLogInterceptor");
         filterRegBean.setAsyncSupported(Boolean.TRUE);
+        //filterRegBean.setEnabled();
         return filterRegBean;
     }
 

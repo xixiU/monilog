@@ -70,7 +70,6 @@ class MoniLogUtil {
         } catch (Exception e) {
             innerDebug("addSystemRecord error", e);
         }
-
     }
 
     static void log(MoniLogParams logParams) {
