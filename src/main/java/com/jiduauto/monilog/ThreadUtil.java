@@ -16,7 +16,7 @@ class ThreadUtil {
     private final static Set<String> DEFAULT_EXCLUDE_PKGS = Sets.newHashSet("com.sun.proxy.$Proxy", "java.lang.reflect", "sun.reflect", "org.springframework", "org.apache", "com.jiduauto.monilog");
 
     static StackTraceElement getNextClassFromStack(Class<?> currentCls) {
-        return getNextClassFromStack(currentCls, null);
+        return getNextClassFromStack(currentCls, (String) null);
     }
 
     /**
