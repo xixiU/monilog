@@ -32,9 +32,7 @@ class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered {
     static final String HTTP_CLIENT_BUILDER = "org.apache.http.impl.client.HttpClientBuilder";
     static final String HTTP_ASYNC_CLIENT_BUILDER = "org.apache.http.impl.nio.client.HttpAsyncClientBuilder";
     private static final String MQ_LISTENER_CONTAINER = "org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer";
-    private static final String REDIS_CONN_FACTORY = "org.springframework.data.redis.connection.RedisConnectionFactory";
     static final String REDIS_TEMPLATE = "org.springframework.data.redis.core.RedisTemplate";
-    static final String REDISSON_CLIENT = "org.redisson.api.RedissonClient";
     private final MoniLogProperties moniLogProperties;
 
     MoniLogPostProcessor(MoniLogProperties moniLogProperties) {
@@ -122,7 +120,7 @@ class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered {
     }
 
     private static void loadClass() {
-        Set<String> clsNames = Sets.newHashSet( XXL_JOB, MQ_ADMIN, HTTP_CLIENT_BUILDER, HTTP_ASYNC_CLIENT_BUILDER, MQ_LISTENER_CONTAINER, REDIS_CONN_FACTORY, REDIS_TEMPLATE, REDISSON_CLIENT);
+        Set<String> clsNames = Sets.newHashSet( XXL_JOB, MQ_ADMIN, HTTP_CLIENT_BUILDER, HTTP_ASYNC_CLIENT_BUILDER, MQ_LISTENER_CONTAINER, REDIS_TEMPLATE);
         for (String clsName : clsNames) {
             try {
                 Class<?> cls = Class.forName(clsName);
