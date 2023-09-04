@@ -49,17 +49,20 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
     }
 
 
+    private static CtClass getClass(String clsName) throws NotFoundException {
+        ClassPool classPool = ClassPool.getDefault();
+        classPool.appendClassPath(new LoaderClassPath(Thread.currentThread().getContextClassLoader()));
+        return classPool.getCtClass(clsName);
+    }
+
     private static boolean doEnhanceHttp(String clsName, String helperMethod) {
         if (FLAGS.get(clsName).get()) {
             return true;
         }
         try {
             String body = HttpClientMoniLogInterceptor.class.getCanonicalName() + "." + helperMethod + "(this);";
-            ClassPool classPool = ClassPool.getDefault();
-            classPool.insertClassPath(new ClassClassPath(MonilogEnhancer.class));
-            CtClass ctCls = classPool.getCtClass(clsName);
+            CtClass ctCls = getClass(clsName);
             ctCls.getConstructor("()V").setBody(body);
-//            ctCls.writeFile();
             Class<?> targetCls = ctCls.toClass();
             log.info("constructor of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(clsName).set(true);
@@ -90,9 +93,7 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
         String body2 = "{org.apache.http.util.Args.notNull($1, \"HTTP request\");return _doExecute(determineTarget($1), $1, $2);}";
         String body3 = "{return _doExecute($1, $2, null);}";
         try {
-            ClassPool classPool = ClassPool.getDefault();
-            classPool.insertClassPath(new ClassClassPath(MonilogEnhancer.class));
-            CtClass ctCls = classPool.getCtClass(clsName);
+            CtClass ctCls = getClass(clsName);
             CtMethod newCtm = CtNewMethod.make(newMethod, ctCls);
             ctCls.addMethod(newCtm);
 
@@ -100,7 +101,6 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
             ctCls.getMethod("execute", desc2).setBody(body2);
             ctCls.getMethod("execute", desc3).setBody(body3);
 
-//            ctCls.writeFile();
             Class<?> targetCls = ctCls.toClass();
             log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(clsName).set(true);
@@ -119,12 +119,9 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
                 "try {this.executionFailed($1);} finally " +
                 "{this.discardConnection();this.releaseResources();}}}";
         try {
-            ClassPool classPool = ClassPool.getDefault();
-            CtClass ctCls = classPool.getCtClass(cls);
-            classPool.insertClassPath(new ClassClassPath(MonilogEnhancer.class));
+            CtClass ctCls = getClass(cls);
             CtMethod method = ctCls.getMethod("failed", "(Ljava/lang/Exception;)V");
             method.setBody(body);
-//            ctCls.writeFile();
             Class<?> targetCls = ctCls.toClass();
             log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(cls).set(true);
@@ -163,14 +160,11 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
                 "if(bizException != null){throw bizException;}" +
                 "return response;}";
         try {
-            ClassPool classPool = ClassPool.getDefault();
-            classPool.insertClassPath(new ClassClassPath(MonilogEnhancer.class));
-            CtClass ctCls = classPool.getCtClass(FEIGN_CLIENT);
+            CtClass ctCls = getClass(FEIGN_CLIENT);
             CtClass[] nestedClasses = ctCls.getNestedClasses();
             Arrays.sort(nestedClasses, Comparator.comparing(CtClass::getName));
             // 里面有两个内部类，第一个是Default，第二个是Proxy
             nestedClasses[0].getDeclaredMethod("execute").setBody(newMethod);
-//            nestedClasses[1].writeFile();
             Class<?> targetCls = nestedClasses[0].toClass();
 
             log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
