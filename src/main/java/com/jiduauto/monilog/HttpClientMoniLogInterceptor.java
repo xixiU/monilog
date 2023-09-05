@@ -59,8 +59,12 @@ public final class HttpClientMoniLogInterceptor {
             //携带有参数的uri
             String[] uriAndParams = requestLine.getUri().split("\\?");
             String path = uriAndParams[0];
+            MoniLogProperties.HttpClientProperties httpClientProperties = checkEnable(host, path);
+            if (httpClientProperties == null) {
+                return;
+            }
             StackTraceElement st = ThreadUtil.getNextClassFromStack(HttpClientMoniLogInterceptor.class);
-            if (!isEnable(host, path, st == null ? null : st.getClassName())) {
+            if (!isClassEnable(httpClientProperties, st == null ? null : st.getClassName())) {
                 return;
             }
             try {
@@ -211,20 +215,26 @@ public final class HttpClientMoniLogInterceptor {
         }
     }
 
-    private static boolean isEnable(HttpHost host, String path, String invokerClass) {
+    //启用，则返回当前配置对象供后续链路使用，否则返回null
+    private static MoniLogProperties.HttpClientProperties checkEnable(HttpHost host, String path) {
         MoniLogProperties mp = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
         if (mp == null || !mp.isEnable() || mp.getHttpclient() == null) {
-            return false;
+            return null;
         }
         MoniLogProperties.HttpClientProperties httpclient = mp.getHttpclient();
         boolean enable = mp.isComponentEnable("httpclient", httpclient.isEnable());
         if (!enable) {
-            return false;
+            return null;
         }
-        Set<String> clientBlackList = httpclient.getClientBlackList();
         Set<String> urlBlackList = httpclient.getUrlBlackList();
         Set<String> hostBlackList = httpclient.getHostBlackList();
-        return !checkClassMatch(clientBlackList, invokerClass) && !checkPathMatch(hostBlackList, host.getHostName()) && !checkPathMatch(urlBlackList, path);
+        enable = !checkPathMatch(hostBlackList, host.getHostName()) && !checkPathMatch(urlBlackList, path);
+        return enable ? httpclient : null;
+    }
+
+    private static boolean isClassEnable(MoniLogProperties.HttpClientProperties httpclient, String invokerClass) {
+        Set<String> clientBlackList = httpclient.getClientBlackList();
+        return !checkClassMatch(clientBlackList, invokerClass);
     }
 
     private static boolean isUpstream(String method, String contentType) {
