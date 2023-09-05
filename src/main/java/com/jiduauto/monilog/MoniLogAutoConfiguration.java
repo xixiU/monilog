@@ -93,6 +93,9 @@ class MoniLogAutoConfiguration {
         if (webEnable) {
             log.info(">>>monilog web start...");
         }
+        if (feignEnable) {
+            log.info(">>>monilog feign start...");
+        }
         FilterRegistrationBean<WebMoniLogInterceptor> filterRegBean = new FilterRegistrationBean<>();
         filterRegBean.setFilter(new WebMoniLogInterceptor(moniLogProperties));
         filterRegBean.setOrder(Ordered.HIGHEST_PRECEDENCE);

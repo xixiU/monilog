@@ -154,9 +154,6 @@ class MoniLogProperties implements InitializingBean, ApplicationListener<Environ
         // banner输出
         printBanner();
         MoniLogUtil.addSystemRecord();
-        if (isComponentEnable("feign", feign.isEnable())) {
-            log.info(">>>monilog feign start...");
-        }
         if (isComponentEnable("httpclient", httpclient.isEnable())) {
             log.info(">>>monilog httpclient start...");
         }
