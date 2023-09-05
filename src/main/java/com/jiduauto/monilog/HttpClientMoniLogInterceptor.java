@@ -60,7 +60,7 @@ public final class HttpClientMoniLogInterceptor {
             String[] uriAndParams = requestLine.getUri().split("\\?");
             String path = uriAndParams[0];
             MoniLogProperties.HttpClientProperties httpClientProperties = checkEnable(host, path);
-            if (httpClientProperties == null) {
+            if (httpClientProperties == null) {//fail-fast
                 return;
             }
             StackTraceElement st = ThreadUtil.getNextClassFromStack(HttpClientMoniLogInterceptor.class);
