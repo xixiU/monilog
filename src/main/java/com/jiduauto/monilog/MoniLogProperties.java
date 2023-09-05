@@ -4,7 +4,6 @@ import com.google.common.collect.Sets;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -108,22 +107,18 @@ class MoniLogProperties implements InitializingBean, ApplicationListener<Environ
      */
     private HttpClientProperties httpclient = new HttpClientProperties();
 
-    boolean isComponentEnable(String componentName, Boolean componentEnable) {
-        if (!Boolean.TRUE.equals(componentEnable)) {
+    boolean isComponentEnable(String componentName, boolean componentEnable) {
+        if (!componentEnable) {
             return false;
+        }
+        Set<String> componentExcludes = getComponentExcludes();
+        boolean excludeThis = componentExcludes != null && (componentExcludes.contains("*") || componentExcludes.contains(componentName));
+        if (!excludeThis) {//未排除，则enable
+            return true;
         }
         Set<String> componentIncludes = getComponentIncludes();
-        if (CollectionUtils.isEmpty(componentIncludes)) {
-            return false;
-        }
-        if (componentIncludes.contains("*") || componentIncludes.contains(componentName)) {
-            Set<String> componentExcludes = getComponentExcludes();
-            if (CollectionUtils.isEmpty(componentExcludes)) {
-                return true;
-            }
-            return !componentExcludes.contains("*") && !componentExcludes.contains(componentName);
-        }
-        return false;
+        //即include 又exclude时，以include为准
+        return componentIncludes != null && (componentIncludes.contains("*") || componentIncludes.contains(componentName));
     }
 
     public String getAppName() {

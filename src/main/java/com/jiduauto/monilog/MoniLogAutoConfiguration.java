@@ -84,19 +84,22 @@ class MoniLogAutoConfiguration {
     }
 
     @ConditionalOnWebApplication
-    @ConditionalOnProperty(prefix = "monilog.web", name = "enable", havingValue = "true", matchIfMissing = true)
-    @ConditionalOnExpression("('${monilog.component.includes:*}'.equals('*') or '${monilog.component.includes}'.contains('web')) and !('${monilog.component.excludes:}'.equals('*') or '${monilog.component.excludes:}'.contains('web'))")
+    @ConditionalOnProperty(prefix = "monilog", name = "enable", havingValue = "true", matchIfMissing = true)
+    //@ConditionalOnExpression("('${monilog.component.includes:*}'.equals('*') or '${monilog.component.includes}'.contains('web')) and !('${monilog.component.excludes:}'.equals('*') or '${monilog.component.excludes:}'.contains('web'))")
     @Bean
     FilterRegistrationBean<WebMoniLogInterceptor> webMoniLogInterceptor(MoniLogProperties moniLogProperties) {
-        log.info(">>>monilog web start...");
-        //TODO feign_server ???
+        boolean webEnable = moniLogProperties.isComponentEnable("web", moniLogProperties.getWeb().isEnable());
+        boolean feignEnable = moniLogProperties.isComponentEnable("feign", moniLogProperties.getFeign().isEnable());
+        if (webEnable) {
+            log.info(">>>monilog web start...");
+        }
         FilterRegistrationBean<WebMoniLogInterceptor> filterRegBean = new FilterRegistrationBean<>();
         filterRegBean.setFilter(new WebMoniLogInterceptor(moniLogProperties));
         filterRegBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
         filterRegBean.setEnabled(Boolean.TRUE);
         filterRegBean.setName("webMoniLogInterceptor");
         filterRegBean.setAsyncSupported(Boolean.TRUE);
-        //filterRegBean.setEnabled();
+        filterRegBean.setEnabled(webEnable || feignEnable);
         return filterRegBean;
     }
 
