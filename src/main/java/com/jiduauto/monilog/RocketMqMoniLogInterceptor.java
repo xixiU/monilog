@@ -112,12 +112,11 @@ class RocketMqMoniLogInterceptor {
             long start = System.currentTimeMillis();
             RocketMQMessageListener anno = cls.getAnnotation(RocketMQMessageListener.class);
             if (anno == null) {
-                MoniLogUtil.innerDebug("RocketMQMessageListener is missing");
+                MoniLogUtil.innerDebug("@RocketMQMessageListener is missing");
                 delegate.onMessage(message);
                 return;
             }
             String topic = message instanceof MessageExt ? ((MessageExt) message).getTopic() : anno.topic();
-            ;
 
             if (topic.startsWith("${")) {
                 topic = SpringUtils.getApplicationContext().getEnvironment().resolvePlaceholders(topic);
