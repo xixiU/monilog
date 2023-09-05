@@ -68,7 +68,7 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
             FLAGS.get(clsName).set(true);
             return true;
         } catch (Throwable e) {
-            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", clsName, e.getMessage(), e);
+            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", clsName, e.getMessage());
         }
         return false;
     }
@@ -105,7 +105,7 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
             log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(clsName).set(true);
         } catch (Throwable e) {
-            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", clsName, e.getMessage(), e);
+            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", clsName, e.getMessage());
         }
     }
 
@@ -126,7 +126,7 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
             log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(cls).set(true);
         } catch (Throwable e) {
-            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", cls, e.getMessage(), e);
+            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", cls, e.getMessage());
         }
     }
 
@@ -160,7 +160,7 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
             log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(FEIGN_CLIENT).set(true);
         } catch (Throwable e) {
-            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", FEIGN_CLIENT, e.getMessage(), e);
+            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", FEIGN_CLIENT, e.getMessage());
         }
     }
 }
