@@ -358,7 +358,7 @@ class MoniLogProperties implements InitializingBean, ApplicationListener<Environ
         /**
          * mybatis慢sql阈值，单位毫秒.
          */
-        private long longRt = 2000;
+        private long longRt = 3000;
     }
 
     @Getter
