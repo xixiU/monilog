@@ -188,8 +188,8 @@ class StringUtil {
             int idx = pair.indexOf("=");
             if (idx<0) {
                 // 只有key没有value,如a/b?c
-                queryParams.put(pair, new ArrayList<>());
-                queryParams.computeIfAbsent(pair, item -> new ArrayList<>());
+                Collection<String> valueList = queryParams.computeIfAbsent(pair, item -> new ArrayList<>());
+                valueList.add("");
                 continue;
             }
             String key = pair.substring(0, idx);
