@@ -2,19 +2,20 @@ package com.jiduauto.monilog;
 
 
 import com.google.common.collect.Sets;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author yp
  * @date 2023/07/26
  */
 class ThreadUtil {
-    static StackTraceElement getNextClassFromStack(Class<?> currentCls) {
-        return getNextClassFromStack(currentCls, null);
-    }
-
+    //遍历线程栈找业务类时需要排除掉的包(类)前缀
+    private final static Set<String> DEFAULT_EXCLUDE_PKGS = Sets.newHashSet("com.sun.proxy.$Proxy", "java.lang.reflect", "sun.reflect", "org.springframework", "org.apache", "com.jiduauto.monilog");
     /**
      * 从当前线程栈中，按先后顺序找到指定类的下一个类对应的栈帧，返回找到的第一个栈帧
      */
@@ -22,9 +23,9 @@ class ThreadUtil {
         if (currentCls == null) {
             return null;
         }
-        Set<String> excludes = Sets.newHashSet("com.sun.proxy.$Proxy", "java.lang.reflect", "sun.reflect");
+        Set<String> excludes = new HashSet<>(DEFAULT_EXCLUDE_PKGS);
         if (excludePkgPrefixs != null) {
-            excludes.addAll(Arrays.asList(excludePkgPrefixs));
+            excludes.addAll(Arrays.stream(excludePkgPrefixs).filter(StringUtils::isNotBlank).collect(Collectors.toList()));
         }
         String clsName = currentCls.getCanonicalName();
         StackTraceElement[] st = Thread.currentThread().getStackTrace();

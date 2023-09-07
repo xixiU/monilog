@@ -28,11 +28,11 @@ public final class FeignMoniLogInterceptor {
      * 为Client.execute()注册拦截器, 此处是通过Javassist将处理后的结果直接传入
      * 注：该方法不可修改，包括可见级别，否则将导致HttpClient拦截失效
      */
-    public static Response doRecord(Request request, Response response, long cost, Throwable ex){
-        try{
+    public static Response doRecord(Request request, Response response, long cost, Throwable ex) {
+        try {
             Method execute = Client.Default.class.getDeclaredMethod("execute", Request.class, Request.Options.class);
-            doFeignInvocationRecord(execute , request, response, cost, ex);
-        }catch (Throwable e){
+            return doFeignInvocationRecord(execute, request, response, cost, ex);
+        } catch (Throwable e) {
             MoniLogUtil.innerDebug("doFeignInvocationRecord error", e);
         }
         return response;
@@ -61,7 +61,7 @@ public final class FeignMoniLogInterceptor {
         mlp.setService(m.getDeclaringClass().getSimpleName());
         mlp.setAction(m.getName());
 
-        StackTraceElement st = ThreadUtil.getNextClassFromStack(Client.class, "feign", "org.springframework", "com.netflix", "rx", "com.jiduauto.monilog");
+        StackTraceElement st = ThreadUtil.getNextClassFromStack(Client.class, "feign", "com.netflix", "rx");
         if (st != null) {
             String className = st.getClassName();
             try {
@@ -117,7 +117,7 @@ public final class FeignMoniLogInterceptor {
                     mlp.setOutput(json);
                     LogParser cl = ReflectUtil.getAnnotation(LogParser.class, mlp.getServiceCls(), m);
                     //尝试更精确的提取业务失败信息
-                    String specifiedBoolExpr = StringUtils.trimToNull(feignProperties == null ? null : feignProperties.getDefaultBoolExpr());
+                    String specifiedBoolExpr = StringUtils.trimToNull(feignProperties.getDefaultBoolExpr());
                     ResultParseStrategy rps = cl == null ? null : cl.resultParseStrategy();//默认使用IfSuccess策略
                     String boolExpr = cl == null ? specifiedBoolExpr : cl.boolExpr();
                     String codeExpr = cl == null ? null : cl.errorCodeExpr();

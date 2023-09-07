@@ -1,9 +1,6 @@
 package com.jiduauto.monilog;
 
-import javassist.ClassPool;
-import javassist.CtClass;
-import javassist.CtMethod;
-import javassist.CtNewMethod;
+import javassist.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringApplicationRunListener;
@@ -16,6 +13,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.jiduauto.monilog.MoniLogUtil.INNER_DEBUG_PREFIX;
+
 /**
  * @author yp
  * @date 2023/08/08
@@ -51,16 +49,20 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
     }
 
 
+    private static CtClass getCtClass(String clsName) throws NotFoundException {
+        ClassPool classPool = ClassPool.getDefault();
+        classPool.appendClassPath(new LoaderClassPath(Thread.currentThread().getContextClassLoader()));
+        return classPool.getCtClass(clsName);
+    }
+
     private static boolean doEnhanceHttp(String clsName, String helperMethod) {
         if (FLAGS.get(clsName).get()) {
             return true;
         }
         try {
             String body = HttpClientMoniLogInterceptor.class.getCanonicalName() + "." + helperMethod + "(this);";
-            ClassPool classPool = ClassPool.getDefault();
-            CtClass ctCls = classPool.getCtClass(clsName);
+            CtClass ctCls = getCtClass(clsName);
             ctCls.getConstructor("()V").setBody(body);
-//            ctCls.writeFile();
             Class<?> targetCls = ctCls.toClass();
             log.info("constructor of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(clsName).set(true);
@@ -91,8 +93,7 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
         String body2 = "{org.apache.http.util.Args.notNull($1, \"HTTP request\");return _doExecute(determineTarget($1), $1, $2);}";
         String body3 = "{return _doExecute($1, $2, null);}";
         try {
-            ClassPool classPool = ClassPool.getDefault();
-            CtClass ctCls = classPool.getCtClass(clsName);
+            CtClass ctCls = getCtClass(clsName);
             CtMethod newCtm = CtNewMethod.make(newMethod, ctCls);
             ctCls.addMethod(newCtm);
 
@@ -100,7 +101,6 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
             ctCls.getMethod("execute", desc2).setBody(body2);
             ctCls.getMethod("execute", desc3).setBody(body3);
 
-//            ctCls.writeFile();
             Class<?> targetCls = ctCls.toClass();
             log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(clsName).set(true);
@@ -119,11 +119,9 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
                 "try {this.executionFailed($1);} finally " +
                 "{this.discardConnection();this.releaseResources();}}}";
         try {
-            ClassPool classPool = ClassPool.getDefault();
-            CtClass ctCls = classPool.getCtClass(cls);
+            CtClass ctCls = getCtClass(cls);
             CtMethod method = ctCls.getMethod("failed", "(Ljava/lang/Exception;)V");
             method.setBody(body);
-//            ctCls.writeFile();
             Class<?> targetCls = ctCls.toClass();
             log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(cls).set(true);
@@ -132,7 +130,7 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
         }
     }
 
-    private static void enhanceHttpClient(){
+    private static void enhanceHttpClient() {
         boolean success = doEnhanceHttp(HTTP_CLIENT_BUILDER, "addInterceptorsForBuilder");
         if (success) {
             doEnhanceSyncErrorHandler(HTTP_SYNC_CLIENT);
@@ -147,28 +145,16 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
         if (FLAGS.get(FEIGN_CLIENT).get()) {
             return;
         }
-        String newMethod = "{" +
-                "Throwable bizException = null;" +
-                "feign.Response response= null;" +
-                "long startTime = System.currentTimeMillis();" +
-                "try{" +
-                "response = this.convertResponse(this.convertAndSend($1, $2), $1);" +
-                "}catch(Throwable e){" +
-                "      bizException = e;" +
-                "}finally{" +
-                "long cost = System.currentTimeMillis()-startTime;"+
-                FeignMoniLogInterceptor.class.getCanonicalName() + ".doRecord($1, response, cost, bizException);" +
-                "}" +
-                "if(bizException != null){throw bizException;}"+
-                "return response;}";
+        String newMethod = "{Throwable ex = null; feign.Response ret = null; long startTime = System.currentTimeMillis();" +
+                "try {ret = this.convertResponse(this.convertAndSend($1, $2), $1);} catch(Throwable e){ex = e;} finally {" +
+                "ret=" + FeignMoniLogInterceptor.class.getCanonicalName() + ".doRecord($1, ret, System.currentTimeMillis()-startTime, ex);" +
+                "if (ex != null) {throw ex;}}return ret;}";
         try {
-            ClassPool classPool = ClassPool.getDefault();
-            CtClass ctCls = classPool.getCtClass(FEIGN_CLIENT);
+            CtClass ctCls = getCtClass(FEIGN_CLIENT);
             CtClass[] nestedClasses = ctCls.getNestedClasses();
             Arrays.sort(nestedClasses, Comparator.comparing(CtClass::getName));
             // 里面有两个内部类，第一个是Default，第二个是Proxy
             nestedClasses[0].getDeclaredMethod("execute").setBody(newMethod);
-//            nestedClasses[1].writeFile();
             Class<?> targetCls = nestedClasses[0].toClass();
 
             log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());

@@ -114,7 +114,7 @@ class RedisMoniLogInterceptor {
         private static JedisInvocation parseRedisInvocation(MethodInvocation invocation, RedisSerializer<?> keySerializer, RedisSerializer<?> valueSerializer, Object ret) {
             JedisInvocation ri = new JedisInvocation();
             try {
-                StackTraceElement st = ThreadUtil.getNextClassFromStack(RedisTemplate.class, "org.springframework");
+                StackTraceElement st = ThreadUtil.getNextClassFromStack(RedisTemplate.class);
                 if (st != null) {
                     ri.cls = Class.forName(st.getClassName());
                     ri.method = st.getMethodName();

@@ -72,7 +72,6 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
         HandlerMethod method = null;
         long startTime = System.currentTimeMillis();
 
-        Map<String, String> requestHeaderMap = new HashMap<>();
         String requestUri = request.getRequestURI();
         Set<String> urlBlackList = webProperties.getUrlBlackList();
         if (checkPathMatch(urlBlackList, requestUri)) {
@@ -80,13 +79,20 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             return;
         }
 
-        try{
+        Map<String, String> requestHeaderMap = new HashMap<>();
+        LogPoint logPoint = LogPoint.unknown;
+        boolean webEnable = false;
+        boolean feignEnable = false;
+        try {
+            webEnable = moniLogProperties.isComponentEnable("web", moniLogProperties.getWeb().isEnable());
+            feignEnable = moniLogProperties.isComponentEnable("feign", moniLogProperties.getFeign().isEnable());
+            requestHeaderMap = getRequestHeaders(request);
+            logPoint = parseLogPoint(requestHeaderMap);
             method = getHandlerMethod(request);
-        }catch (Exception e) {
+        } catch (Exception e) {
             MoniLogUtil.innerDebug("getHandlerMethod error", e);
         }
-
-        if (method == null) {
+        if (method == null || (logPoint == LogPoint.feign_server && !feignEnable) || (logPoint == LogPoint.http_server && !webEnable)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -103,10 +109,9 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             TagBuilder tagBuilder = TagBuilder.of(tagList).add("url", requestUri).add("method", request.getMethod());
             logParams.setTags(tagBuilder.toArray());
 
-            requestHeaderMap = getRequestHeaders(request);
 
             Map<String, Object> requestBodyMap = new HashMap<>();
-            logParams.setLogPoint(validateRequest(requestHeaderMap));
+            logParams.setLogPoint(logPoint);
             JSONObject jsonObject = formatRequestInfo(isMultipart, request, requestHeaderMap);
             Object o = jsonObject.get("body");
             if (o instanceof Map) {
@@ -291,7 +296,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
     }
 
 
-    private static LogPoint validateRequest(Map<String, String> headerMap) {
+    private static LogPoint parseLogPoint(Map<String, String> headerMap) {
         // 为空返回不知道
         if (MapUtils.isEmpty(headerMap)) {
             return LogPoint.unknown;

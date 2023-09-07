@@ -3,7 +3,7 @@ package com.jiduauto.monilog;
 import com.google.common.collect.Sets;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.collections4.CollectionUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -14,6 +14,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -26,7 +27,8 @@ import java.util.Set;
 @ConfigurationProperties("monilog")
 @Getter
 @Setter
-class MoniLogProperties implements InitializingBean , ApplicationListener<EnvironmentChangeEvent> {
+@Slf4j
+class MoniLogProperties implements InitializingBean, ApplicationListener<EnvironmentChangeEvent> {
     /**
      * 服务名，默认取值：${spring.application.name}
      */
@@ -62,11 +64,11 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
      */
     private String globalDefaultBoolExpr = "+$.code==0,$.code==200";
     /**
-     * 监控开启组件清单，默认为*，目前支持feign,grpc,mybatis,rocketmq,web,xxljob，可以一键设置开启.
+     * 监控开启组件清单，默认为*，目前支持feign,grpc,mybatis,rocketmq,web,xxljob,httpclient，可以一键设置开启.
      */
     private Set<String> componentIncludes = Sets.newHashSet("*");
     /**
-     * 监控不开启组件清单，默认为为空，目前支持feign,grpc,mybatis,rocketmq,web,xxljob，可以一键设置不开启.
+     * 监控不开启组件清单，默认为为空，目前支持feign,grpc,mybatis,rocketmq,web,xxljob,httpclient，可以一键设置不开启.
      */
     private Set<String> componentExcludes;
     /**
@@ -106,22 +108,18 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
      */
     private HttpClientProperties httpclient = new HttpClientProperties();
 
-    boolean isComponentEnable(String componentName, Boolean componentEnable) {
-        if (!Boolean.TRUE.equals(componentEnable)) {
+    boolean isComponentEnable(String componentName, boolean componentEnable) {
+        if (!componentEnable) {
             return false;
+        }
+        Set<String> componentExcludes = getComponentExcludes();
+        boolean excludeThis = componentExcludes != null && (componentExcludes.contains("*") || componentExcludes.contains(componentName));
+        if (!excludeThis) {//未排除，则enable
+            return true;
         }
         Set<String> componentIncludes = getComponentIncludes();
-        if (CollectionUtils.isEmpty(componentIncludes)) {
-            return false;
-        }
-        if (componentIncludes.contains("*") || componentIncludes.contains(componentName)) {
-            Set<String> componentExcludes = getComponentExcludes();
-            if (CollectionUtils.isEmpty(componentExcludes)) {
-                return true;
-            }
-            return !componentExcludes.contains("*") && !componentExcludes.contains(componentName);
-        }
-        return false;
+        //即include 又exclude时，以include为准
+        return componentIncludes != null && (componentIncludes.contains("*") || componentIncludes.contains(componentName));
     }
 
     public String getAppName() {
@@ -157,9 +155,12 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         // banner输出
         printBanner();
         MoniLogUtil.addSystemRecord();
+        if (isComponentEnable("httpclient", httpclient.isEnable())) {
+            log.info(">>>monilog httpclient start...");
+        }
     }
 
-    private void bindValue(){
+    private void bindValue() {
         ApplicationContext applicationContext = SpringUtils.getApplicationContext();
         BindResult<MoniLogProperties> monilogBindResult = Binder.get(applicationContext.getEnvironment()).bind("monilog", MoniLogProperties.class);
         if (!monilogBindResult.isBound()) {
@@ -170,6 +171,9 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         Field[] fields = MoniLogProperties.class.getDeclaredFields();
         for (Field field : fields) {
             try {
+                if (Modifier.isFinal(field.getModifiers())) {
+                    continue;
+                }
                 field.setAccessible(true);
                 field.set(this, field.get(moniLogProperties));
             } catch (IllegalAccessException e) {
@@ -178,6 +182,7 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
             }
         }
     }
+
     private void printBanner() {
         if (!banner) {
             return;
@@ -221,7 +226,7 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
          */
         private Set<String> excludeServices;
         /**
-         *日志打印的排除方法清单，默认为空，即所有服务的都会打印,支持模糊匹配
+         * 日志打印的排除方法清单，默认为空，即所有服务的都会打印,支持模糊匹配
          */
         private Set<String> excludeActions;
 
@@ -357,7 +362,7 @@ class MoniLogProperties implements InitializingBean , ApplicationListener<Enviro
         /**
          * mybatis慢sql阈值，单位毫秒.
          */
-        private long longRt = 2000;
+        private long longRt = 3000;
     }
 
     @Getter

@@ -28,7 +28,7 @@ class MoniLogAutoConfiguration {
     }
     @Order(Ordered.HIGHEST_PRECEDENCE)
     @Bean("__springUtils")
-    SpringUtils springUtils() {
+    static SpringUtils springUtils() {
         return new SpringUtils();
     }
 
@@ -84,17 +84,26 @@ class MoniLogAutoConfiguration {
     }
 
     @ConditionalOnWebApplication
-    @ConditionalOnProperty(prefix = "monilog.web", name = "enable", havingValue = "true", matchIfMissing = true)
-    @ConditionalOnExpression("('${monilog.component.includes:*}'.equals('*') or '${monilog.component.includes}'.contains('web')) and !('${monilog.component.excludes:}'.equals('*') or '${monilog.component.excludes:}'.contains('web'))")
+    @ConditionalOnProperty(prefix = "monilog", name = "enable", havingValue = "true", matchIfMissing = true)
+    //@ConditionalOnExpression("('${monilog.component.includes:*}'.equals('*') or '${monilog.component.includes}'.contains('web')) and !('${monilog.component.excludes:}'.equals('*') or '${monilog.component.excludes:}'.contains('web'))")
     @Bean
     FilterRegistrationBean<WebMoniLogInterceptor> webMoniLogInterceptor(MoniLogProperties moniLogProperties) {
-        log.info(">>>monilog web start...");
+        boolean webEnable = moniLogProperties.isComponentEnable("web", moniLogProperties.getWeb().isEnable());
+        boolean feignEnable = moniLogProperties.isComponentEnable("feign", moniLogProperties.getFeign().isEnable());
+        if (webEnable) {
+            log.info(">>>monilog web start...");
+        }
+        if (feignEnable) {
+            log.info(">>>monilog feign start...");
+        }
         FilterRegistrationBean<WebMoniLogInterceptor> filterRegBean = new FilterRegistrationBean<>();
         filterRegBean.setFilter(new WebMoniLogInterceptor(moniLogProperties));
-        filterRegBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        // 这个order顺序不能随便改
+        filterRegBean.setOrder(Ordered.HIGHEST_PRECEDENCE + 10000);
         filterRegBean.setEnabled(Boolean.TRUE);
         filterRegBean.setName("webMoniLogInterceptor");
         filterRegBean.setAsyncSupported(Boolean.TRUE);
+        filterRegBean.setEnabled(webEnable || feignEnable);
         return filterRegBean;
     }
 

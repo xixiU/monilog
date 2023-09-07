@@ -186,15 +186,17 @@ class StringUtil {
         String[] pairs = query.split("&");
         for (String pair : pairs) {
             int idx = pair.indexOf("=");
+            if (idx<0) {
+                // 只有key没有value,如a/b?c
+                Collection<String> valueList = queryParams.computeIfAbsent(pair, item -> new ArrayList<>());
+                valueList.add("");
+                continue;
+            }
             String key = pair.substring(0, idx);
             String value = pair.substring(idx + 1);
-            if (!queryParams.containsKey(key)) {
-                queryParams.put(key, new ArrayList<>());
-            }
-
-            queryParams.get(key).add(value);
+            Collection<String> valueList = queryParams.computeIfAbsent(key, item -> new ArrayList<>());
+            valueList.add(value);
         }
         return queryParams;
     }
-
 }

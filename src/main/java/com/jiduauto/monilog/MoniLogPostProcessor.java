@@ -112,7 +112,7 @@ class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered {
 
 
     // 校验是否排除
-    private boolean isComponentEnable(String component, Boolean componentEnable) {
+    private boolean isComponentEnable(String component, boolean componentEnable) {
         return moniLogProperties.isComponentEnable(component, componentEnable);
     }
 

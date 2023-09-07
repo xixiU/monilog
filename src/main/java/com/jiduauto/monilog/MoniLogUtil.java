@@ -70,7 +70,6 @@ class MoniLogUtil {
         } catch (Exception e) {
             innerDebug("addSystemRecord error", e);
         }
-
     }
 
     static void log(MoniLogParams logParams) {
@@ -311,7 +310,6 @@ class MoniLogUtil {
                 break;
             case http_client:
                 detailLogLevel = properties.getHttpclient().getDetailLogLevel();
-
                 break;
             case feign_server:
                 detailLogLevel = properties.getFeign().getServerDetailLogLevel();
