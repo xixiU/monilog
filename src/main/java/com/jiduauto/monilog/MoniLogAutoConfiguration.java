@@ -28,7 +28,7 @@ class MoniLogAutoConfiguration {
     }
     @Order(Ordered.HIGHEST_PRECEDENCE)
     @Bean("__springUtils")
-    SpringUtils springUtils() {
+    static SpringUtils springUtils() {
         return new SpringUtils();
     }
 

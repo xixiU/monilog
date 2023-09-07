@@ -56,7 +56,6 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
         SpringUtils.beanFactory = beanFactory;
         IS_READY |= applicationContext != null;
-
     }
 
     @SuppressWarnings("NullableProblems")
