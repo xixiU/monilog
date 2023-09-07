@@ -14,6 +14,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -170,6 +171,9 @@ class MoniLogProperties implements InitializingBean, ApplicationListener<Environ
         Field[] fields = MoniLogProperties.class.getDeclaredFields();
         for (Field field : fields) {
             try {
+                if (Modifier.isFinal(field.getModifiers())) {
+                    continue;
+                }
                 field.setAccessible(true);
                 field.set(this, field.get(moniLogProperties));
             } catch (IllegalAccessException e) {
