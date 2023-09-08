@@ -7,7 +7,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.*;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.BufferedHttpEntity;
@@ -72,9 +71,8 @@ public final class HttpClientMoniLogInterceptor {
                 String bodyParams = null;
                 if (request instanceof HttpEntityEnclosingRequest) {
                     HttpEntity entity = ((HttpEntityEnclosingRequest) request).getEntity();
-                    String contentType = entity == null ? null : (entity.getContentType() == null ? null : entity.getContentType().getValue());
                     if (entity != null) {
-                        if (isUpstream(method, contentType)) {
+                        if (entity.isStreaming()) {
                             bodyParams = "Binary Data";
                         } else {
                             BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
@@ -129,6 +127,7 @@ public final class HttpClientMoniLogInterceptor {
                 StatusLine statusLine = httpResponse.getStatusLine();
                 p.setSuccess(statusLine.getStatusCode() < HttpStatus.SC_BAD_REQUEST);
                 p.setMsgCode(String.valueOf(statusLine.getStatusCode()));
+
                 String contentType = null;
                 String contentDisposition = null;
                 for (Header h : httpResponse.getAllHeaders()) {
@@ -141,13 +140,13 @@ public final class HttpClientMoniLogInterceptor {
                         contentDisposition = value;
                     }
                 }
+                HttpEntity entity = httpResponse.getEntity();
                 String responseBody;
                 JSON jsonBody = null;
-                if (isDownstream(contentDisposition)) {
+                if (isStream(entity, contentDisposition)) {
                     responseBody = "Binary Data";
                 } else {
-                    if (isJson(contentType)) {
-                        HttpEntity entity = httpResponse.getEntity();
+                    if (isJson(entity, contentType)) {
                         BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
                         responseBody = EntityUtils.toString(bufferedEntity);
                         jsonBody = StringUtil.tryConvert2Json(responseBody);
@@ -237,16 +236,12 @@ public final class HttpClientMoniLogInterceptor {
         return !checkClassMatch(clientBlackList, invokerClass);
     }
 
-    private static boolean isUpstream(String method, String contentType) {
-        return HttpPost.METHOD_NAME.equalsIgnoreCase(method) && contentType.toLowerCase(Locale.ENGLISH).startsWith("multipart/");
+    private static boolean isStream(HttpEntity entity, String contentDisposition) {
+        return entity.isStreaming() || StringUtils.isNotBlank(contentDisposition) && StringUtils.containsIgnoreCase(contentDisposition, "attachment") || StringUtils.containsIgnoreCase(contentDisposition, "filename");
     }
 
-    private static boolean isDownstream(String contentDisposition) {
-        return StringUtils.isNotBlank(contentDisposition) && StringUtils.containsIgnoreCase(contentDisposition, "attachment") || StringUtils.containsIgnoreCase(contentDisposition, "filename");
-    }
-
-    private static boolean isJson(String contentType) {
-        if (isDownstream(contentType)) {
+    private static boolean isJson(HttpEntity entity, String contentType) {
+        if (isStream(entity, contentType)) {
             return false;
         }
         return StringUtils.containsIgnoreCase(contentType, "application/json");
