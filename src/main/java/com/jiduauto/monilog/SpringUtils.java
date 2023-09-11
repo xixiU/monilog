@@ -103,7 +103,7 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
             return getBeanFactory() == null ? null : getBeanFactory().getBean(clazz);
         } catch (Exception e) {
             //注意，这里不能再调用innerDebug方法，容易出现死循环
-            log.warn(MoniLogUtil.INNER_DEBUG_PREFIX + "SpringUtils.getBean failed", e);
+            log.warn(MoniLogUtil.INNER_DEBUG_PREFIX + "SpringUtils.getBean failed:{}" + clazz.getCanonicalName());
             return null;
         }
     }
