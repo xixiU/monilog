@@ -232,9 +232,10 @@ public final class HttpClientMoniLogInterceptor {
         return !checkClassMatch(clientBlackList, invokerClass);
     }
 
-    private static boolean isStream(HttpEntity entity, String contentDisposition) {
-        return entity.isStreaming() || StringUtils.isNotBlank(contentDisposition) && StringUtils.containsIgnoreCase(contentDisposition, "attachment") || StringUtils.containsIgnoreCase(contentDisposition, "filename");
-    }
+//    // 不要这样调用，使用entity.isStreaming()
+//    private static boolean isStream(HttpEntity entity, String contentDisposition) {
+//        return entity.isStreaming() || StringUtils.isNotBlank(contentDisposition) && StringUtils.containsIgnoreCase(contentDisposition, "attachment") || StringUtils.containsIgnoreCase(contentDisposition, "filename");
+//    }
 
     private static boolean isJson(HttpEntity entity, String contentType) {
         if (entity.isStreaming()) {
