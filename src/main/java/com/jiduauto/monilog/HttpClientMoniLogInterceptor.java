@@ -129,21 +129,17 @@ public final class HttpClientMoniLogInterceptor {
                 p.setMsgCode(String.valueOf(statusLine.getStatusCode()));
 
                 String contentType = null;
-                String contentDisposition = null;
                 for (Header h : httpResponse.getAllHeaders()) {
                     String name = h.getName();
                     String value = h.getValue();
                     if (HttpHeaders.CONTENT_TYPE.equalsIgnoreCase(name)) {
                         contentType = value;
                     }
-                    if (HttpHeaders.CONTENT_DISPOSITION.equalsIgnoreCase(name)) {
-                        contentDisposition = value;
-                    }
                 }
                 HttpEntity entity = httpResponse.getEntity();
                 String responseBody;
                 JSON jsonBody = null;
-                if (isStream(entity, contentDisposition)) {
+                if (entity.isStreaming()) {
                     responseBody = "Binary Data";
                 } else {
                     if (isJson(entity, contentType)) {
@@ -241,7 +237,7 @@ public final class HttpClientMoniLogInterceptor {
     }
 
     private static boolean isJson(HttpEntity entity, String contentType) {
-        if (isStream(entity, contentType)) {
+        if (entity.isStreaming()) {
             return false;
         }
         return StringUtils.containsIgnoreCase(contentType, "application/json");
