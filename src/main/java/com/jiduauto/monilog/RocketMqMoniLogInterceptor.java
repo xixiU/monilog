@@ -204,7 +204,7 @@ class RocketMqMoniLogInterceptor {
             // 判断开关
             if (moniLogProperties == null ||
                     !moniLogProperties.isComponentEnable("rocketmq", moniLogProperties.getRocketmq().isEnable())
-                            && !moniLogProperties.isComponentEnable("rocketmq-producer", moniLogProperties.getRocketmq().isProducerEnable())) {
+                            || !moniLogProperties.isComponentEnable("rocketmq-producer", moniLogProperties.getRocketmq().isProducerEnable())) {
                 return;
             }
             // 在发送完成后拦截，计算耗时并打印监控信息
