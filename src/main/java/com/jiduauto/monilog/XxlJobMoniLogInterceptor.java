@@ -15,6 +15,12 @@ class XxlJobMoniLogInterceptor {
     //处理注解式任务
     @Around("@annotation(com.xxl.job.core.handler.annotation.XxlJob)")
     private Object interceptXxlJob(ProceedingJoinPoint pjp) throws Throwable {
+        MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
+        // 判断开关
+        if (moniLogProperties == null ||
+                !moniLogProperties.isComponentEnable("xxljob", moniLogProperties.getXxljob().isEnable())) {
+            return pjp.proceed();
+        }
         return MoniLogAop.processAround(pjp, buildLogParserForJob(), LogPoint.xxljob);
     }
 
