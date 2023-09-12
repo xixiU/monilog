@@ -68,7 +68,7 @@ class RocketMqMoniLogInterceptor {
             // 判断开关
             if (moniLogProperties == null ||
                     !moniLogProperties.isComponentEnable("rocketmq", moniLogProperties.getRocketmq().isEnable())
-            && !moniLogProperties.isComponentEnable("rocketmq-consumer", moniLogProperties.getRocketmq().isConsumerEnable())) {
+            || !moniLogProperties.isComponentEnable("rocketmq-consumer", moniLogProperties.getRocketmq().isConsumerEnable())) {
                 return delegate.apply(msgs, c);
             }
             MoniLogParams params = new MoniLogParams();
@@ -115,7 +115,7 @@ class RocketMqMoniLogInterceptor {
             // 判断开关
             if (moniLogProperties == null ||
                     !moniLogProperties.isComponentEnable("rocketmq", moniLogProperties.getRocketmq().isEnable())
-                            && !moniLogProperties.isComponentEnable("rocketmq-consumer", moniLogProperties.getRocketmq().isConsumerEnable())) {
+                            || !moniLogProperties.isComponentEnable("rocketmq-consumer", moniLogProperties.getRocketmq().isConsumerEnable())) {
                 delegate.onMessage(message);
                 return;
             }
