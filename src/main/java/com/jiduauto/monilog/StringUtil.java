@@ -158,12 +158,17 @@ class StringUtil {
         for (Map.Entry<String, Collection<String>> entry : params.entrySet()) {
             String key = entry.getKey();
             Collection<String> values = entry.getValue();
-            if (StringUtils.isBlank(key) || CollectionUtils.isEmpty(values)) {
+            if (StringUtils.isBlank(key)) {
                 continue;
             }
             if (queryString.length() > 0) {
                 queryString.append("&");
             }
+            if (CollectionUtils.isEmpty(values)) {
+                queryString.append(key).append("=");
+                continue;
+            }
+
             queryString.append(key)
                     .append("=")
                     .append(String.join(",", values));
@@ -199,4 +204,5 @@ class StringUtil {
         }
         return queryParams;
     }
+
 }
