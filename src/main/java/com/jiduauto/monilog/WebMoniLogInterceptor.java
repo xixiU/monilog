@@ -52,7 +52,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
     @Override
     public void doFilterInternal(@NonNull HttpServletRequest httpServletRequest, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws IOException, ServletException {
         MoniLogProperties.WebProperties webProperties = moniLogProperties.getWeb();
-        if (webProperties == null) {
+        if (webProperties == null ) {
             filterChain.doFilter(httpServletRequest, response);
             return;
         }
@@ -78,7 +78,6 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-
         Map<String, String> requestHeaderMap = new HashMap<>();
         LogPoint logPoint = LogPoint.unknown;
         boolean webEnable = false;
@@ -96,6 +95,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
+
 
         try {
             MoniLogTags logTags = ReflectUtil.getAnnotation(MoniLogTags.class, method.getBeanType(), method.getMethod());
