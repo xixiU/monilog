@@ -76,7 +76,7 @@ class MoniLogUtil {
 
     static void log(MoniLogParams logParams) {
         LogReporter reporter = SpringUtils.getBeanWithoutException(LogReporter.class);
-        if (reporter != null) {
+        if (reporter != null && reporter.isStart()) {
             reporter.addLog(logParams);
         }
         try {
@@ -119,7 +119,7 @@ class MoniLogUtil {
             args[args.length - 1] = ExceptionUtil.getErrorMsg(e);
         }
         LogReporter reporter = SpringUtils.getBeanWithoutException(LogReporter.class);
-        if (reporter != null) {
+        if (reporter != null && reporter.isStart()) {
             reporter.addInnerDebug(INNER_DEBUG_PREFIX + pattern + Arrays.toString(args));
         }
         log.warn(INNER_DEBUG_PREFIX + pattern, args);

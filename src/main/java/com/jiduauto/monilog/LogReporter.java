@@ -14,6 +14,9 @@ import java.util.List;
  * @date 2023/09/13
  */
 public class LogReporter {
+    @Getter
+    @Setter
+    private volatile boolean start = false;
     private final List<LogItem> items;
     @Getter
     private final List<String> innerErrors;
