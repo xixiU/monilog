@@ -33,8 +33,9 @@ public class LogCollector {
     }
 
     public List<LogItem> getItems() {
-        items.sort((o1, o2) -> (int) (o1.getTimestamp() - o2.getTimestamp()));
-        return items;
+        List<LogItem> copy = new ArrayList<>(items);
+        copy.sort((o1, o2) -> (int) (o1.getTimestamp() - o2.getTimestamp()));
+        return copy;
     }
 
     synchronized LogCollector addLog(MoniLogParams item) {
