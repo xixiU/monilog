@@ -13,12 +13,12 @@ import java.util.List;
  * @author yp
  * @date 2023/09/13
  */
-public class TestReporter {
+public class LogReporter {
     private final List<LogItem> items;
     @Getter
     private final List<String> innerErrors;
 
-    public TestReporter() {
+    public LogReporter() {
         this.items = new ArrayList<>();
         this.innerErrors = new ArrayList<>();
     }
@@ -28,7 +28,7 @@ public class TestReporter {
         return items;
     }
 
-    synchronized TestReporter addLog(MoniLogParams item) {
+    synchronized LogReporter addLog(MoniLogParams item) {
         if (item == null) {
             return this;
         }
@@ -36,7 +36,7 @@ public class TestReporter {
         return this;
     }
 
-    synchronized TestReporter addInnerDebug(String innerError) {
+    synchronized LogReporter addInnerDebug(String innerError) {
         this.innerErrors.add(innerError);
         return this;
     }
