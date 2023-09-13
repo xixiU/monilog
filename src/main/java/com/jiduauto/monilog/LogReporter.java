@@ -6,6 +6,7 @@ import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 监控测试报告
@@ -16,7 +17,7 @@ import java.util.List;
 public class LogReporter {
     @Getter
     @Setter
-    private volatile boolean start = false;
+    private volatile AtomicBoolean start = new AtomicBoolean(false);
     private final List<LogItem> items;
     @Getter
     private final List<String> innerErrors;
