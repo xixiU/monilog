@@ -27,6 +27,11 @@ public class LogCollector {
         this.innerErrors = new ArrayList<>();
     }
 
+    public void clear() {
+        this.items.clear();
+        this.innerErrors.clear();
+    }
+
     public List<LogItem> getItems() {
         items.sort((o1, o2) -> (int) (o1.getTimestamp() - o2.getTimestamp()));
         return items;
