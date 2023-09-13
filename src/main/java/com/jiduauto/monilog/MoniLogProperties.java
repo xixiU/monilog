@@ -39,7 +39,7 @@ class MoniLogProperties implements InitializingBean, ApplicationListener<Environ
     private boolean enable = true;
 
     /**
-     * 调试开关,仅对dev/test生效,其他所有环境写死false，打印框架异常。
+     * 调试开关,仅对dev/test生效，用于打印框架异常。
      */
     private boolean debug = true;
 
@@ -239,6 +239,11 @@ class MoniLogProperties implements InitializingBean, ApplicationListener<Environ
          * 日志打印的排除错误关键词清单,使用contains判断。默认为空，即所有错误的都会打印
          */
         private Set<String> excludeKeyWords;
+
+        /**
+         * 收集组件测试报告，内部组件测试用
+         */
+        private boolean reportTestResult = false;
     }
 
     @Getter

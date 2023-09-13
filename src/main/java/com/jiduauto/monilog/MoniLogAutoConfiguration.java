@@ -33,6 +33,12 @@ class MoniLogAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnProperty(prefix = "monilog.printer", name = "report-test-result")
+    TestReporter testReporter() {
+        return new TestReporter();
+    }
+
+    @Bean
     @ConditionalOnMissingBean(MoniLogPrinter.class)
     MoniLogPrinter moniLogPrinter() {
         return new DefaultMoniLogPrinter();
