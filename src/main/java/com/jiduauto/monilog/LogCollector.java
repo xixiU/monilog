@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author yp
  * @date 2023/09/13
  */
-public class LogReporter {
+public class LogCollector {
     @Getter
     @Setter
     private volatile AtomicBoolean start = new AtomicBoolean(false);
@@ -22,7 +22,7 @@ public class LogReporter {
     @Getter
     private final List<String> innerErrors;
 
-    public LogReporter() {
+    public LogCollector() {
         this.items = new ArrayList<>();
         this.innerErrors = new ArrayList<>();
     }
@@ -32,7 +32,7 @@ public class LogReporter {
         return items;
     }
 
-    synchronized LogReporter addLog(MoniLogParams item) {
+    synchronized LogCollector addLog(MoniLogParams item) {
         if (item == null) {
             return this;
         }
@@ -40,7 +40,7 @@ public class LogReporter {
         return this;
     }
 
-    synchronized LogReporter addInnerDebug(String innerError) {
+    synchronized LogCollector addInnerDebug(String innerError) {
         this.innerErrors.add(innerError);
         return this;
     }

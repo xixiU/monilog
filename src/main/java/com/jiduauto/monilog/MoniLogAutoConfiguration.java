@@ -34,8 +34,8 @@ class MoniLogAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(prefix = "monilog.printer", name = "report-test-result")
-    LogReporter testReporter() {
-        return new LogReporter();
+    LogCollector testReporter() {
+        return new LogCollector();
     }
 
     @Bean

@@ -75,7 +75,7 @@ class MoniLogUtil {
     }
 
     static void log(MoniLogParams logParams) {
-        LogReporter reporter = SpringUtils.getBeanWithoutException(LogReporter.class);
+        LogCollector reporter = SpringUtils.getBeanWithoutException(LogCollector.class);
         if (reporter != null && reporter.getStart().get()) {
             reporter.addLog(logParams);
         }
@@ -118,7 +118,7 @@ class MoniLogUtil {
         if (e != null && args.length > 0) {
             args[args.length - 1] = ExceptionUtil.getErrorMsg(e);
         }
-        LogReporter reporter = SpringUtils.getBeanWithoutException(LogReporter.class);
+        LogCollector reporter = SpringUtils.getBeanWithoutException(LogCollector.class);
         if (reporter != null && reporter.getStart().get()) {
             reporter.addInnerDebug(INNER_DEBUG_PREFIX + pattern + Arrays.toString(args));
         }
