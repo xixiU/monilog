@@ -19,7 +19,7 @@ import static com.jiduauto.monilog.MoniLogUtil.INNER_DEBUG_PREFIX;
  * @date 2023/08/08
  */
 @Slf4j
-final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
+final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
     private static final String HTTP_SYNC_CLIENT = "org.apache.http.impl.client.CloseableHttpClient";
     private static final String HTTP_ASYNC_CLIENT_EXCHANGE_HANDLER = "org.apache.http.impl.nio.client.AbstractClientExchangeHandler";
 
@@ -37,7 +37,7 @@ final class MonilogEnhancer implements SpringApplicationRunListener, Ordered {
         put(FEIGN_CLIENT, new AtomicBoolean());
     }};
 
-    private MonilogEnhancer(SpringApplication app, String[] args) {
+    private MoniLogEnhancer(SpringApplication app, String[] args) {
         enhanceHttpClient();
         enhanceFeignClient();
         SpringApplicationRunListener.super.starting();
