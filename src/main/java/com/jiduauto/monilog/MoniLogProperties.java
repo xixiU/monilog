@@ -158,6 +158,9 @@ class MoniLogProperties implements InitializingBean, ApplicationListener<Environ
         if (isComponentEnable("httpclient", httpclient.isEnable())) {
             log.info(">>>monilog httpclient start...");
         }
+        if (isComponentEnable("rocketmq", rocketmq.isEnable())) {
+            log.info(">>>monilog rocketmq start...");
+        }
     }
 
     private void bindValue() {

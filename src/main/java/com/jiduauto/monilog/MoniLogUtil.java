@@ -116,6 +116,7 @@ class MoniLogUtil {
         }
         Throwable e = EventArgUtil.extractThrowable(args);
         if (e != null && args.length > 0) {
+            pattern += " {}";
             args[args.length - 1] = ExceptionUtil.getErrorMsg(e);
         }
         LogCollector reporter = SpringUtils.getBeanWithoutException(LogCollector.class);
