@@ -249,9 +249,9 @@ class MoniLogProperties implements InitializingBean, ApplicationListener<Environ
         private boolean reportTestResult = false;
 
         /**
-         * 结果解析错误时打印error日志，请通过globalDefaultBoolExpr以及组件的解析策略，将解析策略设置正确；当开关未false时打印info日志
+         * 当接口响应结果被判定为false时是否打印ERROR级别日志。注意：请通过globalDefaultBoolExpr以及组件的解析策略，将解析策略设置正确；
          */
-        private boolean parseErrorPrintError = true;
+        private boolean useErrorLevelForFalseResult = true;
     }
 
     @Getter
