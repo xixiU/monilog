@@ -158,6 +158,12 @@ class RedisMoniLogInterceptor {
 
         @Around("execution(public org.redisson.api.R* org.redisson.api.RedissonClient+.*(..))")
         private Object interceptRedisson(ProceedingJoinPoint pjp) throws Throwable {
+            MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
+            // 判断开关
+            if (moniLogProperties == null ||
+                    !moniLogProperties.isComponentEnable("redis", moniLogProperties.getRedis().isEnable())) {
+                return pjp.proceed();
+            }
             long start = System.currentTimeMillis();
             Object result = pjp.proceed();
             boolean isTargetResult = result instanceof RMap || result instanceof RSet || result instanceof RList || result instanceof RBucket || result instanceof RBuckets || result instanceof RLock;

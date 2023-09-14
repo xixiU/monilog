@@ -28,6 +28,13 @@ class GrpcMoniLogInterceptor {
     static class GrpcLogPrintClientInterceptor implements ClientInterceptor {
         @Override
         public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> method, CallOptions callOptions, Channel channel) {
+            MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
+            // 判断开关
+            if (moniLogProperties == null ||
+                    !moniLogProperties.isComponentEnable("grpc", moniLogProperties.getGrpc().isEnable())
+                    || !moniLogProperties.isComponentEnable("grpc-client", moniLogProperties.getGrpc().isClientEnable())) {
+                return channel.newCall(method, callOptions);
+            }
             return new GrpcMoniLogClientCall<>(channel.newCall(method, callOptions), new ConcurrentHashMap<>(), method);
         }
 
@@ -163,6 +170,13 @@ class GrpcMoniLogInterceptor {
     static class GrpcLogPrintServerInterceptor implements ServerInterceptor {
         @Override
         public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call, Metadata metadata, ServerCallHandler<ReqT, RespT> next) {
+            MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
+            // 判断开关
+            if (moniLogProperties == null ||
+                    !moniLogProperties.isComponentEnable("grpc", moniLogProperties.getGrpc().isEnable())
+                    || !moniLogProperties.isComponentEnable("grpc-server", moniLogProperties.getGrpc().isServerEnable())) {
+                return next.startCall(call, metadata);
+            }
             MethodDescriptor<ReqT, RespT> method = call.getMethodDescriptor();
             Map<String, Object> context = new ConcurrentHashMap<>();
             Class<?> cls = getCurrentProtoClass(method);

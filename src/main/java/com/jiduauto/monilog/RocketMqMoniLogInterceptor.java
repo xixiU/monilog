@@ -64,6 +64,13 @@ class RocketMqMoniLogInterceptor {
 
         @Override
         public R apply(List<MessageExt> msgs, C c) {
+            MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
+            // 判断开关
+            if (moniLogProperties == null ||
+                    !moniLogProperties.isComponentEnable("rocketmq", moniLogProperties.getRocketmq().isEnable())
+            || !moniLogProperties.isComponentEnable("rocketmq-consumer", moniLogProperties.getRocketmq().isConsumerEnable())) {
+                return delegate.apply(msgs, c);
+            }
             MoniLogParams params = new MoniLogParams();
             params.setServiceCls(cls);
             params.setAction("onMessage");
@@ -104,6 +111,14 @@ class RocketMqMoniLogInterceptor {
 
         @Override
         public void onMessage(T message) {
+            MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
+            // 判断开关
+            if (moniLogProperties == null ||
+                    !moniLogProperties.isComponentEnable("rocketmq", moniLogProperties.getRocketmq().isEnable())
+                            || !moniLogProperties.isComponentEnable("rocketmq-consumer", moniLogProperties.getRocketmq().isConsumerEnable())) {
+                delegate.onMessage(message);
+                return;
+            }
             MoniLogParams params = new MoniLogParams();
             params.setServiceCls(cls);
             params.setAction("onMessage");
@@ -185,6 +200,13 @@ class RocketMqMoniLogInterceptor {
 
         @Override
         public void sendMessageAfter(SendMessageContext context) {
+            MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
+            // 判断开关
+            if (moniLogProperties == null ||
+                    !moniLogProperties.isComponentEnable("rocketmq", moniLogProperties.getRocketmq().isEnable())
+                            || !moniLogProperties.isComponentEnable("rocketmq-producer", moniLogProperties.getRocketmq().isProducerEnable())) {
+                return;
+            }
             // 在发送完成后拦截，计算耗时并打印监控信息
             StackTraceElement st = ThreadUtil.getNextClassFromStack(DefaultMQProducerImpl.class);
             String clsName;

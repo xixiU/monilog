@@ -57,14 +57,12 @@ class MoniLogAutoConfiguration {
         return new MoniLogAop();
     }
 
-    @ConditionalOnProperty(prefix = "monilog.grpc", name = "enable", havingValue = "true", matchIfMissing = true)
-    @ConditionalOnExpression("('${monilog.component.includes:*}'.equals('*') or '${monilog.component.includes}'.contains('grpc')) and !('${monilog.component.excludes:}'.equals('*') or '${monilog.component.excludes:}'.contains('grpc'))")
     @ConditionalOnClass(name = {"io.grpc.stub.AbstractStub", "io.grpc.stub.ServerCalls"})
     @Configuration
     static class GrpcMoniLogConfiguration {
         @Order(-100)
         @GrpcGlobalServerInterceptor
-        @ConditionalOnProperty(prefix = "monilog.grpc.server", name = "enable", havingValue = "true", matchIfMissing = true)
+        @ConditionalOnClass(name = "io.grpc.stub.ServerCalls")
         GrpcMoniLogInterceptor.GrpcLogPrintServerInterceptor grpcLogPrintServerInterceptor() {
             log.info(">>>monilog grpc-server start...");
             return new GrpcMoniLogInterceptor.GrpcLogPrintServerInterceptor();
@@ -73,7 +71,6 @@ class MoniLogAutoConfiguration {
         @Order(-101)
         @GrpcGlobalClientInterceptor
         @ConditionalOnClass(name = "io.grpc.ClientInterceptor")
-        @ConditionalOnProperty(prefix = "monilog.grpc.client", name = "enable", havingValue = "true", matchIfMissing = true)
         GrpcMoniLogInterceptor.GrpcLogPrintClientInterceptor grpcLogPrintClientInterceptor() {
             log.info(">>>monilog grpc-client start...");
             return new GrpcMoniLogInterceptor.GrpcLogPrintClientInterceptor();
@@ -81,8 +78,6 @@ class MoniLogAutoConfiguration {
     }
 
     @ConditionalOnClass(name = "org.apache.ibatis.session.SqlSessionFactory")
-    @ConditionalOnProperty(prefix = "monilog.mybatis", name = "enable", havingValue = "true", matchIfMissing = true)
-    @ConditionalOnExpression("('${monilog.component.includes:*}'.equals('*') or '${monilog.component.includes}'.contains('mybatis')) and !('${monilog.component.excludes:}'.equals('*') or '${monilog.component.excludes:}'.contains('mybatis'))")
     @Bean
     MybatisMoniLogInterceptor.MybatisInterceptor mybatisMonitorSqlFilter() {
         log.info(">>>monilog mybatis start...");
@@ -90,8 +85,6 @@ class MoniLogAutoConfiguration {
     }
 
     @ConditionalOnWebApplication
-    @ConditionalOnProperty(prefix = "monilog", name = "enable", havingValue = "true", matchIfMissing = true)
-    //@ConditionalOnExpression("('${monilog.component.includes:*}'.equals('*') or '${monilog.component.includes}'.contains('web')) and !('${monilog.component.excludes:}'.equals('*') or '${monilog.component.excludes:}'.contains('web'))")
     @Bean
     FilterRegistrationBean<WebMoniLogInterceptor> webMoniLogInterceptor(MoniLogProperties moniLogProperties) {
         boolean webEnable = moniLogProperties.isComponentEnable("web", moniLogProperties.getWeb().isEnable());
@@ -113,8 +106,6 @@ class MoniLogAutoConfiguration {
         return filterRegBean;
     }
 
-    @ConditionalOnProperty(prefix = "monilog.xxljob", name = "enable", havingValue = "true", matchIfMissing = true)
-    @ConditionalOnExpression("('${monilog.component.includes:*}'.equals('*') or '${monilog.component.includes}'.contains('xxljob')) and !('${monilog.component.excludes:}'.equals('*') or '${monilog.component.excludes:}'.contains('xxljob'))")
     @ConditionalOnClass(name = "com.xxl.job.core.handler.IJobHandler")
     @Bean
     XxlJobMoniLogInterceptor xxljobMoniLogInterceptor() {
@@ -122,8 +113,6 @@ class MoniLogAutoConfiguration {
         return new XxlJobMoniLogInterceptor();
     }
 
-    @ConditionalOnProperty(prefix = "monilog.redis", name = "enable", havingValue = "true", matchIfMissing = true)
-    @ConditionalOnExpression("('${monilog.component.includes:*}'.equals('*') or '${monilog.component.includes}'.contains('redis')) and !('${monilog.component.excludes:}'.equals('*') or '${monilog.component.excludes:}'.contains('redis'))")
     @ConditionalOnClass(name = "org.redisson.api.RedissonClient")
     @Bean
     RedisMoniLogInterceptor.RedissonInterceptor redissonInterceptor(MoniLogProperties moniLogProperties) {
