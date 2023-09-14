@@ -85,19 +85,21 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(FEIGN_CLIENT).set(true);
         } catch (Throwable e) {
-            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", FEIGN_CLIENT, e.getMessage());
+            logWarn(e, FEIGN_CLIENT);
         }
     }
-
 
 
     private static void enhanceRocketMqConsumer() {
         if (FLAGS.get(ROCKET_MQ_CONSUMER).get()) {
             return;
         }
-        String enhancedBody = "{if ($1 instanceof org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently){this.messageListener = new com.jiduauto.monilog.RocketMqMoniLogInterceptor.EnhancedListenerConcurrently((org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently) $1);" +
+        String interceptorCls = RocketMqMoniLogInterceptor.class.getCanonicalName();
+        String enhancedBody = "{if ($1 instanceof org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently){this.messageListener = new " + interceptorCls +
+                ".EnhancedListenerConcurrently((org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently) $1);" +
                 "} else if ($1 instanceof org.apache.rocketmq.client.consumer.listener.MessageListenerOrderly){" +
-                "this.messageListener = new com.jiduauto.monilog.RocketMqMoniLogInterceptor.EnhancedListenerOrderly((org.apache.rocketmq.client.consumer.listener.MessageListenerOrderly) $1);" +
+                "this.messageListener = new " + interceptorCls +
+                ".EnhancedListenerOrderly((org.apache.rocketmq.client.consumer.listener.MessageListenerOrderly) $1);" +
                 "} else {this.messageListener = $1;}}";
         String desc = "(Lorg/apache/rocketmq/client/consumer/listener/MessageListener;)V";
         try {
@@ -107,7 +109,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(ROCKET_MQ_CONSUMER).set(true);
         } catch (Throwable e) {
-            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", ROCKET_MQ_CONSUMER, e.getMessage());
+            logWarn(e, ROCKET_MQ_CONSUMER);
         }
     }
 
@@ -115,7 +117,8 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         if (FLAGS.get(ROCKET_MQ_PRODUCER).get()) {
             return;
         }
-        String enhancedBody = "{this.start(true);this.registerSendMessageHook(new com.jiduauto.monilog.RocketMqMoniLogInterceptor.RocketMQProducerEnhanceProcessor());}";
+        String enhancedBody = "{this.start(true);this.registerSendMessageHook(new " +
+                RocketMqMoniLogInterceptor.class.getCanonicalName() + ".RocketMQProducerEnhanceProcessor());}";
         String desc = "()V";
         try {
             CtClass ctCls = getCtClass(ROCKET_MQ_PRODUCER);
@@ -124,7 +127,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(ROCKET_MQ_PRODUCER).set(true);
         } catch (Throwable e) {
-            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", ROCKET_MQ_PRODUCER, e.getMessage());
+            logWarn(e, ROCKET_MQ_PRODUCER);
         }
     }
 
@@ -147,13 +150,13 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             FLAGS.get(clsName).set(true);
             return true;
         } catch (Throwable e) {
-            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", clsName, e.getMessage());
+            logWarn(e, clsName);
         }
         return false;
     }
 
     private static void doEnhanceSyncErrorHandler() {
-        if (FLAGS.get(MoniLogEnhancer.HTTP_SYNC_CLIENT).get()) {
+        if (FLAGS.get(HTTP_SYNC_CLIENT).get()) {
             return;
         }
         String newMethod = "private org.apache.http.client.methods.CloseableHttpResponse _doExecute(" +
@@ -172,7 +175,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         String body2 = "{org.apache.http.util.Args.notNull($1, \"HTTP request\");return _doExecute(determineTarget($1), $1, $2);}";
         String body3 = "{return _doExecute($1, $2, null);}";
         try {
-            CtClass ctCls = getCtClass(MoniLogEnhancer.HTTP_SYNC_CLIENT);
+            CtClass ctCls = getCtClass(HTTP_SYNC_CLIENT);
             CtMethod newCtm = CtNewMethod.make(newMethod, ctCls);
             ctCls.addMethod(newCtm);
 
@@ -182,14 +185,14 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
 
             Class<?> targetCls = ctCls.toClass();
             log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
-            FLAGS.get(MoniLogEnhancer.HTTP_SYNC_CLIENT).set(true);
+            FLAGS.get(HTTP_SYNC_CLIENT).set(true);
         } catch (Throwable e) {
-            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", MoniLogEnhancer.HTTP_SYNC_CLIENT, e.getMessage());
+            logWarn(e, HTTP_SYNC_CLIENT);
         }
     }
 
     private static void doEnhanceAsyncErrorHandler() {
-        if (FLAGS.get(MoniLogEnhancer.HTTP_ASYNC_CLIENT_EXCHANGE_HANDLER).get()) {
+        if (FLAGS.get(HTTP_ASYNC_CLIENT_EXCHANGE_HANDLER).get()) {
             return;
         }
         String body = "{if(this.closed.compareAndSet(false, true)){" +
@@ -198,14 +201,21 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
                 "try {this.executionFailed($1);} finally " +
                 "{this.discardConnection();this.releaseResources();}}}";
         try {
-            CtClass ctCls = getCtClass(MoniLogEnhancer.HTTP_ASYNC_CLIENT_EXCHANGE_HANDLER);
+            CtClass ctCls = getCtClass(HTTP_ASYNC_CLIENT_EXCHANGE_HANDLER);
             CtMethod method = ctCls.getMethod("failed", "(Ljava/lang/Exception;)V");
             method.setBody(body);
             Class<?> targetCls = ctCls.toClass();
             log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
-            FLAGS.get(MoniLogEnhancer.HTTP_ASYNC_CLIENT_EXCHANGE_HANDLER).set(true);
+            FLAGS.get(HTTP_ASYNC_CLIENT_EXCHANGE_HANDLER).set(true);
         } catch (Throwable e) {
-            log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}], {}", MoniLogEnhancer.HTTP_ASYNC_CLIENT_EXCHANGE_HANDLER, e.getMessage());
+            logWarn(e, HTTP_ASYNC_CLIENT_EXCHANGE_HANDLER);
         }
+    }
+
+    private static void logWarn(Throwable e, String cls) {
+        if (e instanceof NotFoundException) {
+            return;
+        }
+        log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}]", cls, e);
     }
 }
