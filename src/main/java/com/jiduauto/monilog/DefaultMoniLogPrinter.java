@@ -39,7 +39,7 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
 
         String[] tags = p.getTags();
         String tagStr = tags == null || tags.length == 0 ? "" : "|" + Arrays.toString(tags);
-        if (ex != null || moniLogProperties.getPrinter().isUseErrorLevelForFalseResult()) {
+        if (ex != null ||  (!p.isSuccess() && moniLogProperties.getPrinter().isUseErrorLevelForFalseResult())) {
             logger.error(DETAIL_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr, input, output, ex);
             return;
         }
@@ -61,7 +61,7 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         String[] tags = p.getTags();
         String tagStr = tags == null || tags.length == 0 ? "" : "|" + Arrays.toString(tags);
         String rt = p.getCost() + "ms";
-        if (p.getException() != null || moniLogProperties.getPrinter().isUseErrorLevelForFalseResult()) {
+        if (p.getException() != null || (!p.isSuccess() && moniLogProperties.getPrinter().isUseErrorLevelForFalseResult())) {
             logger.error(DIGEST_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
             return;
         }
