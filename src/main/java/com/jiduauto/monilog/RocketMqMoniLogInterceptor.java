@@ -133,6 +133,12 @@ public final class RocketMqMoniLogInterceptor {
                     || !moniLogProperties.isComponentEnable("rocketmq-producer", moniLogProperties.getRocketmq().isProducerEnable())) {
                 return;
             }
+            Message message = context.getMessage();
+            String topic = message.getTopic();
+            // rocketmq内部消息追踪的topic,跳过
+            if ("RMQ_SYS_TRACE_TOPIC".equalsIgnoreCase(topic)) {
+                return;
+            }
             // 在发送完成后拦截，计算耗时并打印监控信息
             StackTraceElement st = ThreadUtil.getNextClassFromStack(DefaultMQProducerImpl.class);
             String clsName;
@@ -160,9 +166,8 @@ public final class RocketMqMoniLogInterceptor {
                 logParams.setSuccess(context.getException() == null && status == SendStatus.SEND_OK);
                 logParams.setMsgCode(logParams.isSuccess() ? ErrorEnum.SUCCESS.name() : status == null ? ErrorEnum.SUCCESS.getMsg() : status.name());
                 logParams.setMsgInfo(logParams.isSuccess() ? ErrorEnum.SUCCESS.getMsg() : ErrorEnum.FAILED.getMsg());
-                Message message = context.getMessage();
                 logParams.setInput(new Object[]{getMqBody(message)});
-                logParams.setTags(TagBuilder.of("topic", message.getTopic(), "group", context.getProducerGroup(), "tag", message.getTags()).toArray());
+                logParams.setTags(TagBuilder.of("topic", topic, "group", context.getProducerGroup(), "tag", message.getTags()).toArray());
                 MoniLogUtil.log(logParams);
             } catch (Exception e) {
                 MoniLogUtil.innerDebug("sendMessageAfter error", e);
