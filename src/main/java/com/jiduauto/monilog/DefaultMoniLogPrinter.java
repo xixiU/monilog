@@ -101,7 +101,7 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         String[] tags = p.getTags();
         String tagStr = tags == null || tags.length == 0 ? "" : "|" + Arrays.toString(tags);
         String rt = p.getCost() + "ms";
-        LogLevel level = getFalseResultLogLevel();
+        LogLevel level = getLongRtLogLevel();
         switch (level) {
             case INFO:
                 logger.info(LONG_RT_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
@@ -123,7 +123,7 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         String readableSize = RamUsageEstimator.humanReadableUnits(sizeInBytes);
         String rt = p.getCost() + "ms";
         Logger logger = getLogger(p);
-        LogLevel level = getFalseResultLogLevel();
+        LogLevel level = getLargeSizeLogLevel();
         switch (level) {
             case INFO:
                 logger.info(LARGE_SIZE_LOG_PATTERN, getLogPrefix(), p.getLogPoint(), p.getService(), p.getAction(), key, readableSize, rt);
@@ -138,20 +138,20 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
     }
 
     private LogLevel getFalseResultLogLevel() {
-        LogLevelConfig cfg = moniLogProperties.getPrinter().getLogLevel();
-        LogLevel ll = (cfg == null ? new LogLevelConfig() : cfg).getFalseResult();
+        MoniLogProperties.LogLevelConfig cfg = moniLogProperties.getPrinter().getLogLevel();
+        LogLevel ll = (cfg == null ? new MoniLogProperties.LogLevelConfig() : cfg).getFalseResult();
         return ll == null ? LogLevel.ERROR : ll;
     }
 
     private LogLevel getLongRtLogLevel() {
-        LogLevelConfig cfg = moniLogProperties.getPrinter().getLogLevel();
-        LogLevel ll = (cfg == null ? new LogLevelConfig() : cfg).getLongRt();
+        MoniLogProperties.LogLevelConfig cfg = moniLogProperties.getPrinter().getLogLevel();
+        LogLevel ll = (cfg == null ? new MoniLogProperties.LogLevelConfig() : cfg).getLongRt();
         return ll == null ? LogLevel.ERROR : ll;
     }
 
     private LogLevel getLargeSizeLogLevel() {
-        LogLevelConfig cfg = moniLogProperties.getPrinter().getLogLevel();
-        LogLevel ll = (cfg == null ? new LogLevelConfig() : cfg).getLargeSize();
+        MoniLogProperties.LogLevelConfig cfg = moniLogProperties.getPrinter().getLogLevel();
+        LogLevel ll = (cfg == null ? new MoniLogProperties.LogLevelConfig() : cfg).getLargeSize();
         return ll == null ? LogLevel.ERROR : ll;
     }
 
