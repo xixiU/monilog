@@ -27,7 +27,7 @@ class MoniLogUtil {
      * 组件监控前缀
      */
     private static final String BUSINESS_MONITOR_PREFIX = "business_monitor_";
-    // 这个后面的空格不能去掉，去掉会导致日志检索的时候查不到对应的日志
+    // 这个后面的分隔符不能去掉，去掉会导致日志检索的时候查不到对应的日志
     static final String INNER_DEBUG_PREFIX = "__monilog_warn__|";
 
     private static MoniLogPrinter logPrinter = null;
