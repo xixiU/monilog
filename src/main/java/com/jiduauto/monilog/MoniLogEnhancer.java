@@ -119,10 +119,9 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         }
         String enhancedBody = "{this.start(true);this.registerSendMessageHook(new " +
                 RocketMqMoniLogInterceptor.class.getCanonicalName() + ".RocketMQProducerEnhanceProcessor());}";
-        String desc = "()V";
         try {
             CtClass ctCls = getCtClass(ROCKET_MQ_PRODUCER);
-            ctCls.getMethod("start", desc).setBody(enhancedBody);
+            ctCls.getMethod("start", "()V").setBody(enhancedBody);
             Class<?> targetCls = ctCls.toClass();
             log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(ROCKET_MQ_PRODUCER).set(true);
