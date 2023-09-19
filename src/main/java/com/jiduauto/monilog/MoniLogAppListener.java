@@ -112,11 +112,11 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
      * @param cache
      */
     private void processRedis(Cache cache){
+        // 只对RedisCache增强
         if (cache instanceof RedisCache) {
             enhanceRedis((RedisCache)cache);
             return;
         }
-        // 只对RedisCache增强
         List<Field> fields = ReflectUtil.getField(cache, RedisCache.class);
         if (CollectionUtils.isEmpty(fields)) {
             return;
