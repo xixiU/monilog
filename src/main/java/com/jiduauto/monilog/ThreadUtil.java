@@ -4,9 +4,7 @@ package com.jiduauto.monilog;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -20,33 +18,42 @@ class ThreadUtil {
      * 从当前线程栈中，按先后顺序找到指定类的下一个类对应的栈帧，返回找到的第一个栈帧
      */
     static StackTraceElement getNextClassFromStack(Class<?> currentCls, String... excludePkgPrefixs) {
-        if (currentCls == null) {
-            return null;
-        }
         Set<String> excludes = new HashSet<>(DEFAULT_EXCLUDE_PKGS);
         if (excludePkgPrefixs != null) {
             excludes.addAll(Arrays.stream(excludePkgPrefixs).filter(StringUtils::isNotBlank).collect(Collectors.toList()));
         }
-        String clsName = currentCls.getCanonicalName();
+
         StackTraceElement[] st = Thread.currentThread().getStackTrace();
-        StackTraceElement target = null;
-        boolean hasFoundTargetClass = false;
-        out:
-        for (int i = 0; i < st.length - 1; i++) {
-            String name = getDeclaringClassName(st[i].getClassName());
-            if (clsName.equals(name)) {
-                hasFoundTargetClass = true;
-                continue;
-            } else if (hasFoundTargetClass) {
-                for (String excludePkgPrefix : excludes) {
-                    if (name.startsWith(excludePkgPrefix)) {
-                        continue out;
-                    }
+        List<StackTraceElement> notExclude = new ArrayList<>();
+        outer:
+        for (StackTraceElement s : st) {
+            String name = getDeclaringClassName(s.getClassName());
+            for (String excludePkgPrefix : excludes) {
+                if (name.startsWith(excludePkgPrefix)) {
+                    continue outer;
                 }
             }
-            if (hasFoundTargetClass) {
-                target = st[i];
-                break;
+            notExclude.add(s);
+        }
+        StackTraceElement target = null;
+        boolean hasFoundTargetClass = false;
+        if (currentCls != null) {
+            String clsName = currentCls.getCanonicalName();
+            for (StackTraceElement s : notExclude) {
+                String name = getDeclaringClassName(s.getClassName());
+                if (clsName.equals(name)) {
+                    hasFoundTargetClass = true;
+                    continue;
+                }
+                if (hasFoundTargetClass) {
+                    target = s;
+                    break;
+                }
+            }
+        }
+        if (target == null) {
+            if (!notExclude.isEmpty()) {
+                target = notExclude.get(0);
             }
         }
         return target == null ? null : new StackTraceElement(target.getClassName(), target.getMethodName(), target.getFileName(), target.getLineNumber());
