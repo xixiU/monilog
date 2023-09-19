@@ -276,6 +276,7 @@ public class RedisMoniLogInterceptor {
                 RedisSerializer<String> keySerializer = new RedisMoniLogInterceptor.CachedRedisSerializer<>(cfg.getKeySerializationPair());
                 RedisSerializer<Object> valueSerializer = new RedisMoniLogInterceptor.CachedRedisSerializer<>(cfg.getValueSerializationPair());
 
+                //TODO cacheWriter实际上可能是单例，以下代码会导致redis被多次执行
                 RedisCacheWriter cacheWriter = ReflectUtil.getPropValue(c, "cacheWriter");
                 assert cacheWriter != null;
                 RedisConnectionFactory connectionFactory = ReflectUtil.getPropValue(cacheWriter, "connectionFactory");
