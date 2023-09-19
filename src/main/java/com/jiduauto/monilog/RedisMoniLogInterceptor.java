@@ -18,6 +18,7 @@ import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.cache.RedisCacheWriter;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisStringCommands;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.SerializationException;
@@ -25,6 +26,8 @@ import org.springframework.data.redis.util.ByteUtils;
 
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 @Slf4j
@@ -137,9 +140,9 @@ public class RedisMoniLogInterceptor {
             }
             try {
                 Object[] args = invocation.getArguments();
-                ri.args = deserializeRedis(keySerializer, args);
+                ri.args = deserializeRedisArgs(keySerializer, valueSerializer, args);
                 ri.maybeKey = parseJedisMaybeKey(keySerializer, args);
-                ri.result = ret == null ? null : deserializeRedis(valueSerializer, new Object[]{ret});
+                ri.result = ret == null ? null : deserializeRedisResult(valueSerializer, ret);
             } catch (Exception e) {
                 MoniLogUtil.innerDebug("parseRedisInvocation-deserialize error", e);
             }
@@ -318,20 +321,32 @@ public class RedisMoniLogInterceptor {
         }
     }
 
-    private static Object[] deserializeRedis(RedisSerializer<?> serializer, Object[] args) {
-        if (serializer == null || args == null) {
+    private static Object[] deserializeRedisArgs(RedisSerializer<?> keySerializer, RedisSerializer<?> valueSerializer, Object[] args) {
+        if (args == null || args.length == 0) {
             return args;
         }
-        Object[] result = new Object[args.length];
+        List<Object> ret = new ArrayList<>();
+        boolean firstByte = true;
         for (int i = 0; i < args.length; i++) {
             Object arg = args[i];
             if (arg instanceof byte[]) {
-                result[i] = serializer.deserialize((byte[]) arg);
+                if (firstByte) {
+                    ret.add(keySerializer.deserialize((byte[]) arg));
+                    firstByte = false;
+                } else {
+                    ret.add(valueSerializer.deserialize((byte[]) arg));
+                }
+            } else if (arg instanceof RedisStringCommands.SetOption || arg instanceof RedisStringCommands.BitOperation) {
+                continue;
             } else {
-                result[i] = arg;
+                ret.add(arg);
             }
         }
-        return result;
+        return ret.toArray(new Object[0]);
+    }
+
+    private static Object deserializeRedisResult(RedisSerializer<?> valueSerializer, Object ret) {
+        return valueSerializer == null || !(ret instanceof byte[]) ? ret : valueSerializer.deserialize((byte[]) ret);
     }
 
     private static String parseJedisMaybeKey(RedisSerializer<?> serializer, Object[] args) {
