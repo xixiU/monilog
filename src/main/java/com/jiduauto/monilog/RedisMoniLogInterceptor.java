@@ -17,6 +17,7 @@ import org.springframework.data.redis.cache.RedisCache;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.cache.RedisCacheWriter;
+import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
@@ -125,6 +126,9 @@ public class RedisMoniLogInterceptor {
             JedisInvocation ri = new JedisInvocation();
             try {
                 StackTraceElement st = ThreadUtil.getNextClassFromStack(RedisTemplate.class);
+                if (st == null) {
+                    st = ThreadUtil.getNextClassFromStack(RedisConnection.class);
+                }
                 if (st != null) {
                     ri.cls = Class.forName(st.getClassName());
                     ri.method = st.getMethodName();
