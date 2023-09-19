@@ -327,8 +327,7 @@ public class RedisMoniLogInterceptor {
         }
         List<Object> ret = new ArrayList<>();
         boolean firstByte = true;
-        for (int i = 0; i < args.length; i++) {
-            Object arg = args[i];
+        for (Object arg : args) {
             if (arg instanceof byte[]) {
                 if (firstByte) {
                     ret.add(keySerializer.deserialize((byte[]) arg));
