@@ -1,25 +1,14 @@
 package com.jiduauto.monilog;
 
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.springframework.boot.context.event.ApplicationPreparedEvent;
-import org.springframework.cache.Cache;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.data.redis.cache.RedisCache;
-import org.springframework.data.redis.cache.RedisCacheConfiguration;
-import org.springframework.data.redis.cache.RedisCacheManager;
-import org.springframework.data.redis.cache.RedisCacheWriter;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.RedisSerializationContext;
-import org.springframework.data.redis.serializer.RedisSerializer;
-import org.springframework.data.redis.serializer.SerializationException;
-import org.springframework.data.redis.util.ByteUtils;
 
 import javax.annotation.Resource;
-import java.nio.ByteBuffer;
 import java.util.Map;
 
 /**
@@ -29,7 +18,6 @@ import java.util.Map;
 @Slf4j
 class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent> {
     private static final String REDIS_TEMPLATE = "org.springframework.data.redis.core.RedisTemplate";
-    private static final String REDIS_CACHE_MANAGER = "org.springframework.data.redis.cache.RedisCacheManager";
 
     @Resource
     private MoniLogProperties moniLogProperties;
@@ -42,15 +30,10 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
         }
         log.info(">>>monilog redis[jedis] start...");
         try {
-            //这里仅增加redisTemplate，不包括Redisson， Redisson的比较复杂，将通过Aop实现
+            //这里仅增加redisTemplate，不包括Redisson和RedisCacheManager， Redisson的比较复杂，将通过Aop实现，而RedisCacheManger将通过字节码增强实现
             enhanceRedisTemplate(ctx);
         } catch (Throwable e) {
             MoniLogUtil.innerDebug("enhanceRedisTemplate error", e);
-        }
-        try {
-            //enhanceRedisCacheManager(ctx);
-        } catch (Throwable e) {
-            MoniLogUtil.innerDebug("enhanceRedisCacheManager error", e);
         }
     }
 
@@ -79,71 +62,8 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
             return;
         }
         for (RedisTemplate t : templates.values()) {
-            RedisConnectionFactory proxy = buildProxy(t.getConnectionFactory(), t.getKeySerializer(), t.getValueSerializer(), moniLogProperties.getRedis());
+            RedisConnectionFactory proxy = RedisMoniLogInterceptor.buildProxy(t.getConnectionFactory(), t.getKeySerializer(), t.getValueSerializer(), moniLogProperties.getRedis());
             t.setConnectionFactory(proxy);
-        }
-    }
-
-    private void enhanceRedisCacheManager(ConfigurableApplicationContext ctx) {
-        if (null == MoniLogPostProcessor.getTargetCls(REDIS_CACHE_MANAGER)) {
-            return;
-        }
-        RedisCacheManager rcm = SpringUtils.getBeanWithoutException(RedisCacheManager.class);
-        if (rcm == null) {
-            return;
-        }
-        for (String n : rcm.getCacheNames()) {
-            Cache cache = rcm.getCache(n);
-            if (!(cache instanceof RedisCache)) {
-                continue;
-            }
-            try {
-                RedisCache c = (RedisCache) cache;
-                RedisCacheConfiguration cfg = c.getCacheConfiguration();
-                RedisSerializer<String> keySerializer = new CachedRedisSerializer<>(cfg.getKeySerializationPair());
-                RedisSerializer<Object> valueSerializer = new CachedRedisSerializer<>(cfg.getValueSerializationPair());
-
-                RedisCacheWriter cacheWriter = ReflectUtil.getPropValue(c, "cacheWriter");
-                assert cacheWriter != null;
-                RedisConnectionFactory connectionFactory = ReflectUtil.getPropValue(cacheWriter, "connectionFactory");
-                assert connectionFactory != null;
-                RedisConnectionFactory proxy = buildProxy(connectionFactory, keySerializer, valueSerializer, moniLogProperties.getRedis());
-                ReflectUtil.setPropValue(cacheWriter, "connectionFactory", proxy, false);
-            } catch (Throwable e) {
-                MoniLogUtil.innerDebug("enhanceRedisCacheManager error", e);
-            }
-        }
-    }
-    private static RedisConnectionFactory buildProxy(RedisConnectionFactory origin, RedisSerializer<?> keySerializer, RedisSerializer<?> valueSerializer, MoniLogProperties.RedisProperties conf) {
-        return ProxyUtils.getProxy(origin, invocation -> {
-            String methodName = invocation.getMethod().getName();
-            if (!methodName.equals("getConnection")) {
-                return invocation.proceed();
-            }
-            long start = System.currentTimeMillis();
-            Object conn;
-            try {
-                conn = invocation.proceed();
-            } catch (Throwable e) {
-                RedisMoniLogInterceptor.JedisTemplateInterceptor.recordException(e, invocation, System.currentTimeMillis() - start, keySerializer, valueSerializer, conf);
-                throw e;
-            }
-            return ProxyUtils.getProxy(conn, new RedisMoniLogInterceptor.JedisTemplateInterceptor(keySerializer, valueSerializer, conf));
-        });
-    }
-
-    @AllArgsConstructor
-    private static class CachedRedisSerializer<T> implements RedisSerializer<T> {
-        private final RedisSerializationContext.SerializationPair<T> serializationPair;
-
-        @Override
-        public byte[] serialize(T t) throws SerializationException {
-            return t == null ? null : ByteUtils.getBytes(serializationPair.write(t));
-        }
-
-        @Override
-        public T deserialize(byte[] bytes) throws SerializationException {
-            return bytes == null ? null : serializationPair.read(ByteBuffer.wrap(bytes));
         }
     }
 }
