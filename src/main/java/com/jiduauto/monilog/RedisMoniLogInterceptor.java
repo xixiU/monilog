@@ -136,8 +136,9 @@ public class RedisMoniLogInterceptor {
                 ri.method = invocation.getMethod().getName();
             }
             try {
-                ri.args = deserializeRedis(keySerializer, invocation.getArguments());
-                ri.maybeKey = parseJedisMaybeKey(keySerializer, invocation.getArguments());
+                Object[] args = invocation.getArguments();
+                ri.args = deserializeRedis(keySerializer, args);
+                ri.maybeKey = parseJedisMaybeKey(keySerializer, args);
                 ri.result = ret == null ? null : deserializeRedis(valueSerializer, new Object[]{ret});
             } catch (Exception e) {
                 MoniLogUtil.innerDebug("parseRedisInvocation-deserialize error", e);
