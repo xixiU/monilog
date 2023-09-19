@@ -50,11 +50,11 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
         } catch (Throwable e) {
             MoniLogUtil.innerDebug("enhanceRedisTemplate error", e);
         }
-        try {
-            enhanceRedisCacheManager(ctx);
-        } catch (Throwable e) {
-            MoniLogUtil.innerDebug("enhanceRedisCacheManager error", e);
-        }
+//        try {
+//            enhanceRedisCacheManager(ctx);
+//        } catch (Throwable e) {
+//            MoniLogUtil.innerDebug("enhanceRedisCacheManager error", e);
+//        }
     }
 
     /**
@@ -112,6 +112,10 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
      * @param cache
      */
     private void processRedis(Cache cache){
+        if (cache instanceof RedisCache) {
+            enhanceRedis((RedisCache)cache);
+            return;
+        }
         // 只对RedisCache增强
         List<Field> fields = ReflectUtil.getField(cache, RedisCache.class);
         if (CollectionUtils.isEmpty(fields)) {
@@ -122,20 +126,24 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
             try {
                 field.setAccessible(true);
                 RedisCache c = (RedisCache)field.get(cache);
-                RedisCacheConfiguration cfg = c.getCacheConfiguration();
-                RedisSerializer<String> keySerializer = new CachedRedisSerializer<>(cfg.getKeySerializationPair());
-                RedisSerializer<Object> valueSerializer = new CachedRedisSerializer<>(cfg.getValueSerializationPair());
-
-                RedisCacheWriter cacheWriter = ReflectUtil.getPropValue(c, "cacheWriter");
-                assert cacheWriter != null;
-                RedisConnectionFactory connectionFactory = ReflectUtil.getPropValue(cacheWriter, "connectionFactory");
-                assert connectionFactory != null;
-                RedisConnectionFactory proxy = buildProxy(connectionFactory, keySerializer, valueSerializer, moniLogProperties.getRedis());
-                ReflectUtil.setPropValue(cacheWriter, "connectionFactory", proxy, false);
+                enhanceRedis(c);
             } catch (Throwable e) {
                 MoniLogUtil.innerDebug("processRedis error", e);
             }
         }
+    }
+
+    private void enhanceRedis(RedisCache c){
+        RedisCacheConfiguration cfg = c.getCacheConfiguration();
+        RedisSerializer<String> keySerializer = new CachedRedisSerializer<>(cfg.getKeySerializationPair());
+        RedisSerializer<Object> valueSerializer = new CachedRedisSerializer<>(cfg.getValueSerializationPair());
+
+        RedisCacheWriter cacheWriter = ReflectUtil.getPropValue(c, "cacheWriter");
+        assert cacheWriter != null;
+        RedisConnectionFactory connectionFactory = ReflectUtil.getPropValue(cacheWriter, "connectionFactory");
+        assert connectionFactory != null;
+        RedisConnectionFactory proxy = buildProxy(connectionFactory, keySerializer, valueSerializer, moniLogProperties.getRedis());
+        ReflectUtil.setPropValue(cacheWriter, "connectionFactory", proxy, false);
     }
     private static RedisConnectionFactory buildProxy(RedisConnectionFactory origin, RedisSerializer<?> keySerializer, RedisSerializer<?> valueSerializer, MoniLogProperties.RedisProperties conf) {
         return ProxyUtils.getProxy(origin, invocation -> {
