@@ -57,7 +57,9 @@ class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered {
             return cls;
         }
         try {
-            return Class.forName(className);
+            cls = Class.forName(className);
+            CACHED_CLASS.put(className, cls);
+            return cls;
         } catch (Exception e) {
             return null;
         }

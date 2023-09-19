@@ -77,7 +77,7 @@ class RedisMoniLogInterceptor {
             }
         }
 
-        static void recordException(Throwable e, MethodInvocation invocation, long cost, RedisTemplate template, MoniLogProperties.RedisProperties redis) {
+        static void recordException(Throwable e, MethodInvocation invocation, long cost, RedisSerializer<?> keySerializer, RedisSerializer<?> valueSerializer, MoniLogProperties.RedisProperties redis) {
             MoniLogParams p = new MoniLogParams();
             try {
                 p.setCost(cost);
@@ -89,7 +89,7 @@ class RedisMoniLogInterceptor {
                 p.setMsgCode(errorInfo.getErrorCode());
                 p.setMsgInfo(errorInfo.getErrorMsg());
 
-                JedisInvocation ri = parseRedisInvocation(invocation, template.getKeySerializer(), template.getValueSerializer(), null);
+                JedisInvocation ri = parseRedisInvocation(invocation, keySerializer, valueSerializer, null);
                 p.setInput(ri.args);
                 p.setOutput(ri.result);
                 p.setServiceCls(ri.cls);
