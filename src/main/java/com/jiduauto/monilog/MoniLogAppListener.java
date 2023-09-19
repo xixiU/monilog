@@ -48,7 +48,7 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
             MoniLogUtil.innerDebug("enhanceRedisTemplate error", e);
         }
         try {
-            enhanceRedisCacheManager(ctx);
+            //enhanceRedisCacheManager(ctx);
         } catch (Throwable e) {
             MoniLogUtil.innerDebug("enhanceRedisCacheManager error", e);
         }
@@ -114,8 +114,6 @@ class MoniLogAppListener implements ApplicationListener<ApplicationPreparedEvent
             }
         }
     }
-
-
     private static RedisConnectionFactory buildProxy(RedisConnectionFactory origin, RedisSerializer<?> keySerializer, RedisSerializer<?> valueSerializer, MoniLogProperties.RedisProperties conf) {
         return ProxyUtils.getProxy(origin, invocation -> {
             String methodName = invocation.getMethod().getName();
