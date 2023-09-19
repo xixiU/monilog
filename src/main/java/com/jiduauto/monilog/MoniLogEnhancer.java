@@ -42,7 +42,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         put(FEIGN_CLIENT, new AtomicBoolean());
         put(ROCKET_MQ_CONSUMER, new AtomicBoolean());
         put(ROCKET_MQ_PRODUCER, new AtomicBoolean());
-        put(REDIS_CACHE_MANAGER, new AtomicBoolean());
+//        put(REDIS_CACHE_MANAGER, new AtomicBoolean());
     }};
 
     private MoniLogEnhancer(SpringApplication app, String[] args) {
@@ -50,7 +50,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         enhanceFeignClient();
         enhanceRocketMqConsumer();
         enhanceRocketProducer();
-        enhanceRedisCacheManager();
+//        enhanceRedisCacheManager();
         SpringApplicationRunListener.super.starting();
     }
 
