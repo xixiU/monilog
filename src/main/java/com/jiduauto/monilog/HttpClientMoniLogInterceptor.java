@@ -2,6 +2,7 @@ package com.jiduauto.monilog;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -11,6 +12,7 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.BufferedHttpEntity;
 import org.apache.http.entity.FileEntity;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.apache.http.protocol.HttpContext;
@@ -33,6 +35,8 @@ import static com.jiduauto.monilog.StringUtil.checkPathMatch;
 @Slf4j
 public final class HttpClientMoniLogInterceptor {
     private static final String MONILOG_PARAMS_KEY = "__MoniLogParams";
+    private static final Set<String> TEXT_TYPES = Sets.newHashSet("application/json", "application/xml", "application/xhtml+xml", "text/");
+    private static final Set<String> STREAMING_TYPES = Sets.newHashSet("application/octet-stream", "application/pdf", "application/x-", "image/", "audio/");
 
     /**
      * 为HttpClient注册拦截器, 注意，此处注册的拦截器仅能处理正常返回的情况，对于异常情况(如超时)则由onFailed方法处理
@@ -75,7 +79,7 @@ public final class HttpClientMoniLogInterceptor {
                     if (entity != null) {
                         if (isStreaming(entity, request.getAllHeaders())) {
                             bodyParams = "Binary Data";
-                        } else{
+                        } else {
                             BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
                             bodyParams = EntityUtils.toString(bufferedEntity);
                             ((HttpEntityEnclosingRequest) request).setEntity(bufferedEntity);
@@ -143,14 +147,10 @@ public final class HttpClientMoniLogInterceptor {
                 if (isStreaming(entity, httpResponse.getAllHeaders())) {
                     responseBody = "Binary Data";
                 } else {
-                    if (isJson(entity, contentType)) {
-                        BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
-                        responseBody = EntityUtils.toString(bufferedEntity);
-                        jsonBody = StringUtil.tryConvert2Json(responseBody);
-                        httpResponse.setEntity(bufferedEntity);
-                    } else {
-                        responseBody = "[content of\"" + contentType + "\"...]";
-                    }
+                    BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
+                    responseBody = EntityUtils.toString(bufferedEntity);
+                    jsonBody = StringUtil.tryConvert2Json(responseBody);
+                    httpResponse.setEntity(bufferedEntity);
                 }
                 p.setOutput(jsonBody == null ? responseBody : jsonBody);
                 if (jsonBody != null) {
@@ -240,6 +240,9 @@ public final class HttpClientMoniLogInterceptor {
         if (StringUtils.containsIgnoreCase(entity.getClass().getCanonicalName(), "Multipart")) {
             return true;
         }
+        if (entity instanceof StringEntity) {
+            return false;
+        }
         Header ct = entity.getContentType();
         String contentType = ct == null ? null : ct.getValue();
         if (contentType == null) {
@@ -250,20 +253,23 @@ public final class HttpClientMoniLogInterceptor {
                 }
             }
         }
-        if (ct != null && "application/octet-stream".equalsIgnoreCase(contentType)) {
-            return true;
+        if (contentType == null) {
+            return entity.isStreaming();
+        } else {
+            contentType = contentType.toLowerCase();
         }
-        if (ct != null && ("application/json".equalsIgnoreCase(contentType) || "application/xml".equalsIgnoreCase(contentType))) {
-            return false;
+        for (String textType : TEXT_TYPES) {
+            if (contentType.startsWith(textType)) {
+                return false;
+            }
         }
-        return entity.isStreaming();
-    }
 
-    private static boolean isJson(HttpEntity entity, String contentType) {
-        if (entity.isStreaming()) {
-            return false;
+        for (String streamingType : STREAMING_TYPES) {
+            if (contentType.startsWith(streamingType)) {
+                return true;
+            }
         }
-        return StringUtils.containsIgnoreCase(contentType, "application/json");
+        return false;
     }
 
     private static Map<String, String> parseHeaders(Header[] allHeaders) {
