@@ -146,14 +146,10 @@ public final class HttpClientMoniLogInterceptor {
                 if (isStreaming(entity, httpResponse.getAllHeaders())) {
                     responseBody = "Binary Data";
                 } else {
-                    if (isJson(entity, contentType)) {
-                        BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
-                        responseBody = EntityUtils.toString(bufferedEntity);
-                        jsonBody = StringUtil.tryConvert2Json(responseBody);
-                        httpResponse.setEntity(bufferedEntity);
-                    } else {
-                        responseBody = "[content of\"" + contentType + "\"...]";
-                    }
+                    BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
+                    responseBody = EntityUtils.toString(bufferedEntity);
+                    jsonBody = StringUtil.tryConvert2Json(responseBody);
+                    httpResponse.setEntity(bufferedEntity);
                 }
                 p.setOutput(jsonBody == null ? responseBody : jsonBody);
                 if (jsonBody != null) {
