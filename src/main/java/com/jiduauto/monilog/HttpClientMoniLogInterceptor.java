@@ -12,6 +12,7 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.BufferedHttpEntity;
 import org.apache.http.entity.FileEntity;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.apache.http.protocol.HttpContext;
@@ -78,7 +79,7 @@ public final class HttpClientMoniLogInterceptor {
                     if (entity != null) {
                         if (isStreaming(entity, request.getAllHeaders())) {
                             bodyParams = "Binary Data";
-                        } else{
+                        } else {
                             BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
                             bodyParams = EntityUtils.toString(bufferedEntity);
                             ((HttpEntityEnclosingRequest) request).setEntity(bufferedEntity);
@@ -239,6 +240,9 @@ public final class HttpClientMoniLogInterceptor {
         if (StringUtils.containsIgnoreCase(entity.getClass().getCanonicalName(), "Multipart")) {
             return true;
         }
+        if (entity instanceof StringEntity) {
+            return false;
+        }
         Header ct = entity.getContentType();
         String contentType = ct == null ? null : ct.getValue();
         if (contentType == null) {
@@ -266,13 +270,6 @@ public final class HttpClientMoniLogInterceptor {
             }
         }
         return false;
-    }
-
-    private static boolean isJson(HttpEntity entity, String contentType) {
-        if (entity.isStreaming()) {
-            return false;
-        }
-        return StringUtils.containsIgnoreCase(contentType, "application/json");
     }
 
     private static Map<String, String> parseHeaders(Header[] allHeaders) {
