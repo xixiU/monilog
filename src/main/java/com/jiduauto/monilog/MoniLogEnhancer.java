@@ -212,7 +212,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         }
     }
 
-    private void enhanceRedisConnFactory() {
+    private static void enhanceRedisConnFactory() {
         doEnhanceRedisConnFactory(JEDIS_CONN_FACTORY);
         doEnhanceRedisConnFactory(LETTUCE_CONN_FACTORY);
     }
