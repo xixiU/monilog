@@ -223,30 +223,44 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
     }
 
     private void doEnhanceJedisConnFactory() {
-        if (FLAGS.get(JEDIS_CONN_FACTORY).get()) {
+        doEnhanceRedisConnFactory(JEDIS_CONN_FACTORY);
+    }
+
+    private void doEnhanceLettuceConnFactory() {
+        doEnhanceRedisConnFactory(LETTUCE_CONN_FACTORY);
+    }
+
+    /**
+     * 对LettuceConnectionFactory 与JedisConnectionFactory 增强，通用代码，入参是对应类的全路径
+     * @param factoryFullPath RedisConnectionFactory的实现类全路径
+     */
+    private void doEnhanceRedisConnFactory(String factoryFullPath){
+        if (FLAGS.get(factoryFullPath).get()) {
             return;
         }
         String methodName1 = "getConnection";
         String methodDesc1 = "()Lorg/springframework/data/redis/connection/RedisConnection;";
-        String body1 = "";
+        String body1 = "{long start = System.currentTimeMillis();org.springframework.data.redis.connection.RedisConnection conn;" +
+                "try {conn = __getConnection();} catch (Throwable e) {"+ RedisMoniLogInterceptor.RedisConnectionFactoryInterceptor.class.getCanonicalName()+".redisRecordException(e, System.currentTimeMillis() - start);throw e;}" +
+                "return "+ RedisMoniLogInterceptor.RedisConnectionFactoryInterceptor.class.getCanonicalName()+".buildProxy(conn);}";
 
-        String methodName2 = "getClusterConnection";
-        String methodDesc2 = "()Lorg/springframework/data/redis/connection/RedisClusterConnection;";
-        String body2 = "";
         try {
-            CtClass ctCls = getCtClass(JEDIS_CONN_FACTORY);
-            ctCls.getMethod(methodName1, methodDesc1).setBody(body1);
-            ctCls.getMethod(methodName2, methodDesc2).setBody(body2);
+            CtClass ctCls = getCtClass(factoryFullPath);
+
+            CtMethod originalMethod = ctCls.getMethod(methodName1, methodDesc1);
+            // 拷贝原始方法成一个新方法，新方法名称
+            CtMethod copiedMethod = CtNewMethod.copy(originalMethod, "__getConnection", ctCls, null);
+            // 添加新方法到类中
+            ctCls.addMethod(copiedMethod);
+            // 将原始方法设置try catch同时增强返回结果
+            originalMethod.setBody(body1);
+            ctCls.writeFile();
             Class<?> targetCls = ctCls.toClass();
-            log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
-            FLAGS.get(JEDIS_CONN_FACTORY).set(true);
+            log.info("originalMethod of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            FLAGS.get(factoryFullPath).set(true);
         } catch (Throwable e) {
-            logWarn(e, JEDIS_CONN_FACTORY);
+            logWarn( e, factoryFullPath);
         }
-    }
-
-    private void doEnhanceLettuceConnFactory() {
-
     }
 
     private static void logWarn(Throwable e, String cls) {
