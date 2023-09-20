@@ -24,13 +24,13 @@ import java.util.List;
 import java.util.Set;
 
 @Slf4j
-class RedisMoniLogInterceptor {
+public class RedisMoniLogInterceptor {
     private static final Set<String> SKIP_METHODS_FOR_JEDIS = Sets.newHashSet("isPipelined", "close", "isClosed", "getNativeConnection", "isQueueing", "closePipeline", "evaluate");
     private static final Set<String> TARGET_REDISSON_METHODS = Sets.newHashSet("get", "getAndDelete", "getAndSet", "getAndExpire", "getAndClearExpire", "put", "putIfAbsent", "putIfExists", "randomEntries", "randomKeys", "addAndGet", "containsKey", "containsValue", "remove", "replace", "putAll", "fastPut", "fastRemove", "fastReplace", "fastPutIfAbsent", "fastPutIfExists", "readAllKeySet", "readAllValues", "readAllEntrySet", "readAllMap", "keySet", "values", "entrySet", "addAfter", "addBefore", "fastSet", "readAll", "range", "random", "removeRandom", "tryAdd", "set", "trySet", "setAndKeepTTL", "setIfAbsent", "setIfExists", "compareAndSet", "tryLock", "lock", "tryLock", "lockInterruptibly");
     private static final RedisSerializer<?> stringSerializer = new StringRedisSerializer();
     private static final RedisSerializer<?> jdkSerializer = new JdkSerializationRedisSerializer();
 
-    private static class JedisTemplateInterceptor implements MethodInterceptor {
+    public static class JedisTemplateInterceptor implements MethodInterceptor {
         @Override
         public Object invoke(MethodInvocation invocation) throws Throwable {
             Method method = invocation.getMethod();
@@ -78,8 +78,7 @@ class RedisMoniLogInterceptor {
                 MoniLogUtil.log(p);
             }
         }
-
-        static void recordException(Throwable e, MethodInvocation invocation, long cost) {
+        public static void recordException(Throwable e, MethodInvocation invocation, long cost) {
             MoniLogParams p = new MoniLogParams();
             try {
                 p.setCost(cost);

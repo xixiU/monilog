@@ -32,6 +32,9 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
     private static final String ROCKET_MQ_CONSUMER = "org.apache.rocketmq.client.consumer.DefaultMQPushConsumer";
     private static final String ROCKET_MQ_PRODUCER = "org.apache.rocketmq.client.impl.producer.DefaultMQProducerImpl";
 
+    private static final String JEDIS_CONN_FACTORY = "org.springframework.data.redis.connection.jedis.JedisConnectionFactory";
+    private static final String LETTUCE_CONN_FACTORY = "org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory";
+
     private static final Map<String, AtomicBoolean> FLAGS = new HashMap<String, AtomicBoolean>() {{
         put(HTTP_CLIENT_BUILDER, new AtomicBoolean());
         put(HTTP_SYNC_CLIENT, new AtomicBoolean());
@@ -40,6 +43,8 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         put(FEIGN_CLIENT, new AtomicBoolean());
         put(ROCKET_MQ_CONSUMER, new AtomicBoolean());
         put(ROCKET_MQ_PRODUCER, new AtomicBoolean());
+        put(JEDIS_CONN_FACTORY, new AtomicBoolean());
+        put(LETTUCE_CONN_FACTORY, new AtomicBoolean());
     }};
 
     private MoniLogEnhancer(SpringApplication app, String[] args) {
@@ -47,6 +52,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         enhanceFeignClient();
         enhanceRocketMqConsumer();
         enhanceRocketProducer();
+        enhanceRedisConnFactory();
         SpringApplicationRunListener.super.starting();
     }
 
@@ -209,6 +215,38 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         } catch (Throwable e) {
             logWarn(e, HTTP_ASYNC_CLIENT_EXCHANGE_HANDLER);
         }
+    }
+
+    private void enhanceRedisConnFactory() {
+        doEnhanceJedisConnFactory();
+        doEnhanceLettuceConnFactory();
+    }
+
+    private void doEnhanceJedisConnFactory() {
+        if (FLAGS.get(JEDIS_CONN_FACTORY).get()) {
+            return;
+        }
+        String methodName1 = "getConnection";
+        String methodDesc1 = "()Lorg/springframework/data/redis/connection/RedisConnection;";
+        String body1 = "";
+
+        String methodName2 = "getClusterConnection";
+        String methodDesc2 = "()Lorg/springframework/data/redis/connection/RedisClusterConnection;";
+        String body2 = "";
+        try {
+            CtClass ctCls = getCtClass(JEDIS_CONN_FACTORY);
+            ctCls.getMethod(methodName1, methodDesc1).setBody(body1);
+            ctCls.getMethod(methodName2, methodDesc2).setBody(body2);
+            Class<?> targetCls = ctCls.toClass();
+            log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            FLAGS.get(JEDIS_CONN_FACTORY).set(true);
+        } catch (Throwable e) {
+            logWarn(e, JEDIS_CONN_FACTORY);
+        }
+    }
+
+    private void doEnhanceLettuceConnFactory() {
+
     }
 
     private static void logWarn(Throwable e, String cls) {
