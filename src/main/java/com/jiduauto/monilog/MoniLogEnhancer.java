@@ -22,16 +22,11 @@ import static com.jiduauto.monilog.MoniLogUtil.INNER_DEBUG_PREFIX;
 final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
     private static final String HTTP_SYNC_CLIENT = "org.apache.http.impl.client.CloseableHttpClient";
     private static final String HTTP_ASYNC_CLIENT_EXCHANGE_HANDLER = "org.apache.http.impl.nio.client.AbstractClientExchangeHandler";
-
     private static final String HTTP_ASYNC_CLIENT_BUILDER = "org.apache.http.impl.nio.client.HttpAsyncClientBuilder";
-
     private static final String HTTP_CLIENT_BUILDER = "org.apache.http.impl.client.HttpClientBuilder";
-
     private static final String FEIGN_CLIENT = "feign.Client";
-
     private static final String ROCKET_MQ_CONSUMER = "org.apache.rocketmq.client.consumer.DefaultMQPushConsumer";
     private static final String ROCKET_MQ_PRODUCER = "org.apache.rocketmq.client.impl.producer.DefaultMQProducerImpl";
-
     private static final String JEDIS_CONN_FACTORY = "org.springframework.data.redis.connection.jedis.JedisConnectionFactory";
     private static final String LETTUCE_CONN_FACTORY = "org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory";
 
@@ -218,15 +213,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
     }
 
     private void enhanceRedisConnFactory() {
-        doEnhanceJedisConnFactory();
-        doEnhanceLettuceConnFactory();
-    }
-
-    private void doEnhanceJedisConnFactory() {
         doEnhanceRedisConnFactory(JEDIS_CONN_FACTORY);
-    }
-
-    private void doEnhanceLettuceConnFactory() {
         doEnhanceRedisConnFactory(LETTUCE_CONN_FACTORY);
     }
 
@@ -234,7 +221,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
      * 对LettuceConnectionFactory 与JedisConnectionFactory 增强，通用代码，入参是对应类的全路径
      * @param factoryFullPath RedisConnectionFactory的实现类全路径
      */
-    private void doEnhanceRedisConnFactory(String factoryFullPath){
+    private static void doEnhanceRedisConnFactory(String factoryFullPath){
         if (FLAGS.get(factoryFullPath).get()) {
             return;
         }
@@ -246,7 +233,6 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
 
         try {
             CtClass ctCls = getCtClass(factoryFullPath);
-
             CtMethod originalMethod = ctCls.getMethod(methodName1, methodDesc1);
             // 拷贝原始方法成一个新方法，新方法名称
             CtMethod copiedMethod = CtNewMethod.copy(originalMethod, "__getConnection", ctCls, null);
@@ -254,7 +240,6 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             ctCls.addMethod(copiedMethod);
             // 将原始方法设置try catch同时增强返回结果
             originalMethod.setBody(body1);
-            ctCls.writeFile();
             Class<?> targetCls = ctCls.toClass();
             log.info("originalMethod of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(factoryFullPath).set(true);
