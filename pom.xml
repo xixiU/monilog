@@ -27,12 +27,12 @@
 
         <spring-boot-stater.version>2.3.12.RELEASE</spring-boot-stater.version>
         <monitor-spring-boot-starter.version>1.1.1</monitor-spring-boot-starter.version>
-        <xxl.job.version>2.2.0</xxl.job.version>
-        <rocketmq.starter.version>2.2.0</rocketmq.starter.version>
+        <xxl.job.version>2.3.1</xxl.job.version>
+        <rocketmq.starter.version>2.2.3</rocketmq.starter.version>
         <mybatis.starter.version>3.0.2</mybatis.starter.version>
         <grpc.starter.version>2.10.3</grpc.starter.version>
         <openfeign.version>10.10.1</openfeign.version>
-        <spring.data.redis.version>2.7.2</spring.data.redis.version>
+        <spring.data.redis.version>3.0.6</spring.data.redis.version>
         <httpclient.version>4.5.14</httpclient.version>
         <httpasyncclient.version>4.1.5</httpasyncclient.version>
         <redisson.version>3.22.0</redisson.version>
@@ -87,12 +87,12 @@
         <dependency>
             <groupId>net.sf.uadetector</groupId>
             <artifactId>uadetector-resources</artifactId>
-            <version>2014.04</version>
+            <version>2014.10</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.6</version>
+            <version>3.12.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -107,7 +107,7 @@
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
-            <version>15.0</version>
+            <version>24.0.1</version>
         </dependency>
         <dependency>
             <groupId>org.aspectj</groupId>
