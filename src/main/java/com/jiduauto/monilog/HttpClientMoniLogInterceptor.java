@@ -72,7 +72,7 @@ public final class HttpClientMoniLogInterceptor {
                 if (request instanceof HttpEntityEnclosingRequest) {
                     HttpEntity entity = ((HttpEntityEnclosingRequest) request).getEntity();
                     if (entity != null) {
-                        if (entity.isStreaming()) {
+                        if (requestIsStreaming((HttpEntityEnclosingRequest) request)) {
                             bodyParams = "Binary Data";
                         } else {
                             BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
@@ -139,7 +139,7 @@ public final class HttpClientMoniLogInterceptor {
                 HttpEntity entity = httpResponse.getEntity();
                 String responseBody;
                 JSON jsonBody = null;
-                if (entity.isStreaming()) {
+                if (responseIsStreaming(httpResponse)) {
                     responseBody = "Binary Data";
                 } else {
                     if (isJson(entity, contentType)) {
@@ -232,10 +232,47 @@ public final class HttpClientMoniLogInterceptor {
         return !checkClassMatch(clientBlackList, invokerClass);
     }
 
-//    // 不要这样调用，使用entity.isStreaming()
-//    private static boolean isStream(HttpEntity entity, String contentDisposition) {
-//        return entity.isStreaming() || StringUtils.isNotBlank(contentDisposition) && StringUtils.containsIgnoreCase(contentDisposition, "attachment") || StringUtils.containsIgnoreCase(contentDisposition, "filename");
-//    }
+    private static boolean requestIsStreaming(HttpEntityEnclosingRequest request) {
+        HttpEntity entity = request.getEntity();
+        Header ct = entity.getContentType();
+        String contentType = ct == null ? null : ct.getValue();
+        if (contentType == null) {
+            for (Header header : request.getAllHeaders()) {
+                if (HttpHeaders.CONTENT_TYPE.equalsIgnoreCase(header.getName())) {
+                    contentType = header.getValue();
+                    break;
+                }
+            }
+        }
+        if (ct != null && "application/octet-stream".equalsIgnoreCase(contentType)) {
+            return true;
+        }
+        if (ct != null && ("application/json".equalsIgnoreCase(contentType) || "application/xml".equalsIgnoreCase(contentType))) {
+            return false;
+        }
+        return entity.isStreaming();
+    }
+
+    private static boolean responseIsStreaming(HttpResponse response) {
+        HttpEntity entity = response.getEntity();
+        Header ct = entity.getContentType();
+        String contentType = ct == null ? null : ct.getValue();
+        if (contentType == null) {
+            for (Header header : response.getAllHeaders()) {
+                if (HttpHeaders.CONTENT_TYPE.equalsIgnoreCase(header.getName())) {
+                    contentType = header.getValue();
+                    break;
+                }
+            }
+        }
+        if (ct != null && "application/octet-stream".equalsIgnoreCase(contentType)) {
+            return true;
+        }
+        if (ct != null && ("application/json".equalsIgnoreCase(contentType) || "application/xml".equalsIgnoreCase(contentType))) {
+            return false;
+        }
+        return entity.isStreaming();
+    }
 
     private static boolean isJson(HttpEntity entity, String contentType) {
         if (entity.isStreaming()) {
