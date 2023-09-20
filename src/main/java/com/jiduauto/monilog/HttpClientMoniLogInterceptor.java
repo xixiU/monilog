@@ -2,6 +2,7 @@ package com.jiduauto.monilog;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -33,6 +34,8 @@ import static com.jiduauto.monilog.StringUtil.checkPathMatch;
 @Slf4j
 public final class HttpClientMoniLogInterceptor {
     private static final String MONILOG_PARAMS_KEY = "__MoniLogParams";
+    private static final Set<String> TEXT_TYPES = Sets.newHashSet("application/json", "application/xml", "application/xhtml+xml", "text/");
+    private static final Set<String> STREAMING_TYPES = Sets.newHashSet("application/octet-stream", "application/pdf", "application/x-", "image/", "audio/");
 
     /**
      * 为HttpClient注册拦截器, 注意，此处注册的拦截器仅能处理正常返回的情况，对于异常情况(如超时)则由onFailed方法处理
@@ -250,13 +253,23 @@ public final class HttpClientMoniLogInterceptor {
                 }
             }
         }
-        if (ct != null && "application/octet-stream".equalsIgnoreCase(contentType)) {
-            return true;
+        if (contentType == null) {
+            return entity.isStreaming();
+        } else {
+            contentType = contentType.toLowerCase();
         }
-        if (ct != null && ("application/json".equalsIgnoreCase(contentType) || "application/xml".equalsIgnoreCase(contentType))) {
-            return false;
+        for (String textType : TEXT_TYPES) {
+            if (contentType.startsWith(textType)) {
+                return false;
+            }
         }
-        return entity.isStreaming();
+
+        for (String streamingType : STREAMING_TYPES) {
+            if (contentType.startsWith(streamingType)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean isJson(HttpEntity entity, String contentType) {
