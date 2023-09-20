@@ -32,8 +32,6 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
     private static final String ROCKET_MQ_CONSUMER = "org.apache.rocketmq.client.consumer.DefaultMQPushConsumer";
     private static final String ROCKET_MQ_PRODUCER = "org.apache.rocketmq.client.impl.producer.DefaultMQProducerImpl";
 
-    private static final String REDIS_CACHE_MANAGER = "org.springframework.data.redis.cache.RedisCacheManager";
-
     private static final Map<String, AtomicBoolean> FLAGS = new HashMap<String, AtomicBoolean>() {{
         put(HTTP_CLIENT_BUILDER, new AtomicBoolean());
         put(HTTP_SYNC_CLIENT, new AtomicBoolean());
@@ -42,7 +40,6 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         put(FEIGN_CLIENT, new AtomicBoolean());
         put(ROCKET_MQ_CONSUMER, new AtomicBoolean());
         put(ROCKET_MQ_PRODUCER, new AtomicBoolean());
-        put(REDIS_CACHE_MANAGER, new AtomicBoolean());
     }};
 
     private MoniLogEnhancer(SpringApplication app, String[] args) {
@@ -50,7 +47,6 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         enhanceFeignClient();
         enhanceRocketMqConsumer();
         enhanceRocketProducer();
-        enhanceRedisCacheManager();
         SpringApplicationRunListener.super.starting();
     }
 
@@ -131,24 +127,6 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             FLAGS.get(ROCKET_MQ_PRODUCER).set(true);
         } catch (Throwable e) {
             logWarn(e, ROCKET_MQ_PRODUCER);
-        }
-    }
-
-    private static void enhanceRedisCacheManager() {
-        if (FLAGS.get(REDIS_CACHE_MANAGER).get()) {
-            return;
-        }
-        String newMethod = "public void afterPropertiesSet() {super.initializeCaches();" +
-                RedisMoniLogInterceptor.class.getCanonicalName() + ".enhanceRedisCacheManager(this);}";
-        try {
-            CtClass ctCls = getCtClass(REDIS_CACHE_MANAGER);
-            CtMethod newCtm = CtNewMethod.make(newMethod, ctCls);
-            ctCls.addMethod(newCtm);
-            Class<?> targetCls = ctCls.toClass();
-            log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
-            FLAGS.get(REDIS_CACHE_MANAGER).set(true);
-        } catch (Throwable e) {
-            logWarn(e, REDIS_CACHE_MANAGER);
         }
     }
 

@@ -26,6 +26,7 @@ class MoniLogAutoConfiguration {
     MoniLogPostProcessor moniLogPostProcessor(MoniLogProperties moniLogProperties) {
         return new MoniLogPostProcessor(moniLogProperties);
     }
+
     @Order(Ordered.HIGHEST_PRECEDENCE)
     @Bean("__springUtils")
     static SpringUtils springUtils() {
@@ -42,12 +43,6 @@ class MoniLogAutoConfiguration {
     @ConditionalOnMissingBean(MoniLogPrinter.class)
     MoniLogPrinter moniLogPrinter() {
         return new DefaultMoniLogPrinter();
-    }
-
-    @Bean
-    @ConditionalOnClass(name = {"org.springframework.data.redis.core.RedisTemplate"})
-    MoniLogAppListener applicationPreparedListener() {
-        return new MoniLogAppListener();
     }
 
     @Bean
@@ -115,9 +110,15 @@ class MoniLogAutoConfiguration {
 
     @ConditionalOnClass(name = "org.redisson.api.RedissonClient")
     @Bean
-    RedisMoniLogInterceptor.RedissonInterceptor redissonInterceptor(MoniLogProperties moniLogProperties) {
+    RedisMoniLogInterceptor.RedissonInterceptor redissonInterceptor() {
         log.info(">>>monilog redis[redisson] start...");
-        //redisson是异步api，拦截操作较为复杂，需要分步进行。通过下面的这个Interceptor的AOP来实现
-        return new RedisMoniLogInterceptor.RedissonInterceptor(moniLogProperties.getRedis());
+        return new RedisMoniLogInterceptor.RedissonInterceptor();
+    }
+
+    @ConditionalOnClass(name = "org.springframework.data.redis.connection.RedisConnectionFactory")
+    @Bean
+    RedisMoniLogInterceptor.RedisConnectionInterceptor redisInterceptor() {
+        log.info(">>>monilog redis[jedis] start...");
+        return new RedisMoniLogInterceptor.RedisConnectionInterceptor();
     }
 }
