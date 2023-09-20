@@ -460,9 +460,9 @@ class MoniLogProperties implements InitializingBean {
         private float warnForValueLength = 50;
 
         /**
-         * redis慢rt阈值，单位毫秒. 默认100ms
+         * redis慢rt阈值，单位毫秒. 默认200ms
          */
-        private long longRt = 100;
+        private long longRt = 200;
     }
 
     @Getter
