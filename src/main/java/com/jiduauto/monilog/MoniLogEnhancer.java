@@ -218,7 +218,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
     }
 
     /**
-     * 对LettuceConnectionFactory 与JedisConnectionFactory 增强，通用代码，入参是对应类的全路径
+     * 对LettuceConnectionFactory 与JedisConnectionFactory 增强getConnection方法和getClusterConnection方法，通用代码，入参是对应类的全路径
      * @param factoryFullPath RedisConnectionFactory的实现类全路径
      */
     private static void doEnhanceRedisConnFactory(String factoryFullPath){
@@ -229,19 +229,33 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         String methodDesc1 = "()Lorg/springframework/data/redis/connection/RedisConnection;";
         String body1 = "{long start = System.currentTimeMillis();org.springframework.data.redis.connection.RedisConnection conn;" +
                 "try {conn = __getConnection();} catch (Throwable e) {"+ RedisMoniLogInterceptor.RedisConnectionFactoryInterceptor.class.getCanonicalName()+".redisRecordException(e, System.currentTimeMillis() - start);throw e;}" +
-                "return "+ RedisMoniLogInterceptor.RedisConnectionFactoryInterceptor.class.getCanonicalName()+".buildProxy(conn);}";
+                "return "+ RedisMoniLogInterceptor.RedisConnectionFactoryInterceptor.class.getCanonicalName()+".buildProxyForRedisConnection(conn);}";
 
+        String methodName2 = "getClusterConnection";
+        String methodDesc2 = "()Lorg/springframework/data/redis/connection/RedisClusterConnection;";
+        String body2 = "{long start = System.currentTimeMillis();org.springframework.data.redis.connection.RedisClusterConnection conn;" +
+                "try {conn = __getClusterConnection();} catch (Throwable e) {"+ RedisMoniLogInterceptor.RedisConnectionFactoryInterceptor.class.getCanonicalName()+".redisRecordException(e, System.currentTimeMillis() - start);throw e;}" +
+                "return "+ RedisMoniLogInterceptor.RedisConnectionFactoryInterceptor.class.getCanonicalName()+".buildProxyForRedisClusterConnection(conn);}";
         try {
             CtClass ctCls = getCtClass(factoryFullPath);
-            CtMethod originalMethod = ctCls.getMethod(methodName1, methodDesc1);
-            // 拷贝原始方法成一个新方法，新方法名称
-            CtMethod copiedMethod = CtNewMethod.copy(originalMethod, "__getConnection", ctCls, null);
-            // 添加新方法到类中
-            ctCls.addMethod(copiedMethod);
-            // 将原始方法设置try catch同时增强返回结果
-            originalMethod.setBody(body1);
+            CtMethod originalMethod1 = ctCls.getMethod(methodName1, methodDesc1);
+            // 拷贝原始方法1成一个新方法，新方法名称__getConnection
+            CtMethod copiedMethod1 = CtNewMethod.copy(originalMethod1, "__getConnection", ctCls, null);
+            // 添加新方法1到类中
+            ctCls.addMethod(copiedMethod1);
+            // 将原始方法1设置try catch同时增强返回结果
+            originalMethod1.setBody(body1);
+
+            CtMethod originalMethod2 = ctCls.getMethod(methodName2, methodDesc2);
+            // 拷贝原始方法2成一个新方法，新方法名称__getConnection
+            CtMethod copiedMethod2 = CtNewMethod.copy(originalMethod1, "__getClusterConnection", ctCls, null);
+            // 添加新方法2到类中
+            ctCls.addMethod(copiedMethod2);
+            // 将原始方法2设置try catch同时增强返回结果
+            originalMethod2.setBody(body2);
+            ctCls.writeFile();
             Class<?> targetCls = ctCls.toClass();
-            log.info("originalMethod of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            log.info("originalMethod getConnection and  getClusterConnection of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(factoryFullPath).set(true);
         } catch (Throwable e) {
             logWarn( e, factoryFullPath);

@@ -13,6 +13,7 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.redisson.api.*;
 import org.springframework.aop.aspectj.MethodInvocationProceedingJoinPoint;
+import org.springframework.data.redis.connection.RedisClusterConnection;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisStringCommands;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
@@ -89,10 +90,16 @@ public class RedisMoniLogInterceptor {
         /**
          * 访问修饰符、方法名不可修改
          */
-        public static RedisConnection buildProxy(RedisConnection conn){
+        public static RedisConnection buildProxyForRedisConnection(RedisConnection conn){
             return ProxyUtils.getProxy(conn, new RedisConnectionFactoryInterceptor());
         }
 
+        /**
+         * 访问修饰符、方法名不可修改
+         */
+        public static RedisClusterConnection buildProxyForRedisClusterConnection(RedisClusterConnection conn){
+            return ProxyUtils.getProxy(conn, new RedisConnectionFactoryInterceptor());
+        }
         /**
          * 访问修饰符、方法名不可修改
          */
