@@ -253,7 +253,6 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             ctCls.addMethod(copiedMethod2);
             // 将原始方法2设置try catch同时增强返回结果
             originalMethod2.setBody(body2);
-            ctCls.writeFile();
             Class<?> targetCls = ctCls.toClass();
             log.info("originalMethod getConnection and  getClusterConnection of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(factoryFullPath).set(true);
