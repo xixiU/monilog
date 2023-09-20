@@ -11,7 +11,6 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.BufferedHttpEntity;
 import org.apache.http.entity.FileEntity;
-import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.apache.http.protocol.HttpContext;
@@ -235,10 +234,10 @@ public final class HttpClientMoniLogInterceptor {
     }
 
     private static boolean isStreaming(HttpEntity entity, Header[] headers) {
-        if (entity instanceof MultipartEntity || entity instanceof FileEntity) {
+        if (entity instanceof FileEntity) {
             return true;
         }
-        if ("org.apache.http.entity.mime.MultipartFormEntity".equals(entity.getClass().getCanonicalName())) {
+        if (StringUtils.containsIgnoreCase(entity.getClass().getCanonicalName(), "Multipart")) {
             return true;
         }
         Header ct = entity.getContentType();
