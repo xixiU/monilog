@@ -138,7 +138,7 @@ class RedisMoniLogInterceptor {
 
     @Aspect
     static class RedisConnectionInterceptor {
-        @Around("execution(public org.springframework.data.redis.connection.RedisConnection+ org.springframework.data.redis.connection.RedisConnectionFactory.get*Connection())")
+        @Around("execution(public org.springframework.data.redis.connection.RedisConnection+ org.springframework.data.redis.connection.RedisConnectionFactory+.get*Connection())")
         private Object intercept(ProceedingJoinPoint pjp) throws Throwable {
             MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
             // 判断开关
