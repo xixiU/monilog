@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.rocketmq.client.consumer.listener.*;
 import org.apache.rocketmq.client.hook.SendMessageContext;
@@ -61,9 +62,29 @@ public final class RocketMqMoniLogInterceptor {
                 return delegate.apply(msgs, c);
             }
             MoniLogParams params = new MoniLogParams();
-            params.setServiceCls(cls);
-            params.setAction("onMessage");
-            params.setService(cls.getSimpleName());
+
+
+            StackTraceElement st = ThreadUtil.getNextClassFromStack(cls);
+            if (st != null) {
+                try{
+                    params.setServiceCls(Class.forName(st.getClassName()));
+                    params.setService(st.getClassName());
+                    params.setAction(st.getMethodName());
+                }catch (Exception e){
+                    MoniLogUtil.innerDebug("sendMessageAfter error", e);
+                }
+            }
+
+            if (params.getServiceCls() == null) {
+                params.setServiceCls(cls);
+            }
+            if (StringUtils.isBlank(params.getService())) {
+                params.setService(cls.getSimpleName());
+            }
+
+            if (StringUtils.isBlank(params.getAction())) {
+                params.setAction("onMessage");
+            }
             params.setLogPoint(LogPoint.rocketmq_consumer);
             R result;
             long start = System.currentTimeMillis();
