@@ -114,11 +114,4 @@ class MoniLogAutoConfiguration {
         log.info(">>>monilog redis[redisson] start...");
         return new RedisMoniLogInterceptor.RedissonInterceptor();
     }
-
-    @ConditionalOnClass(name = "org.springframework.data.redis.connection.RedisConnectionFactory")
-    @Bean
-    RedisMoniLogInterceptor.RedisConnectionInterceptor redisInterceptor() {
-        log.info(">>>monilog redis[jedis] start...");
-        return new RedisMoniLogInterceptor.RedisConnectionInterceptor();
-    }
 }

@@ -15,7 +15,11 @@ import org.redisson.api.*;
 import org.springframework.aop.aspectj.MethodInvocationProceedingJoinPoint;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisStringCommands;
-import org.springframework.data.redis.serializer.*;
+import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.serializer.JdkSerializationRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializer;
+import org.springframework.data.redis.serializer.SerializationException;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Method;
@@ -25,17 +29,20 @@ import java.util.Set;
 
 @Slf4j
 public class RedisMoniLogInterceptor {
-    private static final Set<String> SKIP_METHODS_FOR_JEDIS = Sets.newHashSet("isPipelined", "close", "isClosed", "getNativeConnection", "isQueueing", "closePipeline", "evaluate");
+    private static final Set<String> SKIP_METHODS_FOR_REDIS = Sets.newHashSet("isPipelined", "close", "isClosed", "getNativeConnection", "isQueueing", "closePipeline", "evaluate");
     private static final Set<String> TARGET_REDISSON_METHODS = Sets.newHashSet("get", "getAndDelete", "getAndSet", "getAndExpire", "getAndClearExpire", "put", "putIfAbsent", "putIfExists", "randomEntries", "randomKeys", "addAndGet", "containsKey", "containsValue", "remove", "replace", "putAll", "fastPut", "fastRemove", "fastReplace", "fastPutIfAbsent", "fastPutIfExists", "readAllKeySet", "readAllValues", "readAllEntrySet", "readAllMap", "keySet", "values", "entrySet", "addAfter", "addBefore", "fastSet", "readAll", "range", "random", "removeRandom", "tryAdd", "set", "trySet", "setAndKeepTTL", "setIfAbsent", "setIfExists", "compareAndSet", "tryLock", "lock", "tryLock", "lockInterruptibly");
     private static final RedisSerializer<?> stringSerializer = new StringRedisSerializer();
     private static final RedisSerializer<?> jdkSerializer = new JdkSerializationRedisSerializer();
 
-    public static class JedisTemplateInterceptor implements MethodInterceptor {
+    /**
+     * RedisConnectionFactory的实现类有LettuceConnectionFactory，LettuceConnectionFactory，对这两增强
+     */
+    public static class RedisConnectionFactoryInterceptor implements MethodInterceptor {
         @Override
         public Object invoke(MethodInvocation invocation) throws Throwable {
             Method method = invocation.getMethod();
             String methodName = method.getName();
-            if (SKIP_METHODS_FOR_JEDIS.contains(methodName)) {
+            if (SKIP_METHODS_FOR_REDIS.contains(methodName)) {
                 return invocation.proceed();
             }
             Object target = invocation.getThis();
@@ -63,7 +70,7 @@ public class RedisMoniLogInterceptor {
                 throw e;
             } finally {
                 p.setCost(System.currentTimeMillis() - start);
-                JedisInvocation ri = parseRedisInvocation(invocation, ret);
+                JedisInvocation ri = parseRedisInvocation(invocation.getMethod(), ret);
                 p.setInput(ri.args);
                 p.setOutput(ri.result);
                 p.setServiceCls(ri.cls);
@@ -78,7 +85,25 @@ public class RedisMoniLogInterceptor {
                 MoniLogUtil.log(p);
             }
         }
-        public static void recordException(Throwable e, MethodInvocation invocation, long cost) {
+
+        /**
+         * 访问修饰符、方法名不可修改
+         */
+        public static RedisConnection buildProxy(RedisConnection conn){
+            return ProxyUtils.getProxy(conn, new RedisConnectionFactoryInterceptor());
+        }
+
+        /**
+         * 访问修饰符、方法名不可修改
+         */
+        public static void redisRecordException(Throwable e, long cost) {
+            Method m;
+            try{
+                m = JedisConnectionFactory.class.getDeclaredMethod("getConnection");
+            }catch (Throwable ex){
+                MoniLogUtil.innerDebug("doFeignInvocationRecord error", ex);
+                return;
+            }
             MoniLogParams p = new MoniLogParams();
             try {
                 p.setCost(cost);
@@ -90,7 +115,7 @@ public class RedisMoniLogInterceptor {
                 p.setMsgCode(errorInfo.getErrorCode());
                 p.setMsgInfo(errorInfo.getErrorMsg());
 
-                JedisInvocation ri = parseRedisInvocation(invocation, null);
+                JedisInvocation ri = parseRedisInvocation(m, null);
                 p.setInput(ri.args);
                 p.setOutput(ri.result);
                 p.setServiceCls(ri.cls);
@@ -108,7 +133,7 @@ public class RedisMoniLogInterceptor {
             }
         }
 
-        private static JedisInvocation parseRedisInvocation(MethodInvocation invocation, Object ret) {
+        private static JedisInvocation parseRedisInvocation(Method m, Object ret) {
             JedisInvocation ri = new JedisInvocation();
             try {
                 StackTraceElement st = ThreadUtil.getNextClassFromStack(null);
@@ -116,15 +141,15 @@ public class RedisMoniLogInterceptor {
                     ri.cls = Class.forName(st.getClassName());
                     ri.method = st.getMethodName();
                 } else {
-                    ri.cls = invocation.getThis().getClass();
-                    ri.method = invocation.getMethod().getName();
+                    ri.cls = m.getClass();
+                    ri.method = m.getName();
                 }
             } catch (Exception ignore) {
-                ri.cls = invocation.getThis().getClass();
-                ri.method = invocation.getMethod().getName();
+                ri.cls = m.getClass();
+                ri.method = m.getName();
             }
             try {
-                Object[] args = invocation.getArguments();
+                Object[] args = m.getParameters();
                 ri.args = deserializeRedisArgs(args);
                 ri.maybeKey = chooseStringKey(ri.args);
                 ri.result = ret == null ? null : tryDeserialize(ret, false);
@@ -132,30 +157,6 @@ public class RedisMoniLogInterceptor {
                 MoniLogUtil.innerDebug("parseRedisInvocation-deserialize error", e);
             }
             return ri;
-        }
-    }
-
-    @Aspect
-    static class RedisConnectionInterceptor {
-        @Around("execution(public org.springframework.data.redis.connection.RedisConnection+ org.springframework.data.redis.connection.RedisConnectionFactory+.get*Connection())")
-        private Object intercept(ProceedingJoinPoint pjp) throws Throwable {
-            MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
-            // 判断开关
-            if (moniLogProperties == null ||
-                    !moniLogProperties.isComponentEnable("redis", moniLogProperties.getRedis().isEnable())) {
-                return pjp.proceed();
-            }
-
-            long start = System.currentTimeMillis();
-            MethodInvocationProceedingJoinPoint mp = (MethodInvocationProceedingJoinPoint) pjp;
-            RedisConnection conn;
-            try {
-                conn = (RedisConnection) mp.proceed();
-            } catch (Throwable e) {
-                RedisMoniLogInterceptor.JedisTemplateInterceptor.recordException(e, new InvocationWrapper(mp), System.currentTimeMillis() - start);
-                throw e;
-            }
-            return ProxyUtils.getProxy(conn, new RedisMoniLogInterceptor.JedisTemplateInterceptor());
         }
     }
 
