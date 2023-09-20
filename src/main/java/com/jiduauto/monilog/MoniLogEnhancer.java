@@ -46,7 +46,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         enhanceHttpClient();
         enhanceFeignClient();
         enhanceRocketMqConsumer();
-        enhanceRocketProducer();
+        enhanceRocketMqProducer();
         enhanceRedisConnFactory();
         SpringApplicationRunListener.super.starting();
     }
@@ -114,7 +114,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         }
     }
 
-    private static void enhanceRocketProducer() {
+    private static void enhanceRocketMqProducer() {
         if (FLAGS.get(ROCKET_MQ_PRODUCER).get()) {
             return;
         }
