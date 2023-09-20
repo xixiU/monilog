@@ -41,9 +41,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>javassist</groupId>
+            <groupId>org.javassist</groupId>
             <artifactId>javassist</artifactId>
-            <version>3.12.1.GA</version>
+            <version>3.29.2-GA</version>
         </dependency>
         <!-- metric监控 -->
         <dependency>
