@@ -135,14 +135,6 @@ public final class HttpClientMoniLogInterceptor {
                 p.setSuccess(statusLine.getStatusCode() < HttpStatus.SC_BAD_REQUEST);
                 p.setMsgCode(String.valueOf(statusLine.getStatusCode()));
 
-                String contentType = null;
-                for (Header h : httpResponse.getAllHeaders()) {
-                    String name = h.getName();
-                    String value = h.getValue();
-                    if (HttpHeaders.CONTENT_TYPE.equalsIgnoreCase(name)) {
-                        contentType = value;
-                    }
-                }
                 HttpEntity entity = httpResponse.getEntity();
                 String responseBody;
                 JSON jsonBody = null;
