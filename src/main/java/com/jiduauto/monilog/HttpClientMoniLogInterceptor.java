@@ -76,10 +76,8 @@ public final class HttpClientMoniLogInterceptor {
                 String bodyParams = null;
                 if (request instanceof HttpEntityEnclosingRequest) {
                     HttpEntity entity = ((HttpEntityEnclosingRequest) request).getEntity();
-                    if (entity != null) {
-                        if (entity.getContentLength() == 0) {
-                            bodyParams="";
-                        } else if (isStreaming(entity, request.getAllHeaders())) {
+                    if (entity != null && entity.getContent() != null) {
+                        if (isStreaming(entity, request.getAllHeaders())) {
                             bodyParams = "Binary Data";
                         } else {
                             BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
@@ -136,13 +134,11 @@ public final class HttpClientMoniLogInterceptor {
                 p.setMsgCode(String.valueOf(statusLine.getStatusCode()));
 
                 HttpEntity entity = httpResponse.getEntity();
-                String responseBody;
+                String responseBody = null;
                 JSON jsonBody = null;
 
-                if (entity != null) {
-                    if (entity.getContentLength() == 0) {
-                        responseBody="";
-                    } else if (isStreaming(entity, httpResponse.getAllHeaders())) {
+                if (entity != null && entity.getContent() != null) {
+                    if (isStreaming(entity, httpResponse.getAllHeaders())) {
                         responseBody = "Binary Data";
                     } else {
                         BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
@@ -150,8 +146,6 @@ public final class HttpClientMoniLogInterceptor {
                         jsonBody = StringUtil.tryConvert2Json(responseBody);
                         httpResponse.setEntity(bufferedEntity);
                     }
-                }else{
-                    responseBody="";
                 }
 
                 p.setOutput(jsonBody == null ? responseBody : jsonBody);
