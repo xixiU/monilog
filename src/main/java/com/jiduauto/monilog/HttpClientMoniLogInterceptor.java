@@ -146,14 +146,22 @@ public final class HttpClientMoniLogInterceptor {
                 HttpEntity entity = httpResponse.getEntity();
                 String responseBody;
                 JSON jsonBody = null;
-                if (isStreaming(entity, httpResponse.getAllHeaders())) {
-                    responseBody = "Binary Data";
-                } else {
-                    BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
-                    responseBody = EntityUtils.toString(bufferedEntity);
-                    jsonBody = StringUtil.tryConvert2Json(responseBody);
-                    httpResponse.setEntity(bufferedEntity);
+
+                if (entity != null) {
+                    if (entity.getContentLength() == 0) {
+                        responseBody="";
+                    } else if (isStreaming(entity, httpResponse.getAllHeaders())) {
+                        responseBody = "Binary Data";
+                    } else {
+                        BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
+                        responseBody = EntityUtils.toString(bufferedEntity);
+                        jsonBody = StringUtil.tryConvert2Json(responseBody);
+                        httpResponse.setEntity(bufferedEntity);
+                    }
+                }else{
+                    responseBody="";
                 }
+
                 p.setOutput(jsonBody == null ? responseBody : jsonBody);
                 if (jsonBody != null) {
                     MoniLogProperties prop = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
