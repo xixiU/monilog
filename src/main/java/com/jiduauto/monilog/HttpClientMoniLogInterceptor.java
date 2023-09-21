@@ -76,7 +76,7 @@ public final class HttpClientMoniLogInterceptor {
                 String bodyParams = null;
                 if (request instanceof HttpEntityEnclosingRequest) {
                     HttpEntity entity = ((HttpEntityEnclosingRequest) request).getEntity();
-                    if (entity != null && entity.getContent() != null) {
+                    if (isValidEntity(entity)) {
                         if (isStreaming(entity, request.getAllHeaders())) {
                             bodyParams = "Binary Data";
                         } else {
@@ -137,7 +137,7 @@ public final class HttpClientMoniLogInterceptor {
                 String responseBody = null;
                 JSON jsonBody = null;
 
-                if (entity != null && entity.getContent() != null) {
+                if (isValidEntity(entity)) {
                     if (isStreaming(entity, httpResponse.getAllHeaders())) {
                         responseBody = "Binary Data";
                     } else {
@@ -227,6 +227,17 @@ public final class HttpClientMoniLogInterceptor {
     private static boolean isClassEnable(MoniLogProperties.HttpClientProperties httpclient, String invokerClass) {
         Set<String> clientBlackList = httpclient.getClientBlackList();
         return !checkClassMatch(clientBlackList, invokerClass);
+    }
+
+    private static boolean isValidEntity(HttpEntity entity) {
+        if (entity == null) {
+            return false;
+        }
+        try {
+            return entity.getContent() != null;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private static boolean isStreaming(HttpEntity entity, Header[] headers) {
