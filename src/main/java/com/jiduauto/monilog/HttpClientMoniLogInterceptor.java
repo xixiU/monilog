@@ -77,7 +77,9 @@ public final class HttpClientMoniLogInterceptor {
                 if (request instanceof HttpEntityEnclosingRequest) {
                     HttpEntity entity = ((HttpEntityEnclosingRequest) request).getEntity();
                     if (entity != null) {
-                        if (isStreaming(entity, request.getAllHeaders())) {
+                        if (entity.getContentLength() == 0) {
+                            bodyParams="";
+                        } else if (isStreaming(entity, request.getAllHeaders())) {
                             bodyParams = "Binary Data";
                         } else {
                             BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
