@@ -112,7 +112,8 @@ class MoniLogProperties implements InitializingBean {
     private HttpClientProperties httpclient = new HttpClientProperties();
 
     boolean isComponentEnable(String componentName, boolean componentEnable) {
-        if (!componentEnable) {
+        // 这里必须判断全局enable开关，某个应用启动后修改enable为false会导致无法生效
+        if (!componentEnable || !enable) {
             return false;
         }
         Set<String> componentExcludes = getComponentExcludes();
