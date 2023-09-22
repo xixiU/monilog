@@ -158,11 +158,11 @@ class MoniLogProperties implements InitializingBean {
             log.info(">>>monilog rocketmq start...");
         }
         // 启用配置更新
-        addApolloListen();
+        addApolloListener();
     }
 
 
-    private void addApolloListen() {
+    private void addApolloListener() {
         // 手动配置 apolloConfigListener，添加配置改动监听
         ConfigChangeListener configChangeListener = configChangeEvent -> {
             List<String> changedKeysList = configChangeEvent.changedKeys().stream().filter(item -> item.startsWith("monilog")).collect(Collectors.toList());
@@ -185,6 +185,9 @@ class MoniLogProperties implements InitializingBean {
 
     private void bindValue() {
         ApplicationContext applicationContext = SpringUtils.getApplicationContext();
+        if (applicationContext == null) {
+            return;
+        }
         BindResult<MoniLogProperties> monilogBindResult = Binder.get(applicationContext.getEnvironment()).bind("monilog", MoniLogProperties.class);
         if (!monilogBindResult.isBound()) {
             return;
