@@ -279,7 +279,7 @@ class MoniLogProperties implements InitializingBean {
         /**
          * 当接口响应结果被判定为false时，monilog输出的日志级别
          */
-        private LogLevel falseResult = LogLevel.INFO;
+        private LogLevel falseResult = LogLevel.ERROR;
         /**
          * 当出现慢调用时，monilog输出的日志级别
          */

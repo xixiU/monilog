@@ -140,7 +140,7 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
     private LogLevel getFalseResultLogLevel() {
         MoniLogProperties.LogLevelConfig cfg = moniLogProperties.getPrinter().getLogLevel();
         LogLevel ll = (cfg == null ? new MoniLogProperties.LogLevelConfig() : cfg).getFalseResult();
-        return ll == null ? LogLevel.INFO : ll;
+        return ll == null ? LogLevel.ERROR : ll;
     }
 
     private LogLevel getLongRtLogLevel() {
