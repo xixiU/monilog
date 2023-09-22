@@ -180,13 +180,10 @@ final class ResultParser {
         boolean isMethod = path.contains("(") && path.contains(")");
         if (!isMethod) {
             try {
-                Object val = JSONPath.eval(obj, path);
+                boolean isEmptyString = obj instanceof CharSequence && ((CharSequence) obj).length() == 0;
+                Object val = isEmptyString ? null : JSONPath.eval(obj, path);
                 boolean foundPath = val != null || JSONPath.contains(obj, path);
                 return new TempResult(val, foundPath);
-            } catch (NullPointerException e){
-                MoniLogUtil.innerDebug("npe");
-                // 在尝试解析返回编码时会逐个匹配，找不到会报错 :$.xx NullPointerException 如$.subResultCode NullPointerException
-                // 此错误属于正常情况，直接忽略
             } catch (Throwable e) {
                 MoniLogUtil.innerDebug("resultParser evalVal error, obj:{}, path:{}", JSON.toJSONString(obj), path, e);
             }
