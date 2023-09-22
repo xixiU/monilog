@@ -12,7 +12,6 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.redisson.api.*;
-import org.springframework.aop.aspectj.MethodInvocationProceedingJoinPoint;
 import org.springframework.data.redis.connection.RedisClusterConnection;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisStringCommands;
@@ -22,7 +21,6 @@ import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.SerializationException;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
-import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -311,31 +309,5 @@ public class RedisMoniLogInterceptor {
             }
         }
         return null;
-    }
-
-    @AllArgsConstructor
-    private static class InvocationWrapper implements MethodInvocation {
-        private final MethodInvocationProceedingJoinPoint mp;
-        @Override
-        public Method getMethod() {
-            return ((MethodSignature) mp.getSignature()).getMethod();
-        }
-        @Override
-        public Object[] getArguments() {
-            return mp.getArgs();
-        }
-
-        @Override
-        public Object proceed() throws Throwable {
-            return mp.proceed();
-        }
-        @Override
-        public Object getThis() {
-            return mp.getThis();
-        }
-        @Override
-        public AccessibleObject getStaticPart() {
-            return null;
-        }
     }
 }

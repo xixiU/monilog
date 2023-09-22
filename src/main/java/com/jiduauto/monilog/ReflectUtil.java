@@ -22,9 +22,6 @@ class ReflectUtil {
     private static final Map<String, Set<String>> PROP_CACHE = new ConcurrentHashMap<>();
 
     private static final Map<String, Field> FIELD_CACHE = new ConcurrentHashMap<>();
-
-    private static final Map<String, List<Field>> FIELD_LIST_CACHE = new ConcurrentHashMap<>();
-
     private static final Map<Method, Class<?>> METHOD_OWNER_CACHE = new ConcurrentHashMap<>();
 
     public static boolean hasProperty(Class<?> cls, String propertyName) {
@@ -44,42 +41,6 @@ class ReflectUtil {
         } catch (NoSuchFieldException e) {
             return false;
         }
-    }
-
-    /**
-     * 从obj中获取第一个特定fieldCls类型的字段,
-     * @param obj
-     * @param fieldCls
-     * @return
-     */
-    public static List<Field> getField(Object obj, Class<?> fieldCls) {
-        if (fieldCls == null) {
-            throw new RuntimeException("目标类型不能为空");
-        }
-        Class<?> cls = obj.getClass();
-        String key = cls.getCanonicalName()  + "_" + fieldCls.getCanonicalName();
-        if (FIELD_LIST_CACHE.containsKey(key)) {
-            return FIELD_LIST_CACHE.get(key);
-        }
-
-        List<Field> filedList = new ArrayList<>();
-        for (Class<?> superClass = cls; superClass != Object.class; superClass = superClass.getSuperclass()) {
-            Field[] fields = superClass.getDeclaredFields();
-            for (Field f : fields) {
-                f.setAccessible(true);
-                try {
-                    Object o = f.get(obj);
-                    if (!fieldCls.isAssignableFrom(o.getClass())) {
-                        continue;
-                    }
-                    filedList.add(f);
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            FIELD_LIST_CACHE.put(key, filedList);
-        }
-        return filedList;
     }
 
     /**

@@ -52,7 +52,6 @@ class MoniLogAutoConfiguration {
         return new MoniLogAop();
     }
 
-    @ConditionalOnClass(name = {"io.grpc.stub.AbstractStub", "io.grpc.stub.ServerCalls"})
     @Configuration
     static class GrpcMoniLogConfiguration {
         @Order(-100)

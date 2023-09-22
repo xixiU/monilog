@@ -15,6 +15,7 @@ import org.apache.rocketmq.client.producer.SendStatus;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.topic.TopicValidator;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -136,7 +137,7 @@ public final class RocketMqMoniLogInterceptor {
             Message message = context.getMessage();
             String topic = message.getTopic();
             // rocketmq内部消息追踪的topic,跳过
-            if ("RMQ_SYS_TRACE_TOPIC".equalsIgnoreCase(topic)) {
+            if (TopicValidator.isSystemTopic(topic) || TopicValidator.isNotAllowedSendTopic(topic)) {
                 return;
             }
             // 在发送完成后拦截，计算耗时并打印监控信息
