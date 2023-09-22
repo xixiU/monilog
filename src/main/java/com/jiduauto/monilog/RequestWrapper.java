@@ -51,7 +51,7 @@ class RequestWrapper extends HttpServletRequestWrapper {
     // TODO rongjie.yuan  2023/9/22 15:55 这里读取流可能会有会有问题
     public InputStream cloneInputStream(ServletInputStream inputStream) {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        byte[] buffer = new byte[2048];
+        byte[] buffer = new byte[1024];
         int len;
         try {
             while ((len = inputStream.read(buffer)) > -1) {
@@ -62,6 +62,7 @@ class RequestWrapper extends HttpServletRequestWrapper {
             // 大参数太多会出现Unexpected EOF，直接吞掉
             // org.apache.catalina.connector.ClientAbortException: java.io.EOFException:
             // Unexpected EOF read on the socket at org.apache.catalina.connector.InputBuffer.realReadBytes(InputBuffer.java:340)
+            MoniLogUtil.innerDebug("RequestWrapper.cloneInputStream error:{}", e);
         }
         return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
     }
