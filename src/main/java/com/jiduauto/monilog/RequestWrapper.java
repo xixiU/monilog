@@ -48,6 +48,7 @@ class RequestWrapper extends HttpServletRequestWrapper {
     /**
      * 复制输入流
      */
+    // TODO rongjie.yuan  2023/9/22 15:55 这里读取流可能会有会有问题
     public InputStream cloneInputStream(ServletInputStream inputStream) {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         byte[] buffer = new byte[2048];
