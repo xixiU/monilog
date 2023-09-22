@@ -1,24 +1,27 @@
 package com.jiduauto.monilog;
 
+import com.ctrip.framework.apollo.ConfigChangeListener;
+import com.ctrip.framework.apollo.ConfigService;
+import com.ctrip.framework.apollo.model.ConfigChange;
 import com.google.common.collect.Sets;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.BindResult;
 import org.springframework.boot.context.properties.bind.Binder;
-import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationListener;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author yp
@@ -28,7 +31,7 @@ import java.util.Set;
 @Getter
 @Setter
 @Slf4j
-class MoniLogProperties implements InitializingBean, ApplicationListener<EnvironmentChangeEvent> {
+class MoniLogProperties implements InitializingBean {
     /**
      * 服务名，默认取值：${spring.application.name}
      */
@@ -39,7 +42,7 @@ class MoniLogProperties implements InitializingBean, ApplicationListener<Environ
     private boolean enable = true;
 
     /**
-     * 调试开关,仅对dev/test生效,其他所有环境写死false，打印框架异常。
+     * 调试开关,仅对dev/test生效，用于打印框架异常。
      */
     private boolean debug = true;
 
@@ -109,7 +112,8 @@ class MoniLogProperties implements InitializingBean, ApplicationListener<Environ
     private HttpClientProperties httpclient = new HttpClientProperties();
 
     boolean isComponentEnable(String componentName, boolean componentEnable) {
-        if (!componentEnable) {
+        // 这里必须判断全局enable开关，某个应用启动后修改enable为false会导致无法生效
+        if (!componentEnable || !enable) {
             return false;
         }
         Set<String> componentExcludes = getComponentExcludes();
@@ -121,6 +125,7 @@ class MoniLogProperties implements InitializingBean, ApplicationListener<Environ
         //即include 又exclude时，以include为准
         return componentIncludes != null && (componentIncludes.contains("*") || componentIncludes.contains(componentName));
     }
+
 
     public String getAppName() {
         if (StringUtils.isNotBlank(this.appName)) {
@@ -135,16 +140,7 @@ class MoniLogProperties implements InitializingBean, ApplicationListener<Environ
         return this.appName;
     }
 
-    @Override
-    public void onApplicationEvent(EnvironmentChangeEvent environmentChangeEvent) {
-        if (environmentChangeEvent.getKeys() == null) {
-            return;
-        }
-        Optional<String> moniLogPropertiesChange = environmentChangeEvent.getKeys().stream().filter(item -> item.contains("monilog")).findFirst();
-        if (moniLogPropertiesChange.isPresent()) {
-            bindValue();
-        }
-    }
+
 
     @Override
     public void afterPropertiesSet() throws Exception {
@@ -158,10 +154,40 @@ class MoniLogProperties implements InitializingBean, ApplicationListener<Environ
         if (isComponentEnable("httpclient", httpclient.isEnable())) {
             log.info(">>>monilog httpclient start...");
         }
+        if (isComponentEnable("rocketmq", rocketmq.isEnable())) {
+            log.info(">>>monilog rocketmq start...");
+        }
+        // 启用配置更新
+        addApolloListener();
+    }
+
+
+    private void addApolloListener() {
+        // 手动配置 apolloConfigListener，添加配置改动监听
+        ConfigChangeListener configChangeListener = configChangeEvent -> {
+            List<String> changedKeysList = configChangeEvent.changedKeys().stream().filter(item -> item.startsWith("monilog")).collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(changedKeysList)) {
+                return;
+            }
+            // 日志记录
+            for (String key : changedKeysList) {
+                ConfigChange change = configChangeEvent.getChange(key);
+                String oldValue = change.getOldValue();
+                String newValue = change.getNewValue();
+                log.info("monilog properties changed #configChange key:{} new value:{} old value:{}", key, newValue, oldValue);
+            }
+            // 只需要bindValue 一次就行，不要放在for循环里面
+            bindValue();
+        };
+        // 使用ApolloConfigChangeListener方法不生效，手动注入一个监听器
+        ConfigService.getAppConfig().addChangeListener(configChangeListener);
     }
 
     private void bindValue() {
         ApplicationContext applicationContext = SpringUtils.getApplicationContext();
+        if (applicationContext == null) {
+            return;
+        }
         BindResult<MoniLogProperties> monilogBindResult = Binder.get(applicationContext.getEnvironment()).bind("monilog", MoniLogProperties.class);
         if (!monilogBindResult.isBound()) {
             return;
@@ -239,6 +265,32 @@ class MoniLogProperties implements InitializingBean, ApplicationListener<Environ
          * 日志打印的排除错误关键词清单,使用contains判断。默认为空，即所有错误的都会打印
          */
         private Set<String> excludeKeyWords;
+
+        /**
+         * 收集组件测试报告，内部组件测试用
+         */
+        private boolean reportTestResult = false;
+        /**
+         * 日志输出级别配置
+         */
+        private LogLevelConfig logLevel = new LogLevelConfig();
+    }
+
+    @Getter
+    @Setter
+    static class LogLevelConfig {
+        /**
+         * 当接口响应结果被判定为false时，monilog输出的日志级别
+         */
+        private LogLevel falseResult = LogLevel.ERROR;
+        /**
+         * 当出现慢调用时，monilog输出的日志级别
+         */
+        private LogLevel longRt = LogLevel.ERROR;
+        /**
+         * 当出现超大值时，monilog输出的日志级别
+         */
+        private LogLevel largeSize = LogLevel.ERROR;
     }
 
     @Getter
@@ -412,9 +464,9 @@ class MoniLogProperties implements InitializingBean, ApplicationListener<Environ
         private float warnForValueLength = 50;
 
         /**
-         * redis慢rt阈值，单位毫秒. 默认100ms
+         * redis慢rt阈值，单位毫秒. 默认200ms
          */
-        private long longRt = 100;
+        private long longRt = 200;
     }
 
     @Getter

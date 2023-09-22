@@ -43,7 +43,16 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
             logger.error(DETAIL_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr, input, output, ex);
             return;
         }
-        logger.info(DETAIL_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr, input, output);
+        LogLevel level = getFalseResultLogLevel();
+        if (p.isSuccess() || level == LogLevel.INFO) {
+            logger.info(DETAIL_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr, input, output);
+            return;
+        }
+        if (level == LogLevel.ERROR) {
+            logger.error(DETAIL_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr, input, output);
+        } else {
+            logger.warn(DETAIL_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr, input, output);
+        }
     }
 
     @Override
@@ -65,7 +74,16 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
             logger.error(DIGEST_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
             return;
         }
-        logger.info(DIGEST_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
+        LogLevel level = getFalseResultLogLevel();
+        if (p.isSuccess() || level == LogLevel.INFO) {
+            logger.info(DIGEST_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
+            return;
+        }
+        if (level == LogLevel.ERROR) {
+            logger.error(DIGEST_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
+        } else {
+            logger.warn(DIGEST_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
+        }
     }
 
     @Override
@@ -83,7 +101,18 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         String[] tags = p.getTags();
         String tagStr = tags == null || tags.length == 0 ? "" : "|" + Arrays.toString(tags);
         String rt = p.getCost() + "ms";
-        logger.error(LONG_RT_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
+        LogLevel level = getLongRtLogLevel();
+        switch (level) {
+            case INFO:
+                logger.info(LONG_RT_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
+                return;
+            case WARN:
+                logger.warn(LONG_RT_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
+                return;
+            case ERROR:
+            default:
+                logger.error(LONG_RT_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
+        }
     }
 
     @Override
@@ -93,7 +122,37 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         }
         String readableSize = RamUsageEstimator.humanReadableUnits(sizeInBytes);
         String rt = p.getCost() + "ms";
-        getLogger(p).error(LARGE_SIZE_LOG_PATTERN, getLogPrefix(), p.getLogPoint(), p.getService(), p.getAction(), key, readableSize, rt);
+        Logger logger = getLogger(p);
+        LogLevel level = getLargeSizeLogLevel();
+        switch (level) {
+            case INFO:
+                logger.info(LARGE_SIZE_LOG_PATTERN, getLogPrefix(), p.getLogPoint(), p.getService(), p.getAction(), key, readableSize, rt);
+                return;
+            case WARN:
+                logger.warn(LARGE_SIZE_LOG_PATTERN, getLogPrefix(), p.getLogPoint(), p.getService(), p.getAction(), key, readableSize, rt);
+                return;
+            case ERROR:
+            default:
+                logger.error(LARGE_SIZE_LOG_PATTERN, getLogPrefix(), p.getLogPoint(), p.getService(), p.getAction(), key, readableSize, rt);
+        }
+    }
+
+    private LogLevel getFalseResultLogLevel() {
+        MoniLogProperties.LogLevelConfig cfg = moniLogProperties.getPrinter().getLogLevel();
+        LogLevel ll = (cfg == null ? new MoniLogProperties.LogLevelConfig() : cfg).getFalseResult();
+        return ll == null ? LogLevel.ERROR : ll;
+    }
+
+    private LogLevel getLongRtLogLevel() {
+        MoniLogProperties.LogLevelConfig cfg = moniLogProperties.getPrinter().getLogLevel();
+        LogLevel ll = (cfg == null ? new MoniLogProperties.LogLevelConfig() : cfg).getLongRt();
+        return ll == null ? LogLevel.ERROR : ll;
+    }
+
+    private LogLevel getLargeSizeLogLevel() {
+        MoniLogProperties.LogLevelConfig cfg = moniLogProperties.getPrinter().getLogLevel();
+        LogLevel ll = (cfg == null ? new MoniLogProperties.LogLevelConfig() : cfg).getLargeSize();
+        return ll == null ? LogLevel.ERROR : ll;
     }
 
     private String formatLongText(Object o) {

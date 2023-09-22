@@ -11,7 +11,7 @@
 
     <groupId>com.jiduauto.monilog</groupId>
     <artifactId>monilog</artifactId>
-    <version>1.0.9.1</version>
+    <version>1.0.9.3</version>
     <modelVersion>4.0.0</modelVersion>
 
 
@@ -27,8 +27,8 @@
 
         <spring-boot-stater.version>2.3.12.RELEASE</spring-boot-stater.version>
         <monitor-spring-boot-starter.version>1.1.1</monitor-spring-boot-starter.version>
-        <xxl.job.version>2.2.0</xxl.job.version>
-        <rocketmq.starter.version>2.2.0</rocketmq.starter.version>
+        <xxl.job.version>2.3.1</xxl.job.version>
+        <rocketmq.starter.version>2.2.3</rocketmq.starter.version>
         <mybatis.starter.version>3.0.2</mybatis.starter.version>
         <grpc.starter.version>2.10.3</grpc.starter.version>
         <openfeign.version>10.10.1</openfeign.version>
@@ -40,6 +40,11 @@
 
 
     <dependencies>
+        <dependency>
+            <groupId>org.javassist</groupId>
+            <artifactId>javassist</artifactId>
+            <version>3.29.2-GA</version>
+        </dependency>
         <!-- metric监控 -->
         <dependency>
             <groupId>com.jidu.monitor</groupId>
@@ -82,12 +87,12 @@
         <dependency>
             <groupId>net.sf.uadetector</groupId>
             <artifactId>uadetector-resources</artifactId>
-            <version>2014.04</version>
+            <version>2014.10</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.6</version>
+            <version>3.12.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -102,7 +107,7 @@
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
-            <version>15.0</version>
+            <version>24.0.1</version>
         </dependency>
         <dependency>
             <groupId>org.aspectj</groupId>
@@ -130,9 +135,9 @@
         </dependency>
 
         <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-context</artifactId>
-            <version>2.2.9.RELEASE</version>
+            <groupId>com.ctrip.framework.apollo</groupId>
+            <artifactId>apollo-client</artifactId>
+            <version>2.1.0</version>
             <scope>provided</scope>
         </dependency>
 
@@ -202,11 +207,6 @@
             <artifactId>httpasyncclient</artifactId>
             <version>${httpasyncclient.version}</version>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>javassist</groupId>
-            <artifactId>javassist</artifactId>
-            <version>3.12.1.GA</version>
         </dependency>
     </dependencies>
 

@@ -10,7 +10,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author yepei
@@ -180,9 +183,13 @@ final class ResultParser {
         boolean isMethod = path.contains("(") && path.contains(")");
         if (!isMethod) {
             try {
-                Object val = JSONPath.eval(obj, path);
+                boolean isEmptyString = (obj instanceof CharSequence && ((CharSequence) obj).length() == 0)
+                        || (obj instanceof String && "null".equalsIgnoreCase((String) obj));
+                Object val = isEmptyString ? null : JSONPath.eval(obj, path);
                 boolean foundPath = val != null || JSONPath.contains(obj, path);
                 return new TempResult(val, foundPath);
+            } catch (NullPointerException e) {
+                return new TempResult(null, false);
             } catch (Throwable e) {
                 MoniLogUtil.innerDebug("resultParser evalVal error, obj:{}, path:{}", JSON.toJSONString(obj), path, e);
             }

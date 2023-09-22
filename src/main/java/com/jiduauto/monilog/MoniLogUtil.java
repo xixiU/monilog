@@ -1,10 +1,12 @@
 package com.jiduauto.monilog;
 
+import ch.qos.logback.classic.spi.EventArgUtil;
 import com.carrotsearch.sizeof.RamUsageEstimator;
 import com.metric.MetricMonitor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Arrays;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -25,7 +27,8 @@ class MoniLogUtil {
      * 组件监控前缀
      */
     private static final String BUSINESS_MONITOR_PREFIX = "business_monitor_";
-    static final String INNER_DEBUG_PREFIX = "__monilog_warn__";
+    // 这个后面的分隔符不能去掉，去掉会导致日志检索的时候查不到对应的日志
+    static final String INNER_DEBUG_PREFIX = "__monilog_warn__|";
 
     private static MoniLogPrinter logPrinter = null;
     private static MoniLogProperties logProperties = null;
@@ -73,6 +76,10 @@ class MoniLogUtil {
     }
 
     static void log(MoniLogParams logParams) {
+        LogCollector reporter = SpringUtils.getBeanWithoutException(LogCollector.class);
+        if (reporter != null && reporter.getStart().get()) {
+            reporter.addLog(logParams);
+        }
         try {
             doMonitor(logParams);
         } catch (Exception e) {
@@ -107,6 +114,15 @@ class MoniLogUtil {
         // 仅对dev,test生效，线上永远是false.
         if (!"dev".equalsIgnoreCase(activeProfile) && !"test".equalsIgnoreCase(activeProfile)) {
             return;
+        }
+        Throwable e = EventArgUtil.extractThrowable(args);
+        if (e != null && args.length > 0) {
+            pattern += " {}";
+            args[args.length - 1] = ExceptionUtil.getErrorMsg(e);
+        }
+        LogCollector reporter = SpringUtils.getBeanWithoutException(LogCollector.class);
+        if (reporter != null && reporter.getStart().get()) {
+            reporter.addInnerDebug(INNER_DEBUG_PREFIX + pattern + Arrays.toString(args));
         }
         log.warn(INNER_DEBUG_PREFIX + pattern, args);
     }

@@ -4,7 +4,10 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.springframework.aop.framework.ProxyFactory;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Proxy;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,7 +30,6 @@ class ProxyUtils {
         proxy.addAdvice(interceptor);
         return (T) proxy.getProxy();
     }
-
     static <T extends Annotation> T copyAnnotation(T anno) {
         return copyAnnotation(anno, null);
     }
