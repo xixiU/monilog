@@ -174,7 +174,7 @@ class MoniLogProperties implements InitializingBean {
                 ConfigChange change = configChangeEvent.getChange(key);
                 String oldValue = change.getOldValue();
                 String newValue = change.getNewValue();
-                log.info("SystemConfig#configChange new value:{} old value:{}", newValue, oldValue);
+                log.info("SystemConfig#configChange key:{} new value:{} old value:{}", key, newValue, oldValue);
             }
             // 只需要bindValue 一次就行，不要放在for循环里面
             bindValue();
