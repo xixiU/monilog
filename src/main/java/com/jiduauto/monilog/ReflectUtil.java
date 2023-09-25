@@ -35,7 +35,7 @@ class ReflectUtil {
             if (properties == null) {
                 properties = new HashSet<>();
             }
-            properties.add(propertyName);
+            properties.add(field.getName());
             PROP_CACHE.put(clsName, properties);
             return true;
         } catch (NoSuchFieldException e) {

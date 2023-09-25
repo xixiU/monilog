@@ -353,6 +353,7 @@ class MoniLogUtil {
                 break;
             case redis:
                 detailLogLevel = properties.getRedis().getDetailLogLevel();
+                break;
             case unknown:
             default:
                 break;

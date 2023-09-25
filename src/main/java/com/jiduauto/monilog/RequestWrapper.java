@@ -8,24 +8,26 @@ import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import java.io.*;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 
 @Slf4j
 class RequestWrapper extends HttpServletRequestWrapper {
+    private final Charset CHARSET = StandardCharsets.UTF_8;
     private byte[] body;
     private Map<String, String[]> modifiableParameters;
 
     public RequestWrapper(HttpServletRequest request) {
         super(request);
         String sessionStream = getBodyString(request);
-        body = sessionStream.getBytes(StandardCharsets.UTF_8);
+        body = sessionStream.getBytes(CHARSET);
         modifiableParameters = new HashMap<>(request.getParameterMap());
     }
 
     public String getBodyString() {
-        return new String(body, StandardCharsets.UTF_8);
+        return new String(body, CHARSET);
     }
 
     /**
@@ -34,7 +36,7 @@ class RequestWrapper extends HttpServletRequestWrapper {
     public String getBodyString(ServletRequest request) {
         StringBuilder sb = new StringBuilder();
         try (InputStream inputStream = cloneInputStream(request.getInputStream());
-             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, CHARSET))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 sb.append(line);
@@ -69,7 +71,7 @@ class RequestWrapper extends HttpServletRequestWrapper {
 
     @Override
     public BufferedReader getReader() {
-        return new BufferedReader(new InputStreamReader(getInputStream()));
+        return new BufferedReader(new InputStreamReader(getInputStream(), CHARSET));
     }
 
     @Override
@@ -102,7 +104,7 @@ class RequestWrapper extends HttpServletRequestWrapper {
      * @param body 赋值信息
      */
     public void setBody(String body) {
-        this.body = body.getBytes(StandardCharsets.UTF_8);
+        this.body = body.getBytes(CHARSET);
     }
 
     public void setParameter(String key, Object value) {

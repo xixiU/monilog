@@ -309,6 +309,7 @@ public final class FeignMoniLogInterceptor {
 
         String body() throws IOException {
             StringBuilder sb = new StringBuilder();
+            //TODO charset
             try (InputStreamReader reader = new InputStreamReader(getBody())) {
                 char[] tmp = new char[1024];
                 int len;
