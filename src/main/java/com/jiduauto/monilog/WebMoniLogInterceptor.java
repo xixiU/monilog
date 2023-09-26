@@ -287,15 +287,21 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
         ContentCachingResponseWrapper wrapper = WebUtils.getNativeResponse(response, ContentCachingResponseWrapper.class);
         if (wrapper != null) {
             byte[] buf = wrapper.getContentAsByteArray();
-            if (buf.length > 0) {
-                String payload;
-                try {
-                    payload = new String(buf, wrapper.getCharacterEncoding());
-                } catch (UnsupportedEncodingException e) {
-                    payload = "[unknown]";
-                }
+            if (buf.length <=0) {
+                return null;
+            }
+            String payload;
+            // TODO rongjie.yuan  2023/9/26 14:57 这里暂时先不作为配置，需要trace分析下具体的耗时
+            if (buf.length > 20000) {
+                payload = "[data too long skip]";
                 return payload;
             }
+            try {
+                payload = new String(buf, wrapper.getCharacterEncoding());
+            } catch (UnsupportedEncodingException e) {
+                payload = "[unknown]";
+            }
+            return payload;
         }
         return null;
     }
