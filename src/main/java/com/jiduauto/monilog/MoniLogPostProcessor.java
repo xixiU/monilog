@@ -34,7 +34,7 @@ class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered {
             return bean;
         }
         if (isTargetBean(bean, XXL_JOB)) {
-            if (isComponentEnable("xxljob", moniLogProperties.getXxljob().isEnable())) {
+            if (isComponentEnable(ComponentEnum.xxljob, moniLogProperties.getXxljob().isEnable())) {
                 return XxlJobMoniLogInterceptor.getProxyBean((IJobHandler) bean);
             }
         }
@@ -67,7 +67,7 @@ class MoniLogPostProcessor implements BeanPostProcessor, PriorityOrdered {
 
 
     // 校验是否排除
-    private boolean isComponentEnable(String component, boolean componentEnable) {
+    private boolean isComponentEnable(ComponentEnum component, boolean componentEnable) {
         return moniLogProperties.isComponentEnable(component, componentEnable);
     }
 

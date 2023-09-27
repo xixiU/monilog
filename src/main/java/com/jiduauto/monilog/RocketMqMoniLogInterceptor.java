@@ -57,8 +57,8 @@ public final class RocketMqMoniLogInterceptor {
             MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
             // 判断开关
             if (moniLogProperties == null ||
-                    !moniLogProperties.isComponentEnable("rocketmq", moniLogProperties.getRocketmq().isEnable())
-                    || !moniLogProperties.isComponentEnable("rocketmq-consumer", moniLogProperties.getRocketmq().isConsumerEnable())) {
+                    !moniLogProperties.isComponentEnable(ComponentEnum.rocketmq, moniLogProperties.getRocketmq().isEnable())
+                    || !moniLogProperties.isComponentEnable(ComponentEnum.rocketmq_consumer, moniLogProperties.getRocketmq().isConsumerEnable())) {
                 return delegate.apply(msgs, c);
             }
             MoniLogParams params = new MoniLogParams();
@@ -130,8 +130,8 @@ public final class RocketMqMoniLogInterceptor {
             MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
             // 判断开关
             if (moniLogProperties == null ||
-                    !moniLogProperties.isComponentEnable("rocketmq", moniLogProperties.getRocketmq().isEnable())
-                    || !moniLogProperties.isComponentEnable("rocketmq-producer", moniLogProperties.getRocketmq().isProducerEnable())) {
+                    !moniLogProperties.isComponentEnable(ComponentEnum.rocketmq, moniLogProperties.getRocketmq().isEnable())
+                    || !moniLogProperties.isComponentEnable(ComponentEnum.rocketmq_producer, moniLogProperties.getRocketmq().isProducerEnable())) {
                 return;
             }
             Message message = context.getMessage();

@@ -84,8 +84,8 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
         boolean webEnable = false;
         boolean feignEnable = false;
         try {
-            webEnable = moniLogProperties.isComponentEnable("web", moniLogProperties.getWeb().isEnable());
-            feignEnable = moniLogProperties.isComponentEnable("feign", moniLogProperties.getFeign().isEnable());
+            webEnable = moniLogProperties.isComponentEnable(ComponentEnum.web, moniLogProperties.getWeb().isEnable());
+            feignEnable = moniLogProperties.isComponentEnable(ComponentEnum.feign, moniLogProperties.getFeign().isEnable());
             requestHeaderMap = getRequestHeaders(request);
             logPoint = parseLogPoint(requestHeaderMap);
             method = getHandlerMethod(request);

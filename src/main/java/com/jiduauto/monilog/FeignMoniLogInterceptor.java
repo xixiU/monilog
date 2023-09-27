@@ -44,7 +44,7 @@ public final class FeignMoniLogInterceptor {
     private static Response doFeignInvocationRecord(Method m, Request request, Response response, long cost, Throwable ex) {
         MoniLogProperties properties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
         MoniLogProperties.FeignProperties feignProperties = properties == null ? null : properties.getFeign();
-        if (feignProperties == null || !properties.isComponentEnable("feign", feignProperties.isEnable())) {
+        if (feignProperties == null || !properties.isComponentEnable(ComponentEnum.feign, feignProperties.isEnable())) {
             return response;
         }
         String requestUri = request.url();
