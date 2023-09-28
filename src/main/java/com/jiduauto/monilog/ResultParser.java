@@ -242,4 +242,8 @@ final class ResultParser {
             this.foundPath = foundPath;
         }
     }
+
+    public static void main(String[] args) {
+        System.out.println(parseBoolean("{\"code\":9999,msg:\"xxx\",\"success\":\"fasle\"}",null));
+    }
 }
