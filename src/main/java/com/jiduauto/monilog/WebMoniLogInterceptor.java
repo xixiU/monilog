@@ -1,6 +1,5 @@
 package com.jiduauto.monilog;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
@@ -141,13 +140,13 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             responseBodyStr = getResponseBody(wrapperResponse);
             logParams.setOutput(responseBodyStr);
             wrapperResponse.copyBodyToResponse();
-            JSON json = StringUtil.tryConvert2Json(responseBodyStr);
-            if (json != null) {
-                logParams.setOutput(json);
-            }
-            if (json instanceof JSONObject) {
+//            JSON json = StringUtil.tryConvert2Json(responseBodyStr);
+//            if (json != null) {
+//                logParams.setOutput(json);
+//            }
+            if (StringUtil.validJson(responseBodyStr)) {
                 LogParser cl = ReflectUtil.getAnnotation(LogParser.class, method.getBeanType(), method.getMethod());
-                ResultParseUtil.parseResultAndSet(cl, json, logParams);
+                ResultParseUtil.parseResultAndSet(cl, responseBodyStr, logParams);
             }
         } catch (ClientAbortException e){
             // 解析请求时，客服端断开连接，此类异常直接吞掉
