@@ -9,7 +9,7 @@ import lombok.Getter;
  * @date 2023/9/27 13:34
  */
 @Getter
-public enum ComponentEnum {
+enum ComponentEnum {
     web,
     feign,
     xxljob,
