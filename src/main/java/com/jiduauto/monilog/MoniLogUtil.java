@@ -107,24 +107,19 @@ class MoniLogUtil {
      */
     static void innerDebug(String pattern, Object... args) {
         MoniLogProperties logProperties = getLogProperties();
-        if (logProperties != null && !logProperties.isDebug()) {
-            return;
+        boolean enableDebugOutput = logProperties != null && logProperties.isDebug();
+        if (!enableDebugOutput) {
+            Throwable e = EventArgUtil.extractThrowable(args);
+            if (e != null && args.length > 0) {
+                pattern += " {}";
+                args[args.length - 1] = ExceptionUtil.getErrorMsg(e);
+            }
         }
-        String activeProfile = SpringUtils.activeProfile;
-        // 仅对dev,test生效，线上永远是false.
-        if (!"dev".equalsIgnoreCase(activeProfile) && !"test".equalsIgnoreCase(activeProfile)) {
-            return;
-        }
-        Throwable e = EventArgUtil.extractThrowable(args);
-        if (e != null && args.length > 0) {
-            pattern += " {}";
-            args[args.length - 1] = ExceptionUtil.getErrorMsg(e);
-        }
+        log.warn(INNER_DEBUG_PREFIX + pattern, args);
         LogCollector reporter = SpringUtils.getBeanWithoutException(LogCollector.class);
         if (reporter != null && reporter.getStart().get()) {
             reporter.addInnerDebug(INNER_DEBUG_PREFIX + pattern + Arrays.toString(args));
         }
-        log.warn(INNER_DEBUG_PREFIX + pattern, args);
     }
 
     private static void doMonitor(MoniLogParams logParams) {
@@ -310,11 +305,11 @@ class MoniLogUtil {
     private static void printDetailLog(MoniLogParams logParams) {
         MoniLogPrinter printer = getLogPrinter();
         MoniLogProperties properties = getLogProperties();
-        if (excludePrint(logParams)) {
-            return;
-        }
         if (properties.isDebug()) {
             printer.logDetail(logParams);
+            return;
+        }
+        if (excludePrint(logParams)) {
             return;
         }
         LogOutputLevel detailLogLevel = null;
@@ -393,9 +388,6 @@ class MoniLogUtil {
         MoniLogProperties properties = getLogProperties();
         if (printer == null || properties == null) {
             return true;
-        }
-        if (properties.isDebug()) {
-            return false;
         }
         MoniLogProperties.PrinterProperties printerCfg = properties.getPrinter();
         if (printerCfg == null || logParams == null) {

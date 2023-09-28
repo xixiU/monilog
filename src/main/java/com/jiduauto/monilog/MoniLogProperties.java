@@ -39,9 +39,9 @@ class MoniLogProperties implements InitializingBean {
     private boolean enable = true;
 
     /**
-     * 调试开关,仅对dev/test生效，用于打印框架异常。
+     * 调试开关,开启时，可更详细的观测到框架执行的异常和日志详情
      */
-    private boolean debug = true;
+    private boolean debug = false;
 
     /**
      * Monilog日志前缀(不支持运行时修改), 默认值: monilog_
