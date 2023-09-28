@@ -120,13 +120,6 @@ class StringUtil {
         }
     }
 
-    public static boolean validJson(String str){
-        try{
-            return JSONValidator.from(str).validate();
-        }catch (Exception e){
-            return false;
-        }
-    }
 
     public static String[] processUserTag(Map<String, String> jsonMap, String[] oriTags) {
         if (MapUtils.isEmpty(jsonMap) || oriTags == null || oriTags.length == 0) {
