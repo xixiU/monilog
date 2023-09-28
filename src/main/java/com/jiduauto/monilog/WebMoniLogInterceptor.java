@@ -291,9 +291,8 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
                 return null;
             }
             String payload;
-            // TODO rongjie.yuan  2023/9/26 14:57 这里暂时先不作为配置，需要trace分析下具体的耗时
             if (buf.length > 20000) {
-                payload = "[Data too long length:+"+buf.length+"]";
+                payload = "[Data too long length:+" + buf.length + "]";
                 return payload;
             }
             try {
