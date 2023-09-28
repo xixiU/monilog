@@ -81,6 +81,14 @@ class MoniLogAutoConfiguration {
     @ConditionalOnWebApplication
     @Bean
     FilterRegistrationBean<WebMoniLogInterceptor> webMoniLogInterceptor(MoniLogProperties moniLogProperties) {
+        boolean webEnable = moniLogProperties.isComponentEnable(ComponentEnum.web, moniLogProperties.getWeb().isEnable());
+        boolean feignEnable = moniLogProperties.isComponentEnable(ComponentEnum.feign, moniLogProperties.getFeign().isEnable());
+        if (webEnable) {
+            log.info(">>>monilog {} start...", ComponentEnum.web);
+        }
+        if (feignEnable) {
+            log.info(">>>monilog {} start...", ComponentEnum.feign);
+        }
         FilterRegistrationBean<WebMoniLogInterceptor> filterRegBean = new FilterRegistrationBean<>();
         filterRegBean.setFilter(new WebMoniLogInterceptor(moniLogProperties));
         // 这个order顺序不能随便改
