@@ -64,11 +64,11 @@ class MoniLogProperties implements InitializingBean {
      */
     private String globalDefaultBoolExpr = "+$.code==0,$.code==200";
     /**
-     * 监控开启组件清单，默认为*，目前支持feign,grpc,mybatis,rocketmq,web,xxljob,httpclient，可以一键设置开启.
+     * 监控开启组件清单，默认为支持的全部组件，当前支持web,feign,xxljob,httpclient,grpc,grpc_client,grpc_server,rocketmq,rocketmq_consumer,rocketmq_producer,mybatis,redis，可以一键设置开启.
      */
     private Set<ComponentEnum> componentIncludes = new HashSet<>(Arrays.asList(ComponentEnum.values()));
     /**
-     * 监控不开启组件清单，默认为为空，目前支持feign,grpc,mybatis,rocketmq,web,xxljob,httpclient，可以一键设置不开启.
+     * 监控不开启组件清单，默认为为空，当前支持web,feign,xxljob,httpclient,grpc,grpc_client,grpc_server,rocketmq,rocketmq_consumer,rocketmq_producer,mybatis,redis，可以一键排除设置开启.
      */
     private Set<ComponentEnum> componentExcludes;
     /**
