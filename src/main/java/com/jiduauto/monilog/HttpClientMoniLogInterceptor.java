@@ -214,7 +214,7 @@ public final class HttpClientMoniLogInterceptor {
             return null;
         }
         MoniLogProperties.HttpClientProperties httpclient = mp.getHttpclient();
-        boolean enable = mp.isComponentEnable(ComponentEnum.httpClient, httpclient.isEnable());
+        boolean enable = mp.isComponentEnable(ComponentEnum.httpclient, httpclient.isEnable());
         if (!enable) {
             return null;
         }

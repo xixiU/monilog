@@ -148,7 +148,7 @@ class MoniLogProperties implements InitializingBean {
         // banner输出
         printBanner();
         MoniLogUtil.addSystemRecord();
-        if (isComponentEnable(ComponentEnum.httpClient, httpclient.isEnable())) {
+        if (isComponentEnable(ComponentEnum.httpclient, httpclient.isEnable())) {
             log.info(">>>monilog httpclient start...");
         }
         if (isComponentEnable(ComponentEnum.rocketmq, rocketmq.isEnable())) {

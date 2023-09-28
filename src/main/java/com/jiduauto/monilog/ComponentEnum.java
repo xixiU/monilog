@@ -13,7 +13,7 @@ public enum ComponentEnum {
     web,
     feign,
     xxljob,
-    httpClient,
+    httpclient,
     grpc,
     grpc_client,
     grpc_server,
