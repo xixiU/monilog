@@ -15,7 +15,7 @@ import java.util.*;
 
 @Slf4j
 class RequestWrapper extends HttpServletRequestWrapper {
-    private final Charset CHARSET = StandardCharsets.UTF_8;
+    private static final Charset CHARSET = StandardCharsets.UTF_8;
     private byte[] body;
     private Map<String, String[]> modifiableParameters;
 
