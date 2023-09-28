@@ -292,7 +292,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             }
             String payload;
             if (buf.length > 20000) {
-                payload = "[Data too long length:+" + buf.length + "]";
+                payload = "[Data too long length:" + buf.length + "]";
                 return payload;
             }
             try {
