@@ -132,7 +132,8 @@ class MoniLogUtil {
 
         String name = BUSINESS_MONITOR_PREFIX + logPoint.name();
         MetricMonitor.record(name + MonitorType.RECORD.getMark(), allTags);
-        // 耗时只打印基础tag
+        // 耗时只打印基础tag+耗时
+        systemTags.add("cost", String.valueOf(logParams.getCost()));
         MetricMonitor.eventDruation(name + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
 
         if (logParams.isHasUserTag()) {
@@ -224,7 +225,7 @@ class MoniLogUtil {
     private static TagBuilder getSystemTags(MoniLogParams logParams) {
         boolean success = logParams.isSuccess() && logParams.getException() == null;
         String exception = logParams.getException() == null ? "null" : logParams.getException().getClass().getSimpleName();
-        return TagBuilder.of("result", success ? "success" : "error").add("application", SpringUtils.application).add("logPoint", logParams.getLogPoint().name()).add("env", SpringUtils.activeProfile).add("service", logParams.getService()).add("action", logParams.getAction()).add("msgCode", logParams.getMsgCode()).add("cost", String.valueOf(logParams.getCost())).add("exception", exception);
+        return TagBuilder.of("result", success ? "success" : "error").add("application", SpringUtils.application).add("logPoint", logParams.getLogPoint().name()).add("env", SpringUtils.activeProfile).add("service", logParams.getService()).add("action", logParams.getAction()).add("msgCode", logParams.getMsgCode()).add("exception", exception);
     }
 
     /**
