@@ -31,8 +31,8 @@ class GrpcMoniLogInterceptor {
             MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
             // 判断开关
             if (moniLogProperties == null ||
-                    !moniLogProperties.isComponentEnable("grpc", moniLogProperties.getGrpc().isEnable())
-                    || !moniLogProperties.isComponentEnable("grpc-client", moniLogProperties.getGrpc().isClientEnable())) {
+                    !moniLogProperties.isComponentEnable(ComponentEnum.grpc, moniLogProperties.getGrpc().isEnable())
+                    || !moniLogProperties.isComponentEnable(ComponentEnum.grpc_client, moniLogProperties.getGrpc().isClientEnable())) {
                 return channel.newCall(method, callOptions);
             }
             return new GrpcMoniLogClientCall<>(channel.newCall(method, callOptions), new ConcurrentHashMap<>(), method);
@@ -173,8 +173,8 @@ class GrpcMoniLogInterceptor {
             MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
             // 判断开关
             if (moniLogProperties == null ||
-                    !moniLogProperties.isComponentEnable("grpc", moniLogProperties.getGrpc().isEnable())
-                    || !moniLogProperties.isComponentEnable("grpc-server", moniLogProperties.getGrpc().isServerEnable())) {
+                    !moniLogProperties.isComponentEnable(ComponentEnum.grpc, moniLogProperties.getGrpc().isEnable())
+                    || !moniLogProperties.isComponentEnable(ComponentEnum.grpc_server, moniLogProperties.getGrpc().isServerEnable())) {
                 return next.startCall(call, metadata);
             }
             MethodDescriptor<ReqT, RespT> method = call.getMethodDescriptor();

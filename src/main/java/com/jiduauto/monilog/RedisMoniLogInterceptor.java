@@ -186,7 +186,7 @@ public class RedisMoniLogInterceptor {
             MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
             // 判断开关
             if (moniLogProperties == null ||
-                    !moniLogProperties.isComponentEnable("redis", moniLogProperties.getRedis().isEnable())) {
+                    !moniLogProperties.isComponentEnable(ComponentEnum.redis, moniLogProperties.getRedis().isEnable())) {
                 return pjp.proceed();
             }
             long start = System.currentTimeMillis();

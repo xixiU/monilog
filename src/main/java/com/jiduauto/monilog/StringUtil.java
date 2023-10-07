@@ -120,6 +120,7 @@ class StringUtil {
         }
     }
 
+
     public static String[] processUserTag(Map<String, String> jsonMap, String[] oriTags) {
         if (MapUtils.isEmpty(jsonMap) || oriTags == null || oriTags.length == 0) {
             return oriTags;

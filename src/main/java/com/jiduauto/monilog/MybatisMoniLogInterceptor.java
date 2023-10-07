@@ -39,7 +39,7 @@ class MybatisMoniLogInterceptor {
             MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
             // 判断开关
             if (moniLogProperties == null ||
-                    !moniLogProperties.isComponentEnable("mybatis", moniLogProperties.getMybatis().isEnable())) {
+                    !moniLogProperties.isComponentEnable(ComponentEnum.mybatis, moniLogProperties.getMybatis().isEnable())) {
                 return invocation.proceed();
             }
             long nowTime = System.currentTimeMillis();

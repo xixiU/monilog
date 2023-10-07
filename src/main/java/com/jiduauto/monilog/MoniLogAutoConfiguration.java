@@ -58,7 +58,7 @@ class MoniLogAutoConfiguration {
         @GrpcGlobalServerInterceptor
         @ConditionalOnClass(name = "io.grpc.stub.ServerCalls")
         GrpcMoniLogInterceptor.GrpcLogPrintServerInterceptor grpcLogPrintServerInterceptor() {
-            log.info(">>>monilog grpc-server start...");
+            log.info(">>>monilog {} start...",ComponentEnum.grpc_server);
             return new GrpcMoniLogInterceptor.GrpcLogPrintServerInterceptor();
         }
 
@@ -66,7 +66,7 @@ class MoniLogAutoConfiguration {
         @GrpcGlobalClientInterceptor
         @ConditionalOnClass(name = "io.grpc.ClientInterceptor")
         GrpcMoniLogInterceptor.GrpcLogPrintClientInterceptor grpcLogPrintClientInterceptor() {
-            log.info(">>>monilog grpc-client start...");
+            log.info(">>>monilog {} start...", ComponentEnum.grpc_client);
             return new GrpcMoniLogInterceptor.GrpcLogPrintClientInterceptor();
         }
     }
@@ -74,20 +74,20 @@ class MoniLogAutoConfiguration {
     @ConditionalOnClass(name = "org.apache.ibatis.session.SqlSessionFactory")
     @Bean
     MybatisMoniLogInterceptor.MybatisInterceptor mybatisMonitorSqlFilter() {
-        log.info(">>>monilog mybatis start...");
+        log.info(">>>monilog {} start...", ComponentEnum.mybatis);
         return new MybatisMoniLogInterceptor.MybatisInterceptor();
     }
 
     @ConditionalOnWebApplication
     @Bean
     FilterRegistrationBean<WebMoniLogInterceptor> webMoniLogInterceptor(MoniLogProperties moniLogProperties) {
-        boolean webEnable = moniLogProperties.isComponentEnable("web", moniLogProperties.getWeb().isEnable());
-        boolean feignEnable = moniLogProperties.isComponentEnable("feign", moniLogProperties.getFeign().isEnable());
+        boolean webEnable = moniLogProperties.isComponentEnable(ComponentEnum.web, moniLogProperties.getWeb().isEnable());
+        boolean feignEnable = moniLogProperties.isComponentEnable(ComponentEnum.feign, moniLogProperties.getFeign().isEnable());
         if (webEnable) {
-            log.info(">>>monilog web start...");
+            log.info(">>>monilog {} start...", ComponentEnum.web);
         }
         if (feignEnable) {
-            log.info(">>>monilog feign start...");
+            log.info(">>>monilog {} start...", ComponentEnum.feign);
         }
         FilterRegistrationBean<WebMoniLogInterceptor> filterRegBean = new FilterRegistrationBean<>();
         filterRegBean.setFilter(new WebMoniLogInterceptor(moniLogProperties));
@@ -96,14 +96,13 @@ class MoniLogAutoConfiguration {
         filterRegBean.setEnabled(Boolean.TRUE);
         filterRegBean.setName("webMoniLogInterceptor");
         filterRegBean.setAsyncSupported(Boolean.TRUE);
-        filterRegBean.setEnabled(webEnable || feignEnable);
         return filterRegBean;
     }
 
     @ConditionalOnClass(name = "com.xxl.job.core.handler.IJobHandler")
     @Bean
     XxlJobMoniLogInterceptor xxljobMoniLogInterceptor() {
-        log.info(">>>monilog xxljob start...");
+        log.info(">>>monilog {} start...", ComponentEnum.xxljob);
         return new XxlJobMoniLogInterceptor();
     }
 

@@ -17,10 +17,7 @@ import org.springframework.context.ApplicationContext;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -42,9 +39,9 @@ class MoniLogProperties implements InitializingBean {
     private boolean enable = true;
 
     /**
-     * 调试开关,仅对dev/test生效，用于打印框架异常。
+     * 调试开关,开启时，可更详细的观测到框架执行的异常和日志详情
      */
-    private boolean debug = true;
+    private boolean debug = false;
 
     /**
      * Monilog日志前缀(不支持运行时修改), 默认值: monilog_
@@ -67,13 +64,13 @@ class MoniLogProperties implements InitializingBean {
      */
     private String globalDefaultBoolExpr = "+$.code==0,$.code==200";
     /**
-     * 监控开启组件清单，默认为*，目前支持feign,grpc,mybatis,rocketmq,web,xxljob,httpclient，可以一键设置开启.
+     * 监控开启组件清单，默认为支持的全部组件，当前支持web,feign,xxljob,httpclient,grpc,grpc_client,grpc_server,rocketmq,rocketmq_consumer,rocketmq_producer,mybatis,redis，可以一键设置开启.
      */
-    private Set<String> componentIncludes = Sets.newHashSet("*");
+    private Set<ComponentEnum> componentIncludes = new HashSet<>(Arrays.asList(ComponentEnum.values()));
     /**
-     * 监控不开启组件清单，默认为为空，目前支持feign,grpc,mybatis,rocketmq,web,xxljob,httpclient，可以一键设置不开启.
+     * 监控不开启组件清单，默认为为空，当前支持web,feign,xxljob,httpclient,grpc,grpc_client,grpc_server,rocketmq,rocketmq_consumer,rocketmq_producer,mybatis,redis，可以一键排除设置开启.
      */
-    private Set<String> componentExcludes;
+    private Set<ComponentEnum> componentExcludes;
     /**
      * 日志打印配置
      */
@@ -111,19 +108,19 @@ class MoniLogProperties implements InitializingBean {
      */
     private HttpClientProperties httpclient = new HttpClientProperties();
 
-    boolean isComponentEnable(String componentName, boolean componentEnable) {
+    boolean isComponentEnable(ComponentEnum componentName, boolean componentEnable) {
         // 这里必须判断全局enable开关，某个应用启动后修改enable为false会导致无法生效
         if (!componentEnable || !enable) {
             return false;
         }
-        Set<String> componentExcludes = getComponentExcludes();
-        boolean excludeThis = componentExcludes != null && (componentExcludes.contains("*") || componentExcludes.contains(componentName));
+        Set<ComponentEnum> componentExcludes = getComponentExcludes();
+        boolean excludeThis = componentExcludes != null && componentExcludes.contains(componentName);
         if (!excludeThis) {//未排除，则enable
             return true;
         }
-        Set<String> componentIncludes = getComponentIncludes();
+        Set<ComponentEnum> componentIncludes = getComponentIncludes();
         //即include 又exclude时，以include为准
-        return componentIncludes != null && (componentIncludes.contains("*") || componentIncludes.contains(componentName));
+        return componentIncludes != null && componentIncludes.contains(componentName);
     }
 
 
@@ -151,10 +148,10 @@ class MoniLogProperties implements InitializingBean {
         // banner输出
         printBanner();
         MoniLogUtil.addSystemRecord();
-        if (isComponentEnable("httpclient", httpclient.isEnable())) {
+        if (isComponentEnable(ComponentEnum.httpclient, httpclient.isEnable())) {
             log.info(">>>monilog httpclient start...");
         }
-        if (isComponentEnable("rocketmq", rocketmq.isEnable())) {
+        if (isComponentEnable(ComponentEnum.rocketmq, rocketmq.isEnable())) {
             log.info(">>>monilog rocketmq start...");
         }
         // 启用配置更新

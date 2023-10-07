@@ -84,8 +84,8 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
         boolean webEnable = false;
         boolean feignEnable = false;
         try {
-            webEnable = moniLogProperties.isComponentEnable("web", moniLogProperties.getWeb().isEnable());
-            feignEnable = moniLogProperties.isComponentEnable("feign", moniLogProperties.getFeign().isEnable());
+            webEnable = moniLogProperties.isComponentEnable(ComponentEnum.web, moniLogProperties.getWeb().isEnable());
+            feignEnable = moniLogProperties.isComponentEnable(ComponentEnum.feign, moniLogProperties.getFeign().isEnable());
             requestHeaderMap = getRequestHeaders(request);
             logPoint = parseLogPoint(requestHeaderMap);
             method = getHandlerMethod(request);
@@ -287,15 +287,21 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
         ContentCachingResponseWrapper wrapper = WebUtils.getNativeResponse(response, ContentCachingResponseWrapper.class);
         if (wrapper != null) {
             byte[] buf = wrapper.getContentAsByteArray();
-            if (buf.length > 0) {
-                String payload;
-                try {
-                    payload = new String(buf, wrapper.getCharacterEncoding());
-                } catch (UnsupportedEncodingException e) {
-                    payload = "[unknown]";
-                }
+            if (buf.length <=0) {
+                return null;
+            }
+            String payload;
+            // 限制length字节数组大于100w时不解析
+            if (buf.length > 10000 * 100) {
+                payload = "[Data too long length:" + buf.length + "]";
                 return payload;
             }
+            try {
+                payload = new String(buf, wrapper.getCharacterEncoding());
+            } catch (UnsupportedEncodingException e) {
+                payload = "[unknown]";
+            }
+            return payload;
         }
         return null;
     }
