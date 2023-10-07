@@ -132,8 +132,7 @@ class MoniLogUtil {
 
         String name = BUSINESS_MONITOR_PREFIX + logPoint.name();
         MetricMonitor.record(name + MonitorType.RECORD.getMark(), allTags);
-        // 耗时只打印基础tag+耗时
-        systemTags.add("cost", String.valueOf(logParams.getCost()));
+        // 耗时只打印基础tag
         MetricMonitor.eventDruation(name + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
 
         if (logParams.isHasUserTag()) {
