@@ -123,6 +123,9 @@ class MoniLogUtil {
     }
 
     private static void doMonitor(MoniLogParams logParams) {
+        if (!checkDoMonitor()) {
+            return;
+        }
         TagBuilder systemTags = getSystemTags(logParams);
         LogPoint logPoint = logParams.getLogPoint();
         if (logPoint == null) {
@@ -140,6 +143,14 @@ class MoniLogUtil {
             MetricMonitor.eventDruation(name + MonitorType.TIMER.getMark(), allTags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
         }
 
+    }
+
+    private static boolean checkDoMonitor() {
+        MoniLogProperties logProperties = getLogProperties();
+        if (logProperties == null) {
+            return true;
+        }
+        return logProperties.isEnable() && logProperties.isEnableMonitor();
     }
 
     private static void doRtTooLongMonitor(MoniLogParams logParams) {
@@ -398,20 +409,28 @@ class MoniLogUtil {
             return true;
         }
 
-        Set<String> exceptions = printerCfg.getExcludeExceptions();
+        Set<String> excludeComponents = printerCfg.getExcludeComponents();
+        Set<String> excludeServices = printerCfg.getExcludeServices();
+        Set<String> excludeActions = printerCfg.getExcludeActions();
+        Set<String> excludeMsgCodes = printerCfg.getExcludeMsgCodes();
         Set<String> excludeKeyWords = printerCfg.getExcludeKeyWords();
+        Set<String> exceptions = printerCfg.getExcludeExceptions();
 
-        if (StringUtil.checkPathMatch(printerCfg.getExcludeComponents(), logPoint.name())) {
+        if (StringUtil.checkPathMatch(excludeComponents, logPoint.name())) {
             return true;
         }
-        if (StringUtil.checkPathMatch(printerCfg.getExcludeServices(), logParams.getService())) {
+        if (StringUtil.checkPathMatch(excludeServices, logParams.getService())) {
             return true;
         }
-        if (StringUtil.checkPathMatch(printerCfg.getExcludeActions(), logParams.getAction())) {
+        if (StringUtil.checkPathMatch(excludeActions, logParams.getAction())) {
+            return true;
+        }
+        // 错误码匹配msgCode
+        if (StringUtil.checkContainsIgnoreCase(excludeMsgCodes, logParams.getMsgCode())) {
             return true;
         }
         // 关键词匹配msgInfo
-        if (StringUtil.checkPathMatch(excludeKeyWords, logParams.getMsgInfo())) {
+        if (StringUtil.checkListItemContains(excludeKeyWords, logParams.getMsgInfo())) {
             return true;
         }
         // 基于错误的判断
@@ -424,7 +443,7 @@ class MoniLogUtil {
             return true;
         }
         // 匹配错误类
-        return StringUtil.checkListItemContains(exceptions, exception.getClass().getCanonicalName());
+        return StringUtil.checkListItemContains(exceptions, exception.getClass().getSimpleName());
     }
 
     private static boolean printLevelCheckPass(LogOutputLevel detailLogLevel, MoniLogParams logParams) {

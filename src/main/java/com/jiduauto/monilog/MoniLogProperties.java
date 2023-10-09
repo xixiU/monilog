@@ -34,25 +34,25 @@ class MoniLogProperties implements InitializingBean {
      */
     private String appName;
     /**
-     * 开启核心监控，提供统一日志参数收集与aop参数收集.
+     * 整个组件的总开关：开启后，会进行prometheus打点监控和统一日志参数收集与打印.
      */
     private boolean enable = true;
-
+    /**
+     * 开启监控埋点的总开关，若关闭后，将只会打印日志不做prometheus打点。默认开启(日志+监控)
+     */
+    private boolean enableMonitor = true;
     /**
      * 调试开关,开启时，可更详细的观测到框架执行的异常和日志详情
      */
     private boolean debug = false;
-
     /**
      * Monilog日志前缀(不支持运行时修改), 默认值: monilog_
      */
     private String logPrefix = "monilog_";
-
     /**
      * 记录耗时长的操作
      */
     private boolean monitorLongRt = true;
-
     /**
      * 是否开启 LOGO
      */
@@ -123,7 +123,6 @@ class MoniLogProperties implements InitializingBean {
         return componentIncludes != null && componentIncludes.contains(componentName);
     }
 
-
     public String getAppName() {
         if (StringUtils.isNotBlank(this.appName)) {
             return this.appName;
@@ -136,8 +135,6 @@ class MoniLogProperties implements InitializingBean {
         }
         return this.appName;
     }
-
-
 
     @Override
     public void afterPropertiesSet() throws Exception {
@@ -241,27 +238,32 @@ class MoniLogProperties implements InitializingBean {
          */
         private Integer maxTextLen = 10000;
         /**
-         * 日志打印的排除切点类型列表，默认为空，即所有类型的都会打印
+         * 日志打印时要排除的组件名称列表，默认为空，即所有类型的都会打印。组件名称包括：web,feign,xxljob,httpclient,grpc,grpc_client,grpc_server,rocketmq,rocketmq_consumer,rocketmq_producer,mybatis,redis
          */
         private Set<String> excludeComponents;
         /**
-         * 日志打印的排除服务列表，默认为空，即所有方法的都会打印,支持模糊匹配
+         * 日志打印时要排除的服务(简单类名)列表，默认为空，即所有方法的都会打印,支持模糊匹配
          */
         private Set<String> excludeServices;
         /**
-         * 日志打印的排除方法清单，默认为空，即所有服务的都会打印,支持模糊匹配
+         * 日志打印时要排除的方法名清单，默认为空，即所有服务的都会打印,支持模糊匹配
          */
         private Set<String> excludeActions;
 
         /**
-         * 日志打印的排除错误类清单，通过错误的canonicalName类名判断，使用contains判断。默认为空，即所有错误的都会打印
+         * 日志打印时要排除的异常类(简单类名)清单，通过错误的canonicalName类名判断，使用contains判断。默认为空，即所有错误的都会打印
          */
         private Set<String> excludeExceptions;
 
         /**
-         * 日志打印的排除错误关键词清单,使用contains判断。默认为空，即所有错误的都会打印
+         * 日志打印时要排除的错误关键词清单,使用contains判断。默认为空，即所有错误的都会打印
          */
         private Set<String> excludeKeyWords;
+
+        /**
+         * 日志打印时要排除的错误码清单，默认为空
+         */
+        private Set<String> excludeMsgCodes;
 
         /**
          * 收集组件测试报告，内部组件测试用
@@ -294,7 +296,7 @@ class MoniLogProperties implements InitializingBean {
     @Setter
     static class WebProperties {
         /**
-         * 开启web监控
+         * 开启web监控+日志
          */
         private boolean enable = true;
         /**
@@ -317,7 +319,7 @@ class MoniLogProperties implements InitializingBean {
     @Setter
     static class GrpcProperties {
         /**
-         * 开启grpc监控
+         * 开启grpc监控+日志
          */
         private boolean enable = true;
         /**
@@ -347,7 +349,7 @@ class MoniLogProperties implements InitializingBean {
     @Setter
     static class XxljobProperties {
         /**
-         * 开启xxljob监控
+         * 开启xxljob监控+日志
          */
         private boolean enable = true;
         /**
@@ -365,7 +367,7 @@ class MoniLogProperties implements InitializingBean {
     @Setter
     static class FeignProperties {
         /**
-         * 开启feign监控
+         * 开启feign监控+日志
          */
         private boolean enable = true;
         /**
@@ -401,7 +403,7 @@ class MoniLogProperties implements InitializingBean {
     @Setter
     static class MybatisProperties {
         /**
-         * 开启mybatis监控
+         * 开启mybatis监控+日志
          */
         private boolean enable = true;
         /**
@@ -418,7 +420,7 @@ class MoniLogProperties implements InitializingBean {
     @Setter
     static class RocketMqProperties {
         /**
-         * 开启rocketmq监控
+         * 开启rocketmq监控+日志
          */
         private boolean enable = true;
         /**
@@ -448,7 +450,7 @@ class MoniLogProperties implements InitializingBean {
     @Setter
     static class RedisProperties {
         /**
-         * 开启redis监控
+         * 开启redis监控+日志
          */
         private boolean enable = true;
         /**
@@ -470,7 +472,7 @@ class MoniLogProperties implements InitializingBean {
     @Setter
     static class HttpClientProperties {
         /**
-         * 开启httpClient监控
+         * 开启httpClient监控+日志
          */
         private boolean enable = true;
         /**

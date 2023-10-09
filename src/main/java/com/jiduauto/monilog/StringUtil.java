@@ -25,16 +25,27 @@ class StringUtil {
         return checkMatch(classList, toCheck, ANT_CLASS_MATCHER);
     }
 
+    public static boolean checkContainsIgnoreCase(Collection<String> sourceList, String toCheck) {
+        if (CollectionUtils.isEmpty(sourceList) || StringUtils.isBlank(toCheck)) {
+            return false;
+        }
+        for (String item : sourceList) {
+            if (toCheck.equalsIgnoreCase(item)) {
+                return true;
+            }
+        }
+        return false;
+    }
     public static boolean checkPathMatch(Collection<String> pathList, String toCheckPath) {
         return checkMatch(pathList, toCheckPath, ANT_PATH_MATCHER);
     }
 
     public static boolean checkListItemContains(Collection<String> itemList, String toCheck) {
-        if (CollectionUtils.isEmpty(itemList)) {
+        if (CollectionUtils.isEmpty(itemList) || StringUtils.isBlank(toCheck)) {
             return false;
         }
         for (String item : itemList) {
-            if (item.contains(toCheck)) {
+            if (item != null && item.contains(toCheck)) {
                 return true;
             }
         }
