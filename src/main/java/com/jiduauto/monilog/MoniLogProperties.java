@@ -238,7 +238,7 @@ class MoniLogProperties implements InitializingBean {
          */
         private Integer maxTextLen = 10000;
         /**
-         * 日志打印时要排除的组件名称列表，默认为空，即所有类型的都会打印。组件名称包括：web,feign,xxljob,httpclient,grpc,grpc_client,grpc_server,rocketmq,rocketmq_consumer,rocketmq_producer,mybatis,redis
+         * 日志打印时要排除的组件名称列表，默认为空，即所有类型的都会打印。组件名称包括：web,feign,xxljob,httpclient,grpc,grpc_client,grpc_server,rocketmq,rocketmq_consumer,rocketmq_producer,mybatis,redis.详见ComponentEnum
          */
         private Set<String> excludeComponents;
         /**
