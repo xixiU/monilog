@@ -36,16 +36,17 @@ class StringUtil {
         }
         return false;
     }
+
     public static boolean checkPathMatch(Collection<String> pathList, String toCheckPath) {
         return checkMatch(pathList, toCheckPath, ANT_PATH_MATCHER);
     }
 
-    public static boolean checkListItemContains(Collection<String> itemList, String toCheck) {
-        if (CollectionUtils.isEmpty(itemList) || StringUtils.isBlank(toCheck)) {
+    public static boolean checkListItemContains(Collection<String> keyWords, String message) {
+        if (CollectionUtils.isEmpty(keyWords) || StringUtils.isBlank(message)) {
             return false;
         }
-        for (String item : itemList) {
-            if (item != null && item.contains(toCheck)) {
+        for (String item : keyWords) {
+            if (message.contains(item)) {
                 return true;
             }
         }
@@ -192,7 +193,7 @@ class StringUtil {
      * 从url中提取query参数
      */
     public static Map<String, Collection<String>> getQueryMap(String url) {
-        if (StringUtils.isBlank(url) || !url.contains("?"))  {
+        if (StringUtils.isBlank(url) || !url.contains("?")) {
             return null;
         }
         String query = url.substring(url.indexOf("?") + 1);
@@ -203,7 +204,7 @@ class StringUtil {
         String[] pairs = query.split("&");
         for (String pair : pairs) {
             int idx = pair.indexOf("=");
-            if (idx<0) {
+            if (idx < 0) {
                 // 只有key没有value,如a/b?c
                 Collection<String> valueList = queryParams.computeIfAbsent(pair, item -> new ArrayList<>());
                 valueList.add("");

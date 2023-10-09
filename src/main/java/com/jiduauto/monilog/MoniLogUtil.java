@@ -147,10 +147,7 @@ class MoniLogUtil {
 
     private static boolean checkDoMonitor() {
         MoniLogProperties logProperties = getLogProperties();
-        if (logProperties == null) {
-            return true;
-        }
-        return logProperties.isEnable() && logProperties.isEnableMonitor();
+        return logProperties != null && logProperties.isEnable() && logProperties.isEnableMonitor();
     }
 
     private static void doRtTooLongMonitor(MoniLogParams logParams) {
@@ -443,7 +440,7 @@ class MoniLogUtil {
             return true;
         }
         // 匹配错误类
-        return StringUtil.checkListItemContains(exceptions, exception.getClass().getSimpleName());
+        return StringUtil.checkListItemContains(exceptions, exception.getClass().getCanonicalName());
     }
 
     private static boolean printLevelCheckPass(LogOutputLevel detailLogLevel, MoniLogParams logParams) {
