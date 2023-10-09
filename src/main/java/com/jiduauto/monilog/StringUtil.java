@@ -94,12 +94,10 @@ class StringUtil {
      * 尝试转换成json，转换不了异常吞掉
      */
     public static JSON tryConvert2Json(String str) {
-        if (str == null) {
+        if (StringUtils.isBlank(str)) {
             return null;
         }
-        if (str.isEmpty()) {
-            return null;
-        }
+
         boolean maybeObj = str.startsWith("{") && str.endsWith("}");
         boolean maybeArr = str.startsWith("[") && str.endsWith("]");
         if (!maybeObj && !maybeArr) {
