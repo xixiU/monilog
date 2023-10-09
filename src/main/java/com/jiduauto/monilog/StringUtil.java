@@ -25,16 +25,28 @@ class StringUtil {
         return checkMatch(classList, toCheck, ANT_CLASS_MATCHER);
     }
 
+    public static boolean checkContainsIgnoreCase(Collection<String> sourceList, String toCheck) {
+        if (CollectionUtils.isEmpty(sourceList) || StringUtils.isBlank(toCheck)) {
+            return false;
+        }
+        for (String item : sourceList) {
+            if (toCheck.equalsIgnoreCase(item)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static boolean checkPathMatch(Collection<String> pathList, String toCheckPath) {
         return checkMatch(pathList, toCheckPath, ANT_PATH_MATCHER);
     }
 
-    public static boolean checkListItemContains(Collection<String> itemList, String toCheck) {
-        if (CollectionUtils.isEmpty(itemList)) {
+    public static boolean checkListItemContains(Collection<String> keyWords, String message) {
+        if (CollectionUtils.isEmpty(keyWords) || StringUtils.isBlank(message)) {
             return false;
         }
-        for (String item : itemList) {
-            if (item.contains(toCheck)) {
+        for (String item : keyWords) {
+            if (message.contains(item)) {
                 return true;
             }
         }
@@ -82,12 +94,10 @@ class StringUtil {
      * 尝试转换成json，转换不了异常吞掉
      */
     public static JSON tryConvert2Json(String str) {
-        if (str == null) {
+        if (StringUtils.isBlank(str)) {
             return null;
         }
-        if (str.isEmpty()) {
-            return null;
-        }
+
         boolean maybeObj = str.startsWith("{") && str.endsWith("}");
         boolean maybeArr = str.startsWith("[") && str.endsWith("]");
         if (!maybeObj && !maybeArr) {
@@ -181,7 +191,7 @@ class StringUtil {
      * 从url中提取query参数
      */
     public static Map<String, Collection<String>> getQueryMap(String url) {
-        if (StringUtils.isBlank(url) || !url.contains("?"))  {
+        if (StringUtils.isBlank(url) || !url.contains("?")) {
             return null;
         }
         String query = url.substring(url.indexOf("?") + 1);
@@ -192,7 +202,7 @@ class StringUtil {
         String[] pairs = query.split("&");
         for (String pair : pairs) {
             int idx = pair.indexOf("=");
-            if (idx<0) {
+            if (idx < 0) {
                 // 只有key没有value,如a/b?c
                 Collection<String> valueList = queryParams.computeIfAbsent(pair, item -> new ArrayList<>());
                 valueList.add("");

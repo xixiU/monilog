@@ -123,6 +123,9 @@ class MoniLogUtil {
     }
 
     private static void doMonitor(MoniLogParams logParams) {
+        if (!checkDoMonitor()) {
+            return;
+        }
         TagBuilder systemTags = getSystemTags(logParams);
         LogPoint logPoint = logParams.getLogPoint();
         if (logPoint == null) {
@@ -142,6 +145,11 @@ class MoniLogUtil {
 
     }
 
+    private static boolean checkDoMonitor() {
+        MoniLogProperties logProperties = getLogProperties();
+        return logProperties != null && logProperties.isEnable() && logProperties.isEnableMonitor();
+    }
+
     private static void doRtTooLongMonitor(MoniLogParams logParams) {
         if (!checkRtMonitor(logParams)) {
             return;
@@ -157,7 +165,7 @@ class MoniLogUtil {
         TagBuilder systemTags = getSystemTags(logParams);
         LogPoint logPoint = logParams.getLogPoint();
         String[] allTags = systemTags.add(logParams.getTags()).toArray();
-        if (LogLongRtLevel.both.equals(rtTooLongLevel) || LogLongRtLevel.onlyPrometheus.equals(rtTooLongLevel)) {
+        if ((LogLongRtLevel.both.equals(rtTooLongLevel) || LogLongRtLevel.onlyPrometheus.equals(rtTooLongLevel)) && logProperties.isEnableMonitor()) {
             // 操作操作信息
             String operationCostTooLongMonitorPrefix = BUSINESS_MONITOR_PREFIX + "rt_too_long_" + logPoint.name();
             MetricMonitor.record(operationCostTooLongMonitorPrefix + MonitorType.RECORD.getMark(), allTags);
@@ -398,20 +406,28 @@ class MoniLogUtil {
             return true;
         }
 
-        Set<String> exceptions = printerCfg.getExcludeExceptions();
+        Set<String> excludeComponents = printerCfg.getExcludeComponents();
+        Set<String> excludeServices = printerCfg.getExcludeServices();
+        Set<String> excludeActions = printerCfg.getExcludeActions();
+        Set<String> excludeMsgCodes = printerCfg.getExcludeMsgCodes();
         Set<String> excludeKeyWords = printerCfg.getExcludeKeyWords();
+        Set<String> exceptions = printerCfg.getExcludeExceptions();
 
-        if (StringUtil.checkPathMatch(printerCfg.getExcludeComponents(), logPoint.name())) {
+        if (StringUtil.checkPathMatch(excludeComponents, logPoint.name())) {
             return true;
         }
-        if (StringUtil.checkPathMatch(printerCfg.getExcludeServices(), logParams.getService())) {
+        if (StringUtil.checkPathMatch(excludeServices, logParams.getService())) {
             return true;
         }
-        if (StringUtil.checkPathMatch(printerCfg.getExcludeActions(), logParams.getAction())) {
+        if (StringUtil.checkPathMatch(excludeActions, logParams.getAction())) {
+            return true;
+        }
+        // 错误码匹配msgCode
+        if (StringUtil.checkContainsIgnoreCase(excludeMsgCodes, logParams.getMsgCode())) {
             return true;
         }
         // 关键词匹配msgInfo
-        if (StringUtil.checkPathMatch(excludeKeyWords, logParams.getMsgInfo())) {
+        if (StringUtil.checkListItemContains(excludeKeyWords, logParams.getMsgInfo())) {
             return true;
         }
         // 基于错误的判断
