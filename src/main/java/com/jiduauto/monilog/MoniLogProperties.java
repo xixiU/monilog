@@ -201,6 +201,9 @@ class MoniLogProperties implements InitializingBean {
                 MoniLogUtil.innerDebug("afterPropertiesSet error", e);
             }
         }
+        String globalDefaultBoolExpr = moniLogProperties.getGlobalDefaultBoolExpr();
+        moniLogProperties.getFeign().resetDefaultBoolExpr(globalDefaultBoolExpr);
+        moniLogProperties.getHttpclient().resetDefaultBoolExpr(globalDefaultBoolExpr);
     }
 
     private void printBanner() {
