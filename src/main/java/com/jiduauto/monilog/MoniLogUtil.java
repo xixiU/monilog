@@ -180,7 +180,7 @@ class MoniLogUtil {
 
     private static boolean checkRtMonitor(MoniLogParams logParams) {
         MoniLogProperties logProperties = getLogProperties();
-        if (logProperties == null || !logProperties.isMonitorLongRt()) {
+        if (logProperties == null || !logProperties.isEnableMonitor() || !logProperties.isMonitorLongRt()) {
             return false;
         }
         LogPoint logPoint = logParams.getLogPoint();
