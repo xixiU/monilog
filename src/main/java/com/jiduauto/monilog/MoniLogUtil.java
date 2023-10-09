@@ -165,7 +165,7 @@ class MoniLogUtil {
         TagBuilder systemTags = getSystemTags(logParams);
         LogPoint logPoint = logParams.getLogPoint();
         String[] allTags = systemTags.add(logParams.getTags()).toArray();
-        if (LogLongRtLevel.both.equals(rtTooLongLevel) || LogLongRtLevel.onlyPrometheus.equals(rtTooLongLevel)) {
+        if ((LogLongRtLevel.both.equals(rtTooLongLevel) || LogLongRtLevel.onlyPrometheus.equals(rtTooLongLevel)) && logProperties.isEnableMonitor()) {
             // 操作操作信息
             String operationCostTooLongMonitorPrefix = BUSINESS_MONITOR_PREFIX + "rt_too_long_" + logPoint.name();
             MetricMonitor.record(operationCostTooLongMonitorPrefix + MonitorType.RECORD.getMark(), allTags);
@@ -180,7 +180,7 @@ class MoniLogUtil {
 
     private static boolean checkRtMonitor(MoniLogParams logParams) {
         MoniLogProperties logProperties = getLogProperties();
-        if (logProperties == null || !logProperties.isEnableMonitor() || !logProperties.isMonitorLongRt()) {
+        if (logProperties == null || !logProperties.isMonitorLongRt()) {
             return false;
         }
         LogPoint logPoint = logParams.getLogPoint();
