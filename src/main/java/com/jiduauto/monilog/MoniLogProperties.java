@@ -139,8 +139,6 @@ class MoniLogProperties implements InitializingBean {
     @Override
     public void afterPropertiesSet() throws Exception {
         bindValue();
-        feign.resetDefaultBoolExpr(globalDefaultBoolExpr);
-        httpclient.resetDefaultBoolExpr(globalDefaultBoolExpr);
         getAppName();
         // banner输出
         printBanner();
@@ -201,9 +199,9 @@ class MoniLogProperties implements InitializingBean {
                 MoniLogUtil.innerDebug("afterPropertiesSet error", e);
             }
         }
-        String globalDefaultBoolExpr = moniLogProperties.getGlobalDefaultBoolExpr();
-        moniLogProperties.getFeign().resetDefaultBoolExpr(globalDefaultBoolExpr);
-        moniLogProperties.getHttpclient().resetDefaultBoolExpr(globalDefaultBoolExpr);
+        // 这一步必须在上面属性替换后面
+        feign.resetDefaultBoolExpr(globalDefaultBoolExpr);
+        httpclient.resetDefaultBoolExpr(globalDefaultBoolExpr);
     }
 
     private void printBanner() {
