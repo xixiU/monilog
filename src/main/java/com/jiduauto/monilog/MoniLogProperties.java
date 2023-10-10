@@ -139,8 +139,6 @@ class MoniLogProperties implements InitializingBean {
     @Override
     public void afterPropertiesSet() throws Exception {
         bindValue();
-        feign.resetDefaultBoolExpr(globalDefaultBoolExpr);
-        httpclient.resetDefaultBoolExpr(globalDefaultBoolExpr);
         getAppName();
         // banner输出
         printBanner();
@@ -178,16 +176,19 @@ class MoniLogProperties implements InitializingBean {
     }
 
     private void bindValue() {
+        log.info("monilog properties binding...");
         ApplicationContext applicationContext = SpringUtils.getApplicationContext();
         if (applicationContext == null) {
+            log.warn(MoniLogUtil.INNER_DEBUG_PREFIX + "properties bind failed,applicationCtx is null");
             return;
         }
         BindResult<MoniLogProperties> monilogBindResult = Binder.get(applicationContext.getEnvironment()).bind("monilog", MoniLogProperties.class);
         if (!monilogBindResult.isBound()) {
+            log.warn(MoniLogUtil.INNER_DEBUG_PREFIX + "properties bind failed, not bound");
             return;
         }
         // 当存在属性值进行属性替换，防止配置不生效
-        MoniLogProperties moniLogProperties = monilogBindResult.get();
+        MoniLogProperties newProp = monilogBindResult.get();
         Field[] fields = MoniLogProperties.class.getDeclaredFields();
         for (Field field : fields) {
             try {
@@ -195,11 +196,22 @@ class MoniLogProperties implements InitializingBean {
                     continue;
                 }
                 field.setAccessible(true);
-                field.set(this, field.get(moniLogProperties));
+                field.set(this, field.get(newProp));
             } catch (IllegalAccessException e) {
                 // 处理异常
-                MoniLogUtil.innerDebug("afterPropertiesSet error", e);
+                log.warn(MoniLogUtil.INNER_DEBUG_PREFIX + "properties bind error, illegalAccess");
             }
+        }
+        resetDefaultBoolExpr(this.getFeign(), this.getHttpclient(), this.getGlobalDefaultBoolExpr());
+    }
+
+
+    private static void resetDefaultBoolExpr(FeignProperties feign, HttpClientProperties httpclient, String globalDefaultBoolExpr) {
+        if (feign != null) {
+            feign.resetDefaultBoolExpr(globalDefaultBoolExpr);
+        }
+        if (httpclient != null) {
+            httpclient.resetDefaultBoolExpr(globalDefaultBoolExpr);
         }
     }
 
