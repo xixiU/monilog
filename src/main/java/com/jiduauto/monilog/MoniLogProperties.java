@@ -20,6 +20,8 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.jiduauto.monilog.MoniLogUtil.INNER_DEBUG_PREFIX;
+
 /**
  * @author yp
  * @date 2023/07/12
@@ -139,8 +141,6 @@ class MoniLogProperties implements InitializingBean {
     @Override
     public void afterPropertiesSet() throws Exception {
         bindValue();
-        feign.resetDefaultBoolExpr(globalDefaultBoolExpr);
-        httpclient.resetDefaultBoolExpr(globalDefaultBoolExpr);
         getAppName();
         // banner输出
         printBanner();
@@ -178,12 +178,15 @@ class MoniLogProperties implements InitializingBean {
     }
 
     private void bindValue() {
+        log.info("monilog properties binding...");
         ApplicationContext applicationContext = SpringUtils.getApplicationContext();
         if (applicationContext == null) {
+            log.warn(INNER_DEBUG_PREFIX + "properties bind failed,applicationCtx is null");
             return;
         }
         BindResult<MoniLogProperties> monilogBindResult = Binder.get(applicationContext.getEnvironment()).bind("monilog", MoniLogProperties.class);
         if (!monilogBindResult.isBound()) {
+            log.warn(INNER_DEBUG_PREFIX + "properties bind failed, not bound");
             return;
         }
         // 当存在属性值进行属性替换，防止配置不生效
@@ -198,12 +201,23 @@ class MoniLogProperties implements InitializingBean {
                 field.set(this, field.get(moniLogProperties));
             } catch (IllegalAccessException e) {
                 // 处理异常
-                MoniLogUtil.innerDebug("afterPropertiesSet error", e);
+                log.warn(INNER_DEBUG_PREFIX + "properties bind error, illegalAccess");
             }
         }
         String globalDefaultBoolExpr = moniLogProperties.getGlobalDefaultBoolExpr();
-        moniLogProperties.getFeign().resetDefaultBoolExpr(globalDefaultBoolExpr);
-        moniLogProperties.getHttpclient().resetDefaultBoolExpr(globalDefaultBoolExpr);
+        FeignProperties feign = moniLogProperties.getFeign();
+        HttpClientProperties httpclient = moniLogProperties.getHttpclient();
+        resetDefaultBoolExpr(feign, httpclient, globalDefaultBoolExpr);
+    }
+
+
+    private static void resetDefaultBoolExpr(FeignProperties feign, HttpClientProperties httpclient, String globalDefaultBoolExpr) {
+        if (feign != null) {
+            feign.resetDefaultBoolExpr(globalDefaultBoolExpr);
+        }
+        if (httpclient != null) {
+            httpclient.resetDefaultBoolExpr(globalDefaultBoolExpr);
+        }
     }
 
     private void printBanner() {
