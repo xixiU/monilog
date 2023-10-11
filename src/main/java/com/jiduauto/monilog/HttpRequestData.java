@@ -8,10 +8,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author yp
@@ -24,17 +21,17 @@ class HttpRequestData {
     private String query;
     private Map<String, String> headers;
 
-    static HttpRequestData of1(String bodyParams, Map<String, String[]> parameters, Map<String, String> headers) {
+    static HttpRequestData of1(String requestUrl, String bodyParams, Map<String, String[]> parameters, Map<String, String> headers) {
         Map<String, Collection<String>> queries = new HashMap<>();
         if (MapUtils.isNotEmpty(parameters)) {
             for (Map.Entry<String, String[]> me : parameters.entrySet()) {
                 queries.put(me.getKey(), Arrays.asList(me.getValue()));
             }
         }
-        return of3(bodyParams, queries, headers);
+        return of3(requestUrl, bodyParams, queries, headers);
     }
 
-    static HttpRequestData of2(String bodyParams, Map<String, Collection<String>> queries, Map<String, Collection<String>> headers) {
+    static HttpRequestData of2(String requestUrl, String bodyParams, Map<String, Collection<String>> queries, Map<String, Collection<String>> headers) {
         Map<String, String> headerMap = new HashMap<>();
         if (MapUtils.isNotEmpty(headers)) {
             for (Map.Entry<String, Collection<String>> me : headers.entrySet()) {
@@ -43,17 +40,27 @@ class HttpRequestData {
                 }
             }
         }
-        return of3(bodyParams, queries, headerMap);
+        return of3(requestUrl, bodyParams, queries, headerMap);
     }
 
-    static HttpRequestData of3(String bodyParams, Map<String, Collection<String>> queries, Map<String, String> headers) {
+    /**
+     *
+     * @param requestUrl 请求地址
+     * @param bodyParams body参数
+     * @param queries query参数
+     * @param headers    header信息
+     * @return
+     */
+    static HttpRequestData of3(String requestUrl, String bodyParams, Map<String, Collection<String>> queries, Map<String, String> headers) {
         HttpRequestData data = new HttpRequestData();
         if (StringUtils.isNotBlank(bodyParams)) {
             JSON json = StringUtil.tryConvert2Json(bodyParams);
             data.body = json == null ? bodyParams : json;
         }
-        if (MapUtils.isNotEmpty(queries)) {
-            data.query = StringUtil.encodeQueryString(queries);
+        Map<String, Collection<String>> queryMap = mergeMaps(queries, StringUtil.getQueryMap(requestUrl));
+        if (MapUtils.isNotEmpty(queryMap)) {
+            // 将请求requestUrl路径?后的参数也拼接到queries中
+            data.query = StringUtil.encodeQueryString(queryMap);
         }
         if (MapUtils.isNotEmpty(headers)) {
             Map<String, String> headerMap = new HashMap<>();
@@ -80,4 +87,62 @@ class HttpRequestData {
         }
         return obj;
     }
+
+    public static Map<String, Collection<String>> mergeMaps(Map<String, Collection<String>> map1, Map<String, Collection<String>> map2) {
+        Map<String, Collection<String>> mergedMap = new HashMap<>();
+        if (map1 == null) {
+            return map2;
+        }
+        if (map2 == null) {
+            return map1;
+        }
+        // 遍历第一个Map的键值对，将键和值添加到结果Map中
+        for (Map.Entry<String, Collection<String>> entry : map1.entrySet()) {
+            String key = entry.getKey();
+            Collection<String> values = entry.getValue();
+            mergedMap.put(key, new HashSet<>(values));
+        }
+
+        // 遍历第二个Map的键值对，合并到结果Map中
+        for (Map.Entry<String, Collection<String>> entry : map2.entrySet()) {
+            String key = entry.getKey();
+            Collection<String> values = entry.getValue();
+
+            if (mergedMap.containsKey(key)) {
+                // 如果结果Map中已存在该键，则将值合并，并去重
+                Collection<String> existingValues = mergedMap.get(key);
+                existingValues.addAll(values);
+            } else {
+                // 如果结果Map中不存在该键，则直接添加键值对
+                mergedMap.put(key, new HashSet<>(values));
+            }
+        }
+
+        return mergedMap;
+    }
+
+
+    /**
+     * 提取路径，如http://baidu.com/test?a=1 返回http://baidu.com/test
+     * host信息是可枚举的，没必要区分开。
+     * @param url url
+     * @return 仅路径信息不包含参数与host
+     */
+    public static String extractPath(String url) {
+        if (StringUtils.isBlank(url) || !url.contains("?")) {
+            return url;
+        }
+        String[] uriAndParams = url.split("\\?");
+        return uriAndParams[0];
+    }
+
+//    public static void main(String[] args) {
+//        String url1 = "http://10.90.233.174:8080/inner/credits/user/list?userIdList=401022112620525906";
+//        String url2 = "http://10.90.232.118:8080/inner/credits/user/list?userIdList=401022116916537682";
+//        System.out.println(extractPath(url1));
+//        System.out.println(extractPath(url2));
+//        System.out.println(JSON.toJSONString(of3(url1, null, null, null)));
+//        System.out.println(JSON.toJSONString(of3(url2, null, null, null)));
+//    }
+
 }

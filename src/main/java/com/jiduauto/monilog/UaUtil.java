@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 class UaUtil {
     /**
-     * 添加混存
+     * 添加缓存
      */
     private static final ConcurrentHashMap<String, UserAgentType> CACHE = new ConcurrentHashMap<>();
 
