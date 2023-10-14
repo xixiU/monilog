@@ -184,6 +184,7 @@ class MoniLogProperties implements InitializingBean {
         }
         BindResult<MoniLogProperties> monilogBindResult = Binder.get(applicationContext.getEnvironment()).bind("monilog", MoniLogProperties.class);
         if (!monilogBindResult.isBound()) {
+            resetDefaultBoolExpr(this.getFeign(), this.getHttpclient(), this.getGlobalDefaultBoolExpr());
             log.warn(MoniLogUtil.INNER_DEBUG_PREFIX + "properties bind failed, not bound");
             return;
         }
