@@ -127,7 +127,7 @@ public final class RocketMqMoniLogInterceptor {
 
         @Override
         public void sendMessageAfter(SendMessageContext context) {
-            if (CommunicationMode.ASYNC == context.getCommunicationMode() && context.getSendResult() ==null){
+            if (CommunicationMode.ASYNC == context.getCommunicationMode() && context.getSendResult() == null) {
                 return;
             }
             MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
