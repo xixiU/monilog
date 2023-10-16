@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.rocketmq.client.consumer.listener.*;
 import org.apache.rocketmq.client.hook.SendMessageContext;
@@ -165,14 +166,28 @@ public final class RocketMqMoniLogInterceptor {
                 SendResult sendResult = context.getSendResult();
                 SendStatus status = sendResult == null ? null : sendResult.getSendStatus();
                 logParams.setOutput(sendResult);
-                if (CommunicationMode.SYNC.equals(context.getCommunicationMode())) {
+                if (CommunicationMode.SYNC == context.getCommunicationMode()) {
                     logParams.setSuccess(context.getException() == null && (status == SendStatus.SEND_OK));
-                }else{
+                } else {
                     logParams.setSuccess(context.getException() == null);
                 }
-                ErrorInfo errorInfo = ExceptionUtil.parseException(context.getException());
-                logParams.setMsgCode(logParams.isSuccess() ? ErrorEnum.SUCCESS.name() : errorInfo == null ? null : errorInfo.getErrorCode());
-                logParams.setMsgInfo(logParams.isSuccess() ? ErrorEnum.SUCCESS.getMsg() : errorInfo != null ? errorInfo.getErrorMsg() : ErrorEnum.FAILED.getMsg());
+                if (logParams.isSuccess()) {
+                    logParams.setMsgCode(ErrorEnum.SUCCESS.name());
+                    logParams.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
+                } else {
+                    ErrorInfo errorInfo = ExceptionUtil.parseException(context.getException());
+                    if (errorInfo != null) {
+                        logParams.setMsgCode(errorInfo.getErrorCode());
+                        logParams.setMsgInfo(errorInfo.getErrorMsg());
+                    } else if (sendResult != null && sendResult.getSendStatus() != null) {
+                        logParams.setMsgCode(sendResult.getSendStatus().name());
+                    } else {
+                        logParams.setMsgCode(ErrorEnum.FAILED.name());
+                    }
+                    if (StringUtils.isBlank(logParams.getMsgInfo())) {
+                        logParams.setMsgInfo(ErrorEnum.FAILED.getMsg());
+                    }
+                }
                 logParams.setInput(new Object[]{getMqBody(message)});
                 logParams.setTags(TagBuilder.of("topic", topic, "group", context.getProducerGroup(), "tag", message.getTags()).toArray());
                 MoniLogUtil.log(logParams);

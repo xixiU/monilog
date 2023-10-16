@@ -135,6 +135,4 @@ class HttpRequestData {
         String[] uriAndParams = url.split("\\?");
         return uriAndParams[0];
     }
-
-
 }
