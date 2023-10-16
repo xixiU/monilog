@@ -168,7 +168,7 @@ public final class RocketMqMoniLogInterceptor {
                 SendResult sendResult = context.getSendResult();
                 SendStatus status = sendResult == null ? null : sendResult.getSendStatus();
                 logParams.setOutput(sendResult);
-                if (CommunicationMode.SYNC == context.getCommunicationMode()) {
+                if (!(CommunicationMode.ONEWAY == context.getCommunicationMode())) {
                     logParams.setSuccess(context.getException() == null && (status == SendStatus.SEND_OK));
                 } else {
                     logParams.setSuccess(context.getException() == null);
