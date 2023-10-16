@@ -111,6 +111,7 @@ public final class RocketMqMoniLogInterceptor {
 
     @Slf4j
     public static class RocketMQProducerEnhanceProcessor implements SendMessageHook {
+        private static final String MONILOG_PARAMS_KEY = "__MoniLogParamsCount";
         @Override
         public String hookName() {
             return this.getClass().getName();
@@ -122,10 +123,16 @@ public final class RocketMqMoniLogInterceptor {
                 context.setProps(new HashMap<>());
             }
             context.getProps().put("startTime", String.valueOf(System.currentTimeMillis()));
+            int countTime = Integer.parseInt(context.getProps().getOrDefault(MONILOG_PARAMS_KEY, "0")) + 1;
+            context.getProps().put(MONILOG_PARAMS_KEY, String.valueOf(countTime));
         }
 
         @Override
         public void sendMessageAfter(SendMessageContext context) {
+            int i = Integer.parseInt(context.getProps().get(MONILOG_PARAMS_KEY));
+            if (i > 1) {
+                return;
+            }
             MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
             // 判断开关
             if (moniLogProperties == null ||
