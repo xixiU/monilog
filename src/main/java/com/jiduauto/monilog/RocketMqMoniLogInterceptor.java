@@ -123,14 +123,11 @@ public final class RocketMqMoniLogInterceptor {
                 context.setProps(new HashMap<>());
             }
             context.getProps().put("startTime", String.valueOf(System.currentTimeMillis()));
-            int countTime = Integer.parseInt(context.getProps().getOrDefault(MONILOG_PARAMS_KEY, "0")) + 1;
-            context.getProps().put(MONILOG_PARAMS_KEY, String.valueOf(countTime));
         }
 
         @Override
         public void sendMessageAfter(SendMessageContext context) {
-            int i = Integer.parseInt(context.getProps().get(MONILOG_PARAMS_KEY));
-            if (i > 1) {
+            if (CommunicationMode.ASYNC == context.getCommunicationMode() && context.getSendResult() ==null){
                 return;
             }
             MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
@@ -195,8 +192,8 @@ public final class RocketMqMoniLogInterceptor {
                 logParams.setInput(new Object[]{getMqBody(message)});
                 if (sendResult != null) {
                     Map<String, Object> sendResultMap = new HashMap<>();
-                    sendResultMap.put("messageId", sendResult.getMsgId());
-                    sendResultMap.put("regionId", sendResult.getMsgId() );
+                    sendResultMap.put("msgId", sendResult.getMsgId());
+                    sendResultMap.put("regionId", sendResult.getRegionId() );
                     sendResultMap.put("sendStatus", sendResult.getSendStatus() );
                     logParams.setOutput(sendResultMap);
                 }
