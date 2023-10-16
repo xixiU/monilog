@@ -136,13 +136,5 @@ class HttpRequestData {
         return uriAndParams[0];
     }
 
-//    public static void main(String[] args) {
-//        String url1 = "http://10.90.233.174:8080/inner/credits/user/list?userIdList=401022112620525906";
-//        String url2 = "http://10.90.232.118:8080/inner/credits/user/list?userIdList=401022116916537682";
-//        System.out.println(extractPath(url1));
-//        System.out.println(extractPath(url2));
-//        System.out.println(JSON.toJSONString(of3(url1, null, null, null)));
-//        System.out.println(JSON.toJSONString(of3(url2, null, null, null)));
-//    }
 
 }
