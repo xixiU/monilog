@@ -25,10 +25,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.BiFunction;
 
 public final class RocketMqMoniLogInterceptor {
@@ -189,6 +186,14 @@ public final class RocketMqMoniLogInterceptor {
                     }
                 }
                 logParams.setInput(new Object[]{getMqBody(message)});
+                if (sendResult != null) {
+                    Map<String, Object> sendResultMap = new HashMap<>();
+                    sendResultMap.put("messageId", sendResult.getMsgId());
+                    sendResultMap.put("regionId", sendResult.getMsgId() );
+                    sendResultMap.put("sendStatus", sendResult.getSendStatus() );
+                    logParams.setOutput(sendResultMap);
+                }
+
                 logParams.setTags(TagBuilder.of("topic", topic, "group", context.getProducerGroup(), "tag", message.getTags()).toArray());
                 MoniLogUtil.log(logParams);
             } catch (Exception e) {
