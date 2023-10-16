@@ -127,6 +127,7 @@ public final class RocketMqMoniLogInterceptor {
 
         @Override
         public void sendMessageAfter(SendMessageContext context) {
+            // 异步的时候会调用两次sendMessageAfter,第二次的sendResult会有发送结果，取第二次
             if (CommunicationMode.ASYNC == context.getCommunicationMode() && context.getSendResult() == null) {
                 return;
             }
