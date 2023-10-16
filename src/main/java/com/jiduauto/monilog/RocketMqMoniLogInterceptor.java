@@ -8,6 +8,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.rocketmq.client.consumer.listener.*;
 import org.apache.rocketmq.client.hook.SendMessageContext;
 import org.apache.rocketmq.client.hook.SendMessageHook;
+import org.apache.rocketmq.client.impl.CommunicationMode;
 import org.apache.rocketmq.client.impl.producer.DefaultMQProducerImpl;
 import org.apache.rocketmq.client.producer.MQProducer;
 import org.apache.rocketmq.client.producer.SendResult;
@@ -164,7 +165,11 @@ public final class RocketMqMoniLogInterceptor {
                 SendResult sendResult = context.getSendResult();
                 SendStatus status = sendResult == null ? null : sendResult.getSendStatus();
                 logParams.setOutput(sendResult);
-                logParams.setSuccess(context.getException() == null && (status==null || status == SendStatus.SEND_OK));
+                if (CommunicationMode.SYNC.equals(context.getCommunicationMode())) {
+                    logParams.setSuccess(context.getException() == null && (status == SendStatus.SEND_OK));
+                }else{
+                    logParams.setSuccess(context.getException() == null);
+                }
                 logParams.setMsgCode(logParams.isSuccess() ? ErrorEnum.SUCCESS.name() : status == null ? null : status.name());
                 logParams.setMsgInfo(logParams.isSuccess() ? ErrorEnum.SUCCESS.getMsg() : ErrorEnum.FAILED.getMsg());
                 logParams.setInput(new Object[]{getMqBody(message)});
