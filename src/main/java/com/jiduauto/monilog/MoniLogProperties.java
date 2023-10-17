@@ -182,27 +182,30 @@ class MoniLogProperties implements InitializingBean {
             log.warn(MoniLogUtil.INNER_DEBUG_PREFIX + "properties bind failed,applicationCtx is null");
             return;
         }
-        BindResult<MoniLogProperties> monilogBindResult = Binder.get(applicationContext.getEnvironment()).bind("monilog", MoniLogProperties.class);
-        if (!monilogBindResult.isBound()) {
-            log.warn(MoniLogUtil.INNER_DEBUG_PREFIX + "properties bind failed, not bound");
-            return;
-        }
-        // 当存在属性值进行属性替换，防止配置不生效
-        MoniLogProperties newProp = monilogBindResult.get();
-        Field[] fields = MoniLogProperties.class.getDeclaredFields();
-        for (Field field : fields) {
-            try {
-                if (Modifier.isFinal(field.getModifiers())) {
-                    continue;
-                }
-                field.setAccessible(true);
-                field.set(this, field.get(newProp));
-            } catch (IllegalAccessException e) {
-                // 处理异常
-                log.warn(MoniLogUtil.INNER_DEBUG_PREFIX + "properties bind error, illegalAccess");
+        try {
+            BindResult<MoniLogProperties> monilogBindResult = Binder.get(applicationContext.getEnvironment()).bind("monilog", MoniLogProperties.class);
+            if (!monilogBindResult.isBound()) {
+                log.warn(MoniLogUtil.INNER_DEBUG_PREFIX + "properties bind failed, not bound");
+                return;
             }
+            // 当存在属性值进行属性替换，防止配置不生效
+            MoniLogProperties newProp = monilogBindResult.get();
+            Field[] fields = MoniLogProperties.class.getDeclaredFields();
+            for (Field field : fields) {
+                try {
+                    if (Modifier.isFinal(field.getModifiers())) {
+                        continue;
+                    }
+                    field.setAccessible(true);
+                    field.set(this, field.get(newProp));
+                } catch (IllegalAccessException e) {
+                    // 处理异常
+                    log.warn(MoniLogUtil.INNER_DEBUG_PREFIX + "properties bind error, illegalAccess");
+                }
+            }
+        } finally {
+            resetDefaultBoolExpr(this.getFeign(), this.getHttpclient(), this.getGlobalDefaultBoolExpr());
         }
-        resetDefaultBoolExpr(this.getFeign(), this.getHttpclient(), this.getGlobalDefaultBoolExpr());
     }
 
 

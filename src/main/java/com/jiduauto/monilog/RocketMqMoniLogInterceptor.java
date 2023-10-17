@@ -4,10 +4,12 @@ import com.alibaba.fastjson.JSON;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.rocketmq.client.consumer.listener.*;
 import org.apache.rocketmq.client.hook.SendMessageContext;
 import org.apache.rocketmq.client.hook.SendMessageHook;
+import org.apache.rocketmq.client.impl.CommunicationMode;
 import org.apache.rocketmq.client.impl.producer.DefaultMQProducerImpl;
 import org.apache.rocketmq.client.producer.MQProducer;
 import org.apache.rocketmq.client.producer.SendResult;
@@ -23,10 +25,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.BiFunction;
 
 public final class RocketMqMoniLogInterceptor {
@@ -112,6 +111,7 @@ public final class RocketMqMoniLogInterceptor {
 
     @Slf4j
     public static class RocketMQProducerEnhanceProcessor implements SendMessageHook {
+        private static final String MONILOG_PARAMS_KEY = "__MoniLogParamsCount";
         @Override
         public String hookName() {
             return this.getClass().getName();
@@ -127,6 +127,10 @@ public final class RocketMqMoniLogInterceptor {
 
         @Override
         public void sendMessageAfter(SendMessageContext context) {
+            // 异步的时候会调用两次sendMessageAfter,第二次的sendResult会有发送结果，取第二次
+            if (CommunicationMode.ASYNC == context.getCommunicationMode() && context.getSendResult() == null) {
+                return;
+            }
             MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
             // 判断开关
             if (moniLogProperties == null ||
@@ -164,10 +168,37 @@ public final class RocketMqMoniLogInterceptor {
                 SendResult sendResult = context.getSendResult();
                 SendStatus status = sendResult == null ? null : sendResult.getSendStatus();
                 logParams.setOutput(sendResult);
-                logParams.setSuccess(context.getException() == null && status == SendStatus.SEND_OK);
-                logParams.setMsgCode(logParams.isSuccess() ? ErrorEnum.SUCCESS.name() : status == null ? null : status.name());
-                logParams.setMsgInfo(logParams.isSuccess() ? ErrorEnum.SUCCESS.getMsg() : ErrorEnum.FAILED.getMsg());
+                if (CommunicationMode.ONEWAY == context.getCommunicationMode() || sendResult == null) {
+                    logParams.setSuccess(context.getException() == null);
+                } else {
+                    logParams.setSuccess(context.getException() == null && (status == SendStatus.SEND_OK));
+                }
+                if (logParams.isSuccess()) {
+                    logParams.setMsgCode(ErrorEnum.SUCCESS.name());
+                    logParams.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
+                } else {
+                    ErrorInfo errorInfo = ExceptionUtil.parseException(context.getException());
+                    if (errorInfo != null) {
+                        logParams.setMsgCode(errorInfo.getErrorCode());
+                        logParams.setMsgInfo(errorInfo.getErrorMsg());
+                    } else if (sendResult != null && sendResult.getSendStatus() != null) {
+                        logParams.setMsgCode(sendResult.getSendStatus().name());
+                    } else {
+                        logParams.setMsgCode(ErrorEnum.FAILED.name());
+                    }
+                    if (StringUtils.isBlank(logParams.getMsgInfo())) {
+                        logParams.setMsgInfo(ErrorEnum.FAILED.getMsg());
+                    }
+                }
                 logParams.setInput(new Object[]{getMqBody(message)});
+                if (sendResult != null) {
+                    Map<String, Object> sendResultMap = new HashMap<>();
+                    sendResultMap.put("msgId", sendResult.getMsgId());
+                    sendResultMap.put("regionId", sendResult.getRegionId() );
+                    sendResultMap.put("sendStatus", sendResult.getSendStatus() );
+                    logParams.setOutput(sendResultMap);
+                }
+
                 logParams.setTags(TagBuilder.of("topic", topic, "group", context.getProducerGroup(), "tag", message.getTags()).toArray());
                 MoniLogUtil.log(logParams);
             } catch (Exception e) {

@@ -32,9 +32,8 @@ class XxlJobMoniLogInterceptor {
         return LogParser.Default.buildInstance(boolExpr);
     }
 
-    private static boolean xxlJobEnable() {
+    static boolean xxlJobEnable() {
         MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
         return moniLogProperties != null && moniLogProperties.isComponentEnable(ComponentEnum.xxljob, moniLogProperties.getXxljob().isEnable());
     }
-
 }

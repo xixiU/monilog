@@ -72,7 +72,7 @@ public final class FeignMoniLogInterceptor {
             mlp.setAction(st.getMethodName());
         }
 
-        mlp.setTags(new String[]{"method", getMethod(request), "url", requestUri});
+        mlp.setTags(new String[]{"method", getMethod(request), "url", HttpRequestData.extractPath(requestUri)});
 
         mlp.setCost(cost);
         mlp.setException(ex);
@@ -201,7 +201,7 @@ public final class FeignMoniLogInterceptor {
         String bodyParams = getBodyParams(request);
         Map<String, Collection<String>> headers = request.headers();
         Map<String, Collection<String>> queries = getQuery(request);
-        return HttpRequestData.of2(bodyParams, queries, headers).toJSON();
+        return HttpRequestData.of2(request.url(), bodyParams, queries, headers).toJSON();
     }
 
     private static Map<String, Collection<String>> getQuery(Request request) {

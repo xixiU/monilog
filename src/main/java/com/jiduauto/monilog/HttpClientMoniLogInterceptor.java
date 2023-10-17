@@ -89,7 +89,7 @@ public final class HttpClientMoniLogInterceptor {
                 List<NameValuePair> params = URLEncodedUtils.parse(uriAndParams.length > 1 ? uriAndParams[1] : null, StandardCharsets.UTF_8);
                 Map<String, Collection<String>> queryMap = parseParams(params);
                 Map<String, String> headerMap = parseHeaders(request.getAllHeaders());
-                JSONObject input = HttpRequestData.of3(bodyParams, queryMap, headerMap).toJSON();
+                JSONObject input = HttpRequestData.of3(requestLine.getUri(), bodyParams, queryMap, headerMap).toJSON();
                 Class<?> serviceCls = HttpClient.class;
                 String methodName = method;
                 if (st != null) {

@@ -107,7 +107,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             logParams.setServiceCls(method.getBeanType());
             logParams.setService(method.getBeanType().getSimpleName());
             logParams.setAction(method.getMethod().getName());
-            TagBuilder tagBuilder = TagBuilder.of(tagList).add("url", requestUri).add("method", request.getMethod());
+            TagBuilder tagBuilder = TagBuilder.of(tagList).add("url", HttpRequestData.extractPath(requestUri)).add("method", request.getMethod());
             logParams.setTags(tagBuilder.toArray());
 
 
@@ -276,7 +276,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
     private JSONObject formatRequestInfo(boolean isMultipart, HttpServletRequest request, Map<String, String> requestHeaderMap) {
         Map<String, String[]> parameterMap = request.getParameterMap();
         String requestBodyParams = isMultipart ? "Binary data" : ((RequestWrapper) request).getBodyString();
-        return HttpRequestData.of1(requestBodyParams, parameterMap, requestHeaderMap).toJSON();
+        return HttpRequestData.of1(request.getRequestURI(), requestBodyParams, parameterMap, requestHeaderMap).toJSON();
     }
 
     private static String getResponseBody(ContentCachingResponseWrapper response) {
