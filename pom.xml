@@ -36,6 +36,8 @@
         <httpclient.version>4.5.14</httpclient.version>
         <httpasyncclient.version>4.1.5</httpasyncclient.version>
         <redisson.version>3.22.0</redisson.version>
+        <okhttpclient.version>3.14.9</okhttpclient.version>
+
     </properties>
 
 
@@ -206,6 +208,12 @@
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpasyncclient</artifactId>
             <version>${httpasyncclient.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>${okhttpclient.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
