@@ -88,24 +88,25 @@ public class RedisMoniLogInterceptor {
         /**
          * 访问修饰符、方法名不可修改
          */
-        public static RedisConnection buildProxyForRedisConnection(RedisConnection conn){
+        public static RedisConnection buildProxyForRedisConnection(RedisConnection conn) {
             return ProxyUtils.getProxy(conn, new RedisConnectionFactoryInterceptor());
         }
 
         /**
          * 访问修饰符、方法名不可修改
          */
-        public static RedisClusterConnection buildProxyForRedisClusterConnection(RedisClusterConnection conn){
+        public static RedisClusterConnection buildProxyForRedisClusterConnection(RedisClusterConnection conn) {
             return ProxyUtils.getProxy(conn, new RedisConnectionFactoryInterceptor());
         }
+
         /**
          * 访问修饰符、方法名不可修改
          */
         public static void redisRecordException(Throwable e, long cost) {
             Method m;
-            try{
+            try {
                 m = JedisConnectionFactory.class.getDeclaredMethod("getConnection");
-            }catch (Throwable ex){
+            } catch (Throwable ex) {
                 MoniLogUtil.innerDebug("doFeignInvocationRecord error", ex);
                 return;
             }
@@ -219,6 +220,7 @@ public class RedisMoniLogInterceptor {
     @AllArgsConstructor
     private static class RedissonResultProxy implements MethodInterceptor {
         private final MoniLogParams p;
+
         @Override
         public Object invoke(MethodInvocation invocation) throws Throwable {
             Method method = invocation.getMethod();
@@ -274,7 +276,7 @@ public class RedisMoniLogInterceptor {
                 continue;
             }
             ret.add(tryDeserialize(arg, firstByte));
-            if (arg instanceof byte[]) {
+            if (isByteKey(arg)) {
                 if (firstByte) {
                     firstByte = false;
                 }
@@ -284,19 +286,37 @@ public class RedisMoniLogInterceptor {
     }
 
     private static Object tryDeserialize(Object arg, boolean first) {
-        if (arg instanceof byte[]) {
+        if (isByteKey(arg)) {
+            byte[] byted = getByteKey(arg);
             if (first) {
-                return stringSerializer.deserialize((byte[]) arg);
+                return stringSerializer.deserialize(byted);
             } else {
                 try {
-                    return jdkSerializer.deserialize((byte[]) arg);
+                    return jdkSerializer.deserialize(byted);
                 } catch (SerializationException e) {
-                    return stringSerializer.deserialize((byte[]) arg);
+                    return stringSerializer.deserialize(byted);
                 }
             }
         } else {
             return arg;
         }
+    }
+
+    private static boolean isByteKey(Object arg) {
+        return getByteKey(arg) != null;
+    }
+
+    private static byte[] getByteKey(Object arg) {
+        if (arg == null) {
+            return null;
+        }
+        if (arg instanceof byte[]) {
+            return (byte[]) arg;
+        }
+        if (arg instanceof byte[][] && ((byte[][]) arg).length == 1) {
+            return ((byte[][]) arg)[0];
+        }
+        return null;
     }
 
     private static String chooseStringKey(Object[] input) {
