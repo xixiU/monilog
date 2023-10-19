@@ -157,8 +157,8 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
 
     private String formatLongText(Object o) {
         int maxTextLen = moniLogProperties.getPrinter().getMaxTextLen();
-        if (o == null || o instanceof String) {
-            return (String) o;
+        if (o == null) {
+            return "";
         }
         String str = JSON.toJSONString(o);
         if (str.length() > maxTextLen) {
