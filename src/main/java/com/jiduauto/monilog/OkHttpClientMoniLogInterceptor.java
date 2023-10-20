@@ -65,14 +65,14 @@ public class OkHttpClientMoniLogInterceptor {
                 p.setServiceCls(serviceCls);
                 p.setService(p.getServiceCls().getSimpleName());
                 p.setAction(methodName);
-                p.setTags(TagBuilder.of("url", request.url().toString(), "method", request.method()).toArray());
+                p.setTags(TagBuilder.of("url", HttpRequestData.extractPath(request.url().toString()), "method", request.method()).toArray());
                 p.setInput(new Object[]{getInputObject(request)});
                 if (response != null) {
                     // 先塞调用的结果
                     p.setMsgCode(String.valueOf(response.code()));
                     p.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
 
-                    String responseBody = getOutput(response.body());
+                    String responseBody = getOutputBody(response.body());
                     JSON jsonBody = StringUtil.tryConvert2Json(responseBody);
                     p.setOutput(jsonBody == null ? responseBody : jsonBody);
                     ParsedResult pr = ResultParseUtil.parseResult(jsonBody, null, null, okHttpClientProperties.getDefaultBoolExpr(), null, null);
@@ -130,11 +130,7 @@ public class OkHttpClientMoniLogInterceptor {
         // 请求体参数
         RequestBody requestBody = request.body();
         if (requestBody != null) {
-           if (isInputStream(requestBody)) {
-               bodyParams = "Binary Data";
-           }else{
-               bodyParams = requestBody.toString();
-           }
+            bodyParams = getInputBodyParams(request);
         }
 
         // 请求头参数
@@ -147,7 +143,6 @@ public class OkHttpClientMoniLogInterceptor {
         }
 
         Map<String, Collection<String>> queryMap = new HashMap<>();
-
         // 查询参数
         HttpUrl httpUrl = request.url();
         for (int i = 0, size = httpUrl.querySize(); i < size; i++) {
@@ -171,7 +166,25 @@ public class OkHttpClientMoniLogInterceptor {
         return HttpUtil.checkContentTypeIsStream(mediaType.toString().toLowerCase());
     }
 
-    private static String getOutput(ResponseBody responseBody) {
+    private static String getInputBodyParams(Request request){
+        try {
+            Request copy = request.newBuilder().build();
+            Buffer buffer = new Buffer();
+            RequestBody body = copy.body();
+            if (body == null) {
+                return null;
+            }
+            if (isInputStream(body)) {
+                return "Binary Data";
+            }
+            body.writeTo(buffer);
+            return buffer.readUtf8();
+        } catch (IOException e) {
+            MoniLogUtil.innerDebug("getInputBodyParams error", e);
+            return null;
+        }
+    }
+    private static String getOutputBody(ResponseBody responseBody) {
         if (responseBody == null) {
             return "";
         }
