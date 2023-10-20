@@ -21,7 +21,6 @@ import java.util.*;
  */
 @Slf4j
 public class OkHttpClientMoniLogInterceptor {
-
     /**
      * 为OkHttpClient注册拦截器,
      * 注：该方法不可修改，包括可见级别，否则将导致OkHttpClient拦截失效
@@ -67,7 +66,6 @@ public class OkHttpClientMoniLogInterceptor {
                 p.setService(p.getServiceCls().getSimpleName());
                 p.setAction(methodName);
                 p.setTags(TagBuilder.of("url", request.url().toString(), "method", request.method()).toArray());
-
                 p.setInput(new Object[]{getInputObject(request)});
                 if (response != null) {
                     // 先塞调用的结果
@@ -132,13 +130,11 @@ public class OkHttpClientMoniLogInterceptor {
         // 请求体参数
         RequestBody requestBody = request.body();
         if (requestBody != null) {
-            if (requestBody instanceof MultipartBody) {
-                bodyParams = "Binary Data";
-            } else {
-//                Buffer buffer = new Buffer();
-//                requestBody.writeTo(buffer);
-//                bodyParams = buffer.readUtf8();
-            }
+           if (isInputStream(requestBody)) {
+               bodyParams = "Binary Data";
+           }else{
+               bodyParams = requestBody.toString();
+           }
         }
 
         // 请求头参数
@@ -161,6 +157,18 @@ public class OkHttpClientMoniLogInterceptor {
             valueList.add(value);
         }
         return HttpRequestData.of3(url, bodyParams, queryMap, headerMap).toJSON();
+    }
+
+    private static boolean isInputStream(RequestBody requestBody){
+        if (requestBody instanceof MultipartBody) {
+            return true;
+        }
+        MediaType mediaType = requestBody.contentType();
+        if (mediaType == null) {
+            // 未知状态返回false
+            return true;
+        }
+        return HttpUtil.checkContentTypeIsStream(mediaType.toString().toLowerCase());
     }
 
     private static String getOutput(ResponseBody responseBody) {
