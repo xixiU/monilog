@@ -22,5 +22,5 @@ enum ComponentEnum {
     rocketmq_producer,
     mybatis,
     redis,
-    okHttpClient
+    okhttp
 }

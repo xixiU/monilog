@@ -111,7 +111,7 @@ class MoniLogProperties implements InitializingBean {
     /**
      * okHttpClient监控配置
      */
-    private OkHttpClientProperties okHttpClient = new OkHttpClientProperties();
+    private OkHttpClientProperties okhttpclient = new OkHttpClientProperties();
 
     boolean isComponentEnable(ComponentEnum componentName, boolean componentEnable) {
         // 这里必须判断全局enable开关，某个应用启动后修改enable为false会导致无法生效
@@ -154,7 +154,7 @@ class MoniLogProperties implements InitializingBean {
         if (isComponentEnable(ComponentEnum.rocketmq, rocketmq.isEnable())) {
             log.info(">>>monilog rocketmq start...");
         }
-        if (isComponentEnable(ComponentEnum.okHttpClient, rocketmq.isEnable())) {
+        if (isComponentEnable(ComponentEnum.okhttp, rocketmq.isEnable())) {
 
         }
         // 启用配置更新
@@ -211,17 +211,20 @@ class MoniLogProperties implements InitializingBean {
                 }
             }
         } finally {
-            resetDefaultBoolExpr(this.getFeign(), this.getHttpclient(), this.getGlobalDefaultBoolExpr());
+            resetDefaultBoolExpr(this.getFeign(), this.getHttpclient(), this.okhttpclient, this.getGlobalDefaultBoolExpr());
         }
     }
 
 
-    private static void resetDefaultBoolExpr(FeignProperties feign, HttpClientProperties httpclient, String globalDefaultBoolExpr) {
+    private static void resetDefaultBoolExpr(FeignProperties feign, HttpClientProperties httpclient,OkHttpClientProperties okhttpClient, String globalDefaultBoolExpr ) {
         if (feign != null) {
             feign.resetDefaultBoolExpr(globalDefaultBoolExpr);
         }
         if (httpclient != null) {
             httpclient.resetDefaultBoolExpr(globalDefaultBoolExpr);
+        }
+        if (okhttpClient != null) {
+            okhttpClient.resetDefaultBoolExpr(globalDefaultBoolExpr);
         }
     }
 
