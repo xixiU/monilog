@@ -22,6 +22,7 @@ public enum LogPoint {
     rocketmq_producer,
     mybatis,
     redis,
+    ok_http_client,
     /**
      * 用户自定义业务维度
      */
