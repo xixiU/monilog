@@ -15,7 +15,7 @@ import java.util.*;
 
 /**
  * OkHttpClient的拦截实现
- * 
+ *
  * @author rongjie.yuan
  * @date 2023/10/19 17:35
  */
@@ -43,13 +43,14 @@ public class OkHttpClientMoniLogInterceptor {
             MoniLogParams p = new MoniLogParams();
             try {
                 p.setLogPoint(LogPoint.ok_http_client);
-                p.setSuccess(true);
                 long nowTime = System.currentTimeMillis();
-                try{
+                try {
                     response = chain.proceed(request);
-                }catch (Exception e){
+                    p.setSuccess(true);
+                } catch (Exception e) {
                     bizException = e;
                     p.setSuccess(false);
+                    p.setException(e);
                 }
                 p.setCost(System.currentTimeMillis() - nowTime);
                 Class<?> serviceCls = OkHttpClient.class;
@@ -65,6 +66,8 @@ public class OkHttpClientMoniLogInterceptor {
                 p.setServiceCls(serviceCls);
                 p.setService(p.getServiceCls().getSimpleName());
                 p.setAction(methodName);
+                p.setTags(TagBuilder.of("url", request.url().toString(), "method", request.method()).toArray());
+
                 p.setInput(new Object[]{getInputObject(request)});
                 if (response != null) {
                     // 先塞调用的结果
@@ -87,7 +90,7 @@ public class OkHttpClientMoniLogInterceptor {
                     }
                 }
                 return response;
-            }catch (Exception e){
+            } catch (Exception e) {
                 if (e == bizException) {
                     throw e;
                 }
@@ -103,12 +106,12 @@ public class OkHttpClientMoniLogInterceptor {
     /**
      * 校验是否开启
      */
-    private static MoniLogProperties.OkHttpClientProperties checkEnable(String host, String path){
+    private static MoniLogProperties.OkHttpClientProperties checkEnable(String host, String path) {
         MoniLogProperties mp = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
         // 判断开关
         if (mp == null ||
                 !mp.isComponentEnable(ComponentEnum.okhttp, mp.getOkhttpclient().isEnable())) {
-           return null;
+            return null;
         }
         MoniLogProperties.OkHttpClientProperties clientProperties = mp.getOkhttpclient();
         boolean enable = mp.isComponentEnable(ComponentEnum.okhttp, clientProperties.isEnable());
@@ -121,7 +124,7 @@ public class OkHttpClientMoniLogInterceptor {
         return enable ? clientProperties : null;
     }
 
-    private static JSONObject getInputObject(Request request){
+    private static JSONObject getInputObject(Request request) {
         // 请求路径
         String url = request.url().toString();
 
@@ -130,8 +133,8 @@ public class OkHttpClientMoniLogInterceptor {
         RequestBody requestBody = request.body();
         if (requestBody != null) {
             if (requestBody instanceof MultipartBody) {
-                bodyParams =  "Binary Data";
-            }else{
+                bodyParams = "Binary Data";
+            } else {
 //                Buffer buffer = new Buffer();
 //                requestBody.writeTo(buffer);
 //                bodyParams = buffer.readUtf8();
@@ -139,7 +142,7 @@ public class OkHttpClientMoniLogInterceptor {
         }
 
         // 请求头参数
-        Map<String, String> headerMap =new HashMap<>();
+        Map<String, String> headerMap = new HashMap<>();
         Headers headers = request.headers();
         for (int i = 0, size = headers.size(); i < size; i++) {
             String name = headers.name(i);
@@ -164,13 +167,13 @@ public class OkHttpClientMoniLogInterceptor {
         if (responseBody == null) {
             return "";
         }
-        String responseBodyString ="";
-        try{
+        String responseBodyString = "";
+        try {
             BufferedSource source = responseBody.source();
             source.request(Long.MAX_VALUE); // request the entire body.
             Buffer buffer = source.getBuffer();
             responseBodyString = buffer.clone().readString(StandardCharsets.UTF_8);
-        }catch (IOException e){
+        } catch (IOException e) {
             MoniLogUtil.innerDebug("getOutput error", e);
         }
         return responseBodyString;
