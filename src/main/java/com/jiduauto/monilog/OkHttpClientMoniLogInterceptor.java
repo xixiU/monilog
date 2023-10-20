@@ -41,7 +41,7 @@ public class OkHttpClientMoniLogInterceptor {
             Response response = null;
             MoniLogParams p = new MoniLogParams();
             try {
-                p.setLogPoint(LogPoint.ok_http_client);
+                p.setLogPoint(LogPoint.http_client);
                 long nowTime = System.currentTimeMillis();
                 try {
                     response = chain.proceed(request);
