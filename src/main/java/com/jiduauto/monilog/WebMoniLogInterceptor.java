@@ -291,8 +291,8 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
                 return null;
             }
             String payload;
-            // 限制length字节数组大于10w时不解析
-            if (buf.length > 10000 * 10) {
+            // 限制length字节数组大于5w时不解析
+            if (buf.length > 10000 * 5) {
                 payload = "[Data too long length:" + buf.length + "]";
                 return payload;
             }
