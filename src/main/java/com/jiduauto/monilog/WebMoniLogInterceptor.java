@@ -150,9 +150,13 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
                 ResultParseUtil.parseResultAndSet(cl, json, logParams);
             }
         } catch (ClientAbortException e){
-            // 解析请求时，客服端断开连接，此类异常直接吞掉
-            // 防止大量出现【org.apache.catalina.connector.ClientAbortException: java.io.IOException: Broken pipe/java.io.IOException: Connection reset by peer等】
-            log.info("ClientAbortException failed: {}", e.getMessage());
+            // 解析请求时，客户端断开连接，异常直接抛出去
+            logParams.setSuccess(false);
+            logParams.setException(e);
+            ErrorInfo errorInfo = ExceptionUtil.parseException(e);
+            logParams.setMsgCode(errorInfo.getErrorCode());
+            logParams.setMsgInfo(errorInfo.getErrorMsg());
+            throw e;
         } catch (Exception e) {
             // 业务异常
             if (e == bizException) {
