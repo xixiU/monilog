@@ -108,10 +108,6 @@ class MoniLogProperties implements InitializingBean {
      */
     private HttpClientProperties httpclient = new HttpClientProperties();
 
-    /**
-     * okHttpClient监控配置
-     */
-    private OkHttpClientProperties okhttpclient = new OkHttpClientProperties();
 
     boolean isComponentEnable(ComponentEnum componentName, boolean componentEnable) {
         // 这里必须判断全局enable开关，某个应用启动后修改enable为false会导致无法生效
@@ -153,9 +149,6 @@ class MoniLogProperties implements InitializingBean {
         }
         if (isComponentEnable(ComponentEnum.rocketmq, rocketmq.isEnable())) {
             log.info(">>>monilog rocketmq start...");
-        }
-        if (isComponentEnable(ComponentEnum.okhttp, rocketmq.isEnable())) {
-
         }
         // 启用配置更新
         addApolloListener();
@@ -211,20 +204,17 @@ class MoniLogProperties implements InitializingBean {
                 }
             }
         } finally {
-            resetDefaultBoolExpr(this.getFeign(), this.getHttpclient(), this.okhttpclient, this.getGlobalDefaultBoolExpr());
+            resetDefaultBoolExpr(this.getFeign(), this.getHttpclient(), this.getGlobalDefaultBoolExpr());
         }
     }
 
 
-    private static void resetDefaultBoolExpr(FeignProperties feign, HttpClientProperties httpclient,OkHttpClientProperties okhttpClient, String globalDefaultBoolExpr ) {
+    private static void resetDefaultBoolExpr(FeignProperties feign, HttpClientProperties httpclient, String globalDefaultBoolExpr ) {
         if (feign != null) {
             feign.resetDefaultBoolExpr(globalDefaultBoolExpr);
         }
         if (httpclient != null) {
             httpclient.resetDefaultBoolExpr(globalDefaultBoolExpr);
-        }
-        if (okhttpClient != null) {
-            okhttpClient.resetDefaultBoolExpr(globalDefaultBoolExpr);
         }
     }
 
@@ -536,46 +526,4 @@ class MoniLogProperties implements InitializingBean {
         }
     }
 
-    @Getter
-    @Setter
-    static class OkHttpClientProperties {
-        /**
-         * 开启httpClient监控+日志
-         */
-        private boolean enable = true;
-        /**
-         * httpClient的详情日志输出级别，默认仅异常时输出
-         */
-        private LogOutputLevel detailLogLevel;
-
-        /**
-         * 不监控的url清单，支持模糊路径如a/*
-         */
-        private Set<String> urlBlackList;
-
-        /**
-         * 不监控的host清单，支持模糊路径如a/*,仅当此配置不空且元素个数大于0时才生效
-         */
-        private Set<String> hostBlackList;
-
-//        /**
-//         * 不监控的特定业务client类，支持模糊路径如com.ecwid.**，注意模糊匹配语法：?匹配单个字符，*匹配0个或多个字符，**匹配0个或多个目录
-//         */
-//        private Set<String> clientBlackList = Sets.newHashSet("com.ecwid.consul.**");
-
-        /**
-         * 解析httpClient调用结果的默认表达式，默认校验返回编码是否等于0或者200有一个匹配即认为调用成功,多个表达式直接逗号分割.
-         * 注意，如果表达式前以"+"开头，则表示在原有默认表达式的基础上追加，否则会覆盖原默认表达式
-         */
-        private String defaultBoolExpr = "+$.status==200";
-
-        /**
-         * httpClient慢接口，单位毫秒.
-         */
-        private long longRt = 3000;
-
-        void resetDefaultBoolExpr(String globalDefaultBoolExpr) {
-            this.defaultBoolExpr = ResultParser.mergeBoolExpr(globalDefaultBoolExpr, defaultBoolExpr);
-        }
-    }
 }

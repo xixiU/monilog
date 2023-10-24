@@ -33,7 +33,7 @@ public class OkHttpClientMoniLogInterceptor {
             //携带有参数的uri
             String host = request.url().host();
             String path = request.url().url().getPath();
-            MoniLogProperties.OkHttpClientProperties okHttpClientProperties = checkEnable(host, path);
+            MoniLogProperties.HttpClientProperties okHttpClientProperties = checkEnable(host, path);
             if (okHttpClientProperties == null) {
                 return chain.proceed(request);
             }
@@ -104,15 +104,15 @@ public class OkHttpClientMoniLogInterceptor {
     /**
      * 校验是否开启
      */
-    private static MoniLogProperties.OkHttpClientProperties checkEnable(String host, String path) {
+    private static MoniLogProperties.HttpClientProperties checkEnable(String host, String path) {
         MoniLogProperties mp = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
         // 判断开关
         if (mp == null ||
-                !mp.isComponentEnable(ComponentEnum.okhttp, mp.getOkhttpclient().isEnable())) {
+                !mp.isComponentEnable(ComponentEnum.httpclient, mp.getHttpclient().isEnable())) {
             return null;
         }
-        MoniLogProperties.OkHttpClientProperties clientProperties = mp.getOkhttpclient();
-        boolean enable = mp.isComponentEnable(ComponentEnum.okhttp, clientProperties.isEnable());
+        MoniLogProperties.HttpClientProperties clientProperties = mp.getHttpclient();
+        boolean enable = mp.isComponentEnable(ComponentEnum.httpclient, clientProperties.isEnable());
         if (!enable) {
             return null;
         }
