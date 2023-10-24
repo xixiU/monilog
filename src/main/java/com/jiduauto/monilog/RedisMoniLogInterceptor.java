@@ -108,7 +108,7 @@ public class RedisMoniLogInterceptor {
             try {
                 m = JedisConnectionFactory.class.getDeclaredMethod("getConnection");
             } catch (Throwable ex) {
-                MoniLogUtil.innerDebug("doFeignInvocationRecord error", ex);
+                MoniLogUtil.innerDebug("redisRecordException error", ex);
                 return;
             }
             MoniLogParams p = new MoniLogParams();

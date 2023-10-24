@@ -33,7 +33,7 @@ public final class FeignMoniLogInterceptor {
             Method execute = Client.Default.class.getDeclaredMethod("execute", Request.class, Request.Options.class);
             return doFeignInvocationRecord(execute, request, response, cost, ex);
         } catch (Throwable e) {
-            MoniLogUtil.innerDebug("doFeignInvocationRecord error", e);
+            MoniLogUtil.innerDebug("FeignMoniLogInterceptor doRecord error", e);
         }
         return response;
     }
