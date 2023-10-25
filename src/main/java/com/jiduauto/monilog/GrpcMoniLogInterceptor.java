@@ -180,8 +180,8 @@ class GrpcMoniLogInterceptor {
             MethodDescriptor<ReqT, RespT> method = call.getMethodDescriptor();
             Map<String, Object> context = new ConcurrentHashMap<>();
             Class<?> cls = getCurrentProtoClass(method);
-            // grpc server 会通过InterceptCallHandler调用到业务代码
-            StackTraceElement ste = ThreadUtil.getNextClassFromStack(cls,"io.grpc");
+            // grpc server 会通过InterceptCallHandler、GrpcAccessInterceptor调用到业务代码
+            StackTraceElement ste = ThreadUtil.getNextClassFromStack(cls,"io.grpc", "com.jiduauto.common");
             Class<?> serviceCls = GrpcService.class;
             String serviceName = method.getServiceName();
             String methodName = buildActionName(method.getFullMethodName(), serviceName);
