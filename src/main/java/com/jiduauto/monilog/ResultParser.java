@@ -10,10 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author yepei
@@ -98,9 +95,10 @@ final class ResultParser {
         if (obj instanceof Boolean) {
             return (Boolean) obj;
         }
-        if (obj instanceof List) {
+        if (obj instanceof Collection) {
             return true;
         }
+
         if (StringUtils.isBlank(jsonpaths)) {
             jsonpaths = Default_Bool_Expr;
         }
