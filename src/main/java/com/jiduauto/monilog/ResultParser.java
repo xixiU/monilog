@@ -96,7 +96,7 @@ final class ResultParser {
             return (Boolean) obj;
         }
         if (obj instanceof Collection) {
-            return true;
+            return null;
         }
 
         if (StringUtils.isBlank(jsonpaths)) {
