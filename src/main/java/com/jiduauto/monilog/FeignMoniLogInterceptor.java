@@ -2,10 +2,7 @@ package com.jiduauto.monilog;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import feign.Client;
-import feign.Request;
-import feign.Response;
-import feign.RetryableException;
+import feign.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -34,7 +31,7 @@ public final class FeignMoniLogInterceptor {
             Method execute = Client.Default.class.getDeclaredMethod("execute", Request.class, Request.Options.class);
             return doFeignInvocationRecord(execute, request, response, cost, ex);
         } catch (Throwable e) {
-            MoniLogUtil.innerDebug("FeignMoniLogInterceptor doRecord error", e);
+            MoniLogUtil.innerDebug("FeignMoniLogInterceptor.doRecord error", e);
         }
         return response;
     }
@@ -131,10 +128,10 @@ public final class FeignMoniLogInterceptor {
             bufferedResp.close();
         } catch (Exception e) {
             // 在执行解析的过程中可能会出现连接中断，这种情况需要把异常抛出去
-            if (e instanceof RetryableException) {
+            if (e instanceof FeignException) {
                 ex = e;
                 return getFailedResponseWhenFailed(response, ex, mlp);
-            } // 其他异常可能是monilog的bug导致的
+            } //其他异常可能是monilog的bug导致的
             MoniLogUtil.innerDebug("doFeignInvocationRecord error", e);
             ret = response;
         } finally {

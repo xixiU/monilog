@@ -96,10 +96,6 @@ final class ResultParser {
         if (obj instanceof Boolean) {
             return (Boolean) obj;
         }
-//        if (obj instanceof Collection) {
-//            return null;
-//        }
-
         if (StringUtils.isBlank(jsonpaths)) {
             jsonpaths = Default_Bool_Expr;
         }

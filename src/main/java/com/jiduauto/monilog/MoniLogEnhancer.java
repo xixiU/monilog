@@ -24,17 +24,16 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
     private static final String HTTP_ASYNC_CLIENT_EXCHANGE_HANDLER = "org.apache.http.impl.nio.client.AbstractClientExchangeHandler";
     private static final String HTTP_ASYNC_CLIENT_BUILDER = "org.apache.http.impl.nio.client.HttpAsyncClientBuilder";
     private static final String HTTP_CLIENT_BUILDER = "org.apache.http.impl.client.HttpClientBuilder";
+    private static final String OK_HTTP_CLIENT_BUILDER = "okhttp3.OkHttpClient$Builder";
     private static final String FEIGN_CLIENT = "feign.Client";
     private static final String ROCKET_MQ_CONSUMER = "org.apache.rocketmq.client.consumer.DefaultMQPushConsumer";
     private static final String ROCKET_MQ_PRODUCER = "org.apache.rocketmq.client.impl.producer.DefaultMQProducerImpl";
     private static final String JEDIS_CONN_FACTORY = "org.springframework.data.redis.connection.jedis.JedisConnectionFactory";
     private static final String LETTUCE_CONN_FACTORY = "org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory";
 
-    private static final String OK_HTTP_CLIENT_BUILDER = "okhttp3.OkHttpClient$Builder";
-
-
     private static final Map<String, AtomicBoolean> FLAGS = new HashMap<String, AtomicBoolean>() {{
         put(HTTP_CLIENT_BUILDER, new AtomicBoolean());
+        put(OK_HTTP_CLIENT_BUILDER, new AtomicBoolean());
         put(HTTP_SYNC_CLIENT, new AtomicBoolean());
         put(HTTP_ASYNC_CLIENT_BUILDER, new AtomicBoolean());
         put(HTTP_ASYNC_CLIENT_EXCHANGE_HANDLER, new AtomicBoolean());
@@ -43,7 +42,6 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         put(ROCKET_MQ_PRODUCER, new AtomicBoolean());
         put(JEDIS_CONN_FACTORY, new AtomicBoolean());
         put(LETTUCE_CONN_FACTORY, new AtomicBoolean());
-        put(OK_HTTP_CLIENT_BUILDER, new AtomicBoolean());
     }};
 
     private MoniLogEnhancer(SpringApplication app, String[] args) {
@@ -52,29 +50,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         enhanceRocketMqConsumer();
         enhanceRocketMqProducer();
         enhanceRedisConnFactory();
-        enhanceOkHttpClient();
         SpringApplicationRunListener.super.starting();
-    }
-
-    /**
-     * 增强OkHttpClient
-     */
-    private static void enhanceOkHttpClient() {
-        String clsName = OK_HTTP_CLIENT_BUILDER;
-        if (FLAGS.get(OK_HTTP_CLIENT_BUILDER).get()) {
-            return;
-        }
-        // 对构造函数进行增强，添加一个拦截器
-        try{
-            CtClass ctCls = getCtClass(clsName);
-            String body = "{this.addInterceptor(new "+OkHttpClientMoniLogInterceptor.class.getCanonicalName()+".OkHttpInterceptor());}";
-            ctCls.getConstructor("()V").insertAfter(body);
-            Class<?> targetCls = ctCls.toClass();
-            log.info("constructor of '{}' has bean enhanced.", targetCls.getCanonicalName());
-            FLAGS.get(clsName).set(true);
-        }catch (Throwable e){
-            logWarn(e, clsName);
-        }
     }
 
     @Override
@@ -91,6 +67,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         if (success) {
             doEnhanceAsyncErrorHandler();
         }
+        enhanceOkHttpClient();
     }
 
     private static void enhanceFeignClient() {
@@ -179,6 +156,27 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             logWarn(e, clsName);
         }
         return false;
+    }
+
+    /**
+     * 增强OkHttpClient
+     */
+    private static void enhanceOkHttpClient() {
+        String clsName = OK_HTTP_CLIENT_BUILDER;
+        if (FLAGS.get(OK_HTTP_CLIENT_BUILDER).get()) {
+            return;
+        }
+        // 对构造函数进行增强，添加一个拦截器
+        try{
+            CtClass ctCls = getCtClass(clsName);
+            String body = "{this.addInterceptor(new "+OkHttpClientMoniLogInterceptor.class.getCanonicalName()+".OkHttpInterceptor());}";
+            ctCls.getConstructor("()V").insertAfter(body);
+            Class<?> targetCls = ctCls.toClass();
+            log.info("constructor of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            FLAGS.get(clsName).set(true);
+        }catch (Throwable e){
+            logWarn(e, clsName);
+        }
     }
 
     private static void doEnhanceSyncErrorHandler() {

@@ -108,7 +108,6 @@ class MoniLogProperties implements InitializingBean {
      */
     private HttpClientProperties httpclient = new HttpClientProperties();
 
-
     boolean isComponentEnable(ComponentEnum componentName, boolean componentEnable) {
         // 这里必须判断全局enable开关，某个应用启动后修改enable为false会导致无法生效
         if (!componentEnable || !enable) {
@@ -209,7 +208,7 @@ class MoniLogProperties implements InitializingBean {
     }
 
 
-    private static void resetDefaultBoolExpr(FeignProperties feign, HttpClientProperties httpclient, String globalDefaultBoolExpr ) {
+    private static void resetDefaultBoolExpr(FeignProperties feign, HttpClientProperties httpclient, String globalDefaultBoolExpr) {
         if (feign != null) {
             feign.resetDefaultBoolExpr(globalDefaultBoolExpr);
         }
@@ -525,5 +524,4 @@ class MoniLogProperties implements InitializingBean {
             this.defaultBoolExpr = ResultParser.mergeBoolExpr(globalDefaultBoolExpr, defaultBoolExpr);
         }
     }
-
 }

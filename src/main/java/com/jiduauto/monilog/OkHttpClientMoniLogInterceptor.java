@@ -46,10 +46,17 @@ public class OkHttpClientMoniLogInterceptor {
                 try {
                     response = chain.proceed(request);
                     p.setSuccess(true);
+                    p.setMsgCode(ErrorEnum.SUCCESS.name());
+                    p.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
                 } catch (Exception e) {
                     bizException = e;
                     p.setSuccess(false);
                     p.setException(e);
+                    ErrorInfo errorInfo = ExceptionUtil.parseException(e);
+                    if (errorInfo != null) {
+                        p.setMsgCode(errorInfo.getErrorCode());
+                        p.setMsgInfo(errorInfo.getErrorMsg());
+                    }
                 }
                 p.setCost(System.currentTimeMillis() - nowTime);
                 Class<?> serviceCls = OkHttpClient.class;
@@ -59,8 +66,7 @@ public class OkHttpClientMoniLogInterceptor {
                     try {
                         serviceCls = Class.forName(st.getClassName());
                         methodName = st.getMethodName();
-                    } catch (Exception ignore) {
-                    }
+                    } catch (Exception ignore) {}
                 }
                 p.setServiceCls(serviceCls);
                 p.setService(p.getServiceCls().getSimpleName());
@@ -70,21 +76,18 @@ public class OkHttpClientMoniLogInterceptor {
                 if (response != null) {
                     // 先塞调用的结果
                     p.setMsgCode(String.valueOf(response.code()));
-                    p.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
-
                     String responseBody = getOutputBody(response.body());
                     JSON jsonBody = StringUtil.tryConvert2Json(responseBody);
                     p.setOutput(jsonBody == null ? responseBody : jsonBody);
                     ParsedResult pr = ResultParseUtil.parseResult(jsonBody, null, null, okHttpClientProperties.getDefaultBoolExpr(), null, null);
-                    if (p.isSuccess()) {
-                        //如果外层响应码是200，则再看内层是否成功
-                        p.setSuccess(pr.isSuccess());
-                    }
-                    if (StringUtils.isNotBlank(pr.getMsgCode())) {
-                        p.setMsgCode(pr.getMsgCode());
-                    }
-                    if (StringUtils.isNotBlank(pr.getMsgInfo())) {
-                        p.setMsgInfo(pr.getMsgInfo());
+                    if (pr != null) {
+                        p.setSuccess(p.isSuccess() && pr.isSuccess());
+                        if (StringUtils.isNotBlank(pr.getMsgCode())) {
+                            p.setMsgCode(pr.getMsgCode());
+                        }
+                        if (StringUtils.isNotBlank(pr.getMsgInfo())) {
+                            p.setMsgInfo(pr.getMsgInfo());
+                        }
                     }
                 }
                 return response;
@@ -92,12 +95,11 @@ public class OkHttpClientMoniLogInterceptor {
                 if (e == bizException) {
                     throw e;
                 }
-                MoniLogUtil.innerDebug("OkHttpClientMoniLogInterceptor.OkHttpInterceptor.process error", e);
+                MoniLogUtil.innerDebug("OkHttpInterceptor.intercept error", e);
                 return response;
             } finally {
                 MoniLogUtil.log(p);
             }
-
         }
     }
 
@@ -112,14 +114,12 @@ public class OkHttpClientMoniLogInterceptor {
             return null;
         }
         MoniLogProperties.HttpClientProperties clientProperties = mp.getHttpclient();
-        boolean enable = mp.isComponentEnable(ComponentEnum.httpclient, clientProperties.isEnable());
-        if (!enable) {
+        if (!clientProperties.isEnable()) {
             return null;
         }
         Set<String> urlBlackList = clientProperties.getUrlBlackList();
         Set<String> hostBlackList = clientProperties.getHostBlackList();
-        enable = !StringUtil.checkPathMatch(urlBlackList, path) && !StringUtil.checkPathMatch(hostBlackList, host);
-        return enable ? clientProperties : null;
+        return StringUtil.checkPathMatch(urlBlackList, path) || StringUtil.checkPathMatch(hostBlackList, host) ? null : clientProperties;
     }
 
     private static JSONObject getInputObject(Request request) {
@@ -180,13 +180,13 @@ public class OkHttpClientMoniLogInterceptor {
             body.writeTo(buffer);
             return buffer.readUtf8();
         } catch (IOException e) {
-            MoniLogUtil.innerDebug("getInputBodyParams error", e);
+            MoniLogUtil.innerDebug("OkHttpClientMoniLogInterceptor.getInputBodyParams error", e);
             return null;
         }
     }
     private static String getOutputBody(ResponseBody responseBody) {
         if (responseBody == null) {
-            return "";
+            return null;
         }
         String responseBodyString = "";
         try {
@@ -195,7 +195,7 @@ public class OkHttpClientMoniLogInterceptor {
             Buffer buffer = source.getBuffer();
             responseBodyString = buffer.clone().readString(StandardCharsets.UTF_8);
         } catch (IOException e) {
-            MoniLogUtil.innerDebug("getOutput error", e);
+            MoniLogUtil.innerDebug("OkHttpClientMoniLogInterceptor.getOutputBody error", e);
         }
         return responseBodyString;
     }
