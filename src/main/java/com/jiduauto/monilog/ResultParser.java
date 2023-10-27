@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONPath;
 import com.google.common.base.Preconditions;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -95,9 +96,9 @@ final class ResultParser {
         if (obj instanceof Boolean) {
             return (Boolean) obj;
         }
-        if (obj instanceof Collection) {
-            return null;
-        }
+//        if (obj instanceof Collection) {
+//            return null;
+//        }
 
         if (StringUtils.isBlank(jsonpaths)) {
             jsonpaths = Default_Bool_Expr;
@@ -184,11 +185,8 @@ final class ResultParser {
         boolean isMethod = path.contains("(") && path.contains(")");
         if (!isMethod) {
             try {
-                boolean isEmptyString = (obj instanceof CharSequence && ((CharSequence) obj).length() == 0)
-                        || (obj instanceof String && "null".equalsIgnoreCase((String) obj));
-                Object val = isEmptyString ? null : JSONPath.eval(obj, path);
-                boolean foundPath = val != null || JSONPath.contains(obj, path);
-                return new TempResult(val, foundPath);
+                boolean foundPath = !(obj instanceof String && "null".equalsIgnoreCase((String) obj)) && !ObjectUtils.isEmpty(obj) && JSONPath.contains(obj, path);
+                return new TempResult(foundPath ? JSONPath.eval(obj, path) : null, foundPath);
             } catch (NullPointerException e) {
                 return new TempResult(null, false);
             } catch (Throwable e) {
