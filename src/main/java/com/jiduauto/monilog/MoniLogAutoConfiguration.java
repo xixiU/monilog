@@ -27,6 +27,11 @@ class MoniLogAutoConfiguration {
         return new MoniLogPostProcessor(moniLogProperties);
     }
 
+    @Bean
+    NoHandlerFoundExceptionHandler initRestResponseEntityExceptionHandler(){
+        return new NoHandlerFoundExceptionHandler();
+    }
+
     @Order(Ordered.HIGHEST_PRECEDENCE)
     @Bean("__springUtils")
     static SpringUtils springUtils() {
