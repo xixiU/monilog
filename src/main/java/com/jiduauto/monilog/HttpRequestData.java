@@ -8,6 +8,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.net.URL;
 import java.util.*;
 
 /**
@@ -20,6 +21,7 @@ class HttpRequestData {
     private Object body;
     private String query;
     private Map<String, String> headers;
+    private String originUrl;
 
     static HttpRequestData of1(String requestUrl, String bodyParams, Map<String, String[]> parameters, Map<String, String> headers) {
         Map<String, Collection<String>> queries = new HashMap<>();
@@ -53,6 +55,7 @@ class HttpRequestData {
      */
     static HttpRequestData of3(String requestUrl, String bodyParams, Map<String, Collection<String>> queries, Map<String, String> headers) {
         HttpRequestData data = new HttpRequestData();
+        data.originUrl = requestUrl;
         if (StringUtils.isNotBlank(bodyParams)) {
             JSON json = StringUtil.tryConvert2Json(bodyParams);
             data.body = json == null ? bodyParams : json;
@@ -84,6 +87,9 @@ class HttpRequestData {
         }
         if (MapUtils.isNotEmpty(headers)) {
             obj.put("headers", headers);
+        }
+        if (StringUtils.isNotBlank(originUrl)) {
+            obj.put("originUrl", originUrl);
         }
         return obj;
     }
@@ -123,16 +129,27 @@ class HttpRequestData {
 
 
     /**
-     * 提取路径，如http://baidu.com/test?a=1 返回http://baidu.com/test
-     * host信息是可枚举的，没必要区分开。
+     * 提取路径，如http://baidu.com/test?a=1 返回/test,此处针对restful分格的接口也会存在问题，如/getOrder/123
      * @param url url
      * @return 仅路径信息不包含参数与host
      */
     public static String extractPath(String url) {
-        if (StringUtils.isBlank(url) || !url.contains("?")) {
+        if (StringUtils.isBlank(url)) {
             return url;
         }
-        String[] uriAndParams = url.split("\\?");
-        return uriAndParams[0];
+        try{
+            URL urlResource = new URL(url);
+            if (StringUtils.isNotBlank(urlResource.getPath())) {
+                return urlResource.getPath();
+            }
+        }catch (Exception e){
+            if (StringUtils.isBlank(url) || !url.contains("?")) {
+                return url;
+            }
+            String[] uriAndParams = url.split("\\?");
+            return uriAndParams[0];
+        }
+        return url;
     }
 }
+
