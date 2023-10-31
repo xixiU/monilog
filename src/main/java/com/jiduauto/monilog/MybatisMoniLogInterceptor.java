@@ -63,10 +63,12 @@ class MybatisMoniLogInterceptor {
                 logParams.setService(invocationInfo.serviceCls.getSimpleName());
                 logParams.setAction(invocationInfo.methodName);
                 logParams.setInput(new String[]{invocationInfo.sql});
-                try {
-                    obj = invocation.proceed();
-                } catch (Throwable t) {
-                    bizException = t;
+                if (bizException == null) {
+                    try {
+                        obj = invocation.proceed();
+                    } catch (Throwable t) {
+                        bizException = t;
+                    }
                 }
                 logParams.setOutput(obj);
                 costTime = System.currentTimeMillis() - nowTime + 1;
