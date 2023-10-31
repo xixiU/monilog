@@ -1,7 +1,7 @@
 package com.jiduauto.monilog;
 
+import javassist.*;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.ibatis.javassist.*;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringApplicationRunListener;
 import org.springframework.core.Ordered;
