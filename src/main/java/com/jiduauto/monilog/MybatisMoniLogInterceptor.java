@@ -53,22 +53,15 @@ class MybatisMoniLogInterceptor {
             Object obj = null;
             try {
                 // 获取调用的目标对象
-                MybatisInvocationInfo invocationInfo = null;
-                try{
-                    invocationInfo = parseMybatisExecuteInfo(invocation);
-                }catch (Throwable e){
-                    bizException = e;
-                }
+                MybatisInvocationInfo invocationInfo = parseMybatisExecuteInfo(invocation);
                 logParams.setServiceCls(invocationInfo.serviceCls);
                 logParams.setService(invocationInfo.serviceCls.getSimpleName());
                 logParams.setAction(invocationInfo.methodName);
                 logParams.setInput(new String[]{invocationInfo.sql});
-                if (bizException == null) {
-                    try {
-                        obj = invocation.proceed();
-                    } catch (Throwable t) {
-                        bizException = t;
-                    }
+                try {
+                    obj = invocation.proceed();
+                } catch (Throwable t) {
+                    bizException = t;
                 }
                 logParams.setOutput(obj);
                 costTime = System.currentTimeMillis() - nowTime + 1;
@@ -123,7 +116,6 @@ class MybatisMoniLogInterceptor {
             String methodName = invocation.getMethod().getName();
             MybatisInvocationInfo info = new MybatisInvocationInfo(serviceCls, methodName);
             String sql = "[parseSqlFailed]";
-            Throwable bizException = null;
             try {
                 if (Executor.class.isAssignableFrom(serviceCls)) {
                     Object[] args = invocation.getArgs();
@@ -135,10 +127,8 @@ class MybatisMoniLogInterceptor {
                     try{
                         // 获取sql
                         sql = mappedStatement.getBoundSql(args[1]).getSql().replaceAll("--[^\n|\\\\n].+(\n|\\\\n)", "").replaceAll("(\\\\n)+|\n+|\r+|\\s+", " ");
-                    }catch (Throwable e){
-                        bizException = e;
-                        throw e;
-                        }
+                    }catch (Throwable ignored){}
+                        // 这个错误在执行的时候抛出来，此错误直接吞掉
                     }
                 // 这段代码走不到了
                 if (StatementHandler.class.isAssignableFrom(serviceCls)) {
@@ -154,9 +144,6 @@ class MybatisMoniLogInterceptor {
                     }
                 }
             } catch (Throwable e) {
-                if (e == bizException) {
-                    throw e;
-                }
                 MoniLogUtil.innerDebug("parseMybatisExecuteInfo error", e);
             }
             info.sql = sql;
