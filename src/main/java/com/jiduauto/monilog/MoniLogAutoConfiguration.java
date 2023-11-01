@@ -76,7 +76,7 @@ class MoniLogAutoConfiguration {
         }
     }
 
-    @ConditionalOnClass(name = "org.apache.ibatis.plugin.Interceptor")
+    @ConditionalOnClass(name = "org.mybatis.spring.SqlSessionFactoryBean")
     @Bean
     MybatisMoniLogInterceptor.MybatisInterceptor mybatisMonitorSqlFilter() {
         log.info(">>>monilog {} start...", ComponentEnum.mybatis);

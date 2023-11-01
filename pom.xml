@@ -29,7 +29,7 @@
         <monitor-spring-boot-starter.version>1.1.1</monitor-spring-boot-starter.version>
         <xxl.job.version>2.3.1</xxl.job.version>
         <rocketmq.starter.version>2.2.3</rocketmq.starter.version>
-        <mybatis.starter.version>3.0.2</mybatis.starter.version>
+        <mybatis.version>3.5.2</mybatis.version>
         <grpc.starter.version>2.10.3</grpc.starter.version>
         <openfeign.version>10.10.1</openfeign.version>
         <spring.data.redis.version>2.7.2</spring.data.redis.version>
@@ -169,10 +169,9 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.mybatis.spring.boot</groupId>
-            <artifactId>mybatis-spring-boot-starter</artifactId>
-            <version>${mybatis.starter.version}</version>
-            <scope>provided</scope>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis</artifactId>
+            <version>${mybatis.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.rocketmq</groupId>
