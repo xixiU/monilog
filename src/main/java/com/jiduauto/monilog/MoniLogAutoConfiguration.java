@@ -27,10 +27,10 @@ class MoniLogAutoConfiguration {
         return new MoniLogPostProcessor(moniLogProperties);
     }
 
-
     @Bean
-    ExceptionHandler initGlobalExceptionHandler() {
-        return new ExceptionHandler();
+    @ConditionalOnProperty(name = "spring.mvc.throw-exception-if-no-handler-found", havingValue = "true")
+    MoniLogExceptionHandler initGlobalExceptionHandler() {
+        return new MoniLogExceptionHandler();
     }
 
     @Order(Ordered.HIGHEST_PRECEDENCE)
