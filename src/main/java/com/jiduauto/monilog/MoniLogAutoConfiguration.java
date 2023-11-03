@@ -27,9 +27,10 @@ class MoniLogAutoConfiguration {
         return new MoniLogPostProcessor(moniLogProperties);
     }
 
+
     @Bean
-    NoHandlerFoundExceptionHandler initRestResponseEntityExceptionHandler(){
-        return new NoHandlerFoundExceptionHandler();
+    ExceptionHandler initGlobalExceptionHandler() {
+        return new ExceptionHandler();
     }
 
     @Order(Ordered.HIGHEST_PRECEDENCE)
