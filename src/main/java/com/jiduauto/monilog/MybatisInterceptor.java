@@ -20,17 +20,14 @@ import org.apache.ibatis.session.RowBounds;
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
 import java.util.Map;
-
-
-class MybatisMoniLogInterceptor {
-    @Intercepts({
+@Intercepts({
             @Signature(type = Executor.class, method = "query", args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class, CacheKey.class, BoundSql.class}),
             @Signature(type = Executor.class, method = "query", args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class}),
             @Signature(type = Executor.class, method = "queryCursor", args = {MappedStatement.class, Object.class, RowBounds.class}),
             @Signature(type = Executor.class, method = "update", args = {MappedStatement.class, Object.class})
     })
     @Slf4j
-    static class MybatisInterceptor implements Interceptor {
+class MybatisInterceptor implements Interceptor {
         private static final Map<String, Class<?>> CACHED_CLASS = new HashMap<>();
 
         @SneakyThrows
@@ -187,4 +184,3 @@ class MybatisMoniLogInterceptor {
             return expectedStatementHandler;
         }
     }
-}

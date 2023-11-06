@@ -79,9 +79,10 @@ class MoniLogAutoConfiguration {
 
     @ConditionalOnClass(name = "org.apache.ibatis.plugin.Interceptor")
     @Bean
-    MybatisMoniLogInterceptor.MybatisInterceptor mybatisMonitorSqlFilter() {
+    @ConditionalOnProperty(prefix = "monilog.mybatis", name = "enable", havingValue = "true", matchIfMissing = true)
+    MoniLogMybatisInterceptorFactoryBean moniLog() {
         log.info(">>>monilog {} start...", ComponentEnum.mybatis);
-        return new MybatisMoniLogInterceptor.MybatisInterceptor();
+        return new MoniLogMybatisInterceptorFactoryBean();
     }
 
     @ConditionalOnWebApplication
