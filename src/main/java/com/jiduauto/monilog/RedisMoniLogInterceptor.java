@@ -305,19 +305,18 @@ public class RedisMoniLogInterceptor {
     }
 
     private static Object tryDeserialize(Object arg, boolean first) {
-        if (isByteKey(arg)) {
-            byte[] byted = getByteKey(arg);
-            if (first) {
-                return stringSerializer.deserialize(byted);
-            } else {
-                try {
-                    return jdkSerializer.deserialize(byted);
-                } catch (SerializationException e) {
-                    return stringSerializer.deserialize(byted);
-                }
-            }
-        } else {
+        if (!isByteKey(arg)) {
             return arg;
+        }
+        byte[] byted = getByteKey(arg);
+        if (first) {
+            return stringSerializer.deserialize(byted);
+        } else {
+            try {
+                return jdkSerializer.deserialize(byted);
+            } catch (SerializationException e) {
+                return stringSerializer.deserialize(byted);
+            }
         }
     }
 
