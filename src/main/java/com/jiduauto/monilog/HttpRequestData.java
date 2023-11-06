@@ -139,9 +139,7 @@ class HttpRequestData {
         }
         try{
             URL urlResource = new URL(url);
-            if (StringUtils.isNotBlank(urlResource.getPath())) {
-                return urlResource.getPath();
-            }
+            return urlResource.getPath();
         }catch (Exception e){
             if (StringUtils.isBlank(url) || !url.contains("?")) {
                 return url;
@@ -149,7 +147,6 @@ class HttpRequestData {
             String[] uriAndParams = url.split("\\?");
             return uriAndParams[0];
         }
-        return url;
     }
 }
 
