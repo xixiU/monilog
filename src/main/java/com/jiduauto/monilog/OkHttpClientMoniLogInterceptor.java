@@ -62,7 +62,7 @@ public class OkHttpClientMoniLogInterceptor {
                 p.setCost(System.currentTimeMillis() - nowTime);
                 Class<?> serviceCls = OkHttpClient.class;
                 String methodName = request.method();
-                StackTraceElement st = ThreadUtil.getNextClassFromStack(OkHttpClientMoniLogInterceptor.class, "okhttp3");
+                StackTraceElement st = ThreadUtil.getNextClassFromStack(OkHttpClientMoniLogInterceptor.class);
                 if (st != null) {
                     try {
                         serviceCls = Class.forName(st.getClassName());
