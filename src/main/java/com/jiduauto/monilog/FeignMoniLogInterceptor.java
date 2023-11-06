@@ -80,7 +80,10 @@ public final class FeignMoniLogInterceptor {
         mlp.setMsgCode(ErrorEnum.SUCCESS.name());
         mlp.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
         if (ex != null) {
-            return getFailedResponseWhenFailed(response, ex, mlp);
+            Response failedResponseWhenFailed = getFailedResponseWhenFailed(response, ex, mlp);
+            MoniLogUtil.log(mlp);
+            return failedResponseWhenFailed;
+
         }
         //包装响应
         Charset charset = request.charset();
@@ -150,7 +153,6 @@ public final class FeignMoniLogInterceptor {
             mlp.setMsgCode(errorInfo.getErrorCode());
             mlp.setMsgInfo(errorInfo.getErrorMsg());
         }
-        MoniLogUtil.log(mlp);
         return response;
     }
 

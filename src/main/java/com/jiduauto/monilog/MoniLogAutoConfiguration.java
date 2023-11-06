@@ -60,7 +60,7 @@ class MoniLogAutoConfiguration {
 
     @Configuration
     static class GrpcMoniLogConfiguration {
-        @Order(-100)
+        @Order(-200)
         @GrpcGlobalServerInterceptor
         @ConditionalOnClass(name = "io.grpc.stub.ServerCalls")
         GrpcMoniLogInterceptor.GrpcLogPrintServerInterceptor grpcLogPrintServerInterceptor() {
@@ -68,7 +68,7 @@ class MoniLogAutoConfiguration {
             return new GrpcMoniLogInterceptor.GrpcLogPrintServerInterceptor();
         }
 
-        @Order(-101)
+        @Order
         @GrpcGlobalClientInterceptor
         @ConditionalOnClass(name = "io.grpc.ClientInterceptor")
         GrpcMoniLogInterceptor.GrpcLogPrintClientInterceptor grpcLogPrintClientInterceptor() {
@@ -77,11 +77,12 @@ class MoniLogAutoConfiguration {
         }
     }
 
-    @ConditionalOnClass(name = "org.mybatis.spring.SqlSessionFactoryBean")
+    @ConditionalOnClass(name = "org.apache.ibatis.plugin.Interceptor")
     @Bean
-    MybatisMoniLogInterceptor.MybatisInterceptor mybatisMonitorSqlFilter() {
+    @ConditionalOnProperty(prefix = "monilog.mybatis", name = "enable", havingValue = "true", matchIfMissing = true)
+    MoniLogMybatisInterceptorFactoryBean moniLog() {
         log.info(">>>monilog {} start...", ComponentEnum.mybatis);
-        return new MybatisMoniLogInterceptor.MybatisInterceptor();
+        return new MoniLogMybatisInterceptorFactoryBean();
     }
 
     @ConditionalOnWebApplication

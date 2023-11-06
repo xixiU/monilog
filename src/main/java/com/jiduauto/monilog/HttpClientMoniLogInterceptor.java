@@ -56,7 +56,7 @@ public final class HttpClientMoniLogInterceptor {
         public void process(HttpRequest request, HttpContext httpContext) throws HttpException, IOException {
             RequestLine requestLine = request.getRequestLine();
             HttpHost host = (HttpHost) httpContext.getAttribute(HttpClientContext.HTTP_TARGET_HOST);
-            String targetHost = host == null ? null : host.getHostName() + (host.getPort() < 0 || host.getPort() == 80 ? "" : ":" + host.getPort());
+//            String targetHost = host == null ? null : host.getHostName() + (host.getPort() < 0 || host.getPort() == 80 ? "" : ":" + host.getPort());
             //携带有参数的uri
             String[] uriAndParams = requestLine.getUri().split("\\?");
             String path = uriAndParams[0];
@@ -107,7 +107,7 @@ public final class HttpClientMoniLogInterceptor {
                 p.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
                 p.setLogPoint(LogPoint.http_client);
 
-                p.setTags(TagBuilder.of("url", targetHost + path, "method", method).toArray());
+                p.setTags(TagBuilder.of("url", path, "method", method).toArray());
                 httpContext.setAttribute(MONILOG_PARAMS_KEY, p);
             } catch (Exception e) {
                 MoniLogUtil.innerDebug("HttpClient.RequestInterceptor.process error", e);

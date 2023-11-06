@@ -14,7 +14,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
- * OkHttpClient的拦截实现
+ * OkHttpClient的拦截实现,
+ * OKHttpClient的同步和异步拦截最后都是通过okhttp3.RealCall#getResponseWithInterceptorChain()执行，参考：https://blog.csdn.net/weixin_41939525/article/details/106419678
  *
  * @author rongjie.yuan
  * @date 2023/10/19 17:35
@@ -33,8 +34,8 @@ public class OkHttpClientMoniLogInterceptor {
             //携带有参数的uri
             String host = request.url().host();
             String path = request.url().url().getPath();
-            MoniLogProperties.HttpClientProperties okHttpClientProperties = checkEnable(host, path);
-            if (okHttpClientProperties == null) {
+            MoniLogProperties.HttpClientProperties httpClientProperties = checkEnable(host, path);
+            if (httpClientProperties == null) {
                 return chain.proceed(request);
             }
             Throwable bizException = null;
@@ -61,7 +62,7 @@ public class OkHttpClientMoniLogInterceptor {
                 p.setCost(System.currentTimeMillis() - nowTime);
                 Class<?> serviceCls = OkHttpClient.class;
                 String methodName = request.method();
-                StackTraceElement st = ThreadUtil.getNextClassFromStack(OkHttpClientMoniLogInterceptor.class, "okhttp3");
+                StackTraceElement st = ThreadUtil.getNextClassFromStack(OkHttpClientMoniLogInterceptor.class);
                 if (st != null) {
                     try {
                         serviceCls = Class.forName(st.getClassName());
@@ -79,7 +80,7 @@ public class OkHttpClientMoniLogInterceptor {
                     String responseBody = getOutputBody(response.body());
                     JSON jsonBody = StringUtil.tryConvert2Json(responseBody);
                     p.setOutput(jsonBody == null ? responseBody : jsonBody);
-                    ParsedResult pr = ResultParseUtil.parseResult(jsonBody, null, null, okHttpClientProperties.getDefaultBoolExpr(), null, null);
+                    ParsedResult pr = ResultParseUtil.parseResult(jsonBody, null, null, httpClientProperties.getDefaultBoolExpr(), null, null);
                     if (pr != null) {
                         p.setSuccess(p.isSuccess() && pr.isSuccess());
                         if (StringUtils.isNotBlank(pr.getMsgCode())) {
