@@ -3,6 +3,7 @@ package com.jiduauto.monilog;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.interceptor.GrpcGlobalClientInterceptor;
 import net.devh.boot.grpc.server.interceptor.GrpcGlobalServerInterceptor;
+import org.springframework.beans.factory.FactoryBean;
 import org.springframework.boot.autoconfigure.condition.*;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -80,9 +81,18 @@ class MoniLogAutoConfiguration {
     @ConditionalOnClass(name = "org.apache.ibatis.plugin.Interceptor")
     @Bean
     @ConditionalOnProperty(prefix = "monilog.mybatis", name = "enable", havingValue = "true", matchIfMissing = true)
-    MoniLogMybatisInterceptorFactoryBean moniLog() {
+    FactoryBean<MybatisInterceptor> moniLog() {
         log.info(">>>monilog {} start...", ComponentEnum.mybatis);
-        return new MoniLogMybatisInterceptorFactoryBean();
+        return new FactoryBean<MybatisInterceptor>() {
+            @Override
+            public MybatisInterceptor getObject() throws Exception {
+                return new MybatisInterceptor();
+            }
+            @Override
+            public Class<?> getObjectType() {
+                return MybatisInterceptor.class;
+            }
+        };
     }
 
     @ConditionalOnWebApplication

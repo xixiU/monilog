@@ -189,7 +189,7 @@ public class OkHttpClientMoniLogInterceptor {
         if (responseBody == null) {
             return null;
         }
-        String responseBodyString = "";
+        String responseBodyString = null;
         try {
             BufferedSource source = responseBody.source();
             source.request(Long.MAX_VALUE); // request the entire body.
