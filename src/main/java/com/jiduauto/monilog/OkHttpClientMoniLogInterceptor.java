@@ -14,7 +14,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
- * OkHttpClient的拦截实现
+ * OkHttpClient的拦截实现,
+ * OKHttpClient的同步和异步拦截最后都是通过okhttp3.RealCall#getResponseWithInterceptorChain()执行，参考：https://blog.csdn.net/weixin_41939525/article/details/106419678
  *
  * @author rongjie.yuan
  * @date 2023/10/19 17:35
