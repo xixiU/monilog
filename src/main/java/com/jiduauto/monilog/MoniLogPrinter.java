@@ -60,7 +60,6 @@ public interface MoniLogPrinter {
             if ("00000000000000000000000000000000".equals(traceId)) {
                 return "";
             }
-            traceId = StringUtils.trimToNull(traceId);
         } catch (Exception ignore) {
         }
         return traceId;
