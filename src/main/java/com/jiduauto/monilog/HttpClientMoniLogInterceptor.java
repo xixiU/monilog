@@ -141,7 +141,7 @@ public final class HttpClientMoniLogInterceptor {
                         BufferedHttpEntity bufferedEntity;
                         if ("org.apache.http.impl.execchain.ResponseEntityProxy".equals(entity.getClass().getCanonicalName())) {
                             Object wrappedEntity = ReflectUtil.getPropValue(entity, "wrappedEntity");
-                            bufferedEntity = new BufferedHttpEntity((HttpEntity)wrappedEntity);
+                            bufferedEntity = new MonilogBufferedHttpEntity((HttpEntity)wrappedEntity);
                             responseBody = EntityUtils.toString(bufferedEntity);
                             jsonBody = StringUtil.tryConvert2Json(responseBody);
                             ReflectUtil.setPropValue(entity, "wrappedEntity", bufferedEntity, false);
@@ -179,6 +179,24 @@ public final class HttpClientMoniLogInterceptor {
                 httpContext.removeAttribute(MONILOG_PARAMS_KEY);
                 MoniLogUtil.log(p);
             }
+        }
+    }
+
+    private static class MonilogBufferedHttpEntity extends BufferedHttpEntity{
+
+        public MonilogBufferedHttpEntity(HttpEntity entity) throws IOException {
+            super(entity);
+        }
+
+
+        @Override
+        public boolean isChunked() {
+            return this.wrappedEntity.isChunked();
+        }
+
+        @Override
+        public boolean isStreaming() {
+            return wrappedEntity.isStreaming();
         }
     }
 
