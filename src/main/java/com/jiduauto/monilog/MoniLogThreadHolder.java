@@ -20,11 +20,11 @@ public class MoniLogThreadHolder {
         TRACE_ID_THREAD_LOCAL.set(traceId);
     }
 
-    protected static String getTraceId() {
+    static String getTraceId() {
         return TRACE_ID_THREAD_LOCAL.get();
     }
 
-    protected static void clear() {
+    static void clear() {
         TRACE_ID_THREAD_LOCAL.remove();
     }
 }
