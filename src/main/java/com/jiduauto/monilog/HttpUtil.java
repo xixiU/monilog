@@ -7,7 +7,7 @@ import java.util.Set;
 class HttpUtil {
     private static final Set<String> TEXT_TYPES = Sets.newHashSet("application/json", "application/xml", "application/xhtml+xml", "text/");
 
-    private static final Set<String> STREAMING_TYPES = Sets.newHashSet("application/octet-stream", "application/pdf", "application/x-", "image/", "audio/", "video/");
+    private static final Set<String> STREAMING_TYPES = Sets.newHashSet("application/octet-stream", "application/pdf", "application/zip", "application/x-", "image/", "audio/", "video/");
 
     static boolean checkContentTypeIsStream(String contentType){
         for (String textType : TEXT_TYPES) {
