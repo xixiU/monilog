@@ -47,7 +47,11 @@ public interface MoniLogPrinter {
      * 从mdc中提取traceId
      */
     default String getTraceId() {
-        String traceId = null;
+        // 优先取用户设置的
+        String traceId = MoniLogThreadHolder.getTraceId();
+        if (StringUtils.isNotBlank(traceId)) {
+            return traceId;
+        }
         try {
             traceId = MDC.get("trace_id");
             if (StringUtils.isBlank(traceId)) {
