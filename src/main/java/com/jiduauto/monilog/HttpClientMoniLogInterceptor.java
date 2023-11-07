@@ -138,10 +138,19 @@ public final class HttpClientMoniLogInterceptor {
                     if (isStreaming(entity, httpResponse.getAllHeaders())) {
                         responseBody = "Binary Data";
                     } else {
-                        BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
-                        responseBody = EntityUtils.toString(bufferedEntity);
-                        jsonBody = StringUtil.tryConvert2Json(responseBody);
-                        httpResponse.setEntity(bufferedEntity);
+                        BufferedHttpEntity bufferedEntity;
+                        if ("org.apache.http.impl.execchain.ResponseEntityProxy".equals(entity.getClass().getCanonicalName())) {
+                            Object wrappedEntity = ReflectUtil.getPropValue(entity, "wrappedEntity");
+                            bufferedEntity = new BufferedHttpEntity((HttpEntity)wrappedEntity);
+                            responseBody = EntityUtils.toString(bufferedEntity);
+                            jsonBody = StringUtil.tryConvert2Json(responseBody);
+                            ReflectUtil.setPropValue(entity, "wrappedEntity", bufferedEntity, false);
+                        }else{
+                            bufferedEntity = new BufferedHttpEntity(entity);
+                            responseBody = EntityUtils.toString(bufferedEntity);
+                            jsonBody = StringUtil.tryConvert2Json(responseBody);
+                            httpResponse.setEntity(bufferedEntity);
+                        }
                     }
                 }
 
@@ -239,9 +248,6 @@ public final class HttpClientMoniLogInterceptor {
 
     private static boolean isStreaming(HttpEntity entity, Header[] headers) {
         if (entity instanceof FileEntity) {
-            return true;
-        }
-        if ("org.apache.http.impl.execchain.ResponseEntityProxy".equals(entity.getClass().getCanonicalName())) {
             return true;
         }
         if (StringUtils.containsIgnoreCase(entity.getClass().getCanonicalName(), "Multipart")) {
