@@ -1,8 +1,11 @@
 package com.jiduauto.monilog;
 
 
+import io.opentelemetry.api.trace.Span;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /**
  * @author yp
@@ -38,6 +41,22 @@ public interface MoniLogPrinter {
      */
     default String getLogPrefix() {
         return SpringUtils.LOG_PREFIX;
+    }
+
+    /**
+     * 从mdc中提取traceId
+     */
+    default String getTraceId() {
+        String traceId = null;
+        try {
+            traceId = MDC.get("trace_id");
+            if (StringUtils.isBlank(traceId)) {
+                traceId = Span.current().getSpanContext().getTraceId();
+            }
+            traceId = StringUtils.trimToNull(traceId);
+        } catch (Exception ignore) {
+        }
+        return traceId;
     }
 
     /**
