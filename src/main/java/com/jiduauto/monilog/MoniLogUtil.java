@@ -100,7 +100,7 @@ class MoniLogUtil extends MoniLogThreadHolder{
         } catch (Exception e) {
             innerDebug("printDetailLog error", e);
         }
-        MoniLogThreadHolder.clear();
+//        MoniLogThreadHolder.clear();
     }
 
     /**
