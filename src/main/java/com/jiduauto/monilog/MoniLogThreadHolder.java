@@ -22,7 +22,7 @@ public class MoniLogThreadHolder {
     }
 
 
-    public static void clear() {
+    protected static void clear() {
         TRACE_ID_THREAD_LOCAL.remove();
     }
 }
