@@ -241,6 +241,9 @@ public final class HttpClientMoniLogInterceptor {
         if (entity instanceof FileEntity) {
             return true;
         }
+        if ("org.apache.http.impl.execchain.ResponseEntityProxy".equals(entity.getClass().getCanonicalName())) {
+            return true;
+        }
         if (StringUtils.containsIgnoreCase(entity.getClass().getCanonicalName(), "Multipart")) {
             return true;
         }
