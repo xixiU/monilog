@@ -115,10 +115,13 @@ class MoniLogUtil {
                 args[args.length - 1] = ExceptionUtil.getErrorMsg(e);
             }
         }
-        log.warn(INNER_DEBUG_PREFIX + pattern, args);
+        MoniLogPrinter printer = getLogPrinter();
+        String traceId = printer == null ? new DefaultMoniLogPrinter().getTraceId() : printer.getTraceId();
+        String prefix = "[" + traceId + "]" + INNER_DEBUG_PREFIX;
+        log.warn(prefix, args);
         LogCollector reporter = SpringUtils.getBeanWithoutException(LogCollector.class);
         if (reporter != null && reporter.getStart().get()) {
-            reporter.addInnerDebug(INNER_DEBUG_PREFIX + pattern + Arrays.toString(args));
+            reporter.addInnerDebug(prefix + pattern + Arrays.toString(args));
         }
     }
 
@@ -383,7 +386,7 @@ class MoniLogUtil {
         try {
             printer = SpringUtils.getBean(MoniLogPrinter.class);
         } catch (Exception e) {
-            MoniLogUtil.innerDebug(":no MoniLogPrinter instance found", e);
+            log.warn(INNER_DEBUG_PREFIX + ":no MoniLogPrinter instance found", e);
         }
         return (logPrinter = printer);
     }

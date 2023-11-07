@@ -13,10 +13,10 @@ import java.util.Arrays;
  * 默认日志打印方式
  */
 class DefaultMoniLogPrinter implements MoniLogPrinter {
-    private static final String DETAIL_LOG_PATTERN = "{}detail_log[{}]-{}.{}|{}|{}|{}|{}{} 【input】:{}, 【output】:{}";
-    private static final String DIGEST_LOG_PATTERN = "{}digest_log[{}]-{}.{}|{}|{}|{}|{}{}";
-    private static final String LONG_RT_LOG_PATTERN = "{}rt_too_long[{}]-{}.{}|{}|{}|{}|{}{}";
-    private static final String LARGE_SIZE_LOG_PATTERN = "{}size_too_large[{}]-{}.{}[key={}], size: {}, rt:{}";
+    private static final String DETAIL_LOG_PATTERN = "[{}]{}detail_log[{}]-{}.{}|{}|{}|{}|{}{} 【input】:{}, 【output】:{}";
+    private static final String DIGEST_LOG_PATTERN = "[{}]{}digest_log[{}]-{}.{}|{}|{}|{}|{}{}";
+    private static final String LONG_RT_LOG_PATTERN = "[{}]{}rt_too_long[{}]-{}.{}|{}|{}|{}|{}{}";
+    private static final String LARGE_SIZE_LOG_PATTERN = "[{}]{}size_too_large[{}]-{}.{}[key={}], size: {}, rt:{}";
     @Resource
     private MoniLogProperties moniLogProperties;
 
@@ -36,22 +36,22 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         String input = formatLongText(p.getInput());
         String output = formatLongText(p.getOutput());
         Throwable ex = p.getException();
-
+        String traceId = getTraceId();
         String[] tags = p.getTags();
         String tagStr = tags == null || tags.length == 0 ? "" : "|" + Arrays.toString(tags);
         if (ex != null) {
-            logger.error(DETAIL_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr, input, output, ex);
+            logger.error(DETAIL_LOG_PATTERN, traceId, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr, input, output, ex);
             return;
         }
         LogLevel level = getFalseResultLogLevel();
         if (p.isSuccess() || level == LogLevel.INFO) {
-            logger.info(DETAIL_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr, input, output);
+            logger.info(DETAIL_LOG_PATTERN, traceId, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr, input, output);
             return;
         }
         if (level == LogLevel.ERROR) {
-            logger.error(DETAIL_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr, input, output);
+            logger.error(DETAIL_LOG_PATTERN, traceId, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr, input, output);
         } else {
-            logger.warn(DETAIL_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr, input, output);
+            logger.warn(DETAIL_LOG_PATTERN, traceId, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr, input, output);
         }
     }
 
@@ -70,19 +70,20 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         String[] tags = p.getTags();
         String tagStr = tags == null || tags.length == 0 ? "" : "|" + Arrays.toString(tags);
         String rt = p.getCost() + "ms";
+        String traceId = getTraceId();
         if (p.getException() != null) {
-            logger.error(DIGEST_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
+            logger.error(DIGEST_LOG_PATTERN, traceId, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
             return;
         }
         LogLevel level = getFalseResultLogLevel();
         if (p.isSuccess() || level == LogLevel.INFO) {
-            logger.info(DIGEST_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
+            logger.info(DIGEST_LOG_PATTERN, traceId, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
             return;
         }
         if (level == LogLevel.ERROR) {
-            logger.error(DIGEST_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
+            logger.error(DIGEST_LOG_PATTERN, traceId, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
         } else {
-            logger.warn(DIGEST_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
+            logger.warn(DIGEST_LOG_PATTERN, traceId, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
         }
     }
 
@@ -101,17 +102,18 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         String[] tags = p.getTags();
         String tagStr = tags == null || tags.length == 0 ? "" : "|" + Arrays.toString(tags);
         String rt = p.getCost() + "ms";
+        String traceId = getTraceId();
         LogLevel level = getLongRtLogLevel();
         switch (level) {
             case INFO:
-                logger.info(LONG_RT_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
+                logger.info(LONG_RT_LOG_PATTERN, traceId, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
                 return;
             case WARN:
-                logger.warn(LONG_RT_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
+                logger.warn(LONG_RT_LOG_PATTERN, traceId, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
                 return;
             case ERROR:
             default:
-                logger.error(LONG_RT_LOG_PATTERN, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
+                logger.error(LONG_RT_LOG_PATTERN, traceId, getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
         }
     }
 
@@ -122,18 +124,19 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         }
         String readableSize = RamUsageEstimator.humanReadableUnits(sizeInBytes);
         String rt = p.getCost() + "ms";
+        String traceId = getTraceId();
         Logger logger = getLogger(p);
         LogLevel level = getLargeSizeLogLevel();
         switch (level) {
             case INFO:
-                logger.info(LARGE_SIZE_LOG_PATTERN, getLogPrefix(), p.getLogPoint(), p.getService(), p.getAction(), key, readableSize, rt);
+                logger.info(LARGE_SIZE_LOG_PATTERN, traceId, getLogPrefix(), p.getLogPoint(), p.getService(), p.getAction(), key, readableSize, rt);
                 return;
             case WARN:
-                logger.warn(LARGE_SIZE_LOG_PATTERN, getLogPrefix(), p.getLogPoint(), p.getService(), p.getAction(), key, readableSize, rt);
+                logger.warn(LARGE_SIZE_LOG_PATTERN, traceId, getLogPrefix(), p.getLogPoint(), p.getService(), p.getAction(), key, readableSize, rt);
                 return;
             case ERROR:
             default:
-                logger.error(LARGE_SIZE_LOG_PATTERN, getLogPrefix(), p.getLogPoint(), p.getService(), p.getAction(), key, readableSize, rt);
+                logger.error(LARGE_SIZE_LOG_PATTERN, traceId, getLogPrefix(), p.getLogPoint(), p.getService(), p.getAction(), key, readableSize, rt);
         }
     }
 
