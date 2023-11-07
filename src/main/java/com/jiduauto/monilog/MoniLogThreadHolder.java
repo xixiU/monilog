@@ -24,4 +24,7 @@ public class MoniLogThreadHolder {
         return TRACE_ID_THREAD_LOCAL.get();
     }
 
+    protected static void clear() {
+        TRACE_ID_THREAD_LOCAL.remove();
+    }
 }

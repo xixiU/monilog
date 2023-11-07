@@ -106,6 +106,7 @@ class MoniLogAop {
         }
         try {
             MoniLogUtil.log(params);
+            MoniLogThreadHolder.clear();
         } catch (Exception e) {
             MoniLogUtil.innerDebug("MoniLogAop afterProcess error", e);
         }
