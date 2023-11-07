@@ -34,6 +34,7 @@ import static com.jiduauto.monilog.StringUtil.checkPathMatch;
 @Slf4j
 public final class HttpClientMoniLogInterceptor {
     private static final String MONILOG_PARAMS_KEY = "__MoniLogParams";
+    private static final String ResponseEntityProxy = "org.apache.http.impl.execchain.ResponseEntityProxy";
 
     /**
      * 为HttpClient注册拦截器, 注意，此处注册的拦截器仅能处理正常返回的情况，对于异常情况(如超时)则由onFailed方法处理
@@ -138,15 +139,23 @@ public final class HttpClientMoniLogInterceptor {
                     if (isStreaming(entity, httpResponse.getAllHeaders())) {
                         responseBody = "Binary Data";
                     } else {
-                        BufferedHttpEntity bufferedEntity;
-                        if ("org.apache.http.impl.execchain.ResponseEntityProxy".equals(entity.getClass().getCanonicalName())) {
-                            Object wrappedEntity = ReflectUtil.getPropValue(entity, "wrappedEntity");
-                            bufferedEntity = new MonilogBufferedHttpEntity((HttpEntity)wrappedEntity);
-                            responseBody = EntityUtils.toString(bufferedEntity);
-                            jsonBody = StringUtil.tryConvert2Json(responseBody);
-                            ReflectUtil.setPropValue(entity, "wrappedEntity", bufferedEntity, false);
-                        }else{
-                            bufferedEntity = new BufferedHttpEntity(entity);
+                        if (ResponseEntityProxy.equals(entity.getClass().getCanonicalName())) {
+                            String entityField = "wrappedEntity";
+                            HttpEntity innerEntity = ReflectUtil.getPropValue(entity, entityField);
+                            if (isValidEntity(innerEntity)) {
+                                if (isStreaming(innerEntity, httpResponse.getAllHeaders())) {
+                                    responseBody = "Binary Data";
+                                } else {
+                                    BufferedHttpEntity bufferedEntity = new MonilogBufferedHttpEntity(innerEntity);
+                                    responseBody = EntityUtils.toString(bufferedEntity);
+                                    jsonBody = StringUtil.tryConvert2Json(responseBody);
+                                    ReflectUtil.setPropValue(entity, entityField, bufferedEntity, false);
+                                }
+                            } else {
+                                responseBody = "[parseResponseDataFailed]";
+                            }
+                        } else {
+                            BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
                             responseBody = EntityUtils.toString(bufferedEntity);
                             jsonBody = StringUtil.tryConvert2Json(responseBody);
                             httpResponse.setEntity(bufferedEntity);
@@ -182,12 +191,10 @@ public final class HttpClientMoniLogInterceptor {
         }
     }
 
-    private static class MonilogBufferedHttpEntity extends BufferedHttpEntity{
-
+    private static class MonilogBufferedHttpEntity extends BufferedHttpEntity {
         public MonilogBufferedHttpEntity(HttpEntity entity) throws IOException {
             super(entity);
         }
-
 
         @Override
         public boolean isChunked() {
