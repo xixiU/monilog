@@ -126,8 +126,7 @@ class MoniLogUtil extends MoniLogThreadHolder{
         }
         // 内部异常添加metric上报
         TagBuilder tagBuilder = TagBuilder.of("application", SpringUtils.application);
-        MetricMonitor.record(METRIC_PREFIX + "inner_debug",tagBuilder.toArray());
-
+        MetricMonitor.record(METRIC_PREFIX + "inner_debug", tagBuilder.toArray());
     }
 
     private static void doMonitor(MoniLogParams logParams) {
