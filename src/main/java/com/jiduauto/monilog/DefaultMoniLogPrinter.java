@@ -128,7 +128,7 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
     private LogLevel getLogLevel(MoniLogParams p, LogType logType) {
         LogLevel level = LogLevel.INFO;
         if (p == null) {
-            return LogLevel.INFO;
+            return level;
         }
         switch (logType) {
             case DETAIL:
