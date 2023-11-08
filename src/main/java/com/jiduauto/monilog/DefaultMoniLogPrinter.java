@@ -31,10 +31,6 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
     private static final String LONG_RT_LOG_PATTERN = "{}rt_too_long[{}]-{}.{}|{}|{}|{}|{}{}";
     private static final String LARGE_SIZE_LOG_PATTERN = "{}size_too_large[{}]-{}.{}[key={}], size: {}, rt:{}";
 
-    private static final String DETAIL_LOG_INCLUDE_TRACE_PATTERN = "[{}]" + DETAIL_LOG_PATTERN;
-    private static final String DIGEST_LOG_INCLUDE_TRACE_PATTERN = "[{}]" + DIGEST_LOG_PATTERN;
-    private static final String LONG_RT_LOG_INCLUDE_TRACE_PATTERN = "[{}]" + LONG_RT_LOG_PATTERN;
-    private static final String LARGE_SIZE_LOG_INCLUDE_TRACE_PATTERN = "[{}]" + LARGE_SIZE_LOG_PATTERN;
 
     @Resource
     private MoniLogProperties moniLogProperties;
@@ -46,13 +42,13 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         boolean includeTraceId = moniLogProperties.getPrinter().isMessageRepeatTraceId();
         switch (logType) {
             case DETAIL:
-                return includeTraceId ? DETAIL_LOG_INCLUDE_TRACE_PATTERN : DETAIL_LOG_PATTERN;
+                return includeTraceId ? "[" + getTraceId() + "]" + DETAIL_LOG_PATTERN : DETAIL_LOG_PATTERN;
             case DIGEST:
-                return includeTraceId ? DIGEST_LOG_INCLUDE_TRACE_PATTERN : DIGEST_LOG_PATTERN;
+                return includeTraceId ? "[" + getTraceId() + "]" + DIGEST_LOG_PATTERN : DIGEST_LOG_PATTERN;
             case LARGE_SIZE:
-                return includeTraceId ? LARGE_SIZE_LOG_INCLUDE_TRACE_PATTERN : LARGE_SIZE_LOG_PATTERN;
+                return includeTraceId ? "[" + getTraceId() + "]" + LARGE_SIZE_LOG_PATTERN : LARGE_SIZE_LOG_PATTERN;
             case LONG_RT:
-                return includeTraceId ? LONG_RT_LOG_INCLUDE_TRACE_PATTERN : LONG_RT_LOG_PATTERN;
+                return includeTraceId ? "[" + getTraceId() + "]" + LONG_RT_LOG_PATTERN : LONG_RT_LOG_PATTERN;
             default:
                 // 理论不会
                 return "";
