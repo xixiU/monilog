@@ -39,16 +39,17 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         if (p == null) {
             return "";
         }
-        boolean includeTraceId = moniLogProperties.getPrinter().isMessageRepeatTraceId();
+        boolean includeTraceId = moniLogProperties.getPrinter().isPrintTraceId();
+        String traceId = getTraceId();
         switch (logType) {
             case DETAIL:
-                return includeTraceId ? "[" + getTraceId() + "]" + DETAIL_LOG_PATTERN : DETAIL_LOG_PATTERN;
+                return includeTraceId ? "[" + traceId + "]" + DETAIL_LOG_PATTERN : DETAIL_LOG_PATTERN;
             case DIGEST:
-                return includeTraceId ? "[" + getTraceId() + "]" + DIGEST_LOG_PATTERN : DIGEST_LOG_PATTERN;
+                return includeTraceId ? "[" + traceId + "]" + DIGEST_LOG_PATTERN : DIGEST_LOG_PATTERN;
             case LARGE_SIZE:
-                return includeTraceId ? "[" + getTraceId() + "]" + LARGE_SIZE_LOG_PATTERN : LARGE_SIZE_LOG_PATTERN;
+                return includeTraceId ? "[" + traceId + "]" + LARGE_SIZE_LOG_PATTERN : LARGE_SIZE_LOG_PATTERN;
             case LONG_RT:
-                return includeTraceId ? "[" + getTraceId() + "]" + LONG_RT_LOG_PATTERN : LONG_RT_LOG_PATTERN;
+                return includeTraceId ? "[" + traceId + "]" + LONG_RT_LOG_PATTERN : LONG_RT_LOG_PATTERN;
             default:
                 // 理论不会
                 return "";
@@ -56,10 +57,10 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
     }
 
     private LogLevel getLogLevel(MoniLogParams p, LogType logType) {
-        if (p == null) {
-            return null;
-        }
         LogLevel level = LogLevel.INFO;
+        if (p == null) {
+            return LogLevel.INFO;
+        }
         switch (logType) {
             case DETAIL:
             case DIGEST:
@@ -76,14 +77,14 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
 
     private void logWithLevel(Logger logger, LogLevel level, String pattern, Object... params) {
         switch (level) {
-            case INFO:
-                logger.info(pattern, params);
-                break;
             case WARN:
                 logger.warn(pattern, params);
                 break;
             case ERROR:
                 logger.error(pattern, params);
+                break;
+            default:
+                logger.info(pattern, params);
                 break;
         }
     }
