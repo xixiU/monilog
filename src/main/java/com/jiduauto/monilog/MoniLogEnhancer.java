@@ -2,7 +2,6 @@ package com.jiduauto.monilog;
 
 import javassist.*;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringApplicationRunListener;
 import org.springframework.core.Ordered;
 
@@ -44,14 +43,15 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         put(LETTUCE_CONN_FACTORY, new AtomicBoolean());
     }};
 
-    private MoniLogEnhancer(SpringApplication app, String[] args) {
+    @Override
+    public void starting() {
         enhanceHttpClient();
         enhanceFeignClient();
         enhanceRocketMqConsumer();
         enhanceRocketMqProducer();
         enhanceRedisConnFactory();
-        SpringApplicationRunListener.super.starting();
     }
+
 
     @Override
     public int getOrder() {
