@@ -31,11 +31,80 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
     private static final String LONG_RT_LOG_PATTERN = "{}rt_too_long[{}]-{}.{}|{}|{}|{}|{}{}";
     private static final String LARGE_SIZE_LOG_PATTERN = "{}size_too_large[{}]-{}.{}[key={}], size: {}, rt:{}";
 
-
     @Resource
     private MoniLogProperties moniLogProperties;
 
-    private String getLogPattern(MoniLogParams p, LogType logType) {
+
+    @Override
+    public void logDetail(MoniLogParams p) {
+        logDetailOrDigest(p, true);
+    }
+
+
+    @Override
+    public void logDigest(MoniLogParams p) {
+        logDetailOrDigest(p, false);
+    }
+
+    @Override
+    public void logLongRt(MoniLogParams p) {
+        if (p == null) {
+            return;
+        }
+        Logger logger = getLogger(p);
+        String logPoint = p.getLogPoint().name();
+        String service = p.getService();
+        String action = p.getAction();
+        String success = p.isSuccess() ? "true" : "false";
+        String code = p.getMsgCode();
+        String msg = p.getMsgInfo();
+        String[] tags = p.getTags();
+        String tagStr = tags == null || tags.length == 0 ? "" : "|" + Arrays.toString(tags);
+        String rt = p.getCost() + "ms";
+        logWithLevel(logger, getLogLevel(p, LogType.LONG_RT), getLogPattern(p, LogType.LONG_RT), getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
+    }
+
+    @Override
+    public void logLargeSize(MoniLogParams p, String key, long sizeInBytes) {
+        if (p == null || sizeInBytes <= 0) {
+            return;
+        }
+        Logger logger = getLogger(p);
+        String readableSize = RamUsageEstimator.humanReadableUnits(sizeInBytes);
+        String rt = p.getCost() + "ms";
+        logWithLevel(logger, getLogLevel(p, LogType.LARGE_SIZE), getLogPattern(p, LogType.LARGE_SIZE), getLogPrefix(), p.getLogPoint(), p.getService(), p.getAction(), key, readableSize, rt);
+    }
+
+    private LogLevel getFalseResultLogLevel() {
+        MoniLogProperties.LogLevelConfig cfg = moniLogProperties.getPrinter().getLogLevel();
+        LogLevel ll = (cfg == null ? new MoniLogProperties.LogLevelConfig() : cfg).getFalseResult();
+        return ll == null ? LogLevel.ERROR : ll;
+    }
+
+    private LogLevel getLongRtLogLevel() {
+        MoniLogProperties.LogLevelConfig cfg = moniLogProperties.getPrinter().getLogLevel();
+        LogLevel ll = (cfg == null ? new MoniLogProperties.LogLevelConfig() : cfg).getLongRt();
+        return ll == null ? LogLevel.ERROR : ll;
+    }
+
+    private LogLevel getLargeSizeLogLevel() {
+        MoniLogProperties.LogLevelConfig cfg = moniLogProperties.getPrinter().getLogLevel();
+        LogLevel ll = (cfg == null ? new MoniLogProperties.LogLevelConfig() : cfg).getLargeSize();
+        return ll == null ? LogLevel.ERROR : ll;
+    }
+
+    private String formatLongText(Object o) {
+        int maxTextLen = moniLogProperties.getPrinter().getMaxTextLen();
+        if (o == null) {
+            return null;
+        }
+        String str = JSON.toJSONString(o);
+        if (str.length() > maxTextLen) {
+            return str.substring(0, maxTextLen - 3) + "...";
+        }
+        return str;
+    }
+    private  String getLogPattern(MoniLogParams p, LogType logType) {
         if (p == null) {
             return "";
         }
@@ -119,76 +188,5 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
             logParamsList.add(ex);
         }
         logWithLevel(logger, level, pattern, logParamsList.toArray());
-    }
-
-
-    @Override
-    public void logDetail(MoniLogParams p) {
-        logDetailOrDigest(p, true);
-    }
-
-
-    @Override
-    public void logDigest(MoniLogParams p) {
-        logDetailOrDigest(p, false);
-    }
-
-    @Override
-    public void logLongRt(MoniLogParams p) {
-        if (p == null) {
-            return;
-        }
-        Logger logger = getLogger(p);
-        String logPoint = p.getLogPoint().name();
-        String service = p.getService();
-        String action = p.getAction();
-        String success = p.isSuccess() ? "true" : "false";
-        String code = p.getMsgCode();
-        String msg = p.getMsgInfo();
-        String[] tags = p.getTags();
-        String tagStr = tags == null || tags.length == 0 ? "" : "|" + Arrays.toString(tags);
-        String rt = p.getCost() + "ms";
-        logWithLevel(logger, getLogLevel(p, LogType.LONG_RT), getLogPattern(p, LogType.LONG_RT), getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
-    }
-
-    @Override
-    public void logLargeSize(MoniLogParams p, String key, long sizeInBytes) {
-        if (p == null || sizeInBytes <= 0) {
-            return;
-        }
-        Logger logger = getLogger(p);
-        String readableSize = RamUsageEstimator.humanReadableUnits(sizeInBytes);
-        String rt = p.getCost() + "ms";
-        logWithLevel(logger, getLogLevel(p, LogType.LARGE_SIZE), getLogPattern(p, LogType.LARGE_SIZE), getLogPrefix(), p.getLogPoint(), p.getService(), p.getAction(), key, readableSize, rt);
-    }
-
-    private LogLevel getFalseResultLogLevel() {
-        MoniLogProperties.LogLevelConfig cfg = moniLogProperties.getPrinter().getLogLevel();
-        LogLevel ll = (cfg == null ? new MoniLogProperties.LogLevelConfig() : cfg).getFalseResult();
-        return ll == null ? LogLevel.ERROR : ll;
-    }
-
-    private LogLevel getLongRtLogLevel() {
-        MoniLogProperties.LogLevelConfig cfg = moniLogProperties.getPrinter().getLogLevel();
-        LogLevel ll = (cfg == null ? new MoniLogProperties.LogLevelConfig() : cfg).getLongRt();
-        return ll == null ? LogLevel.ERROR : ll;
-    }
-
-    private LogLevel getLargeSizeLogLevel() {
-        MoniLogProperties.LogLevelConfig cfg = moniLogProperties.getPrinter().getLogLevel();
-        LogLevel ll = (cfg == null ? new MoniLogProperties.LogLevelConfig() : cfg).getLargeSize();
-        return ll == null ? LogLevel.ERROR : ll;
-    }
-
-    private String formatLongText(Object o) {
-        int maxTextLen = moniLogProperties.getPrinter().getMaxTextLen();
-        if (o == null) {
-            return null;
-        }
-        String str = JSON.toJSONString(o);
-        if (str.length() > maxTextLen) {
-            return str.substring(0, maxTextLen - 3) + "...";
-        }
-        return str;
     }
 }
