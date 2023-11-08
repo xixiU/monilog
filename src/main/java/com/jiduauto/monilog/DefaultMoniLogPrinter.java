@@ -118,7 +118,7 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         if (ex != null) {
             logParamsList.add(ex);
         }
-        logWithLevel(logger, level, pattern, logParamsList);
+        logWithLevel(logger, level, pattern, logParamsList.toArray());
     }
 
 
