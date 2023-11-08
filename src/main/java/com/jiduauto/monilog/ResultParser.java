@@ -5,15 +5,13 @@ import com.alibaba.fastjson.JSONPath;
 import com.google.common.base.Preconditions;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author yepei
@@ -183,11 +181,8 @@ final class ResultParser {
         boolean isMethod = path.contains("(") && path.contains(")");
         if (!isMethod) {
             try {
-                boolean isEmptyString = (obj instanceof CharSequence && ((CharSequence) obj).length() == 0)
-                        || (obj instanceof String && "null".equalsIgnoreCase((String) obj));
-                Object val = isEmptyString ? null : JSONPath.eval(obj, path);
-                boolean foundPath = val != null || JSONPath.contains(obj, path);
-                return new TempResult(val, foundPath);
+                boolean foundPath = !(obj instanceof String && "null".equalsIgnoreCase((String) obj)) && !ObjectUtils.isEmpty(obj) && JSONPath.contains(obj, path);
+                return new TempResult(foundPath ? JSONPath.eval(obj, path) : null, foundPath);
             } catch (NullPointerException e) {
                 return new TempResult(null, false);
             } catch (Throwable e) {

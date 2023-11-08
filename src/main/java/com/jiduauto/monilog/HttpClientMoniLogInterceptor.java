@@ -2,7 +2,6 @@ package com.jiduauto.monilog;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -35,8 +34,7 @@ import static com.jiduauto.monilog.StringUtil.checkPathMatch;
 @Slf4j
 public final class HttpClientMoniLogInterceptor {
     private static final String MONILOG_PARAMS_KEY = "__MoniLogParams";
-    private static final Set<String> TEXT_TYPES = Sets.newHashSet("application/json", "application/xml", "application/xhtml+xml", "text/");
-    private static final Set<String> STREAMING_TYPES = Sets.newHashSet("application/octet-stream", "application/pdf", "application/x-", "image/", "audio/", "video/");
+    private static final String ResponseEntityProxy = "org.apache.http.impl.execchain.ResponseEntityProxy";
 
     /**
      * 为HttpClient注册拦截器, 注意，此处注册的拦截器仅能处理正常返回的情况，对于异常情况(如超时)则由onFailed方法处理
@@ -59,7 +57,7 @@ public final class HttpClientMoniLogInterceptor {
         public void process(HttpRequest request, HttpContext httpContext) throws HttpException, IOException {
             RequestLine requestLine = request.getRequestLine();
             HttpHost host = (HttpHost) httpContext.getAttribute(HttpClientContext.HTTP_TARGET_HOST);
-            String targetHost = host == null ? null : host.getHostName() + (host.getPort() < 0 || host.getPort() == 80 ? "" : ":" + host.getPort());
+//            String targetHost = host == null ? null : host.getHostName() + (host.getPort() < 0 || host.getPort() == 80 ? "" : ":" + host.getPort());
             //携带有参数的uri
             String[] uriAndParams = requestLine.getUri().split("\\?");
             String path = uriAndParams[0];
@@ -110,7 +108,7 @@ public final class HttpClientMoniLogInterceptor {
                 p.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
                 p.setLogPoint(LogPoint.http_client);
 
-                p.setTags(TagBuilder.of("url", targetHost + path, "method", method).toArray());
+                p.setTags(TagBuilder.of("url", path, "method", method).toArray());
                 httpContext.setAttribute(MONILOG_PARAMS_KEY, p);
             } catch (Exception e) {
                 MoniLogUtil.innerDebug("HttpClient.RequestInterceptor.process error", e);
@@ -141,10 +139,27 @@ public final class HttpClientMoniLogInterceptor {
                     if (isStreaming(entity, httpResponse.getAllHeaders())) {
                         responseBody = "Binary Data";
                     } else {
-                        BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
-                        responseBody = EntityUtils.toString(bufferedEntity);
-                        jsonBody = StringUtil.tryConvert2Json(responseBody);
-                        httpResponse.setEntity(bufferedEntity);
+                        if (ResponseEntityProxy.equals(entity.getClass().getCanonicalName())) {
+                            String entityField = "wrappedEntity";
+                            HttpEntity innerEntity = ReflectUtil.getPropValue(entity, entityField);
+                            if (isValidEntity(innerEntity)) {
+                                if (isStreaming(innerEntity, httpResponse.getAllHeaders())) {
+                                    responseBody = "Binary Data";
+                                } else {
+                                    BufferedHttpEntity bufferedEntity = new MonilogBufferedHttpEntity(innerEntity);
+                                    responseBody = EntityUtils.toString(bufferedEntity);
+                                    jsonBody = StringUtil.tryConvert2Json(responseBody);
+                                    ReflectUtil.setPropValue(entity, entityField, bufferedEntity, false);
+                                }
+                            } else {
+                                responseBody = "[parseResponseDataFailed]";
+                            }
+                        } else {
+                            BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
+                            responseBody = EntityUtils.toString(bufferedEntity);
+                            jsonBody = StringUtil.tryConvert2Json(responseBody);
+                            httpResponse.setEntity(bufferedEntity);
+                        }
                     }
                 }
 
@@ -173,6 +188,22 @@ public final class HttpClientMoniLogInterceptor {
                 httpContext.removeAttribute(MONILOG_PARAMS_KEY);
                 MoniLogUtil.log(p);
             }
+        }
+    }
+
+    private static class MonilogBufferedHttpEntity extends BufferedHttpEntity {
+        public MonilogBufferedHttpEntity(HttpEntity entity) throws IOException {
+            super(entity);
+        }
+
+        @Override
+        public boolean isChunked() {
+            return this.wrappedEntity.isChunked();
+        }
+
+        @Override
+        public boolean isStreaming() {
+            return wrappedEntity.isStreaming();
         }
     }
 
@@ -265,18 +296,7 @@ public final class HttpClientMoniLogInterceptor {
         } else {
             contentType = contentType.toLowerCase();
         }
-        for (String textType : TEXT_TYPES) {
-            if (contentType.startsWith(textType)) {
-                return false;
-            }
-        }
-
-        for (String streamingType : STREAMING_TYPES) {
-            if (contentType.startsWith(streamingType)) {
-                return true;
-            }
-        }
-        return false;
+        return HttpUtil.checkContentTypeIsStream(contentType);
     }
 
     private static Map<String, String> parseHeaders(Header[] allHeaders) {

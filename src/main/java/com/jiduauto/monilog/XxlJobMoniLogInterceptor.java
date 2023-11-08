@@ -15,7 +15,10 @@ class XxlJobMoniLogInterceptor {
     //处理注解式任务
     @Around("@annotation(com.xxl.job.core.handler.annotation.XxlJob)")
     private Object interceptXxlJob(ProceedingJoinPoint pjp) throws Throwable {
-        return xxlJobEnable() ? MoniLogAop.processAround(pjp, buildLogParserForJob(), LogPoint.xxljob) : pjp.proceed();
+        Object result = xxlJobEnable() ? MoniLogAop.processAround(pjp, buildLogParserForJob(), LogPoint.xxljob) : pjp.proceed();
+        MoniLogThreadHolder.clear();;
+        return result;
+
     }
 
     //处理继承式任务
@@ -23,7 +26,9 @@ class XxlJobMoniLogInterceptor {
         return ProxyUtils.getProxy(bean, invocation -> {
             Method method = invocation.getMethod();
             boolean shouldMonilog = "execute".equals(method.getName()) && xxlJobEnable();
-            return shouldMonilog ? MoniLogAop.processAround(invocation, buildLogParserForJob(), LogPoint.xxljob) : invocation.proceed();
+            Object result =  shouldMonilog ? MoniLogAop.processAround(invocation, buildLogParserForJob(), LogPoint.xxljob) : invocation.proceed();
+            MoniLogThreadHolder.clear();;
+            return result;
         });
     }
 

@@ -3,6 +3,7 @@ package com.jiduauto.monilog;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.interceptor.GrpcGlobalClientInterceptor;
 import net.devh.boot.grpc.server.interceptor.GrpcGlobalServerInterceptor;
+import org.springframework.beans.factory.FactoryBean;
 import org.springframework.boot.autoconfigure.condition.*;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -25,6 +26,12 @@ class MoniLogAutoConfiguration {
     @Bean
     MoniLogPostProcessor moniLogPostProcessor(MoniLogProperties moniLogProperties) {
         return new MoniLogPostProcessor(moniLogProperties);
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "spring.mvc.throw-exception-if-no-handler-found", havingValue = "true")
+    MoniLogExceptionHandler initGlobalExceptionHandler() {
+        return new MoniLogExceptionHandler();
     }
 
     @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -54,7 +61,7 @@ class MoniLogAutoConfiguration {
 
     @Configuration
     static class GrpcMoniLogConfiguration {
-        @Order(-100)
+        @Order(-200)
         @GrpcGlobalServerInterceptor
         @ConditionalOnClass(name = "io.grpc.stub.ServerCalls")
         GrpcMoniLogInterceptor.GrpcLogPrintServerInterceptor grpcLogPrintServerInterceptor() {
@@ -62,7 +69,7 @@ class MoniLogAutoConfiguration {
             return new GrpcMoniLogInterceptor.GrpcLogPrintServerInterceptor();
         }
 
-        @Order(-101)
+        @Order
         @GrpcGlobalClientInterceptor
         @ConditionalOnClass(name = "io.grpc.ClientInterceptor")
         GrpcMoniLogInterceptor.GrpcLogPrintClientInterceptor grpcLogPrintClientInterceptor() {
@@ -71,11 +78,21 @@ class MoniLogAutoConfiguration {
         }
     }
 
-    @ConditionalOnClass(name = "org.apache.ibatis.session.SqlSessionFactory")
+    @ConditionalOnClass(name = "org.apache.ibatis.plugin.Interceptor")
     @Bean
-    MybatisMoniLogInterceptor.MybatisInterceptor mybatisMonitorSqlFilter() {
+    @ConditionalOnProperty(prefix = "monilog.mybatis", name = "enable", havingValue = "true", matchIfMissing = true)
+    FactoryBean<MybatisInterceptor> moniLog() {
         log.info(">>>monilog {} start...", ComponentEnum.mybatis);
-        return new MybatisMoniLogInterceptor.MybatisInterceptor();
+        return new FactoryBean<MybatisInterceptor>() {
+            @Override
+            public MybatisInterceptor getObject() throws Exception {
+                return new MybatisInterceptor();
+            }
+            @Override
+            public Class<?> getObjectType() {
+                return MybatisInterceptor.class;
+            }
+        };
     }
 
     @ConditionalOnWebApplication

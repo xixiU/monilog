@@ -20,17 +20,14 @@ import org.apache.ibatis.session.RowBounds;
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
 import java.util.Map;
-
-
-class MybatisMoniLogInterceptor {
-    @Intercepts({
+@Intercepts({
             @Signature(type = Executor.class, method = "query", args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class, CacheKey.class, BoundSql.class}),
             @Signature(type = Executor.class, method = "query", args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class}),
             @Signature(type = Executor.class, method = "queryCursor", args = {MappedStatement.class, Object.class, RowBounds.class}),
             @Signature(type = Executor.class, method = "update", args = {MappedStatement.class, Object.class})
     })
     @Slf4j
-    static class MybatisInterceptor implements Interceptor {
+class MybatisInterceptor implements Interceptor {
         private static final Map<String, Class<?>> CACHED_CLASS = new HashMap<>();
 
         @SneakyThrows
@@ -124,9 +121,12 @@ class MybatisMoniLogInterceptor {
                     }
                     MappedStatement mappedStatement = (MappedStatement) args[0];
                     setServiceClsAndMethodName(mappedStatement, info);
-                    // 获取sql
-                    sql = mappedStatement.getBoundSql(args[1]).getSql().replaceAll("--[^\n|\\\\n].+(\n|\\\\n)", "").replaceAll("(\\\\n)+|\n+|\r+|\\s+", " ");
-                }
+                    try{
+                        // 获取sql
+                        sql = mappedStatement.getBoundSql(args[1]).getSql().replaceAll("--[^\n|\\\\n].+(\n|\\\\n)", "").replaceAll("(\\\\n)+|\n+|\r+|\\s+", " ");
+                    }catch (Throwable ignored){}
+                        // 这个错误在执行的时候抛出来，此错误直接吞掉
+                    }
                 // 这段代码走不到了
                 if (StatementHandler.class.isAssignableFrom(serviceCls)) {
                     Object expectedStatementHandler = getStatementHandlerObject(invocation);
@@ -184,4 +184,3 @@ class MybatisMoniLogInterceptor {
             return expectedStatementHandler;
         }
     }
-}

@@ -1,18 +1,15 @@
 package com.jiduauto.monilog;
 
+import javassist.*;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.ibatis.javassist.*;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringApplicationRunListener;
 import org.springframework.core.Ordered;
 
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.jiduauto.monilog.MoniLogUtil.INNER_DEBUG_PREFIX;
+import static com.jiduauto.monilog.MoniLogUtil.INNER_DEBUG_LOG_PREFIX;
 
 /**
  * @author yp
@@ -24,6 +21,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
     private static final String HTTP_ASYNC_CLIENT_EXCHANGE_HANDLER = "org.apache.http.impl.nio.client.AbstractClientExchangeHandler";
     private static final String HTTP_ASYNC_CLIENT_BUILDER = "org.apache.http.impl.nio.client.HttpAsyncClientBuilder";
     private static final String HTTP_CLIENT_BUILDER = "org.apache.http.impl.client.HttpClientBuilder";
+    private static final String OK_HTTP_CLIENT_BUILDER = "okhttp3.OkHttpClient$Builder";
     private static final String FEIGN_CLIENT = "feign.Client";
     private static final String ROCKET_MQ_CONSUMER = "org.apache.rocketmq.client.consumer.DefaultMQPushConsumer";
     private static final String ROCKET_MQ_PRODUCER = "org.apache.rocketmq.client.impl.producer.DefaultMQProducerImpl";
@@ -32,6 +30,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
 
     private static final Map<String, AtomicBoolean> FLAGS = new HashMap<String, AtomicBoolean>() {{
         put(HTTP_CLIENT_BUILDER, new AtomicBoolean());
+        put(OK_HTTP_CLIENT_BUILDER, new AtomicBoolean());
         put(HTTP_SYNC_CLIENT, new AtomicBoolean());
         put(HTTP_ASYNC_CLIENT_BUILDER, new AtomicBoolean());
         put(HTTP_ASYNC_CLIENT_EXCHANGE_HANDLER, new AtomicBoolean());
@@ -43,13 +42,25 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
     }};
 
     private MoniLogEnhancer(SpringApplication app, String[] args) {
+        Set<Class<?>> set = new HashSet<>();
+        set.add(FeignMoniLogInterceptor.class);
+        set.add(RocketMqMoniLogInterceptor.class);
+        set.add(HttpClientMoniLogInterceptor.class);
+        set.add(OkHttpClientMoniLogInterceptor.class);
+        set.add(RedisMoniLogInterceptor.class);
+        log.info("loaded class:{}", set.size());
+    }
+
+    @Override
+    public void starting() {
         enhanceHttpClient();
         enhanceFeignClient();
         enhanceRocketMqConsumer();
         enhanceRocketMqProducer();
         enhanceRedisConnFactory();
-        SpringApplicationRunListener.super.starting();
     }
+
+
 
     @Override
     public int getOrder() {
@@ -65,6 +76,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         if (success) {
             doEnhanceAsyncErrorHandler();
         }
+        enhanceOkHttpClient();
     }
 
     private static void enhanceFeignClient() {
@@ -153,6 +165,27 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             logWarn(e, clsName);
         }
         return false;
+    }
+
+    /**
+     * 增强OkHttpClient
+     */
+    private static void enhanceOkHttpClient() {
+        String clsName = OK_HTTP_CLIENT_BUILDER;
+        if (FLAGS.get(OK_HTTP_CLIENT_BUILDER).get()) {
+            return;
+        }
+        // 对构造函数进行增强，添加一个拦截器
+        try{
+            CtClass ctCls = getCtClass(clsName);
+            String body = "{this.addInterceptor(new "+OkHttpClientMoniLogInterceptor.class.getCanonicalName()+".OkHttpInterceptor());}";
+            ctCls.getConstructor("()V").insertAfter(body);
+            Class<?> targetCls = ctCls.toClass();
+            log.info("constructor of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            FLAGS.get(clsName).set(true);
+        }catch (Throwable e){
+            logWarn(e, clsName);
+        }
     }
 
     private static void doEnhanceSyncErrorHandler() {
@@ -265,6 +298,6 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         if (e instanceof NotFoundException) {
             return;
         }
-        log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}]", cls, e);
+        log.warn(INNER_DEBUG_LOG_PREFIX + "failed to rebuild [{}]", cls, e);
     }
 }

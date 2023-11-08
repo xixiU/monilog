@@ -179,13 +179,12 @@ class MoniLogProperties implements InitializingBean {
         log.info("monilog properties binding...");
         ApplicationContext applicationContext = SpringUtils.getApplicationContext();
         if (applicationContext == null) {
-            log.warn(MoniLogUtil.INNER_DEBUG_PREFIX + "properties bind failed,applicationCtx is null");
+            log.warn(MoniLogUtil.INNER_DEBUG_LOG_PREFIX + "properties bind failed,applicationCtx is null");
             return;
         }
         try {
             BindResult<MoniLogProperties> monilogBindResult = Binder.get(applicationContext.getEnvironment()).bind("monilog", MoniLogProperties.class);
             if (!monilogBindResult.isBound()) {
-                log.warn(MoniLogUtil.INNER_DEBUG_PREFIX + "properties bind failed, not bound");
                 return;
             }
             // 当存在属性值进行属性替换，防止配置不生效
@@ -200,7 +199,7 @@ class MoniLogProperties implements InitializingBean {
                     field.set(this, field.get(newProp));
                 } catch (IllegalAccessException e) {
                     // 处理异常
-                    log.warn(MoniLogUtil.INNER_DEBUG_PREFIX + "properties bind error, illegalAccess");
+                    log.warn(MoniLogUtil.INNER_DEBUG_LOG_PREFIX + "properties bind error, illegalAccess");
                 }
             }
         } finally {
@@ -284,6 +283,13 @@ class MoniLogProperties implements InitializingBean {
          * 收集组件测试报告，内部组件测试用
          */
         private boolean reportTestResult = false;
+
+        /**
+         * 日志信息是否输出traceId，默认输出；
+         * 在告警时会在信息主体部分添加traceId，方便排查问题。但是此信息在日志平台直接观察时traceId会重复打印，若不想打印traceId可以设置此开关为false;
+         */
+        private boolean printTraceId = true;
+
         /**
          * 日志输出级别配置
          */

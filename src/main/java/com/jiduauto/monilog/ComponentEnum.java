@@ -21,5 +21,5 @@ enum ComponentEnum {
     rocketmq_consumer,
     rocketmq_producer,
     mybatis,
-    redis,
+    redis
 }

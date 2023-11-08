@@ -3,6 +3,7 @@ package com.jiduauto.monilog;
 
 import com.google.common.collect.Sets;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
@@ -69,7 +70,7 @@ public class RedisMoniLogInterceptor {
                 throw e;
             } finally {
                 p.setCost(System.currentTimeMillis() - start);
-                JedisInvocation ri = parseRedisInvocation(invocation.getMethod(), ret);
+                JedisInvocation ri = parseRedisInvocation(RedisMethodInfo.fromInvocation(invocation), ret);
                 p.setInput(ri.args);
                 p.setOutput(ri.result);
                 p.setServiceCls(ri.cls);
@@ -88,25 +89,26 @@ public class RedisMoniLogInterceptor {
         /**
          * 访问修饰符、方法名不可修改
          */
-        public static RedisConnection buildProxyForRedisConnection(RedisConnection conn){
+        public static RedisConnection buildProxyForRedisConnection(RedisConnection conn) {
             return ProxyUtils.getProxy(conn, new RedisConnectionFactoryInterceptor());
         }
 
         /**
          * 访问修饰符、方法名不可修改
          */
-        public static RedisClusterConnection buildProxyForRedisClusterConnection(RedisClusterConnection conn){
+        public static RedisClusterConnection buildProxyForRedisClusterConnection(RedisClusterConnection conn) {
             return ProxyUtils.getProxy(conn, new RedisConnectionFactoryInterceptor());
         }
+
         /**
          * 访问修饰符、方法名不可修改
          */
         public static void redisRecordException(Throwable e, long cost) {
             Method m;
-            try{
+            try {
                 m = JedisConnectionFactory.class.getDeclaredMethod("getConnection");
-            }catch (Throwable ex){
-                MoniLogUtil.innerDebug("doFeignInvocationRecord error", ex);
+            } catch (Throwable ex) {
+                MoniLogUtil.innerDebug("redisRecordException error", ex);
                 return;
             }
             MoniLogParams p = new MoniLogParams();
@@ -120,7 +122,7 @@ public class RedisMoniLogInterceptor {
                 p.setMsgCode(errorInfo.getErrorCode());
                 p.setMsgInfo(errorInfo.getErrorMsg());
 
-                JedisInvocation ri = parseRedisInvocation(m, null);
+                JedisInvocation ri = parseRedisInvocation(RedisMethodInfo.fromMethod(m), null);
                 p.setInput(ri.args);
                 p.setOutput(ri.result);
                 p.setServiceCls(ri.cls);
@@ -138,7 +140,7 @@ public class RedisMoniLogInterceptor {
             }
         }
 
-        private static JedisInvocation parseRedisInvocation(Method m, Object ret) {
+        private static JedisInvocation parseRedisInvocation(RedisMethodInfo m, Object ret) {
             JedisInvocation ri = new JedisInvocation();
             try {
                 StackTraceElement st = ThreadUtil.getNextClassFromStack(null);
@@ -147,14 +149,14 @@ public class RedisMoniLogInterceptor {
                     ri.method = st.getMethodName();
                 } else {
                     ri.cls = m.getClass();
-                    ri.method = m.getName();
+                    ri.method = m.getMethod();
                 }
             } catch (Exception ignore) {
                 ri.cls = m.getClass();
-                ri.method = m.getName();
+                ri.method = m.getMethod();
             }
             try {
-                Object[] args = m.getParameters();
+                Object[] args = m.getArgs();
                 ri.args = deserializeRedisArgs(args);
                 ri.maybeKey = chooseStringKey(ri.args);
                 ri.result = ret == null ? null : tryDeserialize(ret, false);
@@ -219,6 +221,7 @@ public class RedisMoniLogInterceptor {
     @AllArgsConstructor
     private static class RedissonResultProxy implements MethodInterceptor {
         private final MoniLogParams p;
+
         @Override
         public Object invoke(MethodInvocation invocation) throws Throwable {
             Method method = invocation.getMethod();
@@ -255,6 +258,24 @@ public class RedisMoniLogInterceptor {
         }
     }
 
+    @Getter
+    @AllArgsConstructor
+    private static class RedisMethodInfo {
+        private String cls;
+        private String method;
+        private Object[] args;
+
+        static RedisMethodInfo fromInvocation(MethodInvocation inv) {
+            String methodName = inv.getMethod().getName();
+            String serviceName = inv.getThis().getClass().getSimpleName();
+            return new RedisMethodInfo(serviceName, methodName, inv.getArguments());
+        }
+
+        static RedisMethodInfo fromMethod(Method m) {
+            return new RedisMethodInfo(m.getClass().getSimpleName(), m.getName(), null);
+        }
+    }
+
     private static class JedisInvocation {
         Class<?> cls;
         String method;
@@ -274,7 +295,7 @@ public class RedisMoniLogInterceptor {
                 continue;
             }
             ret.add(tryDeserialize(arg, firstByte));
-            if (arg instanceof byte[]) {
+            if (isByteKey(arg)) {
                 if (firstByte) {
                     firstByte = false;
                 }
@@ -284,19 +305,36 @@ public class RedisMoniLogInterceptor {
     }
 
     private static Object tryDeserialize(Object arg, boolean first) {
-        if (arg instanceof byte[]) {
-            if (first) {
-                return stringSerializer.deserialize((byte[]) arg);
-            } else {
-                try {
-                    return jdkSerializer.deserialize((byte[]) arg);
-                } catch (SerializationException e) {
-                    return stringSerializer.deserialize((byte[]) arg);
-                }
-            }
-        } else {
+        if (!isByteKey(arg)) {
             return arg;
         }
+        byte[] byted = getByteKey(arg);
+        if (first) {
+            return stringSerializer.deserialize(byted);
+        } else {
+            try {
+                return jdkSerializer.deserialize(byted);
+            } catch (SerializationException e) {
+                return stringSerializer.deserialize(byted);
+            }
+        }
+    }
+
+    private static boolean isByteKey(Object arg) {
+        return getByteKey(arg) != null;
+    }
+
+    private static byte[] getByteKey(Object arg) {
+        if (arg == null) {
+            return null;
+        }
+        if (arg instanceof byte[]) {
+            return (byte[]) arg;
+        }
+        if (arg instanceof byte[][] && ((byte[][]) arg).length == 1) {
+            return ((byte[][]) arg)[0];
+        }
+        return null;
     }
 
     private static String chooseStringKey(Object[] input) {
