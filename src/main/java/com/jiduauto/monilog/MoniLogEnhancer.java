@@ -6,10 +6,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringApplicationRunListener;
 import org.springframework.core.Ordered;
 
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.jiduauto.monilog.MoniLogUtil.INNER_DEBUG_LOG_PREFIX;
@@ -44,7 +41,15 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         put(LETTUCE_CONN_FACTORY, new AtomicBoolean());
     }};
 
-    private MoniLogEnhancer(SpringApplication app, String[] args) {}
+    private MoniLogEnhancer(SpringApplication app, String[] args) {
+        Set<Class<?>> set = new HashSet<>();
+        set.add(FeignMoniLogInterceptor.class);
+        set.add(RocketMqMoniLogInterceptor.class);
+        set.add(HttpClientMoniLogInterceptor.class);
+        set.add(OkHttpClientMoniLogInterceptor.class);
+        set.add(RedisMoniLogInterceptor.class);
+        log.info("loaded class:{}", set.size());
+    }
 
     @Override
     public void starting() {
