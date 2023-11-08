@@ -65,7 +65,7 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
             case DETAIL:
             case DIGEST:
                 level = getFalseResultLogLevel();
-                level = p.getException() != null ? LogLevel.ERROR : p.isSuccess() || level == LogLevel.INFO ? LogLevel.INFO : level;
+                level = p.getException() != null ? LogLevel.ERROR : p.isSuccess() ? LogLevel.INFO : level;
                 return level;
             case LARGE_SIZE:
                 return getLargeSizeLogLevel();
@@ -104,8 +104,6 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         Throwable ex = p.getException();
         String[] tags = p.getTags();
         String tagStr = tags == null || tags.length == 0 ? "" : "|" + Arrays.toString(tags);
-        LogLevel level = getFalseResultLogLevel();
-        level = ex != null ? LogLevel.ERROR : p.isSuccess() || level == LogLevel.INFO ? LogLevel.INFO : level;
         List<Object> logParamsList = new ArrayList<>(Arrays.asList(getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr));
         LogType logType = LogType.DIGEST;
         if (isDetail) {
@@ -115,6 +113,7 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
             logParamsList.add(output);
             logType = LogType.DETAIL;
         }
+        LogLevel level = getLogLevel(p, logType);
         String pattern = getLogPattern(p, logType);
         if (ex != null) {
             logParamsList.add(ex);
