@@ -131,7 +131,6 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
     @Override
     public void logDigest(MoniLogParams p) {
         logDetailOrDigest(p, false);
-
     }
 
     @Override
