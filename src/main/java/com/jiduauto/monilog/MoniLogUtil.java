@@ -26,9 +26,9 @@ class MoniLogUtil extends MoniLogThreadHolder{
     /**
      * 组件监控前缀
      */
-    private static final String BUSINESS_MONITOR_PREFIX = "monilog_";
+    private static final String METRIC_PREFIX = "monilog_";
     // 这个后面的分隔符不能去掉，去掉会导致日志检索的时候查不到对应的日志
-    static final String INNER_DEBUG_PREFIX = "__monilog_warn__|";
+    static final String INNER_DEBUG_LOG_PREFIX = "__monilog_warn__|";
 
     private static MoniLogPrinter logPrinter = null;
     private static MoniLogProperties logProperties = null;
@@ -69,7 +69,7 @@ class MoniLogUtil extends MoniLogThreadHolder{
             TagBuilder tag = TagBuilder.of("application", SpringUtils.application)
                     .add("env", SpringUtils.activeProfile)
                     .add("version", MoniLogAutoConfiguration.class.getPackage().getImplementationVersion());
-            MetricMonitor.record(BUSINESS_MONITOR_PREFIX + "sysVersion", tag.toArray());
+            MetricMonitor.record(METRIC_PREFIX + "sysVersion", tag.toArray());
         } catch (Exception e) {
             innerDebug("addSystemRecord error", e);
         }
@@ -116,13 +116,18 @@ class MoniLogUtil extends MoniLogThreadHolder{
             }
         }
         MoniLogPrinter printer = getLogPrinter();
+        // 内部异常默认添加traceId
         String traceId = printer == null ? new DefaultMoniLogPrinter().getTraceId() : printer.getTraceId();
-        String prefix = "[" + traceId + "]" + INNER_DEBUG_PREFIX;
+        String prefix = "[" + traceId + "]" + INNER_DEBUG_LOG_PREFIX;
         log.warn(prefix, args);
         LogCollector reporter = SpringUtils.getBeanWithoutException(LogCollector.class);
         if (reporter != null && reporter.getStart().get()) {
             reporter.addInnerDebug(prefix + pattern + Arrays.toString(args));
         }
+        // 内部异常添加metric上报
+        TagBuilder tagBuilder = TagBuilder.of("application", SpringUtils.application);
+        MetricMonitor.record(METRIC_PREFIX + "inner_debug",tagBuilder.toArray());
+
     }
 
     private static void doMonitor(MoniLogParams logParams) {
@@ -136,7 +141,7 @@ class MoniLogUtil extends MoniLogThreadHolder{
         }
         String[] allTags = systemTags.add(logParams.getTags()).toArray();
 
-        String name = BUSINESS_MONITOR_PREFIX + logPoint.name();
+        String name = METRIC_PREFIX + logPoint.name();
         MetricMonitor.record(name + MonitorType.RECORD.getMark(), allTags);
         // 耗时只打印基础tag
         MetricMonitor.eventDruation(name + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
@@ -170,7 +175,7 @@ class MoniLogUtil extends MoniLogThreadHolder{
         String[] allTags = systemTags.add(logParams.getTags()).toArray();
         if ((LogLongRtLevel.both.equals(rtTooLongLevel) || LogLongRtLevel.onlyPrometheus.equals(rtTooLongLevel)) && logProperties.isEnableMonitor()) {
             // 操作操作信息
-            String operationCostTooLongMonitorPrefix = BUSINESS_MONITOR_PREFIX + "rt_too_long_" + logPoint.name();
+            String operationCostTooLongMonitorPrefix = METRIC_PREFIX + "rt_too_long_" + logPoint.name();
             MetricMonitor.record(operationCostTooLongMonitorPrefix + MonitorType.RECORD.getMark(), allTags);
             // 耗时只打印基础tag
             MetricMonitor.eventDruation(operationCostTooLongMonitorPrefix + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
@@ -386,7 +391,7 @@ class MoniLogUtil extends MoniLogThreadHolder{
         try {
             printer = SpringUtils.getBean(MoniLogPrinter.class);
         } catch (Exception e) {
-            log.warn(INNER_DEBUG_PREFIX + ":no MoniLogPrinter instance found", e);
+            log.warn(INNER_DEBUG_LOG_PREFIX + ":no MoniLogPrinter instance found", e);
         }
         return (logPrinter = printer);
     }

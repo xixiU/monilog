@@ -179,7 +179,7 @@ class MoniLogProperties implements InitializingBean {
         log.info("monilog properties binding...");
         ApplicationContext applicationContext = SpringUtils.getApplicationContext();
         if (applicationContext == null) {
-            log.warn(MoniLogUtil.INNER_DEBUG_PREFIX + "properties bind failed,applicationCtx is null");
+            log.warn(MoniLogUtil.INNER_DEBUG_LOG_PREFIX + "properties bind failed,applicationCtx is null");
             return;
         }
         try {
@@ -199,7 +199,7 @@ class MoniLogProperties implements InitializingBean {
                     field.set(this, field.get(newProp));
                 } catch (IllegalAccessException e) {
                     // 处理异常
-                    log.warn(MoniLogUtil.INNER_DEBUG_PREFIX + "properties bind error, illegalAccess");
+                    log.warn(MoniLogUtil.INNER_DEBUG_LOG_PREFIX + "properties bind error, illegalAccess");
                 }
             }
         } finally {

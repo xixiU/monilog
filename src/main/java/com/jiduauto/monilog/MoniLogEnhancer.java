@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.jiduauto.monilog.MoniLogUtil.INNER_DEBUG_PREFIX;
+import static com.jiduauto.monilog.MoniLogUtil.INNER_DEBUG_LOG_PREFIX;
 
 /**
  * @author yp
@@ -289,6 +289,6 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         if (e instanceof NotFoundException) {
             return;
         }
-        log.warn(INNER_DEBUG_PREFIX + "failed to rebuild [{}]", cls, e);
+        log.warn(INNER_DEBUG_LOG_PREFIX + "failed to rebuild [{}]", cls, e);
     }
 }
