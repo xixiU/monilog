@@ -183,10 +183,13 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
 
         try{
             Object attribute = request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE);
-            if (!(attribute instanceof Map)) {
+            if (attribute == null || !(attribute instanceof Map)) {
                 return originUrl;
             }
             Map<String, String> attributeParmasMap = (Map<String, String>) attribute;
+            if (attributeParmasMap == null || attributeParmasMap.isEmpty()) {
+                return originUrl;
+            }
             for (Map.Entry<String, String> entry : attributeParmasMap.entrySet()) {
                 if (!originUrl.contains(entry.getValue())) {
                     continue;
