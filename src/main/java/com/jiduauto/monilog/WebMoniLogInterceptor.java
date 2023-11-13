@@ -107,9 +107,8 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             logParams.setServiceCls(method.getBeanType());
             logParams.setService(method.getBeanType().getSimpleName());
             logParams.setAction(method.getMethod().getName());
-            TagBuilder tagBuilder = TagBuilder.of(tagList).add("url", HttpRequestData.extractPath(requestUri)).add("method", request.getMethod());
+            TagBuilder tagBuilder = TagBuilder.of(tagList).add("url", getUrl(request)).add("method", request.getMethod());
             logParams.setTags(tagBuilder.toArray());
-
 
             Map<String, Object> requestBodyMap = new HashMap<>();
             logParams.setLogPoint(logPoint);
@@ -176,6 +175,26 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             }
             logParams.setCost(System.currentTimeMillis() - startTime);
             MoniLogUtil.log(logParams);
+        }
+    }
+    private static String getUrl(HttpServletRequest request){
+        String originUrl = HttpRequestData.extractPath(request.getRequestURI());
+
+        try{
+            Object attribute = request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE);
+            if (attribute == null || attribute instanceof Map) {
+                return originUrl;
+            }
+            Map<String, String> attributeParmasMap = (Map<String, String>) attribute;
+            for (Map.Entry<String, String> entry : attributeParmasMap.entrySet()) {
+                if (!originUrl.contains(entry.getValue())) {
+                    continue;
+                }
+                originUrl = originUrl.replaceAll(entry.getValue(), "{"+entry.getKey()+"}");
+            }
+            return originUrl;
+        }catch (Exception e){
+            return originUrl;
         }
     }
 
