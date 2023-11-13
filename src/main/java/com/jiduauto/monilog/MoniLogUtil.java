@@ -21,7 +21,7 @@ import static com.carrotsearch.sizeof.RamUsageEstimator.ONE_KB;
  * @date 2023/7/17 16:42
  */
 @Slf4j
-class MoniLogUtil extends MoniLogThreadHolder{
+class MoniLogUtil {
 
     /**
      * 组件监控前缀
