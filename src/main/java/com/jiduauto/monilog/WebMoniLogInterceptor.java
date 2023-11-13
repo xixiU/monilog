@@ -177,12 +177,13 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             MoniLogUtil.log(logParams);
         }
     }
+    @SuppressWarnings("all")
     private static String getUrl(HttpServletRequest request){
         String originUrl = HttpRequestData.extractPath(request.getRequestURI());
 
         try{
             Object attribute = request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE);
-            if (attribute == null || attribute instanceof Map) {
+            if (!(attribute instanceof Map)) {
                 return originUrl;
             }
             Map<String, String> attributeParmasMap = (Map<String, String>) attribute;
