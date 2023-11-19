@@ -119,7 +119,7 @@ class MoniLogUtil {
         // 内部异常默认添加traceId
         String traceId = printer == null ? new DefaultMoniLogPrinter().getTraceId() : printer.getTraceId();
         String prefix = "[" + traceId + "]" + INNER_DEBUG_LOG_PREFIX;
-        log.warn(prefix, args);
+        log.warn(prefix + pattern, args);
         LogCollector reporter = SpringUtils.getBeanWithoutException(LogCollector.class);
         if (reporter != null && reporter.getStart().get()) {
             reporter.addInnerDebug(prefix + pattern + Arrays.toString(args));
