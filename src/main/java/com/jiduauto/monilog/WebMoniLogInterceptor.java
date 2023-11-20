@@ -74,6 +74,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
         long startTime = System.currentTimeMillis();
 
         String requestUri = request.getRequestURI();
+        MoniLogUtil.innerDebug("monilog web doFilterInternal start:{}",requestUri);
         Set<String> urlBlackList = webProperties.getUrlBlackList();
         if (checkPathMatch(urlBlackList, requestUri)) {
             filterChain.doFilter(request, response);
@@ -132,6 +133,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(response);
             try {
                 filterChain.doFilter(request, wrapperResponse);
+                MoniLogUtil.innerDebug("monilog web doFilterInternal doFilter:{}",requestUri);
             } catch (Exception e) {
                 // 业务异常
                 bizException = e;
