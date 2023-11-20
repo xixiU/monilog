@@ -63,7 +63,6 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             isMultipart = ServletFileUpload.isMultipartContent(httpServletRequest);
             request = isMultipart ? httpServletRequest : new RequestWrapper(httpServletRequest);
         }catch (Exception e){
-            MoniLogUtil.innerDebug("check multipart error: {}", e.getMessage());
             filterChain.doFilter(httpServletRequest, response);
             return;
         }
