@@ -19,7 +19,7 @@ class RequestWrapper extends HttpServletRequestWrapper {
     private byte[] body;
     private Map<String, String[]> modifiableParameters;
 
-    public RequestWrapper(HttpServletRequest request) {
+    public RequestWrapper(HttpServletRequest request) throws IOException{
         super(request);
         String sessionStream = getBodyString(request);
         body = sessionStream.getBytes(CHARSET);
@@ -33,7 +33,7 @@ class RequestWrapper extends HttpServletRequestWrapper {
     /**
      * 获取请求Body
      */
-    public String getBodyString(ServletRequest request) {
+    public String getBodyString(ServletRequest request) throws IOException {
         StringBuilder sb = new StringBuilder();
         try (InputStream inputStream = cloneInputStream(request.getInputStream());
              BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, CHARSET))) {
@@ -43,6 +43,7 @@ class RequestWrapper extends HttpServletRequestWrapper {
             }
         } catch (IOException e) {
             MoniLogUtil.innerDebug("RequestWrapper.getBodyString error", e);
+            throw e;
         }
         return sb.toString();
     }
