@@ -55,9 +55,11 @@ class MybatisInterceptor implements Interceptor {
                 logParams.setService(invocationInfo.serviceCls.getSimpleName());
                 logParams.setAction(invocationInfo.methodName);
                 logParams.setInput(new String[]{invocationInfo.sql});
+                logParams.setMsgCode(ErrorEnum.SUCCESS.name());
                 try {
                     obj = invocation.proceed();
                 } catch (Throwable t) {
+                    logParams.setMsgCode(ErrorEnum.FAILED.name());
                     bizException = t;
                 }
                 logParams.setOutput(obj);
