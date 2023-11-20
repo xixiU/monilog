@@ -19,7 +19,7 @@ class RequestWrapper extends HttpServletRequestWrapper {
     private byte[] body;
     private Map<String, String[]> modifiableParameters;
 
-    public RequestWrapper(HttpServletRequest request) throws IOException{
+    public RequestWrapper(HttpServletRequest request) throws IOException {
         super(request);
         String sessionStream = getBodyString(request);
         body = sessionStream.getBytes(CHARSET);
@@ -48,7 +48,7 @@ class RequestWrapper extends HttpServletRequestWrapper {
     /**
      * 复制输入流
      */
-    public InputStream cloneInputStream(ServletInputStream inputStream) throws IOException{
+    public InputStream cloneInputStream(ServletInputStream inputStream) throws IOException {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         byte[] buffer = new byte[2048];
         int len;
@@ -56,7 +56,6 @@ class RequestWrapper extends HttpServletRequestWrapper {
             byteArrayOutputStream.write(buffer, 0, len);
         }
         byteArrayOutputStream.flush();
-
         return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
     }
 

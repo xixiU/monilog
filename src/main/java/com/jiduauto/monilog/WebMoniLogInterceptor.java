@@ -63,6 +63,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             isMultipart = ServletFileUpload.isMultipartContent(httpServletRequest);
             request = isMultipart ? httpServletRequest : new RequestWrapper(httpServletRequest);
         }catch (Exception e){
+            MoniLogUtil.innerDebug("check multipart error: {}", e.getMessage());
             filterChain.doFilter(httpServletRequest, response);
             return;
         }
@@ -190,6 +191,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
                 return originUrl;
             }
             for (Map.Entry<String, String> entry : attributeParmasMap.entrySet()) {
+                //{userId} : /2323
                 if (!originUrl.contains(entry.getValue())) {
                     continue;
                 }
