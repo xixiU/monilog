@@ -41,8 +41,6 @@ class RequestWrapper extends HttpServletRequestWrapper {
             while ((line = reader.readLine()) != null) {
                 sb.append(line);
             }
-        } catch (IOException e) {
-            throw e;
         }
         return sb.toString();
     }
