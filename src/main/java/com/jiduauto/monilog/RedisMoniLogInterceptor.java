@@ -183,6 +183,16 @@ public class RedisMoniLogInterceptor {
      */
     @Aspect
     static class RedissonInterceptor {
+
+        public static Object getProxy(RedissonClient client) {
+            return ProxyUtils.getProxy(client, new MethodInterceptor() {
+                @Override
+                public Object invoke(MethodInvocation invocation) throws Throwable {
+                    return null;
+                }
+            });
+        }
+
         @Around("execution(public org.redisson.api.R* org.redisson.api.RedissonClient+.*(..))")
         private Object interceptRedisson(ProceedingJoinPoint pjp) throws Throwable {
             MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
