@@ -107,7 +107,12 @@ final class ResultParser {
     }
 
     public static <T> ParsedInfo<T> parseByPaths(Object obj, @NotNull String jsonpaths, @NotNull Class<T> resultCls) {
-        return parseByPaths(obj, SplitterUtil.splitByComma(jsonpaths), resultCls);
+        try{
+            return parseByPaths(obj, SplitterUtil.splitByComma(jsonpaths), resultCls);
+        }catch (Exception e){
+            MoniLogUtil.innerDebug("parseByPaths error, obj:{}", e);
+            return null;
+        }
     }
 
     /**
@@ -147,9 +152,16 @@ final class ResultParser {
         if (obj == null) {
             return null;
         }
-        Preconditions.checkArgument(StringUtils.isNotBlank(jsonpath), "解析路径不能为空");
-        Preconditions.checkNotNull(resultCls, "目标值类型不能为空");
-        Preconditions.checkArgument(StringUtils.contains(jsonpath, "$."), "解析路径非法，需要以\"$.\"指定解析路径的根");
+        if (StringUtils.isBlank(jsonpath)) {
+            MoniLogUtil.innerDebug("解析路径不能为空");
+            return null;
+        }
+        if (resultCls == null) {
+            MoniLogUtil.innerDebug("目标值类型不能为空");
+        }
+        if (!StringUtils.contains(jsonpath,"$.")) {
+            MoniLogUtil.innerDebug("解析路径非法:{}，需要以\"$.\"指定解析路径的根", jsonpath);
+        }
         try {
             String path = jsonpath;
             String expect = null;

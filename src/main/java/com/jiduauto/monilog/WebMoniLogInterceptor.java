@@ -191,11 +191,10 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
                 return originUrl;
             }
             for (Map.Entry<String, String> entry : attributeParmasMap.entrySet()) {
-                //{userId} : /2323
-                if (!originUrl.contains(entry.getValue())) {
+                if (!originUrl.contains("/"+entry.getValue())) {
                     continue;
                 }
-                originUrl = originUrl.replaceAll(entry.getValue(), "{"+entry.getKey()+"}");
+                originUrl = originUrl.replaceAll("/"+entry.getValue(), "{"+entry.getKey()+"}");
             }
             return originUrl;
         }catch (Exception e){
