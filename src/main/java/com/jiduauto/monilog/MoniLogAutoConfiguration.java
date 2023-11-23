@@ -30,19 +30,18 @@ class MoniLogAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(name = "spring.mvc.throw-exception-if-no-handler-found", havingValue = "true")
-    MoniLogExceptionHandler initGlobalExceptionHandler() {
+    MoniLogExceptionHandler moniLogExceptionHandler() {
         return new MoniLogExceptionHandler();
     }
 
     @Order(Ordered.HIGHEST_PRECEDENCE)
-    @Bean("__springUtils")
-    static SpringUtils springUtils() {
+    static SpringUtils moniLogSpringUtils() {
         return new SpringUtils();
     }
 
     @Bean
     @ConditionalOnProperty(prefix = "monilog.printer", name = "report-test-result")
-    LogCollector testReporter() {
+    LogCollector moniLogTestReporter() {
         return new LogCollector();
     }
 
@@ -54,7 +53,7 @@ class MoniLogAutoConfiguration {
 
     @Bean
     @ConditionalOnBean(MoniLogPrinter.class)
-    MoniLogAop aspectProcessor() {
+    MoniLogAop moniLogAop() {
         log.info(">>>monilog core start...");
         return new MoniLogAop();
     }
@@ -64,15 +63,15 @@ class MoniLogAutoConfiguration {
         @Order(-200)
         @GrpcGlobalServerInterceptor
         @ConditionalOnClass(name = "io.grpc.stub.ServerCalls")
-        GrpcMoniLogInterceptor.GrpcLogPrintServerInterceptor grpcLogPrintServerInterceptor() {
-            log.info(">>>monilog {} start...",ComponentEnum.grpc_server);
+        GrpcMoniLogInterceptor.GrpcLogPrintServerInterceptor grpcMoniLogPrintServerInterceptor() {
+            log.info(">>>monilog {} start...", ComponentEnum.grpc_server);
             return new GrpcMoniLogInterceptor.GrpcLogPrintServerInterceptor();
         }
 
         @Order
         @GrpcGlobalClientInterceptor
         @ConditionalOnClass(name = "io.grpc.ClientInterceptor")
-        GrpcMoniLogInterceptor.GrpcLogPrintClientInterceptor grpcLogPrintClientInterceptor() {
+        GrpcMoniLogInterceptor.GrpcLogPrintClientInterceptor grpcMoniLogPrintClientInterceptor() {
             log.info(">>>monilog {} start...", ComponentEnum.grpc_client);
             return new GrpcMoniLogInterceptor.GrpcLogPrintClientInterceptor();
         }
@@ -81,13 +80,14 @@ class MoniLogAutoConfiguration {
     @ConditionalOnClass(name = "org.apache.ibatis.plugin.Interceptor")
     @Bean
     @ConditionalOnProperty(prefix = "monilog.mybatis", name = "enable", havingValue = "true", matchIfMissing = true)
-    FactoryBean<MybatisInterceptor> moniLog() {
+    FactoryBean<MybatisInterceptor> moniLogFactoryBean() {
         log.info(">>>monilog {} start...", ComponentEnum.mybatis);
         return new FactoryBean<MybatisInterceptor>() {
             @Override
             public MybatisInterceptor getObject() throws Exception {
                 return new MybatisInterceptor();
             }
+
             @Override
             public Class<?> getObjectType() {
                 return MybatisInterceptor.class;
@@ -125,7 +125,7 @@ class MoniLogAutoConfiguration {
 
     @ConditionalOnClass(name = "org.redisson.api.RedissonClient")
     @Bean
-    RedisMoniLogInterceptor.RedissonInterceptor redissonInterceptor() {
+    RedisMoniLogInterceptor.RedissonInterceptor redissonMoniLogInterceptor() {
         log.info(">>>monilog redis[redisson] start...");
         return new RedisMoniLogInterceptor.RedissonInterceptor();
     }
