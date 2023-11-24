@@ -122,11 +122,4 @@ class MoniLogAutoConfiguration {
         log.info(">>>monilog {} start...", ComponentEnum.xxljob);
         return new XxlJobMoniLogInterceptor();
     }
-
-    @ConditionalOnClass(name = "org.redisson.api.RedissonClient")
-    @Bean
-    RedisMoniLogInterceptor.RedissonInterceptor redissonMoniLogInterceptor() {
-        log.info(">>>monilog redis[redisson] start...");
-        return new RedisMoniLogInterceptor.RedissonInterceptor();
-    }
 }

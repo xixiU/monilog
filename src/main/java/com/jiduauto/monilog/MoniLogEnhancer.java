@@ -27,6 +27,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
     private static final String ROCKET_MQ_PRODUCER = "org.apache.rocketmq.client.impl.producer.DefaultMQProducerImpl";
     private static final String JEDIS_CONN_FACTORY = "org.springframework.data.redis.connection.jedis.JedisConnectionFactory";
     private static final String LETTUCE_CONN_FACTORY = "org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory";
+    private static final String REDISSON_CLIENT = "org.redisson.Redisson";
 
     private static final Map<String, AtomicBoolean> FLAGS = new HashMap<String, AtomicBoolean>() {{
         put(HTTP_CLIENT_BUILDER, new AtomicBoolean());
@@ -39,6 +40,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         put(ROCKET_MQ_PRODUCER, new AtomicBoolean());
         put(JEDIS_CONN_FACTORY, new AtomicBoolean());
         put(LETTUCE_CONN_FACTORY, new AtomicBoolean());
+        put(REDISSON_CLIENT, new AtomicBoolean());
     }};
 
     private MoniLogEnhancer(SpringApplication app, String[] args) {
@@ -58,9 +60,8 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         enhanceRocketMqConsumer();
         enhanceRocketMqProducer();
         enhanceRedisConnFactory();
+        enhanceRedisson();
     }
-
-
 
     @Override
     public int getOrder() {
@@ -176,14 +177,14 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             return;
         }
         // 对构造函数进行增强，添加一个拦截器
-        try{
+        try {
             CtClass ctCls = getCtClass(clsName);
-            String body = "{this.addInterceptor(new "+OkHttpClientMoniLogInterceptor.class.getCanonicalName()+".OkHttpInterceptor());}";
+            String body = "{this.addInterceptor(new " + OkHttpClientMoniLogInterceptor.class.getCanonicalName() + ".OkHttpInterceptor());}";
             ctCls.getConstructor("()V").insertAfter(body);
             Class<?> targetCls = ctCls.toClass();
             log.info("constructor of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(clsName).set(true);
-        }catch (Throwable e){
+        } catch (Throwable e) {
             logWarn(e, clsName);
         }
     }
@@ -250,25 +251,40 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         doEnhanceRedisConnFactory(LETTUCE_CONN_FACTORY);
     }
 
+    private void enhanceRedisson() {
+        String clsName = REDISSON_CLIENT;
+        try {
+            CtClass ctCls = getCtClass(clsName);
+            CtMethod method1 = ctCls.getMethod("create", "(Lorg/redisson/config/Config;)Lorg/redisson/api/RedissonClient;");
+            method1.setBody("{org.redisson.api.RedissonClient client = new Redisson(config); return " + RedisMoniLogInterceptor.class.getCanonicalName() + ".getRedissonProxy(client);}");
+            Class<?> targetCls = ctCls.toClass();
+            log.info("constructor of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            FLAGS.get(clsName).set(true);
+        } catch (Throwable e) {
+            logWarn(e, clsName);
+        }
+    }
+
     /**
      * 对LettuceConnectionFactory 与JedisConnectionFactory 增强getConnection方法和getClusterConnection方法，通用代码，入参是对应类的全路径
+     *
      * @param factoryFullPath RedisConnectionFactory的实现类全路径
      */
-    private static void doEnhanceRedisConnFactory(String factoryFullPath){
+    private static void doEnhanceRedisConnFactory(String factoryFullPath) {
         if (FLAGS.get(factoryFullPath).get()) {
             return;
         }
         String methodName1 = "getConnection";
         String methodDesc1 = "()Lorg/springframework/data/redis/connection/RedisConnection;";
         String body1 = "{long start = System.currentTimeMillis();org.springframework.data.redis.connection.RedisConnection conn;" +
-                "try {conn = __getConnection();} catch (Throwable e) {"+ RedisMoniLogInterceptor.RedisConnectionFactoryInterceptor.class.getCanonicalName()+".redisRecordException(e, System.currentTimeMillis() - start);throw e;}" +
-                "return "+ RedisMoniLogInterceptor.RedisConnectionFactoryInterceptor.class.getCanonicalName()+".buildProxyForRedisConnection(conn);}";
+                "try {conn = __getConnection();} catch (Throwable e) {" + RedisMoniLogInterceptor.RedisConnectionFactoryInterceptor.class.getCanonicalName() + ".redisRecordException(e, System.currentTimeMillis() - start);throw e;}" +
+                "return " + RedisMoniLogInterceptor.RedisConnectionFactoryInterceptor.class.getCanonicalName() + ".buildProxyForRedisConnection(conn);}";
 
         String methodName2 = "getClusterConnection";
         String methodDesc2 = "()Lorg/springframework/data/redis/connection/RedisClusterConnection;";
         String body2 = "{long start = System.currentTimeMillis();org.springframework.data.redis.connection.RedisClusterConnection conn;" +
-                "try {conn = __getClusterConnection();} catch (Throwable e) {"+ RedisMoniLogInterceptor.RedisConnectionFactoryInterceptor.class.getCanonicalName()+".redisRecordException(e, System.currentTimeMillis() - start);throw e;}" +
-                "return "+ RedisMoniLogInterceptor.RedisConnectionFactoryInterceptor.class.getCanonicalName()+".buildProxyForRedisClusterConnection(conn);}";
+                "try {conn = __getClusterConnection();} catch (Throwable e) {" + RedisMoniLogInterceptor.RedisConnectionFactoryInterceptor.class.getCanonicalName() + ".redisRecordException(e, System.currentTimeMillis() - start);throw e;}" +
+                "return " + RedisMoniLogInterceptor.RedisConnectionFactoryInterceptor.class.getCanonicalName() + ".buildProxyForRedisClusterConnection(conn);}";
         try {
             CtClass ctCls = getCtClass(factoryFullPath);
             CtMethod originalMethod1 = ctCls.getMethod(methodName1, methodDesc1);
@@ -290,7 +306,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             log.info("originalMethod getConnection and  getClusterConnection of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(factoryFullPath).set(true);
         } catch (Throwable e) {
-            logWarn( e, factoryFullPath);
+            logWarn(e, factoryFullPath);
         }
     }
 
