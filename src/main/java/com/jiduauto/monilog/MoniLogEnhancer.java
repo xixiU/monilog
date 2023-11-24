@@ -2,6 +2,7 @@ package com.jiduauto.monilog;
 
 import javassist.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringApplicationRunListener;
 import org.springframework.core.Ordered;
@@ -64,7 +65,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         set.add(GrpcMoniLogInterceptor.class);
         set.add(MybatisInterceptor.class);
         log.info("loaded class:{}", set.size());
-        outputClass = args != null && args.length > 0 && Arrays.stream(args).anyMatch(e -> e.trim().equalsIgnoreCase("outputClass=true"));
+        outputClass = args != null && args.length > 0 && Arrays.stream(args).anyMatch(e -> StringUtils.containsIgnoreCase(e.trim(), "outputClass=true"));
     }
 
     @Override
@@ -102,10 +103,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         if (FLAGS.get(FEIGN_CLIENT).get()) {
             return;
         }
-        String newMethod = "{Throwable ex = null; feign.Response ret = null; long startTime = System.currentTimeMillis();" +
-                "try {ret = this.convertResponse(this.convertAndSend($1, $2), $1);} catch(Throwable e){ex = e;} finally {" +
-                "ret=" + FeignMoniLogInterceptor.class.getCanonicalName() + ".doRecord($1, ret, System.currentTimeMillis()-startTime, ex);" +
-                "if (ex != null) {throw ex;}}return ret;}";
+        String newMethod = "{Throwable ex = null; feign.Response ret = null; long startTime = System.currentTimeMillis();" + "try {ret = this.convertResponse(this.convertAndSend($1, $2), $1);} catch(Throwable e){ex = e;} finally {" + "ret=" + FeignMoniLogInterceptor.class.getCanonicalName() + ".doRecord($1, ret, System.currentTimeMillis()-startTime, ex);" + "if (ex != null) {throw ex;}}return ret;}";
         try {
             CtClass ctCls = getCtClass(FEIGN_CLIENT);
             CtClass[] nestedClasses = ctCls.getNestedClasses();
@@ -130,12 +128,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             return;
         }
         String interceptorCls = RocketMqMoniLogInterceptor.class.getCanonicalName();
-        String enhancedBody = "{if ($1 instanceof org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently){this.messageListener = new " + interceptorCls +
-                ".EnhancedListenerConcurrently((org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently) $1);" +
-                "} else if ($1 instanceof org.apache.rocketmq.client.consumer.listener.MessageListenerOrderly){" +
-                "this.messageListener = new " + interceptorCls +
-                ".EnhancedListenerOrderly((org.apache.rocketmq.client.consumer.listener.MessageListenerOrderly) $1);" +
-                "} else {this.messageListener = $1;}}";
+        String enhancedBody = "{if ($1 instanceof org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently){this.messageListener = new " + interceptorCls + ".EnhancedListenerConcurrently((org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently) $1);" + "} else if ($1 instanceof org.apache.rocketmq.client.consumer.listener.MessageListenerOrderly){" + "this.messageListener = new " + interceptorCls + ".EnhancedListenerOrderly((org.apache.rocketmq.client.consumer.listener.MessageListenerOrderly) $1);" + "} else {this.messageListener = $1;}}";
         String desc = "(Lorg/apache/rocketmq/client/consumer/listener/MessageListener;)V";
         try {
             CtClass ctCls = getCtClass(ROCKET_MQ_CONSUMER);
@@ -155,8 +148,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         if (FLAGS.get(ROCKET_MQ_PRODUCER).get()) {
             return;
         }
-        String enhancedBody = "{this.start(true);this.registerSendMessageHook(new " +
-                RocketMqMoniLogInterceptor.class.getCanonicalName() + ".RocketMQProducerEnhanceProcessor());}";
+        String enhancedBody = "{this.start(true);this.registerSendMessageHook(new " + RocketMqMoniLogInterceptor.class.getCanonicalName() + ".RocketMQProducerEnhanceProcessor());}";
         try {
             CtClass ctCls = getCtClass(ROCKET_MQ_PRODUCER);
             ctCls.getMethod("start", "()V").setBody(enhancedBody);
@@ -226,15 +218,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         if (FLAGS.get(HTTP_SYNC_CLIENT).get()) {
             return;
         }
-        String newMethod = "private org.apache.http.client.methods.CloseableHttpResponse _doExecute(" +
-                "org.apache.http.HttpHost target," +
-                "org.apache.http.HttpRequest request," +
-                "org.apache.http.protocol.HttpContext context)" +
-                "throws java.io.IOException,org.apache.http.client.ClientProtocolException{" +
-                "if(context==null)context=new org.apache.http.protocol.BasicHttpContext();" +
-                "try {return doExecute(target,request,context);} catch(Throwable e){" +
-                HttpClientMoniLogInterceptor.class.getCanonicalName() +
-                ".onFailed(e, context);throw e;}}";
+        String newMethod = "private org.apache.http.client.methods.CloseableHttpResponse _doExecute(" + "org.apache.http.HttpHost target," + "org.apache.http.HttpRequest request," + "org.apache.http.protocol.HttpContext context)" + "throws java.io.IOException,org.apache.http.client.ClientProtocolException{" + "if(context==null)context=new org.apache.http.protocol.BasicHttpContext();" + "try {return doExecute(target,request,context);} catch(Throwable e){" + HttpClientMoniLogInterceptor.class.getCanonicalName() + ".onFailed(e, context);throw e;}}";
         String desc1 = "(Lorg/apache/http/HttpHost;Lorg/apache/http/HttpRequest;Lorg/apache/http/protocol/HttpContext;)Lorg/apache/http/client/methods/CloseableHttpResponse;";
         String desc2 = "(Lorg/apache/http/client/methods/HttpUriRequest;Lorg/apache/http/protocol/HttpContext;)Lorg/apache/http/client/methods/CloseableHttpResponse;";
         String desc3 = "(Lorg/apache/http/HttpHost;Lorg/apache/http/HttpRequest;)Lorg/apache/http/client/methods/CloseableHttpResponse;";
@@ -265,11 +249,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         if (FLAGS.get(HTTP_ASYNC_CLIENT_EXCHANGE_HANDLER).get()) {
             return;
         }
-        String body = "{if(this.closed.compareAndSet(false, true)){" +
-                HttpClientMoniLogInterceptor.class.getCanonicalName() +
-                ".onFailed($1, this.localContext);" +
-                "try {this.executionFailed($1);} finally " +
-                "{this.discardConnection();this.releaseResources();}}}";
+        String body = "{if(this.closed.compareAndSet(false, true)){" + HttpClientMoniLogInterceptor.class.getCanonicalName() + ".onFailed($1, this.localContext);" + "try {this.executionFailed($1);} finally " + "{this.discardConnection();this.releaseResources();}}}";
         try {
             CtClass ctCls = getCtClass(HTTP_ASYNC_CLIENT_EXCHANGE_HANDLER);
             CtMethod method = ctCls.getMethod("failed", "(Ljava/lang/Exception;)V");
@@ -321,15 +301,11 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         }
         String methodName1 = "getConnection";
         String methodDesc1 = "()Lorg/springframework/data/redis/connection/RedisConnection;";
-        String body1 = "{long start = System.currentTimeMillis();org.springframework.data.redis.connection.RedisConnection conn;" +
-                "try {conn = __getConnection();} catch (Throwable e) {" + RedisMoniLogInterceptor.RedisConnectionFactoryInterceptor.class.getCanonicalName() + ".redisRecordException(e, System.currentTimeMillis() - start);throw e;}" +
-                "return " + RedisMoniLogInterceptor.RedisConnectionFactoryInterceptor.class.getCanonicalName() + ".buildProxyForRedisConnection(conn);}";
+        String body1 = "{long start = System.currentTimeMillis();org.springframework.data.redis.connection.RedisConnection conn;" + "try {conn = __getConnection();} catch (Throwable e) {" + RedisMoniLogInterceptor.RedisConnectionFactoryInterceptor.class.getCanonicalName() + ".redisRecordException(e, System.currentTimeMillis() - start);throw e;}" + "return " + RedisMoniLogInterceptor.RedisConnectionFactoryInterceptor.class.getCanonicalName() + ".buildProxyForRedisConnection(conn);}";
 
         String methodName2 = "getClusterConnection";
         String methodDesc2 = "()Lorg/springframework/data/redis/connection/RedisClusterConnection;";
-        String body2 = "{long start = System.currentTimeMillis();org.springframework.data.redis.connection.RedisClusterConnection conn;" +
-                "try {conn = __getClusterConnection();} catch (Throwable e) {" + RedisMoniLogInterceptor.RedisConnectionFactoryInterceptor.class.getCanonicalName() + ".redisRecordException(e, System.currentTimeMillis() - start);throw e;}" +
-                "return " + RedisMoniLogInterceptor.RedisConnectionFactoryInterceptor.class.getCanonicalName() + ".buildProxyForRedisClusterConnection(conn);}";
+        String body2 = "{long start = System.currentTimeMillis();org.springframework.data.redis.connection.RedisClusterConnection conn;" + "try {conn = __getClusterConnection();} catch (Throwable e) {" + RedisMoniLogInterceptor.RedisConnectionFactoryInterceptor.class.getCanonicalName() + ".redisRecordException(e, System.currentTimeMillis() - start);throw e;}" + "return " + RedisMoniLogInterceptor.RedisConnectionFactoryInterceptor.class.getCanonicalName() + ".buildProxyForRedisClusterConnection(conn);}";
         try {
             CtClass ctCls = getCtClass(factoryFullPath);
             CtMethod originalMethod1 = ctCls.getMethod(methodName1, methodDesc1);
@@ -379,14 +355,14 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         }
     }
 
-    private void enhanceGrpcServer() {
+    private static void enhanceGrpcServer() {
         String clsName = GRPC_SERVER_REGISTRY;
         if (FLAGS.get(clsName).get()) {
             return;
         }
         try {
             CtClass ctCls = getCtClass(clsName);
-            String body = "{$_.add(0,new " + GrpcMoniLogInterceptor.GrpcLogPrintServerInterceptor.class + "()); return $_;}"; //server要更先执行
+            String body = "{$_.add(0," + GrpcMoniLogInterceptor.class.getCanonicalName() + ".getServerInterceptor());}"; //server要更先执行
             ctCls.getMethod("initServerInterceptors", "()Ljava/util/List;").insertAfter(body);
             Class<?> targetCls = ctCls.toClass();
             log.info("initServerInterceptors method of '{}' has bean enhanced.", targetCls.getCanonicalName());
@@ -399,14 +375,14 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         }
     }
 
-    private void enhanceGrpcClient() {
+    private static void enhanceGrpcClient() {
         String clsName = GRPC_CLIENT_REGISTRY;
         if (FLAGS.get(clsName).get()) {
             return;
         }
         try {
             CtClass ctCls = getCtClass(clsName);
-            String body = "{$_.add(new " + GrpcMoniLogInterceptor.GrpcLogPrintClientInterceptor.class + "()); return $_;}"; //client要更后执行
+            String body = "{$_.add(" + GrpcMoniLogInterceptor.class.getCanonicalName() + ".getClientInterceptor());}"; //client要更后执行
             ctCls.getMethod("initClientInterceptors", "()Ljava/util/List;").insertAfter(body);
             Class<?> targetCls = ctCls.toClass();
             log.info("initClientInterceptors method of '{}' has bean enhanced.", targetCls.getCanonicalName());
@@ -419,15 +395,15 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         }
     }
 
-    private void enhanceMybatis() {
+    private static void enhanceMybatis() {
         String clsName = MYBATIS_INTERCEPTOR;
         if (FLAGS.get(clsName).get()) {
             return;
         }
         try {
             CtClass ctCls = getCtClass(clsName);
-            ctCls.addField(CtField.make("private int interceptorAdd = 0;", ctCls));
-            String body = "{if(this.interceptorAdd==0){this.addInterceptor(new " + MybatisInterceptor.class.getCanonicalName() + "());this.interceptorAdd=1;};}"; //client要更后执行
+            ctCls.addField(CtField.make("private volatile int interceptorAdd = 0;", ctCls));
+            String body = "{if(this.interceptorAdd==0){this.addInterceptor(" + MybatisInterceptor.class.getCanonicalName() + ".getInstance());this.interceptorAdd=1;};}"; //client要更后执行
             ctCls.getMethod("getInterceptors", "()Ljava/util/List;").insertBefore(body);
             Class<?> targetCls = ctCls.toClass();
             log.info("getInterceptors method of '{}' has bean enhanced.", targetCls.getCanonicalName());

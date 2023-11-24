@@ -30,6 +30,9 @@ import java.util.Map;
 @Slf4j
 public final class MybatisInterceptor implements Interceptor {
     private static final Map<String, Class<?>> CACHED_CLASS = new HashMap<>();
+    public static Interceptor getInstance(){
+        return new MybatisInterceptor();
+    }
     @SneakyThrows
     @Override
     public Object intercept(Invocation invocation) {
