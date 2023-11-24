@@ -255,7 +255,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         doEnhanceRedisConnFactory(LETTUCE_CONN_FACTORY);
     }
 
-    private void enhanceRedisson() {
+    private static void enhanceRedisson() {
         String clsName = REDISSON_CLIENT;
         if (FLAGS.get(clsName).get()) {
             return;
@@ -318,7 +318,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
     }
 
     //增加XxljobThread类的构造器
-    private void enhanceXxljob() {
+    private static void enhanceXxljob() {
         String clsName = XXL_JOB_THREAD;
         if (FLAGS.get(clsName).get()) {
             return;
