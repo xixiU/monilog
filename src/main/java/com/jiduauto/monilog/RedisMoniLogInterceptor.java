@@ -8,10 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.lang3.StringUtils;
-import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.reflect.MethodSignature;
 import org.redisson.api.*;
 import org.springframework.data.redis.connection.RedisClusterConnection;
 import org.springframework.data.redis.connection.RedisConnection;
@@ -24,6 +21,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -185,49 +183,40 @@ public class RedisMoniLogInterceptor {
     static class RedissonInterceptor {
 
         public static Object getProxy(RedissonClient client) {
-            return ProxyUtils.getProxy(client, new MethodInterceptor() {
-                @Override
-                public Object invoke(MethodInvocation invocation) throws Throwable {
-                    return null;
+            return ProxyUtils.getProxy(client, invocation -> {
+                MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
+                // 判断开关
+                if (moniLogProperties == null ||
+                        !moniLogProperties.isComponentEnable(ComponentEnum.redis, moniLogProperties.getRedis().isEnable())) {
+                    return invocation.proceed();
+                }
+                long start = System.currentTimeMillis();
+                Object result = invocation.proceed();
+                boolean isTargetResult = result instanceof RMap || result instanceof RSet || result instanceof RList || result instanceof RBucket || result instanceof RBuckets || result instanceof RLock;
+                if (!isTargetResult) {
+                    return result;
+                }
+                MoniLogParams p = new MoniLogParams();
+                Method method = invocation.getMethod();
+                p.setServiceCls(method.getDeclaringClass());
+                p.setService(method.getDeclaringClass().getSimpleName());
+                p.setAction(method.getName());
+                Object[] args = invocation.getArguments();
+                p.setInput(args == null || args.length == 0 ? args : Arrays.stream(args).filter(e -> e instanceof String).toArray());
+                p.setCost(start); //取结果时再减掉此值
+                p.setSuccess(true);
+                p.setLogPoint(LogPoint.redis);
+                p.setMsgCode(ErrorEnum.SUCCESS.name());
+                p.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
+                try {
+                    return ProxyUtils.getProxy(result, new RedissonResultProxy(p));
+                } catch (Throwable e) {
+                    MoniLogUtil.innerDebug("interceptRedisson error", e);
+                    return result;
                 }
             });
         }
-
-        @Around("execution(public org.redisson.api.R* org.redisson.api.RedissonClient+.*(..))")
-        private Object interceptRedisson(ProceedingJoinPoint pjp) throws Throwable {
-            MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
-            // 判断开关
-            if (moniLogProperties == null ||
-                    !moniLogProperties.isComponentEnable(ComponentEnum.redis, moniLogProperties.getRedis().isEnable())) {
-                return pjp.proceed();
-            }
-            long start = System.currentTimeMillis();
-            Object result = pjp.proceed();
-            boolean isTargetResult = result instanceof RMap || result instanceof RSet || result instanceof RList || result instanceof RBucket || result instanceof RBuckets || result instanceof RLock;
-            if (!isTargetResult) {
-                return result;
-            }
-            MoniLogParams p = new MoniLogParams();
-            MethodSignature signature = (MethodSignature) pjp.getSignature();
-            Method method = signature.getMethod();
-            p.setServiceCls(method.getDeclaringClass());
-            p.setService(method.getDeclaringClass().getSimpleName());
-            p.setAction(method.getName());
-            p.setInput(pjp.getArgs());
-            p.setCost(start); //取结果时再减掉此值
-            p.setSuccess(true);
-            p.setLogPoint(LogPoint.redis);
-            p.setMsgCode(ErrorEnum.SUCCESS.name());
-            p.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
-            try {
-                return ProxyUtils.getProxy(result, new RedissonResultProxy(p));
-            } catch (Throwable e) {
-                MoniLogUtil.innerDebug("interceptRedisson error", e);
-                return result;
-            }
-        }
     }
-
     @AllArgsConstructor
     private static class RedissonResultProxy implements MethodInterceptor {
         private final MoniLogParams p;
@@ -241,7 +230,7 @@ public class RedisMoniLogInterceptor {
             }
             //e.g. : getBucket().set
             p.setAction(p.getAction() + "()." + methodName);
-            Object ret = null;
+            Object ret;
             try {
                 ret = invocation.proceed();
                 p.setOutput(ret);
