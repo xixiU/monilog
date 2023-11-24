@@ -118,7 +118,7 @@ class MoniLogAspectCtx {
         if (logParserAnnotation != null && StringUtils.isNotBlank(logParserAnnotation.serviceName())) {
             return logParserAnnotation.serviceName();
         }
-        return StringUtils.uncapitalize(ReflectUtil.getSimpleClassName(cls));
+        return ReflectUtil.getSimpleClassName(cls);
     }
 
     public Logger getLogger() {
