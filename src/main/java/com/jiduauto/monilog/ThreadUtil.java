@@ -13,17 +13,7 @@ import java.util.stream.Collectors;
  */
 class ThreadUtil {
     //遍历线程栈找业务类时需要排除掉的包(类)前缀
-    private final static Set<String> DEFAULT_EXCLUDE_PKGS = Sets.newHashSet(
-            "com.sun.proxy.$Proxy",
-            "java", "sun.reflect",
-            "org.springframework",
-            "org.apache",
-            "kong.unirest.apache",
-            "com.jiduauto.monilog",
-            "com.jiduauto.javakit",
-            "okhttp3",
-            "org.elasticsearch.client",
-            "org.redisson");
+    private final static Set<String> DEFAULT_EXCLUDE_PKGS = Sets.newHashSet("com.sun.proxy.$Proxy", "java", "sun.reflect", "org.springframework", "org.apache", "kong.unirest.apache", "com.jiduauto.monilog", "com.jiduauto.javakit", "okhttp3", "org.elasticsearch.client");
     /**
      * 从当前线程栈中，按先后顺序找到指定类的下一个类对应的栈帧，返回找到的第一个栈帧
      */

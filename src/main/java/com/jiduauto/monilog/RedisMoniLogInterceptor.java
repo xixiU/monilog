@@ -193,9 +193,13 @@ public class RedisMoniLogInterceptor {
                 p.setOutput(ret);
                 return ret;
             } catch (Throwable e) {
-                p.setException(e);
+                Throwable ex = e;
+                if (e.getMessage().contains("Unexpected exception while processing command") && e.getCause() != null) {
+                    ex = e.getCause();
+                }
+                p.setException(ex);
                 p.setSuccess(false);
-                ErrorInfo errorInfo = ExceptionUtil.parseException(e);
+                ErrorInfo errorInfo = ExceptionUtil.parseException(ex);
                 p.setMsgCode(errorInfo.getErrorCode());
                 p.setMsgInfo(errorInfo.getErrorMsg());
                 throw e;
@@ -243,7 +247,7 @@ public class RedisMoniLogInterceptor {
     private static JedisInvocation parseRedisInvocation(RedisMethodInfo m, Object ret) {
         JedisInvocation ri = new JedisInvocation();
         try {
-            StackTraceElement st = ThreadUtil.getNextClassFromStack(RedisMoniLogInterceptor.class);
+            StackTraceElement st = ThreadUtil.getNextClassFromStack(RedisMoniLogInterceptor.class, "org.redisson");
             if (st != null) {
                 ri.cls = Class.forName(st.getClassName());
                 ri.method = st.getMethodName();

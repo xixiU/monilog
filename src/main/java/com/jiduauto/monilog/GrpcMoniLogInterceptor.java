@@ -54,7 +54,7 @@ class GrpcMoniLogInterceptor {
             @Override
             public void start(Listener<RespT> responseListener, Metadata metadata) {
                 Class<?> cls = getCurrentProtoClass(method);
-                StackTraceElement ste = ThreadUtil.getNextClassFromStack(cls);
+                StackTraceElement ste = ThreadUtil.getNextClassFromStack(cls, "io.grpc", "com.jiduauto.common", "net.devh", "io.opentelemetry");
                 Class<?> serviceCls = GrpcClient.class;
                 String serviceName = method.getServiceName();
                 String methodName = buildActionName(method.getFullMethodName(), serviceName);
