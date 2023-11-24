@@ -136,32 +136,6 @@ public class RedisMoniLogInterceptor {
                 MoniLogUtil.innerDebug("redis {}.{} {} failed, {}", p.getService(), p.getAction(), p.getMsgInfo(), e.getMessage());
             }
         }
-
-        private static JedisInvocation parseRedisInvocation(RedisMethodInfo m, Object ret) {
-            JedisInvocation ri = new JedisInvocation();
-            try {
-                StackTraceElement st = ThreadUtil.getNextClassFromStack(null);
-                if (st != null) {
-                    ri.cls = Class.forName(st.getClassName());
-                    ri.method = st.getMethodName();
-                } else {
-                    ri.cls = m.getClass();
-                    ri.method = m.getMethod();
-                }
-            } catch (Exception ignore) {
-                ri.cls = m.getClass();
-                ri.method = m.getMethod();
-            }
-            try {
-                Object[] args = m.getArgs();
-                ri.args = deserializeRedisArgs(args);
-                ri.maybeKey = chooseStringKey(ri.args);
-                ri.result = ret == null ? null : tryDeserialize(ret, false);
-            } catch (Exception e) {
-                MoniLogUtil.innerDebug("parseRedisInvocation-deserialize error", e);
-            }
-            return ri;
-        }
     }
 
     /**
@@ -181,13 +155,13 @@ public class RedisMoniLogInterceptor {
             if (!isTargetResult) {
                 return result;
             }
+            JedisInvocation ri = parseRedisInvocation(RedisMethodInfo.fromInvocation(invocation), null);
             MoniLogParams p = new MoniLogParams();
-            Method method = invocation.getMethod();
-            p.setServiceCls(method.getDeclaringClass());
-            p.setService(method.getDeclaringClass().getSimpleName());
-            p.setAction(method.getName());
-            Object[] args = invocation.getArguments();
-            p.setInput(args == null || args.length == 0 ? args : Arrays.stream(args).filter(e -> e instanceof String).toArray());
+            p.setInput(ri.args);
+            p.setServiceCls(ri.cls);
+            p.setService(ri.cls.getSimpleName());
+            p.setAction(ri.method);
+            p.setInput(ri.args == null || ri.args.length == 0 ? ri.args : Arrays.stream(ri.args).filter(e -> e instanceof String).toArray());
             p.setCost(start); //取结果时再减掉此值
             p.setSuccess(true);
             p.setLogPoint(LogPoint.redis);
@@ -264,6 +238,32 @@ public class RedisMoniLogInterceptor {
         String maybeKey;
         Object[] args;
         Object result;
+    }
+
+    private static JedisInvocation parseRedisInvocation(RedisMethodInfo m, Object ret) {
+        JedisInvocation ri = new JedisInvocation();
+        try {
+            StackTraceElement st = ThreadUtil.getNextClassFromStack(null);
+            if (st != null) {
+                ri.cls = Class.forName(st.getClassName());
+                ri.method = st.getMethodName();
+            } else {
+                ri.cls = m.getClass();
+                ri.method = m.getMethod();
+            }
+        } catch (Exception ignore) {
+            ri.cls = m.getClass();
+            ri.method = m.getMethod();
+        }
+        try {
+            Object[] args = m.getArgs();
+            ri.args = deserializeRedisArgs(args);
+            ri.maybeKey = chooseStringKey(ri.args);
+            ri.result = ret == null ? null : tryDeserialize(ret, false);
+        } catch (Exception e) {
+            MoniLogUtil.innerDebug("parseRedisInvocation-deserialize error", e);
+        }
+        return ri;
     }
 
     private static Object[] deserializeRedisArgs(Object[] args) {
