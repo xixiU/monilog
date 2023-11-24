@@ -1,10 +1,10 @@
 package com.jiduauto.monilog;
 
 import lombok.extern.slf4j.Slf4j;
-import net.devh.boot.grpc.client.interceptor.GrpcGlobalClientInterceptor;
-import net.devh.boot.grpc.server.interceptor.GrpcGlobalServerInterceptor;
-import org.springframework.beans.factory.FactoryBean;
-import org.springframework.boot.autoconfigure.condition.*;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -51,43 +51,6 @@ class MoniLogAutoConfiguration {
     MoniLogAop moniLogAop() {
         log.info(">>>monilog core start...");
         return new MoniLogAop();
-    }
-
-    @Configuration
-    static class GrpcMoniLogConfiguration {
-        @Order(-200)
-        @GrpcGlobalServerInterceptor
-        @ConditionalOnClass(name = "io.grpc.stub.ServerCalls")
-        GrpcMoniLogInterceptor.GrpcLogPrintServerInterceptor grpcMoniLogPrintServerInterceptor() {
-            log.info(">>>monilog {} start...", ComponentEnum.grpc_server);
-            return new GrpcMoniLogInterceptor.GrpcLogPrintServerInterceptor();
-        }
-
-        @Order
-        @GrpcGlobalClientInterceptor
-        @ConditionalOnClass(name = "io.grpc.ClientInterceptor")
-        GrpcMoniLogInterceptor.GrpcLogPrintClientInterceptor grpcMoniLogPrintClientInterceptor() {
-            log.info(">>>monilog {} start...", ComponentEnum.grpc_client);
-            return new GrpcMoniLogInterceptor.GrpcLogPrintClientInterceptor();
-        }
-    }
-
-    @ConditionalOnClass(name = "org.apache.ibatis.plugin.Interceptor")
-    @Bean
-    @ConditionalOnProperty(prefix = "monilog.mybatis", name = "enable", havingValue = "true", matchIfMissing = true)
-    FactoryBean<MybatisInterceptor> moniLogFactoryBean() {
-        log.info(">>>monilog {} start...", ComponentEnum.mybatis);
-        return new FactoryBean<MybatisInterceptor>() {
-            @Override
-            public MybatisInterceptor getObject() throws Exception {
-                return new MybatisInterceptor();
-            }
-
-            @Override
-            public Class<?> getObjectType() {
-                return MybatisInterceptor.class;
-            }
-        };
     }
 
     @ConditionalOnWebApplication

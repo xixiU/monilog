@@ -22,10 +22,10 @@ import java.util.stream.Collectors;
  */
 
 @Slf4j
-class GrpcMoniLogInterceptor {
+public final class GrpcMoniLogInterceptor {
     private static final String TIME_KEY = "nowTime";
     @Slf4j
-    static class GrpcLogPrintClientInterceptor implements ClientInterceptor {
+    public static class GrpcLogPrintClientInterceptor implements ClientInterceptor {
         @Override
         public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> method, CallOptions callOptions, Channel channel) {
             MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
