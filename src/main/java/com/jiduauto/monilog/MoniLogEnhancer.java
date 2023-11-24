@@ -28,6 +28,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
     private static final String JEDIS_CONN_FACTORY = "org.springframework.data.redis.connection.jedis.JedisConnectionFactory";
     private static final String LETTUCE_CONN_FACTORY = "org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory";
     private static final String REDISSON_CLIENT = "org.redisson.Redisson";
+    private static final String XXL_JOB_THREAD = "com.xxl.job.core.thread.JobThread";
 
     private static final Map<String, AtomicBoolean> FLAGS = new HashMap<String, AtomicBoolean>() {{
         put(HTTP_CLIENT_BUILDER, new AtomicBoolean());
@@ -41,6 +42,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         put(JEDIS_CONN_FACTORY, new AtomicBoolean());
         put(LETTUCE_CONN_FACTORY, new AtomicBoolean());
         put(REDISSON_CLIENT, new AtomicBoolean());
+        put(XXL_JOB_THREAD, new AtomicBoolean());
     }};
 
     private MoniLogEnhancer(SpringApplication app, String[] args) {
@@ -50,6 +52,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         set.add(HttpClientMoniLogInterceptor.class);
         set.add(OkHttpClientMoniLogInterceptor.class);
         set.add(RedisMoniLogInterceptor.class);
+        set.add(XxlJobMoniLogInterceptor.class);
         log.info("loaded class:{}", set.size());
     }
 
@@ -61,6 +64,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         enhanceRocketMqProducer();
         enhanceRedisConnFactory();
         enhanceRedisson();
+        enhanceXxljob();
     }
 
     @Override
@@ -179,7 +183,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         // 对构造函数进行增强，添加一个拦截器
         try {
             CtClass ctCls = getCtClass(clsName);
-            String body = "{this.addInterceptor(new " + OkHttpClientMoniLogInterceptor.class.getCanonicalName() + ".OkHttpInterceptor());}";
+            String body = "{this.addInterceptor(new " + OkHttpClientMoniLogInterceptor.class.getCanonicalName() + "());}";
             ctCls.getConstructor("()V").insertAfter(body);
             Class<?> targetCls = ctCls.toClass();
             log.info("constructor of '{}' has bean enhanced.", targetCls.getCanonicalName());
@@ -310,6 +314,24 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             FLAGS.get(factoryFullPath).set(true);
         } catch (Throwable e) {
             logWarn(e, factoryFullPath);
+        }
+    }
+
+    //增加XxljobThread类的构造器
+    private void enhanceXxljob() {
+        String clsName = XXL_JOB_THREAD;
+        if (FLAGS.get(clsName).get()) {
+            return;
+        }
+        try {
+            CtClass ctCls = getCtClass(clsName);
+            String body = "{this.handler=" + XxlJobMoniLogInterceptor.class.getCanonicalName() + ".getProxyBean(this.handler);}";
+            ctCls.getConstructor("(Lint;com/xxl/job/core/handler/IJobHandler;)V").insertAfter(body);
+            Class<?> targetCls = ctCls.toClass();
+            log.info("constructor of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            FLAGS.get(clsName).set(true);
+        } catch (Throwable e) {
+            logWarn(e, clsName);
         }
     }
 

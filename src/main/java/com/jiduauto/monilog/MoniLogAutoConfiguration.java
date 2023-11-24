@@ -24,11 +24,6 @@ import org.springframework.core.annotation.Order;
 @Import({SpringUtils.class})
 class MoniLogAutoConfiguration {
     @Bean
-    MoniLogPostProcessor moniLogPostProcessor(MoniLogProperties moniLogProperties) {
-        return new MoniLogPostProcessor(moniLogProperties);
-    }
-
-    @Bean
     @ConditionalOnProperty(name = "spring.mvc.throw-exception-if-no-handler-found", havingValue = "true")
     MoniLogExceptionHandler moniLogExceptionHandler() {
         return new MoniLogExceptionHandler();
@@ -114,12 +109,5 @@ class MoniLogAutoConfiguration {
         filterRegBean.setName("webMoniLogInterceptor");
         filterRegBean.setAsyncSupported(Boolean.TRUE);
         return filterRegBean;
-    }
-
-    @ConditionalOnClass(name = "com.xxl.job.core.handler.IJobHandler")
-    @Bean
-    XxlJobMoniLogInterceptor xxljobMoniLogInterceptor() {
-        log.info(">>>monilog {} start...", ComponentEnum.xxljob);
-        return new XxlJobMoniLogInterceptor();
     }
 }
