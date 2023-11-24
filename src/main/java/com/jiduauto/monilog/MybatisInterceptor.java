@@ -52,7 +52,7 @@ class MybatisInterceptor implements Interceptor {
                 // 获取调用的目标对象
                 MybatisInvocationInfo invocationInfo = parseMybatisExecuteInfo(invocation);
                 logParams.setServiceCls(invocationInfo.serviceCls);
-                logParams.setService(invocationInfo.serviceCls.getSimpleName());
+                logParams.setService(ReflectUtil.getSimpleClassName(invocationInfo.serviceCls));
                 logParams.setAction(invocationInfo.methodName);
                 logParams.setInput(new String[]{invocationInfo.sql});
                 logParams.setMsgCode(ErrorEnum.SUCCESS.name());

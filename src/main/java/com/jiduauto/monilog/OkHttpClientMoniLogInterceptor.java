@@ -65,7 +65,7 @@ public final class OkHttpClientMoniLogInterceptor implements Interceptor {
                     } catch (Exception ignore) {}
                 }
                 p.setServiceCls(serviceCls);
-                p.setService(p.getServiceCls().getSimpleName());
+                p.setService(ReflectUtil.getSimpleClassName(p.getServiceCls()));
                 p.setAction(methodName);
                 p.setTags(TagBuilder.of("url", HttpRequestData.extractPath(request.url().toString()), "method", request.method()).toArray());
                 p.setInput(new Object[]{getInputObject(request)});

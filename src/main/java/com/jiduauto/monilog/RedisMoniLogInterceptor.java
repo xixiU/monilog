@@ -43,7 +43,7 @@ public final class RedisMoniLogInterceptor {
                 return invocation.proceed();
             }
             Object target = invocation.getThis();
-            String serviceName = target.getClass().getSimpleName();
+            String serviceName = ReflectUtil.getSimpleClassName(target.getClass());
 
             MoniLogParams p = new MoniLogParams();
             p.setServiceCls(target.getClass());
@@ -71,7 +71,7 @@ public final class RedisMoniLogInterceptor {
                 p.setInput(ri.args);
                 p.setOutput(ri.result);
                 p.setServiceCls(ri.cls);
-                p.setService(ri.cls.getSimpleName());
+                p.setService(ReflectUtil.getSimpleClassName(ri.cls));
                 p.setAction(ri.method);
                 MoniLogUtil.printLargeSizeLog(p, ri.maybeKey);
                 String msgPrefix = "";
@@ -123,7 +123,7 @@ public final class RedisMoniLogInterceptor {
                 p.setInput(ri.args);
                 p.setOutput(ri.result);
                 p.setServiceCls(ri.cls);
-                p.setService(ri.cls.getSimpleName());
+                p.setService(ReflectUtil.getSimpleClassName(ri.cls));
                 p.setAction(ri.method);
 
                 String msgPrefix = "";
@@ -159,7 +159,7 @@ public final class RedisMoniLogInterceptor {
             MoniLogParams p = new MoniLogParams();
             p.setInput(ri.args);
             p.setServiceCls(ri.cls);
-            p.setService(ri.cls.getSimpleName());
+            p.setService(ReflectUtil.getSimpleClassName(ri.cls));
             p.setAction(ri.method);
             p.setInput(ri.args == null || ri.args.length == 0 ? ri.args : Arrays.stream(ri.args).filter(e -> e instanceof String).toArray());
             p.setCost(start); //取结果时再减掉此值
@@ -230,12 +230,12 @@ public final class RedisMoniLogInterceptor {
 
         static RedisMethodInfo fromInvocation(MethodInvocation inv) {
             String methodName = inv.getMethod().getName();
-            String serviceName = inv.getThis().getClass().getSimpleName();
+            String serviceName = ReflectUtil.getSimpleClassName(inv.getThis().getClass());
             return new RedisMethodInfo(serviceName, methodName, inv.getArguments());
         }
 
         static RedisMethodInfo fromMethod(Method m) {
-            return new RedisMethodInfo(m.getClass().getSimpleName(), m.getName(), null);
+            return new RedisMethodInfo(ReflectUtil.getSimpleClassName(m.getClass()), m.getName(), null);
         }
     }
 

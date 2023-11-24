@@ -105,7 +105,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
                 logParams.setHasUserTag(true);
             }
             logParams.setServiceCls(method.getBeanType());
-            logParams.setService(method.getBeanType().getSimpleName());
+            logParams.setService(ReflectUtil.getSimpleClassName(method.getBeanType()));
             logParams.setAction(method.getMethod().getName());
             TagBuilder tagBuilder = TagBuilder.of(tagList).add("url", getUrl(request)).add("method", request.getMethod());
             logParams.setTags(tagBuilder.toArray());

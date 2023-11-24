@@ -239,7 +239,7 @@ class MoniLogUtil {
      */
     private static TagBuilder getSystemTags(MoniLogParams logParams) {
         boolean success = logParams.isSuccess() && logParams.getException() == null;
-        String exception = logParams.getException() == null ? "null" : logParams.getException().getClass().getSimpleName();
+        String exception = logParams.getException() == null ? "null" : ReflectUtil.getSimpleClassName(logParams.getException().getClass());
         return TagBuilder.of("result", success ? "success" : "error").add("application", SpringUtils.application).add("logPoint", logParams.getLogPoint().name()).add("env", SpringUtils.activeProfile).add("service", logParams.getService()).add("action", logParams.getAction()).add("msgCode", logParams.getMsgCode()).add("exception", exception);
     }
 

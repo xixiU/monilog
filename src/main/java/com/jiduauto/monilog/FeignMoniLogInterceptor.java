@@ -56,7 +56,7 @@ public final class FeignMoniLogInterceptor {
 
         MoniLogParams mlp = new MoniLogParams();
         mlp.setServiceCls(m.getDeclaringClass());
-        mlp.setService(m.getDeclaringClass().getSimpleName());
+        mlp.setService(ReflectUtil.getSimpleClassName(m.getDeclaringClass()));
         mlp.setAction(m.getName());
 
         StackTraceElement st = ThreadUtil.getNextClassFromStack(Client.class, "feign", "com.netflix", "rx");
@@ -66,7 +66,7 @@ public final class FeignMoniLogInterceptor {
                 mlp.setServiceCls(Class.forName(className));
             } catch (Exception ignore) {
             }
-            mlp.setService(mlp.getServiceCls().getSimpleName());
+            mlp.setService(ReflectUtil.getSimpleClassName(mlp.getServiceCls()));
             mlp.setAction(st.getMethodName());
         }
 

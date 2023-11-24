@@ -20,7 +20,7 @@ class ExceptionUtil {
             return ErrorInfo.of(ErrorEnum.PARAM_ERROR.name(), getErrorMsg(ex));
         }
         if (ex instanceof UnknownHostException) {
-            return ErrorInfo.of(ErrorEnum.UNKNOWN_HOST.name(), ex.getClass().getSimpleName() + ":" + ex.getMessage());
+            return ErrorInfo.of(ErrorEnum.UNKNOWN_HOST.name(), ReflectUtil.getSimpleClassName(ex.getClass()) + ":" + ex.getMessage());
         }
         boolean isTimeout = ExceptionUtil.isTimeout(ex);
         ErrorEnum ee = isTimeout ? ErrorEnum.SERVICE_TIMEOUT : ErrorEnum.SYSTEM_ERROR;
@@ -54,8 +54,8 @@ class ExceptionUtil {
             msg = e.getCause().getMessage();
         }
         if (StringUtils.isBlank(msg)) {
-            return StringUtils.isBlank(defaultMsg) ? e.getClass().getSimpleName() :
-                    defaultMsg + "(" + e.getClass().getSimpleName() + ")";
+            return StringUtils.isBlank(defaultMsg) ? ReflectUtil.getSimpleClassName(e.getClass()):
+                    defaultMsg + "(" + ReflectUtil.getSimpleClassName(e.getClass()) + ")";
         }
         return msg;
     }
@@ -69,7 +69,7 @@ class ExceptionUtil {
                 || e instanceof TimeoutException) {
             return true;
         }
-        String msg = e.getClass().getSimpleName() + ":" + e.getLocalizedMessage();
+        String msg = ReflectUtil.getSimpleClassName(e.getClass()) + ":" + e.getLocalizedMessage();
         return StringUtils.containsIgnoreCase(msg, "timeout") || StringUtils.containsIgnoreCase(msg, "timed out");
     }
 

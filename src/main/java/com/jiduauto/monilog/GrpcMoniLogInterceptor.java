@@ -61,7 +61,7 @@ class GrpcMoniLogInterceptor {
                 try {
                     if (ste != null) {
                         serviceCls = Class.forName(ste.getClassName());
-                        serviceName = serviceCls.getSimpleName();
+                        serviceName = ReflectUtil.getSimpleClassName(serviceCls);
                         methodName = ste.getMethodName();
                         List<Method> list = Arrays.stream(serviceCls.getMethods()).filter(e -> ste.getMethodName().equals(e.getName())).collect(Collectors.toList());
                         Method[] array = list.toArray(new Method[]{});
@@ -188,7 +188,7 @@ class GrpcMoniLogInterceptor {
             try {
                 if (ste != null) {
                     serviceCls = Class.forName(ste.getClassName());
-                    serviceName = serviceCls.getSimpleName();
+                    serviceName = ReflectUtil.getSimpleClassName(serviceCls);
                     methodName = ste.getMethodName();
                     List<Method> list = Arrays.stream(serviceCls.getMethods()).filter(e -> ste.getMethodName().equals(e.getName())).collect(Collectors.toList());
                     Method[] array = list.toArray(new Method[]{});
