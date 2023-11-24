@@ -243,7 +243,7 @@ public class RedisMoniLogInterceptor {
     private static JedisInvocation parseRedisInvocation(RedisMethodInfo m, Object ret) {
         JedisInvocation ri = new JedisInvocation();
         try {
-            StackTraceElement st = ThreadUtil.getNextClassFromStack(null);
+            StackTraceElement st = ThreadUtil.getNextClassFromStack(RedisMoniLogInterceptor.class);
             if (st != null) {
                 ri.cls = Class.forName(st.getClassName());
                 ri.method = st.getMethodName();
