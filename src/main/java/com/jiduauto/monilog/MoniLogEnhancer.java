@@ -256,7 +256,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         try {
             CtClass ctCls = getCtClass(clsName);
             CtMethod method1 = ctCls.getMethod("create", "(Lorg/redisson/config/Config;)Lorg/redisson/api/RedissonClient;");
-            method1.setBody("{org.redisson.api.RedissonClient client = new Redisson(config); return " + RedisMoniLogInterceptor.class.getCanonicalName() + ".getRedissonProxy(client);}");
+            method1.setBody("{org.redisson.api.RedissonClient client = new " + REDISSON_CLIENT + "(config); return " + RedisMoniLogInterceptor.class.getCanonicalName() + ".getRedissonProxy(client);}");
             Class<?> targetCls = ctCls.toClass();
             log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(clsName).set(true);
