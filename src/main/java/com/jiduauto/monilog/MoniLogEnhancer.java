@@ -326,7 +326,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         try {
             CtClass ctCls = getCtClass(clsName);
             String body = "{this.handler=" + XxlJobMoniLogInterceptor.class.getCanonicalName() + ".getProxyBean(this.handler);}";
-            ctCls.getConstructor("(Lint;com/xxl/job/core/handler/IJobHandler;)V").insertAfter(body);
+            ctCls.getConstructor("(ILcom/xxl/job/core/handler/IJobHandler;)V").insertAfter(body);
             Class<?> targetCls = ctCls.toClass();
             log.info("constructor of '{}' has bean enhanced.", targetCls.getCanonicalName());
             FLAGS.get(clsName).set(true);
