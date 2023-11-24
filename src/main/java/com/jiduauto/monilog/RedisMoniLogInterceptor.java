@@ -185,8 +185,11 @@ public class RedisMoniLogInterceptor {
             if (!TARGET_REDISSON_METHODS.contains(methodName) || p == null) {
                 return invocation.proceed();
             }
-            //e.g. : getBucket().set
-            p.setAction(p.getAction() + "()." + methodName);
+            Class<?> serviceCls = p.getServiceCls();
+            if (serviceCls != null && serviceCls.getPackage().getName().startsWith("org.redisson")) {
+                //e.g. : getBucket().set
+                p.setAction(p.getAction() + "()." + methodName);
+            }
             Object ret;
             try {
                 ret = invocation.proceed();
@@ -247,7 +250,7 @@ public class RedisMoniLogInterceptor {
     private static JedisInvocation parseRedisInvocation(RedisMethodInfo m, Object ret) {
         JedisInvocation ri = new JedisInvocation();
         try {
-            StackTraceElement st = ThreadUtil.getNextClassFromStack(RedisMoniLogInterceptor.class, "org.redisson");
+            StackTraceElement st = ThreadUtil.getNextClassFromStack(RedisMoniLogInterceptor.class);
             if (st != null) {
                 ri.cls = Class.forName(st.getClassName());
                 ri.method = st.getMethodName();
