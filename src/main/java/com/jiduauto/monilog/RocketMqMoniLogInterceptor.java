@@ -234,7 +234,7 @@ public final class RocketMqMoniLogInterceptor {
      * @param charset 编码
      * @return 乱码返回true，否者返回false
      */
-    public static boolean hasInvalidCharacters(byte[] bytes, Charset charset) {
+    private static boolean hasInvalidCharacters(byte[] bytes, Charset charset) {
         CharsetDecoder decoder = charset.newDecoder();
         decoder.onMalformedInput(CodingErrorAction.REPORT);
         decoder.onUnmappableCharacter(CodingErrorAction.REPORT);
