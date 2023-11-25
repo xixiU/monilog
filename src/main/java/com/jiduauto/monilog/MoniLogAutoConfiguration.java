@@ -49,28 +49,18 @@ class MoniLogAutoConfiguration {
     @Bean
     @ConditionalOnBean(MoniLogPrinter.class)
     MoniLogAop moniLogAop() {
-        log.info(">>>monilog core start...");
         return new MoniLogAop();
     }
 
     @ConditionalOnWebApplication
     @Bean
     FilterRegistrationBean<WebMoniLogInterceptor> webMoniLogInterceptor(MoniLogProperties moniLogProperties) {
-        boolean webEnable = moniLogProperties.isComponentEnable(ComponentEnum.web, moniLogProperties.getWeb().isEnable());
-        boolean feignEnable = moniLogProperties.isComponentEnable(ComponentEnum.feign, moniLogProperties.getFeign().isEnable());
-        if (webEnable) {
-            log.info(">>>monilog {} start...", ComponentEnum.web);
-        }
-        if (feignEnable) {
-            log.info(">>>monilog {} start...", ComponentEnum.feign);
-        }
         FilterRegistrationBean<WebMoniLogInterceptor> filterRegBean = new FilterRegistrationBean<>();
         filterRegBean.setFilter(new WebMoniLogInterceptor(moniLogProperties));
-        // 这个order顺序不能随便改
-        filterRegBean.setOrder(Ordered.HIGHEST_PRECEDENCE + 10000);
-        filterRegBean.setEnabled(Boolean.TRUE);
+        filterRegBean.setOrder(Ordered.HIGHEST_PRECEDENCE + 10000); //这个order顺序不能随便改
+        filterRegBean.setEnabled(true);
         filterRegBean.setName("webMoniLogInterceptor");
-        filterRegBean.setAsyncSupported(Boolean.TRUE);
+        filterRegBean.setAsyncSupported(true);
         return filterRegBean;
     }
 }

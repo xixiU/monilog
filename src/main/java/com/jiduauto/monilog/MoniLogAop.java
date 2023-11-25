@@ -29,11 +29,11 @@ class MoniLogAop {
         return processAround(InvocationProxy.of(invocation), logParser, logPoint);
     }
 
-    static Object processAround(ProceedingJoinPoint pjp, LogParser logParser, LogPoint logPoint) throws Throwable {
+    private static Object processAround(ProceedingJoinPoint pjp, LogParser logParser, LogPoint logPoint) throws Throwable {
         return processAround(InvocationProxy.of(pjp), logParser, logPoint);
     }
 
-    static Object processAround(InvocationProxy proxy, LogParser logParser, LogPoint logPoint) throws Throwable {
+    private static Object processAround(InvocationProxy proxy, LogParser logParser, LogPoint logPoint) throws Throwable {
         MoniLogAspectCtx ctx = null;
         Throwable tx = null;
         try {

@@ -31,7 +31,6 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
     private static final String LETTUCE_CONN_FACTORY = "org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory";
     private static final String REDISSON_CLIENT = "org.redisson.Redisson";
     private static final String XXL_JOB_THREAD = "com.xxl.job.core.thread.JobThread";
-
     private static final String GRPC_CLIENT_REGISTRY = "net.devh.boot.grpc.client.interceptor.GlobalClientInterceptorRegistry";
     private static final String GRPC_SERVER_REGISTRY = "net.devh.boot.grpc.server.interceptor.GlobalServerInterceptorRegistry";
     private static final String MYBATIS_INTERCEPTOR = "org.apache.ibatis.plugin.InterceptorChain";
@@ -54,6 +53,11 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         put(MYBATIS_INTERCEPTOR, new AtomicBoolean());
     }};
 
+    /**
+     * 构建本类时，主动load相关class到ClassPool，防止增强失败
+     * @param app
+     * @param args
+     */
     private MoniLogEnhancer(SpringApplication app, String[] args) {
         Set<Class<?>> set = new HashSet<>();
         set.add(FeignMoniLogInterceptor.class);

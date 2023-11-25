@@ -26,14 +26,14 @@ public final class GrpcMoniLogInterceptor {
     private static final String TIME_KEY = "nowTime";
 
     public static ClientInterceptor getClientInterceptor() {
-        return new GrpcLogPrintClientInterceptor();
+        return new MonilogClientInterceptor();
     }
 
     public static ServerInterceptor getServerInterceptor() {
-        return new GrpcLogPrintServerInterceptor();
+        return new MonilogServerInterceptor();
     }
 
-    private static class GrpcLogPrintClientInterceptor implements ClientInterceptor {
+    private static class MonilogClientInterceptor implements ClientInterceptor {
         @Override
         public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> method, CallOptions callOptions, Channel channel) {
             MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
@@ -174,7 +174,7 @@ public final class GrpcMoniLogInterceptor {
         }
     }
 
-    private static class GrpcLogPrintServerInterceptor implements ServerInterceptor {
+    private static class MonilogServerInterceptor implements ServerInterceptor {
         @Override
         public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call, Metadata metadata, ServerCallHandler<ReqT, RespT> next) {
             MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
