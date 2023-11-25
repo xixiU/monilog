@@ -64,7 +64,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         set.add(XxlJobMoniLogInterceptor.class);
         set.add(GrpcMoniLogInterceptor.class);
         set.add(MybatisInterceptor.class);
-        log.info("loaded class:{}", set.size());
+        log.debug("loaded class:{}", set.size());
         outputClass = args != null && args.length > 0 && Arrays.stream(args).anyMatch(e -> StringUtils.containsIgnoreCase(e.trim(), "outputClass=true"));
     }
 
@@ -112,7 +112,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             nestedClasses[0].getDeclaredMethod("execute").setBody(newMethod);
             Class<?> targetCls = nestedClasses[0].toClass();
 
-            log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            log.debug("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             if (outputClass) {
                 ctCls.writeFile();
             }
@@ -134,7 +134,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             CtClass ctCls = getCtClass(ROCKET_MQ_CONSUMER);
             ctCls.getMethod("setMessageListener", desc).setBody(enhancedBody);
             Class<?> targetCls = ctCls.toClass();
-            log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            log.debug("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             if (outputClass) {
                 ctCls.writeFile();
             }
@@ -153,7 +153,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             CtClass ctCls = getCtClass(ROCKET_MQ_PRODUCER);
             ctCls.getMethod("start", "()V").setBody(enhancedBody);
             Class<?> targetCls = ctCls.toClass();
-            log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            log.debug("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             if (outputClass) {
                 ctCls.writeFile();
             }
@@ -178,7 +178,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             CtClass ctCls = getCtClass(clsName);
             ctCls.getConstructor("()V").setBody(body);
             Class<?> targetCls = ctCls.toClass();
-            log.info("constructor of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            log.debug("constructor of '{}' has bean enhanced.", targetCls.getCanonicalName());
             if (outputClass) {
                 ctCls.writeFile();
             }
@@ -204,7 +204,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             String body = "{this.addInterceptor(new " + OkHttpClientMoniLogInterceptor.class.getCanonicalName() + "());}";
             ctCls.getConstructor("()V").insertAfter(body);
             Class<?> targetCls = ctCls.toClass();
-            log.info("constructor of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            log.debug("constructor of '{}' has bean enhanced.", targetCls.getCanonicalName());
             if (outputClass) {
                 ctCls.writeFile();
             }
@@ -235,7 +235,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             ctCls.getMethod("execute", desc3).setBody(body3);
 
             Class<?> targetCls = ctCls.toClass();
-            log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            log.debug("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             if (outputClass) {
                 ctCls.writeFile();
             }
@@ -255,7 +255,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             CtMethod method = ctCls.getMethod("failed", "(Ljava/lang/Exception;)V");
             method.setBody(body);
             Class<?> targetCls = ctCls.toClass();
-            log.info("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            log.debug("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             if (outputClass) {
                 ctCls.writeFile();
             }
@@ -280,7 +280,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             CtMethod method1 = ctCls.getMethod("create", "(Lorg/redisson/config/Config;)Lorg/redisson/api/RedissonClient;");
             method1.setBody("{org.redisson.api.RedissonClient client = new " + REDISSON_CLIENT + "($1); return " + RedisMoniLogInterceptor.class.getCanonicalName() + ".getRedissonProxy(client);}");
             Class<?> targetCls = ctCls.toClass();
-            log.info("create method of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            log.debug("create method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             if (outputClass) {
                 ctCls.writeFile();
             }
@@ -324,7 +324,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             // 将原始方法2设置try catch同时增强返回结果
             originalMethod2.setBody(body2);
             Class<?> targetCls = ctCls.toClass();
-            log.info("originalMethod getConnection and  getClusterConnection of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            log.debug("originalMethod getConnection and  getClusterConnection of '{}' has bean enhanced.", targetCls.getCanonicalName());
             if (outputClass) {
                 ctCls.writeFile();
             }
@@ -345,7 +345,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             String body = "{this.handler=" + XxlJobMoniLogInterceptor.class.getCanonicalName() + ".getProxyBean(this.handler);}";
             ctCls.getConstructor("(ILcom/xxl/job/core/handler/IJobHandler;)V").insertAfter(body);
             Class<?> targetCls = ctCls.toClass();
-            log.info("constructor of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            log.debug("constructor of '{}' has bean enhanced.", targetCls.getCanonicalName());
             if (outputClass) {
                 ctCls.writeFile();
             }
@@ -365,7 +365,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             String body = "{$_.add(0," + GrpcMoniLogInterceptor.class.getCanonicalName() + ".getServerInterceptor());}"; //server要更先执行
             ctCls.getMethod("initServerInterceptors", "()Ljava/util/List;").insertAfter(body);
             Class<?> targetCls = ctCls.toClass();
-            log.info("initServerInterceptors method of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            log.debug("initServerInterceptors method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             if (outputClass) {
                 ctCls.writeFile();
             }
@@ -385,7 +385,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             String body = "{$_.add(" + GrpcMoniLogInterceptor.class.getCanonicalName() + ".getClientInterceptor());}"; //client要更后执行
             ctCls.getMethod("initClientInterceptors", "()Ljava/util/List;").insertAfter(body);
             Class<?> targetCls = ctCls.toClass();
-            log.info("initClientInterceptors method of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            log.debug("initClientInterceptors method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             if (outputClass) {
                 ctCls.writeFile();
             }
@@ -402,15 +402,10 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         }
         try {
             CtClass ctCls = getCtClass(clsName);
-//            ctCls.addField(CtField.make("private int interceptorAdd = 0;", ctCls));
-//            String body = "{if(this.interceptorAdd==0){this.addInterceptor(" + MybatisInterceptor.class.getCanonicalName() + ".getInstance());this.interceptorAdd=1;};}"; //client要更后执行
-//            ctCls.getMethod("getInterceptors", "()Ljava/util/List;").insertBefore(body);
-//            Class<?> targetCls = ctCls.toClass();
-//            log.info("getInterceptors method of '{}' has bean enhanced.", targetCls.getCanonicalName());
-            String body = "{this.addInterceptor( " + MybatisInterceptor.class.getCanonicalName() + ".getInstance());}";
+            String body = "{if(this.interceptors==null){this.interceptors = new java.util.ArrayList();}this.interceptors.add( " + MybatisInterceptor.class.getCanonicalName() + ".getInstance());}";
             ctCls.getConstructor("()V").setBody(body);
             Class<?> targetCls = ctCls.toClass();
-            log.info("constructor of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            log.debug("constructor of '{}' has bean enhanced.", targetCls.getCanonicalName());
             if (outputClass) {
                 ctCls.writeFile();
             }
