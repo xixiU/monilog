@@ -402,11 +402,14 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         }
         try {
             CtClass ctCls = getCtClass(clsName);
-            ctCls.addField(CtField.make("private volatile int interceptorAdd = 0;", ctCls));
-            String body = "{if(this.interceptorAdd==0){this.addInterceptor(" + MybatisInterceptor.class.getCanonicalName() + ".getInstance());this.interceptorAdd=1;};}"; //client要更后执行
-            ctCls.getMethod("getInterceptors", "()Ljava/util/List;").insertBefore(body);
+//            ctCls.addField(CtField.make("private volatile int interceptorAdd = 0;", ctCls));
+//            String body = "{if(this.interceptorAdd==0){this.addInterceptor(" + MybatisInterceptor.class.getCanonicalName() + ".getInstance());this.interceptorAdd=1;};}"; //client要更后执行
+//            ctCls.getMethod("getInterceptors", "()Ljava/util/List;").insertBefore(body);
+//            Class<?> targetCls = ctCls.toClass();
+            String body = "{this.interceptors.add( " + MybatisInterceptor.class.getCanonicalName() + ".getInstance());}";
+            ctCls.getConstructor("()V").setBody(body);
             Class<?> targetCls = ctCls.toClass();
-            log.info("getInterceptors method of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            log.info("constructor of '{}' has bean enhanced.", targetCls.getCanonicalName());
             if (outputClass) {
                 ctCls.writeFile();
             }
