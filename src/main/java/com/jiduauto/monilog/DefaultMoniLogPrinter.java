@@ -59,7 +59,7 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         String code = p.getMsgCode();
         String msg = p.getMsgInfo();
         String[] tags = p.getTags();
-        String tagStr = tags == null || tags.length == 0 ? "" : "|" + Arrays.toString(tags);
+        String tagStr = tags == null || tags.length == 0 ? "|" : "|" + Arrays.toString(tags);
         String rt = p.getCost() + "ms";
         logWithLevel(logger, getLogLevel(p, LogType.LONG_RT), getLogPattern(p, LogType.LONG_RT), getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr);
     }
