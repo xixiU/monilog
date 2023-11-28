@@ -55,8 +55,6 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
 
     /**
      * 构建本类时，主动load相关class到ClassPool，防止增强失败
-     * @param app
-     * @param args
      */
     private MoniLogEnhancer(SpringApplication app, String[] args) {
         Set<Class<?>> set = new HashSet<>();

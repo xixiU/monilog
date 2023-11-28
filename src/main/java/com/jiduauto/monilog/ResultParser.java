@@ -158,9 +158,11 @@ final class ResultParser {
         }
         if (resultCls == null) {
             MoniLogUtil.innerDebug("目标值类型不能为空");
+            return null;
         }
         if (!StringUtils.contains(jsonpath,"$.")) {
             MoniLogUtil.innerDebug("解析路径非法:{}，需要以\"$.\"指定解析路径的根", jsonpath);
+            return null;
         }
         try {
             String path = jsonpath;

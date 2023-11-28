@@ -110,7 +110,7 @@ final class ResultParseUtil {
         String boolExpr = cl == null ? null : cl.boolExpr();
         String codeExpr = cl == null ? null : cl.errorCodeExpr();
         String msgExpr = cl == null ? null : cl.errorMsgExpr();
-        ParsedResult pr = ResultParseUtil.parseResult(resultJson, rps, null, boolExpr, codeExpr, msgExpr);
+        ParsedResult pr = parseResult(resultJson, rps, null, boolExpr, codeExpr, msgExpr);
         logParams.setSuccess(pr.isSuccess());
         logParams.setMsgCode(pr.getMsgCode());
         logParams.setMsgInfo(pr.getMsgInfo());
