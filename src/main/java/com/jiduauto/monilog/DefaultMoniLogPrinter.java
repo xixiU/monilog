@@ -172,7 +172,7 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         String msg = p.getMsgInfo();
         Throwable ex = p.getException();
         String[] tags = p.getTags();
-        String tagStr = tags == null || tags.length == 0 ? "" : "|" + Arrays.toString(tags);
+        String tagStr = tags == null || tags.length == 0 ? "|" : "|" + Arrays.toString(tags);
         List<Object> logParamsList = new ArrayList<>(Arrays.asList(getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr));
         LogType logType = LogType.DIGEST;
         if (isDetail) {
