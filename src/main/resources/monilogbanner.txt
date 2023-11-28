@@ -4,5 +4,5 @@ ${AnsiColor.BRIGHT_YELLOW} | |\/| |/ _ \| '_ \| | |   / _ \ / _` |
 ${AnsiColor.BRIGHT_CYAN} | |  | | (_) | | | | | |__| (_) | (_| |
 ${AnsiColor.BLUE} |_|  |_|\___/|_| |_|_|_____\___/ \__, |
 ${AnsiColor.MAGENTA}                                  |___/
-${AnsiColor.BRIGHT_GREEN}                            v${monilog.version}
+${AnsiColor.BRIGHT_GREEN} v${monilog.version}
 ${AnsiColor.DEFAULT}
