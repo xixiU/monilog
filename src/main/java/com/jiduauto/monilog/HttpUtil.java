@@ -1,6 +1,7 @@
 package com.jiduauto.monilog;
 
 import com.google.common.collect.Sets;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Set;
 
@@ -9,7 +10,11 @@ class HttpUtil {
 
     private static final Set<String> STREAMING_TYPES = Sets.newHashSet("application/octet-stream", "application/pdf", "application/zip", "application/x-", "application/vnd.", "application/ms", "image/", "audio/", "video/");
 
-    static boolean checkContentTypeIsStream(String contentType){
+    static Boolean checkContentTypeIsStream(String contentType){
+        if (StringUtils.isBlank(contentType)) {
+            return null;
+        }
+        contentType = contentType.toLowerCase();
         for (String textType : TEXT_TYPES) {
             if (contentType.startsWith(textType)) {
                 return false;
@@ -21,7 +26,7 @@ class HttpUtil {
                 return true;
             }
         }
-        return false;
+        return null;
 
     }
 }

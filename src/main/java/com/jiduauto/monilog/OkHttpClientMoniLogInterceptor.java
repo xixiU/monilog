@@ -158,7 +158,8 @@ public final class OkHttpClientMoniLogInterceptor implements Interceptor {
             // 未知状态返回false
             return true;
         }
-        return HttpUtil.checkContentTypeIsStream(mediaType.toString().toLowerCase());
+        Boolean isStream = HttpUtil.checkContentTypeIsStream(mediaType.toString());
+        return Boolean.TRUE.equals(isStream);
     }
 
     private static String getInputBodyParams(Request request){

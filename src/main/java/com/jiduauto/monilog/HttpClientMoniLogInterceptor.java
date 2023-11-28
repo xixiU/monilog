@@ -291,12 +291,8 @@ public final class HttpClientMoniLogInterceptor {
                 }
             }
         }
-        if (contentType == null) {
-            return entity.isStreaming();
-        } else {
-            contentType = contentType.toLowerCase();
-        }
-        return HttpUtil.checkContentTypeIsStream(contentType);
+        Boolean isStream = HttpUtil.checkContentTypeIsStream(contentType);
+        return isStream == null ? entity.isStreaming() : isStream;
     }
 
     private static Map<String, String> parseHeaders(Header[] allHeaders) {
