@@ -21,7 +21,7 @@ import static com.carrotsearch.sizeof.RamUsageEstimator.ONE_KB;
  * @date 2023/7/17 16:42
  */
 @Slf4j
-class MoniLogUtil extends MoniLogThreadHolder{
+class MoniLogUtil {
 
     /**
      * 组件监控前缀
@@ -118,8 +118,9 @@ class MoniLogUtil extends MoniLogThreadHolder{
         MoniLogPrinter printer = getLogPrinter();
         // 内部异常默认添加traceId
         String traceId = printer == null ? new DefaultMoniLogPrinter().getTraceId() : printer.getTraceId();
-        String prefix = "[" + traceId + "]" + INNER_DEBUG_LOG_PREFIX;
-        log.warn(prefix, args);
+        String version = MoniLogAutoConfiguration.class.getPackage().getImplementationVersion();
+        String prefix = "[" + traceId + "][" + version + "]" + INNER_DEBUG_LOG_PREFIX;
+        log.warn(prefix + pattern, args);
         LogCollector reporter = SpringUtils.getBeanWithoutException(LogCollector.class);
         if (reporter != null && reporter.getStart().get()) {
             reporter.addInnerDebug(prefix + pattern + Arrays.toString(args));
@@ -238,7 +239,7 @@ class MoniLogUtil extends MoniLogThreadHolder{
      */
     private static TagBuilder getSystemTags(MoniLogParams logParams) {
         boolean success = logParams.isSuccess() && logParams.getException() == null;
-        String exception = logParams.getException() == null ? "null" : logParams.getException().getClass().getSimpleName();
+        String exception = logParams.getException() == null ? "null" : ReflectUtil.getSimpleClassName(logParams.getException().getClass());
         return TagBuilder.of("result", success ? "success" : "error").add("application", SpringUtils.application).add("logPoint", logParams.getLogPoint().name()).add("env", SpringUtils.activeProfile).add("service", logParams.getService()).add("action", logParams.getAction()).add("msgCode", logParams.getMsgCode()).add("exception", exception);
     }
 

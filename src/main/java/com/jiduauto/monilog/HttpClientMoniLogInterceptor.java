@@ -100,7 +100,7 @@ public final class HttpClientMoniLogInterceptor {
                 MoniLogParams p = new MoniLogParams();
                 p.setCost(System.currentTimeMillis());
                 p.setServiceCls(serviceCls);
-                p.setService(p.getServiceCls().getSimpleName());
+                p.setService(ReflectUtil.getSimpleClassName(p.getServiceCls()));
                 p.setAction(methodName);
                 p.setInput(new Object[]{input});
                 p.setSuccess(true);

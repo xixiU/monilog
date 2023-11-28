@@ -21,13 +21,8 @@ import java.util.*;
  * @date 2023/10/19 17:35
  */
 @Slf4j
-public class OkHttpClientMoniLogInterceptor {
-    /**
-     * 为OkHttpClient注册拦截器,
-     * 注：该方法不可修改，包括可见级别，否则将导致OkHttpClient拦截失效
-     */
-    @SuppressWarnings("all")
-    public static class OkHttpInterceptor implements Interceptor {
+@SuppressWarnings("all")
+public final class OkHttpClientMoniLogInterceptor implements Interceptor {
         @Override
         public @NotNull Response intercept(Chain chain) throws IOException {
             Request request = chain.request();
@@ -70,7 +65,7 @@ public class OkHttpClientMoniLogInterceptor {
                     } catch (Exception ignore) {}
                 }
                 p.setServiceCls(serviceCls);
-                p.setService(p.getServiceCls().getSimpleName());
+                p.setService(ReflectUtil.getSimpleClassName(p.getServiceCls()));
                 p.setAction(methodName);
                 p.setTags(TagBuilder.of("url", HttpRequestData.extractPath(request.url().toString()), "method", request.method()).toArray());
                 p.setInput(new Object[]{getInputObject(request)});
@@ -101,7 +96,6 @@ public class OkHttpClientMoniLogInterceptor {
             } finally {
                 MoniLogUtil.log(p);
             }
-        }
     }
 
     /**

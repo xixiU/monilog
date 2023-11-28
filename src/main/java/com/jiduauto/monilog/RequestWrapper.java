@@ -19,7 +19,7 @@ class RequestWrapper extends HttpServletRequestWrapper {
     private byte[] body;
     private Map<String, String[]> modifiableParameters;
 
-    public RequestWrapper(HttpServletRequest request) {
+    public RequestWrapper(HttpServletRequest request) throws IOException {
         super(request);
         String sessionStream = getBodyString(request);
         body = sessionStream.getBytes(CHARSET);
@@ -33,7 +33,7 @@ class RequestWrapper extends HttpServletRequestWrapper {
     /**
      * 获取请求Body
      */
-    public String getBodyString(ServletRequest request) {
+    public String getBodyString(ServletRequest request) throws IOException {
         StringBuilder sb = new StringBuilder();
         try (InputStream inputStream = cloneInputStream(request.getInputStream());
              BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, CHARSET))) {
@@ -41,8 +41,6 @@ class RequestWrapper extends HttpServletRequestWrapper {
             while ((line = reader.readLine()) != null) {
                 sb.append(line);
             }
-        } catch (IOException e) {
-            MoniLogUtil.innerDebug("RequestWrapper.getBodyString error", e);
         }
         return sb.toString();
     }
@@ -50,22 +48,14 @@ class RequestWrapper extends HttpServletRequestWrapper {
     /**
      * 复制输入流
      */
-    public InputStream cloneInputStream(ServletInputStream inputStream) {
+    public InputStream cloneInputStream(ServletInputStream inputStream) throws IOException {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         byte[] buffer = new byte[2048];
         int len;
-        try {
-            while ((len = inputStream.read(buffer)) > -1) {
-                byteArrayOutputStream.write(buffer, 0, len);
-            }
-            byteArrayOutputStream.flush();
-        } catch (IOException e) {
-            //这里读取流可能会有问题，原请求被处理成功了，但监控在处理response时，流中断了此时：
-            // 可能会出现Unexpected EOF，直接吞掉
-            // org.apache.catalina.connector.ClientAbortException: java.io.EOFException:
-            // Unexpected EOF read on the socket at org.apache.catalina.connector.InputBuffer.realReadBytes(InputBuffer.java:340)
-            MoniLogUtil.innerDebug("RequestWrapper.cloneInputStream error:{}", e);
+        while ((len = inputStream.read(buffer)) > -1) {
+            byteArrayOutputStream.write(buffer, 0, len);
         }
+        byteArrayOutputStream.flush();
         return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
     }
 

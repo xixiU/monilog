@@ -24,6 +24,22 @@ class ReflectUtil {
     private static final Map<String, Field> FIELD_CACHE = new ConcurrentHashMap<>();
     private static final Map<Method, Class<?>> METHOD_OWNER_CACHE = new ConcurrentHashMap<>();
 
+
+    public static String getSimpleClassName(Class<?> cls) {
+        if (cls == null) {
+            return null;
+        }
+        if (cls.isAnonymousClass()) {
+            if (cls.getEnclosingClass() != null) {
+                return cls.getEnclosingClass().getSimpleName();
+            }
+            if (cls.getDeclaringClass() != null) {
+                return cls.getDeclaringClass().getSimpleName();
+            }
+        }
+        return cls.getSimpleName();
+    }
+
     public static boolean hasProperty(Class<?> cls, String propertyName) {
         String clsName = cls.getCanonicalName();
         try {

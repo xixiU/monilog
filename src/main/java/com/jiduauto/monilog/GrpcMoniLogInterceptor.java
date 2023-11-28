@@ -22,10 +22,18 @@ import java.util.stream.Collectors;
  */
 
 @Slf4j
-class GrpcMoniLogInterceptor {
+public final class GrpcMoniLogInterceptor {
     private static final String TIME_KEY = "nowTime";
-    @Slf4j
-    static class GrpcLogPrintClientInterceptor implements ClientInterceptor {
+
+    public static ClientInterceptor getClientInterceptor() {
+        return new MonilogClientInterceptor();
+    }
+
+    public static ServerInterceptor getServerInterceptor() {
+        return new MonilogServerInterceptor();
+    }
+
+    private static class MonilogClientInterceptor implements ClientInterceptor {
         @Override
         public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> method, CallOptions callOptions, Channel channel) {
             MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
@@ -54,14 +62,14 @@ class GrpcMoniLogInterceptor {
             @Override
             public void start(Listener<RespT> responseListener, Metadata metadata) {
                 Class<?> cls = getCurrentProtoClass(method);
-                StackTraceElement ste = ThreadUtil.getNextClassFromStack(cls);
+                StackTraceElement ste = ThreadUtil.getNextClassFromStack(cls, "io.grpc", "com.jiduauto.common", "net.devh", "io.opentelemetry");
                 Class<?> serviceCls = GrpcClient.class;
                 String serviceName = method.getServiceName();
                 String methodName = buildActionName(method.getFullMethodName(), serviceName);
                 try {
                     if (ste != null) {
                         serviceCls = Class.forName(ste.getClassName());
-                        serviceName = serviceCls.getSimpleName();
+                        serviceName = ReflectUtil.getSimpleClassName(serviceCls);
                         methodName = ste.getMethodName();
                         List<Method> list = Arrays.stream(serviceCls.getMethods()).filter(e -> ste.getMethodName().equals(e.getName())).collect(Collectors.toList());
                         Method[] array = list.toArray(new Method[]{});
@@ -166,8 +174,7 @@ class GrpcMoniLogInterceptor {
         }
     }
 
-    @Slf4j
-    static class GrpcLogPrintServerInterceptor implements ServerInterceptor {
+    private static class MonilogServerInterceptor implements ServerInterceptor {
         @Override
         public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call, Metadata metadata, ServerCallHandler<ReqT, RespT> next) {
             MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
@@ -188,7 +195,7 @@ class GrpcMoniLogInterceptor {
             try {
                 if (ste != null) {
                     serviceCls = Class.forName(ste.getClassName());
-                    serviceName = serviceCls.getSimpleName();
+                    serviceName = ReflectUtil.getSimpleClassName(serviceCls);
                     methodName = ste.getMethodName();
                     List<Method> list = Arrays.stream(serviceCls.getMethods()).filter(e -> ste.getMethodName().equals(e.getName())).collect(Collectors.toList());
                     Method[] array = list.toArray(new Method[]{});
