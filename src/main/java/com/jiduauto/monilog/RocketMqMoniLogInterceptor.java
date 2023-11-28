@@ -63,7 +63,7 @@ public final class RocketMqMoniLogInterceptor {
             MoniLogParams params = new MoniLogParams();
             params.setServiceCls(cls);
             params.setAction("onMessage");
-            params.setService(cls.getSimpleName());
+            params.setService(ReflectUtil.getSimpleClassName(cls));
             params.setLogPoint(LogPoint.rocketmq_consumer);
             R result;
             long start = System.currentTimeMillis();
@@ -160,7 +160,7 @@ public final class RocketMqMoniLogInterceptor {
             logParams.setAction(action);
             try {
                 logParams.setServiceCls(Class.forName(clsName));
-                logParams.setService(logParams.getServiceCls().getSimpleName());
+                logParams.setService(ReflectUtil.getSimpleClassName(logParams.getServiceCls()));
                 String startTimeStr = context.getProps().get("startTime");
                 long startTime = NumberUtils.isCreatable(startTimeStr) ? Long.parseLong(startTimeStr) : 0L;
                 logParams.setCost(System.currentTimeMillis() - startTime);
@@ -234,7 +234,7 @@ public final class RocketMqMoniLogInterceptor {
      * @param charset 编码
      * @return 乱码返回true，否者返回false
      */
-    public static boolean hasInvalidCharacters(byte[] bytes, Charset charset) {
+    private static boolean hasInvalidCharacters(byte[] bytes, Charset charset) {
         CharsetDecoder decoder = charset.newDecoder();
         decoder.onMalformedInput(CodingErrorAction.REPORT);
         decoder.onUnmappableCharacter(CodingErrorAction.REPORT);

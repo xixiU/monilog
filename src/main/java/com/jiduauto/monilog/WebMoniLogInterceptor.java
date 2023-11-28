@@ -35,19 +35,14 @@ import static com.jiduauto.monilog.StringUtil.checkPathMatch;
 @Slf4j
 @AllArgsConstructor
 class WebMoniLogInterceptor extends OncePerRequestFilter {
+    private final static Object initLock = new Object();
     /**
      * 集度JNS请求时header中会带X-JIDU-SERVICENAME
      */
     private static final String JIDU_JNS_HEADER = "X-JIDU-SERVICENAME";
     private static final String USER_AGENT = "User-Agent";
     private final MoniLogProperties moniLogProperties;
-    private final static List<HandlerMapping> handlerMappings;
-
-    static {
-        Map<String, HandlerMapping> matchingBeans = BeanFactoryUtils.beansOfTypeIncludingAncestors(SpringUtils.getApplicationContext(), HandlerMapping.class, true, false);
-        handlerMappings = new ArrayList<>(matchingBeans.values());
-    }
-    
+    private static List<HandlerMapping> handlerMappings;
 
     @SneakyThrows
     @Override
@@ -105,7 +100,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
                 logParams.setHasUserTag(true);
             }
             logParams.setServiceCls(method.getBeanType());
-            logParams.setService(method.getBeanType().getSimpleName());
+            logParams.setService(ReflectUtil.getSimpleClassName(method.getBeanType()));
             logParams.setAction(method.getMethod().getName());
             TagBuilder tagBuilder = TagBuilder.of(tagList).add("url", getUrl(request)).add("method", request.getMethod());
             logParams.setTags(tagBuilder.toArray());
@@ -246,7 +241,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
 
 
     private static HandlerMethod getHandlerMethod(HttpServletRequest request) {
-        for (HandlerMapping mapping : handlerMappings) {
+        for (HandlerMapping mapping : getHandlerMappings()) {
             HandlerExecutionChain handlerExecutionChain;
             try {
                 handlerExecutionChain = mapping.getHandler(request);
@@ -263,6 +258,20 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             return (HandlerMethod) handlerExecutionChain.getHandler();
         }
         return null;
+    }
+
+    private static List<HandlerMapping> getHandlerMappings() {
+        if (handlerMappings != null) {
+            return handlerMappings;
+        }
+        synchronized (initLock) {
+            if (handlerMappings != null) {
+                return handlerMappings;
+            }
+            Map<String, HandlerMapping> matchingBeans = BeanFactoryUtils.beansOfTypeIncludingAncestors(SpringUtils.getApplicationContext(), HandlerMapping.class, true, false);
+            handlerMappings = new ArrayList<>(matchingBeans.values());
+        }
+        return handlerMappings;
     }
 
     /**

@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Set;
 
 @Slf4j
-public class RedisMoniLogInterceptor {
+public final class RedisMoniLogInterceptor {
     private static final Set<String> SKIP_METHODS_FOR_REDIS = Sets.newHashSet("isPipelined", "close", "isClosed", "getNativeConnection", "isQueueing", "closePipeline", "evaluate");
     private static final Set<String> TARGET_REDISSON_METHODS = Sets.newHashSet("get", "getAndDelete", "getAndSet", "getAndExpire", "getAndClearExpire", "put", "putIfAbsent", "putIfExists", "randomEntries", "randomKeys", "addAndGet", "containsKey", "containsValue", "remove", "replace", "putAll", "fastPut", "fastRemove", "fastReplace", "fastPutIfAbsent", "fastPutIfExists", "readAllKeySet", "readAllValues", "readAllEntrySet", "readAllMap", "keySet", "values", "entrySet", "addAfter", "addBefore", "fastSet", "readAll", "range", "random", "removeRandom", "tryAdd", "set", "trySet", "setAndKeepTTL", "setIfAbsent", "setIfExists", "compareAndSet", "tryLock", "lock", "tryLock", "lockInterruptibly");
     private static final RedisSerializer<?> stringSerializer = new StringRedisSerializer();
@@ -43,7 +43,7 @@ public class RedisMoniLogInterceptor {
                 return invocation.proceed();
             }
             Object target = invocation.getThis();
-            String serviceName = target.getClass().getSimpleName();
+            String serviceName = ReflectUtil.getSimpleClassName(target.getClass());
 
             MoniLogParams p = new MoniLogParams();
             p.setServiceCls(target.getClass());
@@ -71,7 +71,7 @@ public class RedisMoniLogInterceptor {
                 p.setInput(ri.args);
                 p.setOutput(ri.result);
                 p.setServiceCls(ri.cls);
-                p.setService(ri.cls.getSimpleName());
+                p.setService(ReflectUtil.getSimpleClassName(ri.cls));
                 p.setAction(ri.method);
                 MoniLogUtil.printLargeSizeLog(p, ri.maybeKey);
                 String msgPrefix = "";
@@ -123,7 +123,7 @@ public class RedisMoniLogInterceptor {
                 p.setInput(ri.args);
                 p.setOutput(ri.result);
                 p.setServiceCls(ri.cls);
-                p.setService(ri.cls.getSimpleName());
+                p.setService(ReflectUtil.getSimpleClassName(ri.cls));
                 p.setAction(ri.method);
 
                 String msgPrefix = "";
@@ -135,32 +135,6 @@ public class RedisMoniLogInterceptor {
             } catch (Throwable ex) {
                 MoniLogUtil.innerDebug("redis {}.{} {} failed, {}", p.getService(), p.getAction(), p.getMsgInfo(), e.getMessage());
             }
-        }
-
-        private static JedisInvocation parseRedisInvocation(RedisMethodInfo m, Object ret) {
-            JedisInvocation ri = new JedisInvocation();
-            try {
-                StackTraceElement st = ThreadUtil.getNextClassFromStack(null);
-                if (st != null) {
-                    ri.cls = Class.forName(st.getClassName());
-                    ri.method = st.getMethodName();
-                } else {
-                    ri.cls = m.getClass();
-                    ri.method = m.getMethod();
-                }
-            } catch (Exception ignore) {
-                ri.cls = m.getClass();
-                ri.method = m.getMethod();
-            }
-            try {
-                Object[] args = m.getArgs();
-                ri.args = deserializeRedisArgs(args);
-                ri.maybeKey = chooseStringKey(ri.args);
-                ri.result = ret == null ? null : tryDeserialize(ret, false);
-            } catch (Exception e) {
-                MoniLogUtil.innerDebug("parseRedisInvocation-deserialize error", e);
-            }
-            return ri;
         }
     }
 
@@ -181,13 +155,13 @@ public class RedisMoniLogInterceptor {
             if (!isTargetResult) {
                 return result;
             }
+            JedisInvocation ri = parseRedisInvocation(RedisMethodInfo.fromInvocation(invocation), null);
             MoniLogParams p = new MoniLogParams();
-            Method method = invocation.getMethod();
-            p.setServiceCls(method.getDeclaringClass());
-            p.setService(method.getDeclaringClass().getSimpleName());
-            p.setAction(method.getName());
-            Object[] args = invocation.getArguments();
-            p.setInput(args == null || args.length == 0 ? args : Arrays.stream(args).filter(e -> e instanceof String).toArray());
+            p.setInput(ri.args);
+            p.setServiceCls(ri.cls);
+            p.setService(ReflectUtil.getSimpleClassName(ri.cls));
+            p.setAction(ri.method);
+            p.setInput(ri.args == null || ri.args.length == 0 ? ri.args : Arrays.stream(ri.args).filter(e -> e instanceof String).toArray());
             p.setCost(start); //取结果时再减掉此值
             p.setSuccess(true);
             p.setLogPoint(LogPoint.redis);
@@ -211,17 +185,24 @@ public class RedisMoniLogInterceptor {
             if (!TARGET_REDISSON_METHODS.contains(methodName) || p == null) {
                 return invocation.proceed();
             }
-            //e.g. : getBucket().set
-            p.setAction(p.getAction() + "()." + methodName);
+            Class<?> serviceCls = p.getServiceCls();
+            if (serviceCls != null && serviceCls.getPackage().getName().startsWith("org.redisson")) {
+                //e.g. : getBucket().set
+                p.setAction(p.getAction() + "()." + methodName);
+            }
             Object ret;
             try {
                 ret = invocation.proceed();
                 p.setOutput(ret);
                 return ret;
             } catch (Throwable e) {
-                p.setException(e);
+                Throwable ex = e;
+                if (e.getMessage().contains("Unexpected exception while processing command") && e.getCause() != null) {
+                    ex = e.getCause();
+                }
+                p.setException(ex);
                 p.setSuccess(false);
-                ErrorInfo errorInfo = ExceptionUtil.parseException(e);
+                ErrorInfo errorInfo = ExceptionUtil.parseException(ex);
                 p.setMsgCode(errorInfo.getErrorCode());
                 p.setMsgInfo(errorInfo.getErrorMsg());
                 throw e;
@@ -249,12 +230,12 @@ public class RedisMoniLogInterceptor {
 
         static RedisMethodInfo fromInvocation(MethodInvocation inv) {
             String methodName = inv.getMethod().getName();
-            String serviceName = inv.getThis().getClass().getSimpleName();
+            String serviceName = ReflectUtil.getSimpleClassName(inv.getThis().getClass());
             return new RedisMethodInfo(serviceName, methodName, inv.getArguments());
         }
 
         static RedisMethodInfo fromMethod(Method m) {
-            return new RedisMethodInfo(m.getClass().getSimpleName(), m.getName(), null);
+            return new RedisMethodInfo(ReflectUtil.getSimpleClassName(m.getClass()), m.getName(), null);
         }
     }
 
@@ -264,6 +245,32 @@ public class RedisMoniLogInterceptor {
         String maybeKey;
         Object[] args;
         Object result;
+    }
+
+    private static JedisInvocation parseRedisInvocation(RedisMethodInfo m, Object ret) {
+        JedisInvocation ri = new JedisInvocation();
+        try {
+            StackTraceElement st = ThreadUtil.getNextClassFromStack(RedisMoniLogInterceptor.class, "org.redisson");
+            if (st != null) {
+                ri.cls = Class.forName(st.getClassName());
+                ri.method = st.getMethodName();
+            } else {
+                ri.cls = m.getClass();
+                ri.method = m.getMethod();
+            }
+        } catch (Exception ignore) {
+            ri.cls = m.getClass();
+            ri.method = m.getMethod();
+        }
+        try {
+            Object[] args = m.getArgs();
+            ri.args = deserializeRedisArgs(args);
+            ri.maybeKey = chooseStringKey(ri.args);
+            ri.result = ret == null ? null : tryDeserialize(ret, false);
+        } catch (Exception e) {
+            MoniLogUtil.innerDebug("parseRedisInvocation-deserialize error", e);
+        }
+        return ri;
     }
 
     private static Object[] deserializeRedisArgs(Object[] args) {
