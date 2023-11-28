@@ -107,12 +107,7 @@ final class ResultParser {
     }
 
     public static <T> ParsedInfo<T> parseByPaths(Object obj, @NotNull String jsonpaths, @NotNull Class<T> resultCls) {
-        try{
-            return parseByPaths(obj, SplitterUtil.splitByComma(jsonpaths), resultCls);
-        }catch (Exception e){
-            MoniLogUtil.innerDebug("parseByPaths error, obj:{}", e);
-            return null;
-        }
+        return parseByPaths(obj, SplitterUtil.splitByComma(jsonpaths), resultCls);
     }
 
     /**
