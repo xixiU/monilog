@@ -1,13 +1,7 @@
-${AnsiColor.MAGENTA}--------------------------------------------------------------------------------------------------------------------
 ${AnsiColor.BRIGHT_MAGENTA}  __  __             _ _
 ${AnsiColor.BRIGHT_RED} |  \/  | ___  _ __ (_) |    ___   __ _
 ${AnsiColor.BRIGHT_YELLOW} | |\/| |/ _ \| '_ \| | |   / _ \ / _` |
 ${AnsiColor.BRIGHT_CYAN} | |  | | (_) | | | | | |__| (_) | (_| |
 ${AnsiColor.BLUE} |_|  |_|\___/|_| |_|_|_____\___/ \__, |
-${AnsiColor.MAGENTA}                                  |___/
-${AnsiColor.DEFAULT}Powered by Jidu-商业中台团队 version: ${AnsiColor.BRIGHT_GREEN} ${monilog.version}
-${AnsiColor.DEFAULT}Current project: ${spring.application.name} Env: ${spring.profiles.active}
-${AnsiColor.DEFAULT}Grafana大盘: https://grafana.jidudev.com/d/4YY0Lw4Sz?orgId=2&refresh=5s&var-application=crm-auth-service&var-env=dev&from=now-30m&to=now
-${AnsiColor.DEFAULT}README: https://wiki.jiduauto.com/pages/viewpage.action?pageId=633398362
-${AnsiColor.MAGENTA}--------------------------------------------------------------------------------------------------------------------
+${AnsiColor.MAGENTA}                                  |___/  ${AnsiColor.BRIGHT_GREEN} ${monilog.version}
 ${AnsiColor.DEFAULT}
