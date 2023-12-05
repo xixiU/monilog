@@ -311,10 +311,10 @@ class MoniLogUtil {
      */
     private static void printDetailLog(MoniLogParams logParams) {
         MoniLogPrinter printer = getLogPrinter();
-        if (printer == null) {
+        MoniLogProperties properties = getLogProperties();
+        if (printer == null || properties == null) {
             return;
         }
-        MoniLogProperties properties = getLogProperties();
         if (properties.isDebug()) {
             printer.logDetail(logParams);
             return;
