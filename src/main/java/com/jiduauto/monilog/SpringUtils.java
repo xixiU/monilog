@@ -56,7 +56,7 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
      */
     public static String LOG_PREFIX = "monilog_";
 
-    private static Map<Class<?>, Object> INSTANCE_MAP = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, Object> INSTANCE_MAP = new ConcurrentHashMap<>();
 
     @SuppressWarnings("NullableProblems")
     @Override
