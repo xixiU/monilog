@@ -230,17 +230,14 @@ class MoniLogProperties implements InitializingBean {
          * 流量出入口的的摘要日志输出级别总开关，默认仅异常时输出
          */
         private LogOutputLevel digestLogLevel = LogOutputLevel.always;
-
         /**
          * 流量出入口的的详情日志输出级别总开关，默认仅异常时输出
          */
         private LogOutputLevel detailLogLevel = LogOutputLevel.onException;
-
         /**
          * 慢操作日志输出开关，默认prometheus与日志均打印
          */
         private LogLongRtLevel longRtLevel = LogLongRtLevel.both;
-
         /**
          * 默认详情日志打印最长的长度，目前仅限制了收集参数中的input与output的长度
          */
@@ -257,28 +254,23 @@ class MoniLogProperties implements InitializingBean {
          * 日志打印时要排除的方法名清单，默认为空，即所有服务的都会打印,支持模糊匹配
          */
         private Set<String> excludeActions;
-
         /**
          * 日志打印时要排除的异常类(简单类名)清单，通过错误的canonicalName类名判断，使用contains判断。默认为空，即所有错误的都会打印
          */
         private Set<String> excludeExceptions;
-
         /**
          * 日志打印时要排除的错误关键词清单,使用contains判断。默认为空，即所有错误的都会打印
          */
         private Set<String> excludeKeyWords;
-
         /**
          * 日志打印时要排除的错误码清单，默认为空
          */
         private Set<String> excludeMsgCodes;
-
         /**
          * 日志信息是否输出traceId，默认输出；
          * 在告警时会在信息主体部分添加traceId，方便排查问题。但是此信息在日志平台直接观察时traceId会重复打印，若不想打印traceId可以设置此开关为false;
          */
         private boolean printTraceId = true;
-
         /**
          * 日志输出级别配置
          */
