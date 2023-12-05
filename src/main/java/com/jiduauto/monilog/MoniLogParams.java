@@ -32,11 +32,29 @@ public class MoniLogParams {
     private boolean hasUserTag;
 
     public String getMsgCode() {
-        return StringUtils.isBlank(msgCode) ? (success ? ErrorEnum.SUCCESS.name() : ErrorEnum.FAILED.name()) : msgCode;
+        boolean blank = StringUtils.isBlank(msgCode);
+        if (!blank) {
+            if (!success && ErrorEnum.SUCCESS.name().equals(msgCode)) {
+                blank = true;
+            }
+            if (success && ErrorEnum.FAILED.name().equals(msgCode)) {
+                blank = true;
+            }
+        }
+        return blank ? success ? ErrorEnum.SUCCESS.name() : ErrorEnum.FAILED.name() : msgCode;
     }
 
     public String getMsgInfo() {
-        return StringUtils.isBlank(msgInfo) ? (success ? ErrorEnum.SUCCESS.getMsg() : ErrorEnum.FAILED.getMsg()) : msgInfo;
+        boolean blank = StringUtils.isBlank(msgInfo);
+        if (!blank) {
+            if (!success && ErrorEnum.SUCCESS.getMsg().equals(msgInfo)) {
+                blank = true;
+            }
+            if (success && ErrorEnum.FAILED.getMsg().equals(msgInfo)) {
+                blank = true;
+            }
+        }
+        return blank ? (success ? ErrorEnum.SUCCESS.getMsg() : ErrorEnum.FAILED.getMsg()) : msgInfo;
     }
 
     @Override
