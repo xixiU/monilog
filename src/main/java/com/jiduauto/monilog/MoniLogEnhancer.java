@@ -83,7 +83,6 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         enhanceGrpcClient();
         enhanceMybatis();
     }
-
     @Override
     public int getOrder() {
         return Ordered.HIGHEST_PRECEDENCE;

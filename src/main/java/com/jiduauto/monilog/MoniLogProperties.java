@@ -274,11 +274,6 @@ class MoniLogProperties implements InitializingBean {
         private Set<String> excludeMsgCodes;
 
         /**
-         * 收集组件测试报告，内部组件测试用
-         */
-        private boolean reportTestResult = false;
-
-        /**
          * 日志信息是否输出traceId，默认输出；
          * 在告警时会在信息主体部分添加traceId，方便排查问题。但是此信息在日志平台直接观察时traceId会重复打印，若不想打印traceId可以设置此开关为false;
          */
@@ -454,7 +449,6 @@ class MoniLogProperties implements InitializingBean {
          * rocketmq发送者的详情日志输出级别，默认仅异常时输出
          */
         private LogOutputLevel producerDetailLogLevel;
-
         /**
          * rocketmq慢接口，单位毫秒.
          */

@@ -9,6 +9,12 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
+
 /**
  * Spring(Spring boot)工具封装，包括：
  *
@@ -50,6 +56,7 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
      */
     public static String LOG_PREFIX = "monilog_";
 
+    private static Map<Class<?>, Object> INSTANCE_MAP = new ConcurrentHashMap<>();
 
     @SuppressWarnings("NullableProblems")
     @Override
@@ -94,13 +101,22 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
      * @param clazz Bean类
      * @return Bean对象
      */
-    static <T> T getBean(Class<T> clazz) {
-        return getBeanFactory().getBean(clazz);
+    private static <T> T getBean(Class<T> clazz) {
+        return getBeanFactory() == null ? null : getBeanFactory().getBean(clazz);
     }
 
     static <T> T getBeanWithoutException(Class<T> clazz) {
         try {
-            return getBeanFactory() == null ? null : getBeanFactory().getBean(clazz);
+            //spring启动期间，如果在子线程中调用该方法容易发生死锁
+            if (INSTANCE_MAP.containsKey(clazz)) {
+                return (T) INSTANCE_MAP.get(clazz);
+            }
+            Supplier<T> supplier = () -> getBean(clazz);
+            T bean = CompletableFuture.supplyAsync(supplier).get(200, TimeUnit.MILLISECONDS);
+            if (bean != null) {
+                INSTANCE_MAP.put(clazz, bean);
+            }
+            return bean;
         } catch (Exception e) {
             return null;
         }
