@@ -112,8 +112,7 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
             if (INSTANCE_MAP.containsKey(clazz)) {
                 return (T) INSTANCE_MAP.get(clazz);
             }
-            Supplier<T> supplier = () -> getBean(clazz);
-            T bean = CompletableFuture.supplyAsync(supplier).get(200, TimeUnit.MILLISECONDS);
+            T bean = CompletableFuture.supplyAsync(() -> getBean(clazz)).get(200, TimeUnit.MILLISECONDS);
             if (bean != null) {
                 INSTANCE_MAP.put(clazz, bean);
             }
