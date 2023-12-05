@@ -105,6 +105,7 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
         return getBeanFactory() == null ? null : getBeanFactory().getBean(clazz);
     }
 
+    @SuppressWarnings("all")
     static <T> T getBeanWithoutException(Class<T> clazz) {
         try {
             //spring启动期间，如果在子线程中调用该方法容易发生死锁，因此这里最多等待200ms，取不到就先返回null，不阻塞主线程
