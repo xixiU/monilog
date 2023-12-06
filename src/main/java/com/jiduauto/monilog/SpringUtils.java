@@ -108,6 +108,7 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
     static <T> T getBeanWithoutException(Class<T> clazz) {
         try {
             //spring启动期间，如果在子线程中调用该方法容易发生死锁，因此这里最多等待200ms，取不到就先返回null，不阻塞主线程
+            //TODO 需要验证的一点的是，这样做后，会不会影响Apollo推送后properties类的正常更新
             if (INSTANCE_MAP.containsKey(clazz)) {
                 return (T) INSTANCE_MAP.get(clazz);
             }
