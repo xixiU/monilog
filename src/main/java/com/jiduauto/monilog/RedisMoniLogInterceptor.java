@@ -177,12 +177,13 @@ public final class RedisMoniLogInterceptor {
     }
     @AllArgsConstructor
     private static class RedissonResultProxy implements MethodInterceptor {
-        private final MoniLogParams p;
+        private MoniLogParams p;
         @Override
         public Object invoke(MethodInvocation invocation) throws Throwable {
             Method method = invocation.getMethod();
             String methodName = method.getName();
             if (!TARGET_REDISSON_METHODS.contains(methodName) || p == null) {
+                p = null;
                 return invocation.proceed();
             }
             Class<?> serviceCls = p.getServiceCls();
@@ -217,6 +218,7 @@ public final class RedisMoniLogInterceptor {
                 }
                 p.setMsgInfo(msgPrefix + p.getMsgInfo());
                 MoniLogUtil.log(p);
+                p = null;
             }
         }
     }
