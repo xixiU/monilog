@@ -105,7 +105,7 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
                 INSTANCE_MAP.put(clazz, bean);
             }
             return bean;
-        } catch (Exception e) {
+        } catch (Exception ignore) {
             return null;
         }
     }
