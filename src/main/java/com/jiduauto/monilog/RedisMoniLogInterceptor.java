@@ -162,13 +162,13 @@ public final class RedisMoniLogInterceptor {
             p.setService(ReflectUtil.getSimpleClassName(ri.cls));
             p.setAction(ri.method);
             p.setInput(ri.args == null || ri.args.length == 0 ? ri.args : Arrays.stream(ri.args).filter(e -> e instanceof String).toArray());
-            p.setCost(start); //取结果时再减掉此值
+            p.setCost(0);
             p.setSuccess(true);
             p.setLogPoint(LogPoint.redis);
             p.setMsgCode(ErrorEnum.SUCCESS.name());
             p.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
             try {
-                return ProxyUtils.getProxy(result, new RedissonResultProxy(p, p.getCost()));
+                return ProxyUtils.getProxy(result, new RedissonResultProxy(p, start));
             } catch (Throwable e) {
                 MoniLogUtil.innerDebug("interceptRedisson error", e);
                 return result;
@@ -178,7 +178,7 @@ public final class RedisMoniLogInterceptor {
     @AllArgsConstructor
     private static class RedissonResultProxy implements MethodInterceptor {
         private final MoniLogParams p;
-        private final Long startTime;
+        private final long startTime;
 
         @Override
         public Object invoke(MethodInvocation invocation) throws Throwable {
