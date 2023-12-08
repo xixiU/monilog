@@ -93,17 +93,6 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
         return null == beanFactory ? applicationContext : beanFactory;
     }
 
-    /**
-     * 通过class获取Bean
-     *
-     * @param <T>   Bean类型
-     * @param clazz Bean类
-     * @return Bean对象
-     */
-    private static <T> T getBean(Class<T> clazz) {
-        return getBeanFactory() == null ? null : getBeanFactory().getBean(clazz);
-    }
-
     @SuppressWarnings("all")
     static <T> T getBeanWithoutException(Class<T> clazz) {
         try {
@@ -116,7 +105,7 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
                 INSTANCE_MAP.put(clazz, bean);
             }
             return bean;
-        } catch (Exception e) {
+        } catch (Exception ignore) {
             return null;
         }
     }
@@ -203,5 +192,16 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
             }
         }
         return false;
+    }
+
+    /**
+     * 通过class获取Bean
+     *
+     * @param <T>   Bean类型
+     * @param clazz Bean类
+     * @return Bean对象
+     */
+    private static <T> T getBean(Class<T> clazz) {
+        return getBeanFactory() == null ? null : getBeanFactory().getBean(clazz);
     }
 }

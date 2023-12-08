@@ -169,7 +169,7 @@ public final class RedisMoniLogInterceptor {
             p.setMsgCode(ErrorEnum.SUCCESS.name());
             p.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
             try {
-                return ProxyUtils.getProxy(result, new RedissonResultProxy(p, new AtomicLong(p.getCost())));
+                return ProxyUtils.getProxy(result, new RedissonResultProxy(p, new AtomicLong(start)));
             } catch (Throwable e) {
                 MoniLogUtil.innerDebug("interceptRedisson error", e);
                 return result;
