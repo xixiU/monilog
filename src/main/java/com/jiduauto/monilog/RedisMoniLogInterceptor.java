@@ -210,7 +210,9 @@ public final class RedisMoniLogInterceptor {
                 p.setMsgInfo(errorInfo.getErrorMsg());
                 throw e;
             } finally {
-                p.setCost(System.currentTimeMillis() - startTime.getAndSet(System.currentTimeMillis()));
+                long newStart = System.currentTimeMillis();
+                long oldStart = startTime.getAndSet(newStart);
+                p.setCost(newStart - oldStart);
                 String maybeKey = chooseStringKey(p.getInput());
                 MoniLogUtil.printLargeSizeLog(p, maybeKey);
                 String msgPrefix = "";
