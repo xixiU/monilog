@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 public final class RedisMoniLogInterceptor {
@@ -168,7 +169,7 @@ public final class RedisMoniLogInterceptor {
             p.setMsgCode(ErrorEnum.SUCCESS.name());
             p.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
             try {
-                return ProxyUtils.getProxy(result, new RedissonResultProxy(p, p.getCost()));
+                return ProxyUtils.getProxy(result, new RedissonResultProxy(p, new AtomicLong(p.getCost())));
             } catch (Throwable e) {
                 MoniLogUtil.innerDebug("interceptRedisson error", e);
                 return result;
@@ -178,7 +179,7 @@ public final class RedisMoniLogInterceptor {
     @AllArgsConstructor
     private static class RedissonResultProxy implements MethodInterceptor {
         private final MoniLogParams p;
-        private final Long startTime;
+        private AtomicLong startTime;
 
         @Override
         public Object invoke(MethodInvocation invocation) throws Throwable {
@@ -209,7 +210,8 @@ public final class RedisMoniLogInterceptor {
                 p.setMsgInfo(errorInfo.getErrorMsg());
                 throw e;
             } finally {
-                p.setCost(System.currentTimeMillis() - startTime);
+                p.setCost(System.currentTimeMillis() - startTime.get());
+                startTime = new AtomicLong(p.getCost());
                 String maybeKey = chooseStringKey(p.getInput());
                 MoniLogUtil.printLargeSizeLog(p, maybeKey);
                 String msgPrefix = "";
