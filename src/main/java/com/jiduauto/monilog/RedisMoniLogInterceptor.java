@@ -179,7 +179,7 @@ public final class RedisMoniLogInterceptor {
     @AllArgsConstructor
     private static class RedissonResultProxy implements MethodInterceptor {
         private final MoniLogParams p;
-        private AtomicLong startTime;
+        private final AtomicLong startTime;
 
         @Override
         public Object invoke(MethodInvocation invocation) throws Throwable {
@@ -211,7 +211,7 @@ public final class RedisMoniLogInterceptor {
                 throw e;
             } finally {
                 p.setCost(System.currentTimeMillis() - startTime.get());
-                startTime = new AtomicLong(p.getCost());
+                startTime.set(System.currentTimeMillis());
                 String maybeKey = chooseStringKey(p.getInput());
                 MoniLogUtil.printLargeSizeLog(p, maybeKey);
                 String msgPrefix = "";
