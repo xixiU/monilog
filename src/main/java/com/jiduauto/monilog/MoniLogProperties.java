@@ -4,7 +4,6 @@ import com.google.common.collect.Sets;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -15,7 +14,6 @@ import org.springframework.context.ApplicationContext;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * @author yp
@@ -141,33 +139,7 @@ class MoniLogProperties implements InitializingBean {
         printBanner();
         MoniLogUtil.addSystemRecord();
         // 启用配置更新
-        addApolloListener();
-    }
-
-
-    private void addApolloListener() {
-        try {
-            // 手动配置 apolloConfigListener，添加配置改动监听
-            com.ctrip.framework.apollo.ConfigChangeListener configChangeListener = configChangeEvent -> {
-                List<String> changedKeysList = configChangeEvent.changedKeys().stream().filter(item -> item.startsWith("monilog")).collect(Collectors.toList());
-                if (CollectionUtils.isEmpty(changedKeysList)) {
-                    return;
-                }
-                // 日志记录
-                for (String key : changedKeysList) {
-                    com.ctrip.framework.apollo.model.ConfigChange change = configChangeEvent.getChange(key);
-                    String oldValue = change.getOldValue();
-                    String newValue = change.getNewValue();
-                    log.info("monilog properties changed #configChange key:{} new value:{} old value:{}", key, newValue, oldValue);
-                }
-                // 只需要bindValue 一次就行，不要放在for循环里面
-                bindValue();
-            };
-            // 使用ApolloConfigChangeListener方法不生效，手动注入一个监听器
-            com.ctrip.framework.apollo.ConfigService.getAppConfig().addChangeListener(configChangeListener);
-        } catch (Throwable e) {
-            log.warn("addApolloListener failed, apollo sdk maybe missing, monilog's config property cannot changed by apollo");
-        }
+        ApolloChangeListener.register(this::bindValue);
     }
 
     private void bindValue() {
