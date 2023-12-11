@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @AllArgsConstructor
-class ApolloChangeListenerRegistry {
+class ApolloListenerRegistry {
     static void register(Runnable callback) {
         try {
             // 使用ApolloConfigChangeListener方法不生效，手动注入一个监听器

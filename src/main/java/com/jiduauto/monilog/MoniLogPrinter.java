@@ -1,6 +1,7 @@
 package com.jiduauto.monilog;
 
 
+import io.opentelemetry.api.trace.Span;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,8 +51,7 @@ public interface MoniLogPrinter {
         try {
             traceId = MDC.get("trace_id");
             if (StringUtils.isBlank(traceId)) {
-//                traceId = Span.current().getSpanContext().getTraceId();
-                return "";
+                traceId = Span.current().getSpanContext().getTraceId();
             }
             if ("00000000000000000000000000000000".equals(traceId)) {
                 return "";
