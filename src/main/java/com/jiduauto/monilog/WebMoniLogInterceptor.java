@@ -46,18 +46,19 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
 
     @SneakyThrows
     @Override
+    @SuppressWarnings("unchecked")
     public void doFilterInternal(@NonNull HttpServletRequest httpServletRequest, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws IOException, ServletException {
         MoniLogProperties.WebProperties webProperties = moniLogProperties.getWeb();
-        if (webProperties == null ) {
+        if (webProperties == null) {
             filterChain.doFilter(httpServletRequest, response);
             return;
         }
         boolean isMultipart;
         HttpServletRequest request;
-        try{
+        try {
             isMultipart = ServletFileUpload.isMultipartContent(httpServletRequest);
             request = isMultipart ? httpServletRequest : new RequestWrapper(httpServletRequest);
-        }catch (Exception e){
+        } catch (Exception e) {
             MoniLogUtil.innerDebug("check multipart error: {}", e.getMessage());
             filterChain.doFilter(httpServletRequest, response);
             return;
@@ -143,7 +144,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
                 LogParser cl = ReflectUtil.getAnnotation(LogParser.class, method.getBeanType(), method.getMethod());
                 ResultParseUtil.parseResultAndSet(cl, json, logParams);
             }
-        } catch (ClientAbortException e){
+        } catch (ClientAbortException e) {
             // 解析请求时，客户端断开连接，异常直接抛出去
             logParams.setSuccess(false);
             logParams.setException(e);
@@ -162,7 +163,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
                 throw bizException;
             } else {
                 // 组件异常
-                MoniLogUtil.innerDebug( "webMoniLogInterceptor process error", e);
+                MoniLogUtil.innerDebug("webMoniLogInterceptor process error", e);
             }
         } finally {
             if (logParams.isSuccess() && StringUtils.isNotBlank(responseBodyStr) && isJson(requestHeaderMap)) {
@@ -172,11 +173,12 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             MoniLogUtil.log(logParams);
         }
     }
+
     @SuppressWarnings("all")
-    private static String getUrl(HttpServletRequest request){
+    private static String getUrl(HttpServletRequest request) {
         String originUrl = HttpRequestData.extractPath(request.getRequestURI());
 
-        try{
+        try {
             Object attribute = request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE);
             if (attribute == null || !(attribute instanceof Map)) {
                 return originUrl;
@@ -186,13 +188,13 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
                 return originUrl;
             }
             for (Map.Entry<String, String> entry : attributeParmasMap.entrySet()) {
-                if (!originUrl.contains("/"+entry.getValue())) {
+                if (!originUrl.contains("/" + entry.getValue())) {
                     continue;
                 }
-                originUrl = originUrl.replaceAll("/"+entry.getValue(), "{"+entry.getKey()+"}");
+                originUrl = originUrl.replaceAll("/" + entry.getValue(), "{" + entry.getKey() + "}");
             }
             return originUrl;
-        }catch (Exception e){
+        } catch (Exception e) {
             return originUrl;
         }
     }
@@ -226,17 +228,11 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             return false;
         }
 
-        if (isDownstream(headerMap)) {
+        if (HttpUtil.isDownstream(headerMap)) {
             return false;
         }
-        String header = getMapValueIgnoreCase(headerMap, HttpHeaders.CONTENT_TYPE);
+        String header = HttpUtil.getMapValueIgnoreCase(headerMap, HttpHeaders.CONTENT_TYPE);
         return StringUtils.containsIgnoreCase(header, MediaType.APPLICATION_JSON_VALUE);
-    }
-
-    private static boolean isDownstream(Map<String, String> headerMap) {
-        String header = getMapValueIgnoreCase(headerMap, HttpHeaders.CONTENT_DISPOSITION);
-        return StringUtils.containsIgnoreCase(header, "attachment")
-                || StringUtils.containsIgnoreCase(header, "filename");
     }
 
 
@@ -295,13 +291,13 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
                 continue;
             }
             // 再从body中取值
-            resultTagValue = getMapValueIgnoreCase(requestBodyMap, parameterName);
+            resultTagValue = HttpUtil.getMapValueIgnoreCase(requestBodyMap, parameterName);
             if (StringUtils.isNotBlank(resultTagValue)) {
                 oriTags[i] = resultTagValue;
                 continue;
             }
             // 再从header取值
-            resultTagValue = getMapValueIgnoreCase(headersMap, parameterName);
+            resultTagValue = HttpUtil.getMapValueIgnoreCase(headersMap, parameterName);
             if (StringUtils.isNotBlank(resultTagValue)) {
                 oriTags[i] = resultTagValue;
             }
@@ -317,13 +313,13 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
 
     private static String getResponseBody(ContentCachingResponseWrapper response) {
         Map<String, String> responseHeaders = getResponseHeaders(response);
-        if (isDownstream(responseHeaders)) {
+        if (HttpUtil.isDownstream(responseHeaders)) {
             return "Binary data";
         }
         ContentCachingResponseWrapper wrapper = WebUtils.getNativeResponse(response, ContentCachingResponseWrapper.class);
         if (wrapper != null) {
             byte[] buf = wrapper.getContentAsByteArray();
-            if (buf.length <=0) {
+            if (buf.length <= 0) {
                 return null;
             }
             String payload;
@@ -348,11 +344,11 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
         if (MapUtils.isEmpty(headerMap)) {
             return LogPoint.unknown;
         }
-        String jnsHeader = getMapValueIgnoreCase(headerMap, JIDU_JNS_HEADER);
+        String jnsHeader = HttpUtil.getMapValueIgnoreCase(headerMap, JIDU_JNS_HEADER);
         if (StringUtils.isNotBlank(jnsHeader)) {
             return LogPoint.feign_server;
         }
-        String userAgent = getMapValueIgnoreCase(headerMap, USER_AGENT);
+        String userAgent = HttpUtil.getMapValueIgnoreCase(headerMap, USER_AGENT);
         if (StringUtils.isBlank(userAgent)) {
             return LogPoint.unknown;
         }
@@ -361,19 +357,5 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             return LogPoint.feign_server;
         }
         return LogPoint.http_server;
-    }
-
-
-    private static String getMapValueIgnoreCase(Map<String, ?> headerMap, String headerKey) {
-        if (MapUtils.isEmpty(headerMap) || StringUtils.isBlank(headerKey)) {
-            return null;
-        }
-        for (String key : headerMap.keySet()) {
-            if (StringUtils.equalsIgnoreCase(key, headerKey)) {
-                Object v = headerMap.get(key);
-                return v == null ? null : v.toString();
-            }
-        }
-        return null;
     }
 }
