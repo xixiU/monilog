@@ -152,7 +152,7 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
         if (StringUtils.isNotBlank(property)) {
             return property;
         }
-        throw new RuntimeException("appName is not set");
+        throw new RuntimeException("appName is not set, please check property: 'spring.application.name' or 'monilog.app-name'");
     }
 
     /**
