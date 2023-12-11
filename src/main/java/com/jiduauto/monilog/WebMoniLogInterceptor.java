@@ -368,17 +368,12 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
         if (MapUtils.isEmpty(headerMap) || StringUtils.isBlank(headerKey)) {
             return null;
         }
-        Object userAgent = headerMap.get(headerKey);
-        if (userAgent != null) {
-            return userAgent.toString();
+        for (String key : headerMap.keySet()) {
+            if (StringUtils.equalsIgnoreCase(key, headerKey)) {
+                Object v = headerMap.get(key);
+                return v == null ? null : v.toString();
+            }
         }
-        // 全小写
-        userAgent = headerMap.get(headerKey.toLowerCase());
-        if (userAgent != null) {
-            return userAgent.toString();
-        }
-        // 全大写
-        Object o = headerMap.get(headerKey.toUpperCase());
-        return o != null ?  o.toString() : null;
+        return null;
     }
 }
