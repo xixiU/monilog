@@ -93,8 +93,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         try {
             return Class.forName(clsName);
         } catch (ClassNotFoundException e) {
-            log.error("ClassNotFoundException for interceptor: " + clsName);
-            return Object.class;
+            throw new RuntimeException("ClassNotFoundException for interceptor: " + clsName);
         } catch (Throwable ignore) {
             return Object.class;
         }
