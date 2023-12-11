@@ -58,14 +58,14 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
      */
     private MoniLogEnhancer(SpringApplication app, String[] args) {
         Set<Class<?>> set = new HashSet<>();
-        set.add(FeignMoniLogInterceptor.class);
-        set.add(RocketMqMoniLogInterceptor.class);
-        set.add(HttpClientMoniLogInterceptor.class);
-        set.add(OkHttpClientMoniLogInterceptor.class);
-        set.add(RedisMoniLogInterceptor.class);
-        set.add(XxlJobMoniLogInterceptor.class);
-        set.add(GrpcMoniLogInterceptor.class);
-        set.add(MybatisInterceptor.class);
+        set.add(loadInterceptors("com.jiduauto.monilog.FeignMoniLogInterceptor"));
+        set.add(loadInterceptors("com.jiduauto.monilog.RocketMqMoniLogInterceptor"));
+        set.add(loadInterceptors("com.jiduauto.monilog.HttpClientMoniLogInterceptor"));
+        set.add(loadInterceptors("com.jiduauto.monilog.OkHttpClientMoniLogInterceptor"));
+        set.add(loadInterceptors("com.jiduauto.monilog.RedisMoniLogInterceptor"));
+        set.add(loadInterceptors("com.jiduauto.monilog.XxlJobMoniLogInterceptor"));
+        set.add(loadInterceptors("com.jiduauto.monilog.GrpcMoniLogInterceptor"));
+        set.add(loadInterceptors("com.jiduauto.monilog.MybatisInterceptor"));
         log.debug("loaded class:{}", set.size());
         outputClass = args != null && args.length > 0 && Arrays.stream(args).anyMatch(e -> StringUtils.containsIgnoreCase(e.trim(), "outputClass=true"));
     }
@@ -87,6 +87,14 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
     @Override
     public int getOrder() {
         return Ordered.HIGHEST_PRECEDENCE;
+    }
+
+    private static Class<?> loadInterceptors(String clsName) {
+        try {
+            return Class.forName(clsName);
+        } catch (Exception ignore) {
+            return Object.class;
+        }
     }
 
     private static void enhanceHttpClient() {
