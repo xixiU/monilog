@@ -166,7 +166,7 @@ class MoniLogProperties implements InitializingBean {
             // 使用ApolloConfigChangeListener方法不生效，手动注入一个监听器
             com.ctrip.framework.apollo.ConfigService.getAppConfig().addChangeListener(configChangeListener);
         } catch (Throwable e) {
-            log.warn("addApolloListener failed, apollo sdk maybe missing, monilog's config property cann't by changed by apollo");
+            log.warn("addApolloListener failed, apollo sdk maybe missing, monilog's config property cannot changed by apollo");
         }
     }
 
