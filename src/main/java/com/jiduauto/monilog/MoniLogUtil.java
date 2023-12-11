@@ -134,11 +134,11 @@ class MoniLogUtil {
         String name = METRIC_PREFIX + logPoint.name();
         MonilogMetrics.record(name + MonitorType.RECORD.getMark(), allTags);
         // 耗时只打印基础tag
-        MonilogMetrics.eventDruation(name + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
+        MonilogMetrics.eventDuration(name + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
 
         if (logParams.isHasUserTag()) {
             name = name + "_" + logParams.getService() + "_" + logParams.getAction();
-            MonilogMetrics.eventDruation(name + MonitorType.TIMER.getMark(), allTags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
+            MonilogMetrics.eventDuration(name + MonitorType.TIMER.getMark(), allTags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
         }
 
     }
@@ -168,7 +168,7 @@ class MoniLogUtil {
             String operationCostTooLongMonitorPrefix = METRIC_PREFIX + "rt_too_long_" + logPoint.name();
             MonilogMetrics.record(operationCostTooLongMonitorPrefix + MonitorType.RECORD.getMark(), allTags);
             // 耗时只打印基础tag
-            MonilogMetrics.eventDruation(operationCostTooLongMonitorPrefix + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
+            MonilogMetrics.eventDuration(operationCostTooLongMonitorPrefix + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
         }
         if (LogLongRtLevel.both.equals(rtTooLongLevel) || LogLongRtLevel.onlyLogger.equals(rtTooLongLevel)) {
             printLongRtLog(logParams);

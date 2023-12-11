@@ -37,7 +37,7 @@ class MonilogMetrics {
         }
     }
 
-    static Timer eventDruation(String metricName, String... tags) {
+    static Timer eventDuration(String metricName, String... tags) {
         try {
             return Timer.builder(metricName).tags(tags).publishPercentiles(new double[]{0.75, 0.95, 0.99, 1.0}).register(Metrics.globalRegistry);
         } catch (Exception e) {
