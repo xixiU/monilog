@@ -6,7 +6,6 @@ import com.metric.MetricMonitor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.Arrays;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -76,10 +75,6 @@ class MoniLogUtil {
     }
 
     static void log(MoniLogParams logParams) {
-        LogCollector reporter = SpringUtils.getBeanWithoutException(LogCollector.class);
-        if (reporter != null && reporter.getStart().get()) {
-            reporter.addLog(logParams);
-        }
         try {
             doMonitor(logParams);
         } catch (Exception e) {
@@ -121,10 +116,6 @@ class MoniLogUtil {
         String version = MoniLogAutoConfiguration.class.getPackage().getImplementationVersion();
         String prefix = "[" + traceId + "][" + version + "]" + INNER_DEBUG_LOG_PREFIX;
         log.warn(prefix + pattern, args);
-        LogCollector reporter = SpringUtils.getBeanWithoutException(LogCollector.class);
-        if (reporter != null && reporter.getStart().get()) {
-            reporter.addInnerDebug(prefix + pattern + Arrays.toString(args));
-        }
         // 内部异常添加metric上报
         TagBuilder tagBuilder = TagBuilder.of("application", SpringUtils.application);
         MetricMonitor.record(METRIC_PREFIX + "inner_debug", tagBuilder.toArray());
@@ -306,7 +297,7 @@ class MoniLogUtil {
      */
     private static void printDigestLog(MoniLogParams logParams) {
         MoniLogPrinter printer = getLogPrinter();
-        if (excludePrint(logParams)) {
+        if (printer == null || excludePrint(logParams)) {
             return;
         }
         boolean doPrinter = printLevelCheckPass(getDigestLogLevel(), logParams);
@@ -321,6 +312,9 @@ class MoniLogUtil {
     private static void printDetailLog(MoniLogParams logParams) {
         MoniLogPrinter printer = getLogPrinter();
         MoniLogProperties properties = getLogProperties();
+        if (printer == null || properties == null) {
+            return;
+        }
         if (properties.isDebug()) {
             printer.logDetail(logParams);
             return;
@@ -387,12 +381,7 @@ class MoniLogUtil {
         if (logPrinter != null) {
             return logPrinter;
         }
-        MoniLogPrinter printer = null;
-        try {
-            printer = SpringUtils.getBean(MoniLogPrinter.class);
-        } catch (Exception e) {
-            log.warn(INNER_DEBUG_LOG_PREFIX + ":no MoniLogPrinter instance found", e);
-        }
+        MoniLogPrinter printer = SpringUtils.getBeanWithoutException(MoniLogPrinter.class);
         return (logPrinter = printer);
     }
 

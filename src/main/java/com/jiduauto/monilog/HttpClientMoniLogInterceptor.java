@@ -130,6 +130,9 @@ public final class HttpClientMoniLogInterceptor {
                 StatusLine statusLine = httpResponse.getStatusLine();
                 p.setSuccess(statusLine.getStatusCode() < HttpStatus.SC_BAD_REQUEST);
                 p.setMsgCode(String.valueOf(statusLine.getStatusCode()));
+                if (!p.isSuccess()) {
+                    p.setMsgInfo(ErrorEnum.FAILED.getMsg());
+                }
 
                 HttpEntity entity = httpResponse.getEntity();
                 String responseBody = null;

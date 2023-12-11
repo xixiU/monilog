@@ -33,13 +33,6 @@ class MoniLogAutoConfiguration {
     static SpringUtils moniLogSpringUtils() {
         return new SpringUtils();
     }
-
-    @Bean
-    @ConditionalOnProperty(prefix = "monilog.printer", name = "report-test-result")
-    LogCollector moniLogTestReporter() {
-        return new LogCollector();
-    }
-
     @Bean
     @ConditionalOnMissingBean(MoniLogPrinter.class)
     MoniLogPrinter moniLogPrinter() {

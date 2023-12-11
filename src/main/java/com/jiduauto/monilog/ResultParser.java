@@ -32,7 +32,7 @@ final class ResultParser {
     /**
      * 默认的错误原因解析路径，注意对于基于方法的解析方式，仅支持无参方法
      */
-    public static final String Default_ErrMsg_Expr = "$.msgInfo,$.MsgInfo,$.message,$.Message,$.msg,$.Msg,$.resultMsg,$.errorMsg,$.errMsg,$.responseMsg,$.responseMessage,$.retMsg,$.subResultCode,$.errorDesc,$.error,$.getMsgInfo(),$.getMessage(),$.getMsg(),$.getResultMsg(),$.getErrorMsg(),$.getResponseMsg(),$.getRetMsg()";
+    public static final String Default_ErrMsg_Expr = "$.msgInfo,$.MsgInfo,$.message,$.Message,$.msg,$.Msg,$.resultMsg,$.errorMsg,$.errMsg,$.errorMessage,$.responseMsg,$.responseMessage,$.retMsg,$.subResultCode,$.errorDesc,$.error,$.getMsgInfo(),$.getMessage(),$.getMsg(),$.getResultMsg(),$.getErrorMsg(),$.getResponseMsg(),$.getRetMsg()";
 
     public static Integer parseIntCode(Object obj) {
         return parseIntCode(obj, null);
