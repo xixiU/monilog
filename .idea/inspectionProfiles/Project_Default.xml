@@ -13,7 +13,7 @@
     <inspection_tool class="AlibabaAbstractMethodOrInterfaceMethodMustUseJavadoc" enabled="true" level="WARNING" enabled_by_default="true" />
     <inspection_tool class="AlibabaAvoidApacheBeanUtilsCopy" enabled="true" level="WARNING" enabled_by_default="true" />
     <inspection_tool class="AlibabaAvoidCallStaticSimpleDateFormat" enabled="true" level="WARNING" enabled_by_default="true" />
-    <inspection_tool class="AlibabaAvoidCommentBehindStatement" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="AlibabaAvoidCommentBehindStatement" enabled="true" level="WARNING" enabled_by_default="true" />
     <inspection_tool class="AlibabaAvoidComplexCondition" enabled="true" level="WARNING" enabled_by_default="true" />
     <inspection_tool class="AlibabaAvoidConcurrentCompetitionRandom" enabled="true" level="WARNING" enabled_by_default="true" />
     <inspection_tool class="AlibabaAvoidDoubleOrFloatEqualCompare" enabled="true" level="WARNING" enabled_by_default="true" />
