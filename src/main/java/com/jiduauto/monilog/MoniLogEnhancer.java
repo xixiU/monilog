@@ -95,7 +95,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("ClassNotFoundException for interceptor: " + clsName);
         } catch (NoClassDefFoundError e) {
-            log.info("monilog {} will not effect cause related class missing", clsName);
+            log.info("monilog {} will not effect cause related class missing: {}", clsName, e.getCause().getMessage());
             return Object.class;
         } catch (Throwable e) {
             log.error("monilog {} will not effect cause related class load error", clsName, e);
