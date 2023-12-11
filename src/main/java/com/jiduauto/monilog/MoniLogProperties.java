@@ -240,10 +240,10 @@ class MoniLogProperties implements InitializingBean {
          */
         private Set<String> excludeMsgCodes;
         /**
-         * 日志信息是否输出traceId，默认输出；
+         * 日志信息中是否再次输出traceId，默认不输出；
          * 在告警时会在信息主体部分添加traceId，方便排查问题。但是此信息在日志平台直接观察时traceId会重复打印，若不想打印traceId可以设置此开关为false;
          */
-        private boolean printTraceId = true;
+        private boolean printTraceId = false;
         /**
          * 日志输出级别配置
          */
