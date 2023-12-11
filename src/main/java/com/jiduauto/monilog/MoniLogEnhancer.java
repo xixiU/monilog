@@ -103,6 +103,12 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         }
     }
 
+    private static CtClass getCtClass(String clsName) throws NotFoundException {
+        ClassPool classPool = ClassPool.getDefault();
+        classPool.appendClassPath(new LoaderClassPath(Thread.currentThread().getContextClassLoader()));
+        return classPool.getCtClass(clsName);
+    }
+
     private static void enhanceHttpClient() {
         boolean success = doEnhanceHttp(HTTP_CLIENT_BUILDER, "addInterceptorsForBuilder");
         if (success) {
@@ -177,12 +183,6 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         } catch (Throwable e) {
             logWarn(e, ROCKET_MQ_PRODUCER);
         }
-    }
-
-    private static CtClass getCtClass(String clsName) throws NotFoundException {
-        ClassPool classPool = ClassPool.getDefault();
-        classPool.appendClassPath(new LoaderClassPath(Thread.currentThread().getContextClassLoader()));
-        return classPool.getCtClass(clsName);
     }
 
     private static boolean doEnhanceHttp(String clsName, String helperMethod) {
