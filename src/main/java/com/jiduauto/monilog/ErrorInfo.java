@@ -10,7 +10,6 @@ import lombok.Getter;
 class ErrorInfo {
     private String errorCode;
     private String errorMsg;
-
     public static ErrorInfo of(String errorCode, String errorMsg) {
         ErrorInfo e = new ErrorInfo();
         e.errorCode = errorCode;
