@@ -58,12 +58,6 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
      */
     private MoniLogEnhancer(SpringApplication app, String[] args) {
         Set<Class<?>> set = new HashSet<>();
-        Class<?> propCls = loadInterceptorClass("com.jiduauto.monilog.MoniLogProperties");
-        if (propCls == Object.class) {
-            //无法装载配置类，不做任何增强
-            log.warn("monilog will not effect cause apollo sdk not found");
-            return;
-        }
         set.add(loadInterceptorClass("com.jiduauto.monilog.FeignMoniLogInterceptor"));
         set.add(loadInterceptorClass("com.jiduauto.monilog.RocketMqMoniLogInterceptor"));
         set.add(loadInterceptorClass("com.jiduauto.monilog.HttpClientMoniLogInterceptor"));
