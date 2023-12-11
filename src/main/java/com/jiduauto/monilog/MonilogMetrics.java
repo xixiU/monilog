@@ -29,8 +29,7 @@ class MonilogMetrics {
 
     static DistributionSummary eventRange(String metricName, Double expextMin, Double expextMax, String... tags) {
         try {
-            DistributionSummary summary = DistributionSummary.builder(metricName).tags(tags).maximumExpectedValue(expextMax).minimumExpectedValue(expextMin).publishPercentiles(new double[]{0.75, 0.95, 0.99, 1.0}).register(Metrics.globalRegistry);
-            return summary;
+            return DistributionSummary.builder(metricName).tags(tags).maximumExpectedValue(expextMax).minimumExpectedValue(expextMin).publishPercentiles(new double[]{0.75, 0.95, 0.99, 1.0}).register(Metrics.globalRegistry);
         } catch (Exception e) {
             log.warn(e.getMessage());
             return null;
