@@ -139,7 +139,7 @@ class MoniLogProperties implements InitializingBean {
         printBanner();
         MoniLogUtil.addSystemRecord();
         // 启用配置更新
-        ApolloChangeListener.register(this::bindValue);
+        ApolloChangeListenerRegistry.register(this::bindValue);
     }
 
     private void bindValue() {
