@@ -53,6 +53,11 @@
             <artifactId>micrometer-core</artifactId>
             <version>1.5.14</version>
         </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
+            <version>1.9.1</version>
+        </dependency>
         <!-- 三方工具 -->
         <dependency>
             <groupId>org.projectlombok</groupId>
