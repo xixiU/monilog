@@ -48,28 +48,11 @@
             <version>3.29.2-GA</version>
         </dependency>
         <!-- metric监控 -->
-<!--        <dependency>-->
-<!--            <groupId>com.jidu.monitor</groupId>-->
-<!--            <artifactId>monitor-spring-boot-starter</artifactId>-->
-<!--            <version>${monitor-spring-boot-starter.version}</version>-->
-<!--            <exclusions>-->
-<!--                <exclusion>-->
-<!--                    <artifactId>grpc-netty-shaded</artifactId>-->
-<!--                    <groupId>io.grpc</groupId>-->
-<!--                </exclusion>-->
-<!--            </exclusions>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>com.jiduauto.common</groupId>-->
-<!--            <artifactId>jidu-opentelemetry-log</artifactId>-->
-<!--            <version>${opentelemetry.log.version}</version>-->
-<!--            <exclusions>-->
-<!--                <exclusion>-->
-<!--                    <groupId>io.grpc</groupId>-->
-<!--                    <artifactId>grpc-api</artifactId>-->
-<!--                </exclusion>-->
-<!--            </exclusions>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+            <version>1.5.14</version>
+        </dependency>
         <!-- 三方工具 -->
         <dependency>
             <groupId>org.projectlombok</groupId>

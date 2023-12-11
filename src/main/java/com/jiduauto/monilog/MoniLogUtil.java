@@ -2,7 +2,6 @@ package com.jiduauto.monilog;
 
 import ch.qos.logback.classic.spi.EventArgUtil;
 import com.carrotsearch.sizeof.RamUsageEstimator;
-import com.metric.MetricMonitor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -41,7 +40,7 @@ class MoniLogUtil {
     /**
      * 添加系统方法指标，每6小时打印一条系统信息
      */
-    private static void addSysRecord(){
+    private static void addSysRecord() {
         // 设置任务的初始延迟时间为3分钟，防止应用启动过程中执行
         long delay = 3 * 60 * 1000;
 
@@ -63,12 +62,12 @@ class MoniLogUtil {
     /**
      * 添加接入组件信息上报，仅上报基础信息，当前接入的版本，接入的应用，环境
      */
-    static void addSystemRecord(){
+    static void addSystemRecord() {
         try {
             TagBuilder tag = TagBuilder.of("application", SpringUtils.application)
                     .add("env", SpringUtils.activeProfile)
                     .add("version", MoniLogAutoConfiguration.class.getPackage().getImplementationVersion());
-            MetricMonitor.record(METRIC_PREFIX + "sysVersion", tag.toArray());
+            MonilogMetrics.record(METRIC_PREFIX + "sysVersion", tag.toArray());
         } catch (Exception e) {
             innerDebug("addSystemRecord error", e);
         }
@@ -118,7 +117,7 @@ class MoniLogUtil {
         log.warn(prefix + pattern, args);
         // 内部异常添加metric上报
         TagBuilder tagBuilder = TagBuilder.of("application", SpringUtils.application);
-        MetricMonitor.record(METRIC_PREFIX + "inner_debug", tagBuilder.toArray());
+        MonilogMetrics.record(METRIC_PREFIX + "inner_debug", tagBuilder.toArray());
     }
 
     private static void doMonitor(MoniLogParams logParams) {
@@ -133,13 +132,13 @@ class MoniLogUtil {
         String[] allTags = systemTags.add(logParams.getTags()).toArray();
 
         String name = METRIC_PREFIX + logPoint.name();
-        MetricMonitor.record(name + MonitorType.RECORD.getMark(), allTags);
+        MonilogMetrics.record(name + MonitorType.RECORD.getMark(), allTags);
         // 耗时只打印基础tag
-        MetricMonitor.eventDruation(name + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
+        MonilogMetrics.eventDruation(name + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
 
         if (logParams.isHasUserTag()) {
             name = name + "_" + logParams.getService() + "_" + logParams.getAction();
-            MetricMonitor.eventDruation(name + MonitorType.TIMER.getMark(), allTags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
+            MonilogMetrics.eventDruation(name + MonitorType.TIMER.getMark(), allTags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
         }
 
     }
@@ -167,9 +166,9 @@ class MoniLogUtil {
         if ((LogLongRtLevel.both.equals(rtTooLongLevel) || LogLongRtLevel.onlyPrometheus.equals(rtTooLongLevel)) && logProperties.isEnableMonitor()) {
             // 操作操作信息
             String operationCostTooLongMonitorPrefix = METRIC_PREFIX + "rt_too_long_" + logPoint.name();
-            MetricMonitor.record(operationCostTooLongMonitorPrefix + MonitorType.RECORD.getMark(), allTags);
+            MonilogMetrics.record(operationCostTooLongMonitorPrefix + MonitorType.RECORD.getMark(), allTags);
             // 耗时只打印基础tag
-            MetricMonitor.eventDruation(operationCostTooLongMonitorPrefix + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
+            MonilogMetrics.eventDruation(operationCostTooLongMonitorPrefix + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
         }
         if (LogLongRtLevel.both.equals(rtTooLongLevel) || LogLongRtLevel.onlyLogger.equals(rtTooLongLevel)) {
             printLongRtLog(logParams);
