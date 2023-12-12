@@ -257,7 +257,7 @@ public final class FeignMoniLogInterceptor {
     }
 
     private static class BufferingFeignClientResponse implements Closeable {
-        private final Response response;
+        private Response response;
         private byte[] buffer;
 
         BufferingFeignClientResponse(Response response) throws IOException {
@@ -269,7 +269,7 @@ public final class FeignMoniLogInterceptor {
         }
 
         Response getResponse() {
-            return response.toBuilder().body(buffer).build();
+            return response;
         }
         int status() {
             return this.response.status();
@@ -323,6 +323,7 @@ public final class FeignMoniLogInterceptor {
             } finally {
                 Util.ensureClosed(bodyStream);
             }
+            this.response = response.toBuilder().body(buffer).build();
             return sb.toString();
         }
 
