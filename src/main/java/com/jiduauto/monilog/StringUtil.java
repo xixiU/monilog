@@ -219,7 +219,19 @@ class StringUtil {
         return queryParams;
     }
 
-    public static boolean isBinaryArray(byte[] body, Charset charset){
+    static String encodeByteArray(byte[] body, Charset charset, String defaultStr) {
+        // 任意一个为空则认为是二进制的
+        if (body == null || charset == null) {
+            return defaultStr;
+        }
+        try {
+            return charset.newDecoder().decode(ByteBuffer.wrap(body)).toString();
+        } catch (CharacterCodingException ex) {
+            // 无法解码认为是二进制的
+            return defaultStr;
+        }
+    }
+    static boolean isBinaryArray(byte[] body, Charset charset) {
         // 任意一个为空则认为是二进制的
         if (body == null || charset == null) {
             return true;
@@ -227,8 +239,8 @@ class StringUtil {
         try {
             charset.newDecoder().decode(ByteBuffer.wrap(body));
             return false;
-            // 无法解码认为是二进制的
         } catch (CharacterCodingException ex) {
+            // 无法解码认为是二进制的
             return true;
         }
     }

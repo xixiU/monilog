@@ -80,14 +80,15 @@ public final class FeignMoniLogInterceptor {
         mlp.setMsgCode(ErrorEnum.SUCCESS.name());
         mlp.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
         if (ex != null) {
-            Response failedResponseWhenFailed = getFailedResponseWhenFailed(response, ex, mlp);
+            handleException(ex, mlp);
             MoniLogUtil.log(mlp);
-            return failedResponseWhenFailed;
+            return response;
 
         }
         Response ret;
+        BufferingFeignClientResponse bufferedResp = null;
         try {
-            BufferingFeignClientResponse bufferedResp = new BufferingFeignClientResponse(response);
+            bufferedResp = new BufferingFeignClientResponse(response);
             mlp.setSuccess(mlp.isSuccess() && response.status() < HttpStatus.BAD_REQUEST.value());
             if (!mlp.isSuccess()) {
                 mlp.setMsgCode(String.valueOf(bufferedResp.status()));
@@ -119,16 +120,15 @@ public final class FeignMoniLogInterceptor {
             }
             // 再次新建一个流
             ret = bufferedResp.getResponse();
-            // 关闭包装类的response
-            bufferedResp.close();
+            Util.ensureClosed(bufferedResp);
         } catch (Exception e) {
             // 在执行解析的过程中可能会出现连接中断，这种情况需要把异常抛出去
             if (e instanceof FeignException) {
-                ex = e;
-                return getFailedResponseWhenFailed(response, ex, mlp);
+                handleException(e, mlp);
+                return response;
             } //其他异常可能是monilog的bug导致的
             MoniLogUtil.innerDebug("doFeignInvocationRecord error", e);
-            ret = response;
+            ret = bufferedResp == null ? response : bufferedResp.getResponse();
         } finally {
             MoniLogUtil.log(mlp);
         }
@@ -138,14 +138,13 @@ public final class FeignMoniLogInterceptor {
     /**
      * 当有异常时设置MoniLogParams并返回
      */
-    private static Response getFailedResponseWhenFailed(Response response, Throwable ex, MoniLogParams mlp) {
+    private static void handleException(Throwable ex, MoniLogParams mlp) {
         mlp.setSuccess(false);
         ErrorInfo errorInfo = ExceptionUtil.parseException(ex);
         if (errorInfo != null) {
             mlp.setMsgCode(errorInfo.getErrorCode());
             mlp.setMsgInfo(errorInfo.getErrorMsg());
         }
-        return response;
     }
 
 
@@ -223,9 +222,6 @@ public final class FeignMoniLogInterceptor {
         return queryMap.isEmpty() ? null : queryMap;
     }
 
-
-
-
     // com.netflix.feign:feign-core 8.18.0 中没有request.length()方法
     private static int length(byte[] body) {
         return body != null ? body.length : 0;
@@ -233,21 +229,20 @@ public final class FeignMoniLogInterceptor {
 
     private static String getBodyParams(Request request) {
         byte[] body = request.body();
-        // com.netflix.feign:feign-core 8.18.0 中没有request.isBinary()方法
-        if (StringUtil.isBinaryArray(body, request.charset())) {
-            return "Binary data";
-        }
         if (length(body) == 0) {
             return null;
         }
-        return new String(body, request.charset()).trim();
+        //com.netflix.feign:feign-core 8.18.0 中没有request.isBinary()方法
+        return StringUtil.encodeByteArray(body, request.charset(), "Binary data");
     }
 
     private static class BufferingFeignClientResponse implements Closeable {
+        private final Response originResponse;
         private Response response;
         private final byte[] buffer;
 
         BufferingFeignClientResponse(Response response) throws IOException {
+            this.originResponse = response;
             this.buffer = response.body() == null ? null : Util.toByteArray(response.body().asInputStream());
             this.response = response.toBuilder().body(this.buffer).build();
         }
@@ -269,7 +264,7 @@ public final class FeignMoniLogInterceptor {
             if (charset == null) {
                 charset = StandardCharsets.UTF_8;
             }
-            String bodyString = Util.decodeOrDefault(buffer, charset, "Binary data");
+            String bodyString = StringUtil.encodeByteArray(buffer, charset, "Binary data");
             this.response = response.toBuilder().body(buffer).build();
             return bodyString;
         }
@@ -289,7 +284,7 @@ public final class FeignMoniLogInterceptor {
 
         @Override
         public void close() {
-            this.response.close();
+            this.originResponse.close();
         }
     }
 }
