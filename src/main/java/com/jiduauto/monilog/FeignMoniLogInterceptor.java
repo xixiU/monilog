@@ -99,10 +99,12 @@ public final class FeignMoniLogInterceptor {
                 mlp.setMsgInfo(ErrorEnum.FAILED.getMsg());
             }
             String resultStr = null;
+            boolean bodyConsumed = false;
             if (bufferedResp.isDownstream()) {
                 mlp.setOutput("Binary data");
             } else {
                 resultStr = bufferedResp.body(); //读掉原始response中的数据
+                bodyConsumed = true;
                 mlp.setOutput(resultStr);
             }
             if (resultStr != null && bufferedResp.isJson()) {
@@ -122,12 +124,13 @@ public final class FeignMoniLogInterceptor {
                     mlp.setMsgInfo(parsedResult.getMsgInfo());
                 }
             }
-            if (resultStr != null) {
+            if (bodyConsumed) {
                 //重写将数据写入原始response的body中
                 ret = bufferedResp.getResponse(resultStr, charset);
             } else {
                 ret = bufferedResp.getResponse();
             }
+            //TODO 不能直接关闭
             bufferedResp.close();
         } catch (Exception e) {
             // 在执行解析的过程中可能会出现连接中断，这种情况需要把异常抛出去
