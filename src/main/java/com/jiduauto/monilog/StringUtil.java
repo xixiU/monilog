@@ -9,6 +9,9 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.AntPathMatcher;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -216,4 +219,17 @@ class StringUtil {
         return queryParams;
     }
 
+    public static boolean isBinaryArray(byte[] body, Charset charset){
+        // 任意一个为空则认为是二进制的
+        if (body == null || charset == null) {
+            return true;
+        }
+        try {
+            charset.newDecoder().decode(ByteBuffer.wrap(body));
+            return false;
+            // 无法解码认为是二进制的
+        } catch (CharacterCodingException ex) {
+            return true;
+        }
+    }
 }

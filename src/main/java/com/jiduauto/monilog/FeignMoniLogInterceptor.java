@@ -224,10 +224,7 @@ public final class FeignMoniLogInterceptor {
     }
 
 
-    // com.netflix.feign:feign-core 8.18.0 中没有request.isBinary()方法
-    private static boolean isBinary(byte[] body, Charset charset) {
-        return charset == null || body == null;
-    }
+
 
     // com.netflix.feign:feign-core 8.18.0 中没有request.length()方法
     private static int length(byte[] body) {
@@ -236,7 +233,8 @@ public final class FeignMoniLogInterceptor {
 
     private static String getBodyParams(Request request) {
         byte[] body = request.body();
-        if (isBinary(body, request.charset())) {
+        // com.netflix.feign:feign-core 8.18.0 中没有request.isBinary()方法
+        if (StringUtil.isBinaryArray(body, request.charset())) {
             return "Binary data";
         }
         if (length(body) == 0) {
