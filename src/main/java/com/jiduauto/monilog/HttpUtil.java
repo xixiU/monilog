@@ -5,6 +5,7 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpHeaders;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
@@ -45,6 +46,22 @@ class HttpUtil {
             if (StringUtils.equalsIgnoreCase(key, headerKey)) {
                 Object v = headerMap.get(key);
                 return v == null ? null : v.toString();
+            }
+        }
+        return null;
+    }
+
+    static String getFirstHeader(Map<String, Collection<String>> headerMap, String name) {
+        if (headerMap == null || StringUtils.isBlank(name)) {
+            return null;
+        }
+        for (Map.Entry<String, Collection<String>> me : headerMap.entrySet()) {
+            if (me.getKey().equalsIgnoreCase(name)) {
+                Collection<String> headers = me.getValue();
+                if (headers == null || headers.isEmpty()) {
+                    return null;
+                }
+                return headers.iterator().next();
             }
         }
         return null;

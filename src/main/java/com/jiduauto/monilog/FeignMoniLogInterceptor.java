@@ -9,7 +9,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 
-import java.io.*;
+import java.io.Closeable;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -238,7 +239,6 @@ public final class FeignMoniLogInterceptor {
         return body != null ? body.length : 0;
     }
 
-    // 注意这里消耗的流
     private static String getBodyParams(Request request) {
         byte[] body = request.body();
         if (isBinary(body, request.charset())) {
@@ -251,22 +251,18 @@ public final class FeignMoniLogInterceptor {
     }
 
     private static class BufferingFeignClientResponse implements Closeable {
-        private  Response response;
+        private Response response;
         private final byte[] buffer;
 
         BufferingFeignClientResponse(Response response) throws IOException {
-            if (response.body() != null) {
-                this.buffer = Util.toByteArray(response.body().asInputStream());
-            }else{
-                this.buffer = null;
-            }
-            //重新构建response
+            this.buffer = response.body() == null ? null : Util.toByteArray(response.body().asInputStream());
             this.response = response.toBuilder().body(this.buffer).build();
         }
 
         Response getResponse() {
             return response;
         }
+
         int status() {
             return this.response.status();
         }
@@ -275,8 +271,14 @@ public final class FeignMoniLogInterceptor {
             return this.response.headers();
         }
 
+        String getBodyAsString() {
+            String bodyString = Util.decodeOrDefault(buffer, StandardCharsets.UTF_8, "Binary data");
+            this.response = response.toBuilder().body(buffer).build();
+            return bodyString;
+        }
+
         boolean isDownstream() {
-            String header = getFirstHeader(HttpHeaders.CONTENT_DISPOSITION);
+            String header = HttpUtil.getFirstHeader(headers(), HttpHeaders.CONTENT_DISPOSITION);
             return StringUtils.containsIgnoreCase(header, "attachment") || StringUtils.containsIgnoreCase(header, "filename");
         }
 
@@ -284,30 +286,8 @@ public final class FeignMoniLogInterceptor {
             if (isDownstream()) {
                 return false;
             }
-            String header = getFirstHeader(HttpHeaders.CONTENT_TYPE);
+            String header = HttpUtil.getFirstHeader(headers(), HttpHeaders.CONTENT_TYPE);
             return StringUtils.containsIgnoreCase(header, "application/json");
-        }
-
-        String getFirstHeader(String name) {
-            if (headers() == null || StringUtils.isBlank(name)) {
-                return null;
-            }
-            for (Map.Entry<String, Collection<String>> me : headers().entrySet()) {
-                if (me.getKey().equalsIgnoreCase(name)) {
-                    Collection<String> headers = me.getValue();
-                    if (headers == null || headers.isEmpty()) {
-                        return null;
-                    }
-                    return headers.iterator().next();
-                }
-            }
-            return null;
-        }
-
-        String getBodyAsString() {
-            String bodyString = Util.decodeOrDefault(buffer, StandardCharsets.UTF_8, "Binary data");
-            this.response = response.toBuilder().body(buffer).build();
-            return bodyString;
         }
 
         @Override
