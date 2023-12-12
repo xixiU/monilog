@@ -262,7 +262,7 @@ public final class FeignMoniLogInterceptor {
         private final Response response;
         private byte[] body;
 
-        BufferingFeignClientResponse(Response response,Request request) throws IOException {
+        BufferingFeignClientResponse(Response response, Request request) throws IOException {
             this.request = request;
             // 读取一次response
             if (response.body() != null) {
@@ -273,7 +273,6 @@ public final class FeignMoniLogInterceptor {
         }
 
         Response getResponse() {
-            // return this.response;
             return Response.builder().request(request).status(response.status()).reason(response.reason()).headers(response.headers()).body(body).build();
         }
 
@@ -285,7 +284,6 @@ public final class FeignMoniLogInterceptor {
         private Map<String, Collection<String>> headers() {
             return this.response.headers();
         }
-
 
         boolean isDownstream() {
             String header = getFirstHeader(HttpHeaders.CONTENT_DISPOSITION);
