@@ -92,19 +92,17 @@ public final class FeignMoniLogInterceptor {
         }
         Response ret;
         try {
-            BufferingFeignClientResponse bufferedResp = new BufferingFeignClientResponse(response);
+            BufferingFeignClientResponse bufferedResp = new BufferingFeignClientResponse(response, request);
             mlp.setSuccess(mlp.isSuccess() && response.status() < HttpStatus.BAD_REQUEST.value());
             if (!mlp.isSuccess()) {
                 mlp.setMsgCode(String.valueOf(bufferedResp.status()));
                 mlp.setMsgInfo(ErrorEnum.FAILED.getMsg());
             }
             String resultStr = null;
-            boolean bodyConsumed = false;
             if (bufferedResp.isDownstream()) {
                 mlp.setOutput("Binary data");
             } else {
                 resultStr = bufferedResp.body(); //读掉原始response中的数据
-                bodyConsumed = true;
                 mlp.setOutput(resultStr);
             }
             if (resultStr != null && bufferedResp.isJson()) {
@@ -124,13 +122,15 @@ public final class FeignMoniLogInterceptor {
                     mlp.setMsgInfo(parsedResult.getMsgInfo());
                 }
             }
-            if (bodyConsumed) {
-                //重写将数据写入原始response的body中
-                ret = bufferedResp.getResponse(resultStr, charset);
-            } else {
-                ret = bufferedResp.getResponse();
-            }
-            //TODO 不能直接关闭
+//            if (bodyConsumed) {
+//                //重写将数据写入原始response的body中
+//                ret = bufferedResp.getResponse(resultStr, charset);
+//            } else {
+//                ret = bufferedResp.getResponse();
+//            }
+            // 再次新建一个流
+            ret = bufferedResp.getResponse();
+            // 关闭包装类的response
             bufferedResp.close();
         } catch (Exception e) {
             // 在执行解析的过程中可能会出现连接中断，这种情况需要把异常抛出去
@@ -258,29 +258,23 @@ public final class FeignMoniLogInterceptor {
     }
 
     private static class BufferingFeignClientResponse implements Closeable {
+        private final Request request;
         private final Response response;
         private byte[] body;
 
-        BufferingFeignClientResponse(Response response) {
-            this.response = response;
+        BufferingFeignClientResponse(Response response,Request request) throws IOException {
+            this.request = request;
+            // 读取一次response
+            if (response.body() != null) {
+                this.body = Util.toByteArray(response.body().asInputStream());
+            }
+            // 重新构建response
+            this.response = Response.builder().request(request).status(response.status()).reason(response.reason()).headers(response.headers()).body(body).build();
         }
 
         Response getResponse() {
-            return this.response;
-        }
-
-        Response getResponse(String text, Charset charset) {
-            try {
-                Class<?> cls = Class.forName("feign.Response$ByteArrayBody");
-                Method orNull = cls.getDeclaredMethod("orNull", String.class, Charset.class);
-                orNull.setAccessible(true);
-                Object body = orNull.invoke(null, text, charset);
-                // 通过反射获取Response.body,并修改值
-                ReflectUtil.setPropValue(this.response, "body", body, true);
-            } catch (Exception e) {
-                MoniLogUtil.innerDebug("setResponseBody error", e);
-            }
-            return this.response;
+            // return this.response;
+            return Response.builder().request(request).status(response.status()).reason(response.reason()).headers(response.headers()).body(body).build();
         }
 
 
