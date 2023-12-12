@@ -98,7 +98,7 @@ public final class FeignMoniLogInterceptor {
             if (bufferedResp.isDownstream()) {
                 mlp.setOutput("Binary data");
             } else {
-                resultStr = bufferedResp.getBodyAsString(); //读掉原始response中的数据
+                resultStr = bufferedResp.getBodyAsString();
                 mlp.setOutput(resultStr);
             }
             if (resultStr != null && bufferedResp.isJson()) {
@@ -265,6 +265,7 @@ public final class FeignMoniLogInterceptor {
                 charset = StandardCharsets.UTF_8;
             }
             String bodyString = StringUtil.encodeByteArray(buffer, charset, "Binary data");
+            //复原response
             this.response = response.toBuilder().body(buffer).build();
             return bodyString;
         }
