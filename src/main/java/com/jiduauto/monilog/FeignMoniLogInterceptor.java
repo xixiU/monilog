@@ -213,7 +213,7 @@ public final class FeignMoniLogInterceptor {
     }
 
     private static Map<String, Collection<String>> getQuery(Request request) {
-        // com.netflix.feign根据feign.RequestTemplate.request原来可以看到query参数也会拼接到url中
+        //com.netflix.feign根据feign.RequestTemplate.request原来可以看到query参数也会拼接到url中
         Map<String, Collection<String>> queryMap = StringUtil.getQueryMap(request.url());
         if (queryMap == null) {
             queryMap = new HashMap<>();
@@ -255,7 +255,6 @@ public final class FeignMoniLogInterceptor {
         private final byte[] buffer;
 
         BufferingFeignClientResponse(Response response) throws IOException {
-            //读取一次response
             if (response.body() != null) {
                 this.buffer = Util.toByteArray(response.body().asInputStream());
             }else{
