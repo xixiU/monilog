@@ -121,12 +121,6 @@ public final class FeignMoniLogInterceptor {
                     mlp.setMsgInfo(parsedResult.getMsgInfo());
                 }
             }
-//            if (bodyConsumed) {
-//                //重写将数据写入原始response的body中
-//                ret = bufferedResp.getResponse(resultStr, charset);
-//            } else {
-//                ret = bufferedResp.getResponse();
-//            }
             // 再次新建一个流
             ret = bufferedResp.getResponse();
             // 关闭包装类的response
@@ -257,20 +251,22 @@ public final class FeignMoniLogInterceptor {
     }
 
     private static class BufferingFeignClientResponse implements Closeable {
-        private final Response response;
-        private byte[] buffer;
+        private  Response response;
+        private final byte[] buffer;
 
         BufferingFeignClientResponse(Response response) throws IOException {
             //读取一次response
             if (response.body() != null) {
                 this.buffer = Util.toByteArray(response.body().asInputStream());
+            }else{
+                this.buffer = null;
             }
             //重新构建response
-            this.response = response.toBuilder().body(buffer).build();
+            this.response = response.toBuilder().body(this.buffer).build();
         }
 
         Response getResponse() {
-            return response.toBuilder().body(buffer).build();
+            return response;
         }
         int status() {
             return this.response.status();
@@ -309,20 +305,10 @@ public final class FeignMoniLogInterceptor {
             return null;
         }
 
-        String getBodyAsString() throws IOException {
-            InputStream bodyStream = this.buffer == null ? null : new ByteArrayInputStream(this.buffer);
-            if (bodyStream == null) {
-                return null;
-            }
-            StringBuilder sb = new StringBuilder();
-            try (InputStreamReader reader = new InputStreamReader(bodyStream)) {
-                char[] tmp = new char[1024];
-                int len;
-                while ((len = reader.read(tmp, 0, tmp.length)) != -1) {
-                    sb.append(new String(tmp, 0, len));
-                }
-            }
-            return sb.toString();
+        String getBodyAsString() {
+            String bodyString = Util.decodeOrDefault(buffer, StandardCharsets.UTF_8, "Binary data");
+            this.response = response.toBuilder().body(buffer).build();
+            return bodyString;
         }
 
         @Override
