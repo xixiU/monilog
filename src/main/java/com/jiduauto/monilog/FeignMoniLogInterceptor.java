@@ -8,7 +8,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.util.StreamUtils;
 
 import java.io.*;
 import java.lang.reflect.Method;
@@ -92,7 +91,7 @@ public final class FeignMoniLogInterceptor {
         }
         Response ret;
         try {
-            BufferingFeignClientResponse bufferedResp = new BufferingFeignClientResponse(response, request);
+            BufferingFeignClientResponse bufferedResp = new BufferingFeignClientResponse(response);
             mlp.setSuccess(mlp.isSuccess() && response.status() < HttpStatus.BAD_REQUEST.value());
             if (!mlp.isSuccess()) {
                 mlp.setMsgCode(String.valueOf(bufferedResp.status()));
@@ -102,7 +101,7 @@ public final class FeignMoniLogInterceptor {
             if (bufferedResp.isDownstream()) {
                 mlp.setOutput("Binary data");
             } else {
-                resultStr = bufferedResp.body(); //读掉原始response中的数据
+                resultStr = bufferedResp.getBodyAsString(); //读掉原始response中的数据
                 mlp.setOutput(resultStr);
             }
             if (resultStr != null && bufferedResp.isJson()) {
@@ -258,25 +257,21 @@ public final class FeignMoniLogInterceptor {
     }
 
     private static class BufferingFeignClientResponse implements Closeable {
-        private final Request request;
         private final Response response;
-        private byte[] body;
+        private byte[] buffer;
 
-        BufferingFeignClientResponse(Response response, Request request) throws IOException {
-            this.request = request;
-            // 读取一次response
+        BufferingFeignClientResponse(Response response) throws IOException {
+            //读取一次response
             if (response.body() != null) {
-                this.body = Util.toByteArray(response.body().asInputStream());
+                this.buffer = Util.toByteArray(response.body().asInputStream());
             }
-            // 重新构建response
-            this.response = Response.builder().request(request).status(response.status()).reason(response.reason()).headers(response.headers()).body(body).build();
+            //重新构建response
+            this.response = response.toBuilder().body(buffer).build();
         }
 
         Response getResponse() {
-            return Response.builder().request(request).status(response.status()).reason(response.reason()).headers(response.headers()).body(body).build();
+            return response.toBuilder().body(buffer).build();
         }
-
-
         int status() {
             return this.response.status();
         }
@@ -314,10 +309,13 @@ public final class FeignMoniLogInterceptor {
             return null;
         }
 
-        String body() throws IOException {
+        String getBodyAsString() throws IOException {
+            InputStream bodyStream = this.buffer == null ? null : new ByteArrayInputStream(this.buffer);
+            if (bodyStream == null) {
+                return null;
+            }
             StringBuilder sb = new StringBuilder();
-            //TODO charset
-            try (InputStreamReader reader = new InputStreamReader(getBody())) {
+            try (InputStreamReader reader = new InputStreamReader(bodyStream)) {
                 char[] tmp = new char[1024];
                 int len;
                 while ((len = reader.read(tmp, 0, tmp.length)) != -1) {
@@ -325,13 +323,6 @@ public final class FeignMoniLogInterceptor {
                 }
             }
             return sb.toString();
-        }
-
-        private InputStream getBody() throws IOException {
-            if (this.body == null) {
-                this.body = StreamUtils.copyToByteArray(this.response.body().asInputStream());
-            }
-            return new ByteArrayInputStream(this.body);
         }
 
         @Override
