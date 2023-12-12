@@ -265,7 +265,7 @@ public final class FeignMoniLogInterceptor {
         }
 
         String getBodyAsString() {
-            Charset charset = response.request().charset();
+            Charset charset = response.request() == null ? null : response.request().charset();
             if (charset == null) {
                 charset = StandardCharsets.UTF_8;
             }
