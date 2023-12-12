@@ -86,9 +86,9 @@ public final class FeignMoniLogInterceptor {
 
         }
         Response ret;
-        BufferingFeignClientResponse bufferedResp = null;
+        BufferingFeignResponse bufferedResp = null;
         try {
-            bufferedResp = new BufferingFeignClientResponse(response);
+            bufferedResp = new BufferingFeignResponse(response);
             mlp.setSuccess(mlp.isSuccess() && response.status() < HttpStatus.BAD_REQUEST.value());
             if (!mlp.isSuccess()) {
                 mlp.setMsgCode(String.valueOf(bufferedResp.status()));
@@ -236,12 +236,12 @@ public final class FeignMoniLogInterceptor {
         return StringUtil.encodeByteArray(body, request.charset(), "Binary data");
     }
 
-    private static class BufferingFeignClientResponse implements Closeable {
+    private static class BufferingFeignResponse implements Closeable {
         private final Response originResponse;
         private Response response;
         private final byte[] buffer;
 
-        BufferingFeignClientResponse(Response response) throws IOException {
+        BufferingFeignResponse(Response response) throws IOException {
             this.originResponse = response;
             this.buffer = response.body() == null ? null : Util.toByteArray(response.body().asInputStream());
             this.response = response.toBuilder().body(this.buffer).build();
