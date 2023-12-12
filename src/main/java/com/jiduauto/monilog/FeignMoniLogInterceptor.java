@@ -85,11 +85,6 @@ public final class FeignMoniLogInterceptor {
             return failedResponseWhenFailed;
 
         }
-        //包装响应
-        Charset charset = request.charset();
-        if (charset == null) {
-            charset = StandardCharsets.UTF_8;
-        }
         Response ret;
         try {
             BufferingFeignClientResponse bufferedResp = new BufferingFeignClientResponse(response);
@@ -272,7 +267,11 @@ public final class FeignMoniLogInterceptor {
         }
 
         String getBodyAsString() {
-            String bodyString = Util.decodeOrDefault(buffer, StandardCharsets.UTF_8, "Binary data");
+            Charset charset = response.request().charset();
+            if (charset == null) {
+                charset = StandardCharsets.UTF_8;
+            }
+            String bodyString = Util.decodeOrDefault(buffer, charset, "Binary data");
             this.response = response.toBuilder().body(buffer).build();
             return bodyString;
         }
