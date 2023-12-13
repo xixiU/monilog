@@ -102,16 +102,13 @@ public final class OkHttpClientMoniLogInterceptor implements Interceptor {
      * 校验是否开启
      */
     private static MoniLogProperties.HttpClientProperties checkEnable(String host, String path) {
-        MoniLogProperties mp = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
         // 判断开关
-        if (mp == null ||
-                !mp.isComponentEnable(ComponentEnum.httpclient, mp.getHttpclient().isEnable())) {
+        if (!ComponentEnum.httpclient.isEnable()) {
             return null;
         }
+        MoniLogProperties mp = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
+        assert mp != null;
         MoniLogProperties.HttpClientProperties clientProperties = mp.getHttpclient();
-        if (!clientProperties.isEnable()) {
-            return null;
-        }
         Set<String> urlBlackList = clientProperties.getUrlBlackList();
         Set<String> hostBlackList = clientProperties.getHostBlackList();
         return StringUtil.checkPathMatch(urlBlackList, path) || StringUtil.checkPathMatch(hostBlackList, host) ? null : clientProperties;

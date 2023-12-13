@@ -40,11 +40,12 @@ public final class FeignMoniLogInterceptor {
      * 需要注意request与response流的消耗
      */
     private static Response doFeignInvocationRecord(Method m, Request request, Response response, long cost, Throwable ex) {
-        MoniLogProperties properties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
-        MoniLogProperties.FeignProperties feignProperties = properties == null ? null : properties.getFeign();
-        if (feignProperties == null || !properties.isComponentEnable(ComponentEnum.feign, feignProperties.isEnable())) {
+        if (!ComponentEnum.feign.isEnable()) {
             return response;
         }
+        MoniLogProperties properties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
+        assert properties != null;
+        MoniLogProperties.FeignProperties feignProperties = properties.getFeign();
         String requestUri = request.url();
         Set<String> urlBlackList = feignProperties.getUrlBlackList();
         if (CollectionUtils.isEmpty(urlBlackList)) {

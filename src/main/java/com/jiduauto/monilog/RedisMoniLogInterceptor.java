@@ -38,10 +38,7 @@ public final class RedisMoniLogInterceptor {
     public static class RedisConnectionFactoryInterceptor implements MethodInterceptor {
         @Override
         public Object invoke(MethodInvocation invocation) throws Throwable {
-            MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
-            // 判断开关
-            if (moniLogProperties == null || moniLogProperties.getRedis() == null ||
-                    !moniLogProperties.isComponentEnable(ComponentEnum.redis, moniLogProperties.getRedis().isEnable())) {
+            if (!ComponentEnum.redis.isEnable()) {
                 return invocation.proceed();
             }
             Method method = invocation.getMethod();
@@ -108,11 +105,8 @@ public final class RedisMoniLogInterceptor {
          * 访问修饰符、方法名不可修改
          */
         public static void redisRecordException(Throwable e, long cost) {
-            MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
-            // 判断开关
-            if (moniLogProperties == null || moniLogProperties.getRedis() == null ||
-                    !moniLogProperties.isComponentEnable(ComponentEnum.redis, moniLogProperties.getRedis().isEnable())) {
-                return ;
+            if (!ComponentEnum.redis.isEnable()) {
+                return;
             }
             Method m;
             try {
@@ -156,10 +150,7 @@ public final class RedisMoniLogInterceptor {
      */
     public static Object getRedissonProxy(RedissonClient client) {
         return ProxyUtils.getProxy(client, invocation -> {
-            MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
-            // 判断开关
-            if (moniLogProperties == null ||
-                    !moniLogProperties.isComponentEnable(ComponentEnum.redis, moniLogProperties.getRedis().isEnable())) {
+            if (!ComponentEnum.redis.isEnable()) {
                 return invocation.proceed();
             }
             long start = System.currentTimeMillis();
