@@ -5,6 +5,7 @@ import com.carrotsearch.sizeof.RamUsageEstimator;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.annotation.Nullable;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -157,20 +158,20 @@ class MoniLogUtil {
             return;
         }
         LogLongRtLevel rtTooLongLevel = logProperties.getPrinter().getLongRtLevel();
-        if (rtTooLongLevel == null || LogLongRtLevel.none.equals(rtTooLongLevel)) {
+        if (rtTooLongLevel == null || LogLongRtLevel.none == rtTooLongLevel) {
             return;
         }
         TagBuilder systemTags = getSystemTags(logParams);
         LogPoint logPoint = logParams.getLogPoint();
         String[] allTags = systemTags.add(logParams.getTags()).toArray();
-        if ((LogLongRtLevel.both.equals(rtTooLongLevel) || LogLongRtLevel.onlyPrometheus.equals(rtTooLongLevel)) && logProperties.isEnableMonitor()) {
+        if ((LogLongRtLevel.both == rtTooLongLevel || LogLongRtLevel.onlyPrometheus == rtTooLongLevel) && logProperties.isEnableMonitor()) {
             // 操作操作信息
             String operationCostTooLongMonitorPrefix = METRIC_PREFIX + "rt_too_long_" + logPoint.name();
             MonilogMetrics.record(operationCostTooLongMonitorPrefix + MonitorType.RECORD.getMark(), allTags);
             // 耗时只打印基础tag
             MonilogMetrics.eventDuration(operationCostTooLongMonitorPrefix + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
         }
-        if (LogLongRtLevel.both.equals(rtTooLongLevel) || LogLongRtLevel.onlyLogger.equals(rtTooLongLevel)) {
+        if (LogLongRtLevel.both == rtTooLongLevel || LogLongRtLevel.onlyLogger == rtTooLongLevel) {
             printLongRtLog(logParams);
         }
     }
@@ -285,6 +286,7 @@ class MoniLogUtil {
         }
     }
 
+    @Nullable
     private static MoniLogPrinter getLogPrinter() {
         if (logPrinter != null) {
             return logPrinter;
@@ -367,6 +369,7 @@ class MoniLogUtil {
         return doPrinter;
     }
 
+    @Nullable
     private static MoniLogProperties getLogProperties() {
         if (logProperties != null) {
             return logProperties;
