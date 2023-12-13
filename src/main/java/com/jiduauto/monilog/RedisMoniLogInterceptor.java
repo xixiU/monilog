@@ -40,7 +40,7 @@ public final class RedisMoniLogInterceptor {
         public Object invoke(MethodInvocation invocation) throws Throwable {
             MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
             // 判断开关
-            if (moniLogProperties == null ||
+            if (moniLogProperties == null || moniLogProperties.getRedis() == null ||
                     !moniLogProperties.isComponentEnable(ComponentEnum.redis, moniLogProperties.getRedis().isEnable())) {
                 return invocation.proceed();
             }
@@ -110,7 +110,7 @@ public final class RedisMoniLogInterceptor {
         public static void redisRecordException(Throwable e, long cost) {
             MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
             // 判断开关
-            if (moniLogProperties == null ||
+            if (moniLogProperties == null || moniLogProperties.getRedis() == null ||
                     !moniLogProperties.isComponentEnable(ComponentEnum.redis, moniLogProperties.getRedis().isEnable())) {
                 return ;
             }
