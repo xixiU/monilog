@@ -119,6 +119,13 @@ public final class RocketMqMoniLogInterceptor {
 
         @Override
         public void sendMessageBefore(SendMessageContext context) {
+            MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
+            // 判断开关
+            if (moniLogProperties == null ||
+                    !moniLogProperties.isComponentEnable(ComponentEnum.rocketmq, moniLogProperties.getRocketmq().isEnable()) ||
+                    !moniLogProperties.isComponentEnable(ComponentEnum.rocketmq_producer, moniLogProperties.getRocketmq().isProducerEnable())) {
+                return ;
+            }
             if (null == context.getProps()) {
                 context.setProps(new HashMap<>());
             }

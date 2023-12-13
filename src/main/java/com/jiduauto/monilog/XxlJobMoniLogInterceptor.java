@@ -11,6 +11,12 @@ public final class XxlJobMoniLogInterceptor {
     //增强xxljob，请勿改动此方法
     public static IJobHandler getProxyBean(IJobHandler bean) {
         return ProxyUtils.getProxy(bean, invocation -> {
+            MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
+            // 判断开关
+            if (moniLogProperties == null ||
+                    !moniLogProperties.isComponentEnable(ComponentEnum.xxljob, moniLogProperties.getXxljob().isEnable())) {
+                return invocation.proceed();
+            }
             Method method = invocation.getMethod();
             Class<?> returnType = method.getReturnType();
             boolean shouldMonilog = "execute".equals(method.getName()) && xxlJobEnable();

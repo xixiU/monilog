@@ -55,6 +55,12 @@ public final class HttpClientMoniLogInterceptor {
     private static class RequestInterceptor implements HttpRequestInterceptor {
         @Override
         public void process(HttpRequest request, HttpContext httpContext) throws HttpException, IOException {
+            MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
+            // 判断开关
+            if (moniLogProperties == null ||
+                    !moniLogProperties.isComponentEnable(ComponentEnum.httpclient, moniLogProperties.getHttpclient().isEnable())) {
+                return;
+            }
             RequestLine requestLine = request.getRequestLine();
             HttpHost host = (HttpHost) httpContext.getAttribute(HttpClientContext.HTTP_TARGET_HOST);
 //            String targetHost = host == null ? null : host.getHostName() + (host.getPort() < 0 || host.getPort() == 80 ? "" : ":" + host.getPort());
@@ -119,6 +125,12 @@ public final class HttpClientMoniLogInterceptor {
     private static class ResponseInterceptor implements HttpResponseInterceptor {
         @Override
         public void process(HttpResponse httpResponse, HttpContext httpContext) throws HttpException, IOException {
+            MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
+            // 判断开关
+            if (moniLogProperties == null ||
+                    !moniLogProperties.isComponentEnable(ComponentEnum.httpclient, moniLogProperties.getHttpclient().isEnable())) {
+                return;
+            }
             MoniLogParams p = (MoniLogParams) httpContext.getAttribute(MONILOG_PARAMS_KEY);
             if (p == null) {
                 return;
