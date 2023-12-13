@@ -23,7 +23,7 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         DETAIL,
         DIGEST,
         LONG_RT,
-        LARGE_SIZE;
+        LARGE_SIZE
     }
 
     private static final String DETAIL_LOG_PATTERN = "{}detail_log[{}]-{}.{}|{}|{}|{}|{}{} 【input】:{}, 【output】:{}";

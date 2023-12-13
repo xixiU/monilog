@@ -6,5 +6,5 @@ package com.jiduauto.monilog;
  * @date 2023/8/10 11:14
  */
 public enum LogLongRtLevel {
-    onlyLogger,onlyPrometheus,both,none;
+    onlyLogger,onlyPrometheus,both,none
 }

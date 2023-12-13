@@ -106,7 +106,7 @@ class RequestWrapper extends HttpServletRequestWrapper {
     }
 
     @Override
-    public String getParameter(final String name) {
+    public String getParameter(String name) {
         String[] strings = getParameterMap().get(name);
         if (strings != null) {
             return strings[0];
@@ -128,7 +128,7 @@ class RequestWrapper extends HttpServletRequestWrapper {
     }
 
     @Override
-    public String[] getParameterValues(final String name) {
+    public String[] getParameterValues(String name) {
         return getParameterMap().get(name);
     }
 

@@ -333,7 +333,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
         ContentCachingResponseWrapper wrapper = WebUtils.getNativeResponse(response, ContentCachingResponseWrapper.class);
         if (wrapper != null) {
             byte[] buf = wrapper.getContentAsByteArray();
-            if (buf.length <= 0) {
+            if (buf.length == 0) {
                 return null;
             }
             String payload;
