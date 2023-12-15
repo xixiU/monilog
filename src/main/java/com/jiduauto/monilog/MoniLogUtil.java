@@ -175,54 +175,10 @@ class MoniLogUtil {
         }
     }
 
-
     private static boolean checkRtMonitor(MoniLogParams logParams) {
-        MoniLogProperties logProperties = getLogProperties();
-        if (logProperties == null || !logProperties.isMonitorLongRt()) {
-            return false;
-        }
         LogPoint logPoint = logParams.getLogPoint();
-        if (logPoint == null) {
-            return false;
-        }
-        long cost = logParams.getCost();
-        if (cost <= 0) {
-            return false;
-        }
-        switch (logPoint) {
-            case xxljob:
-                return exceedCostThreshold(logProperties.getXxljob().getLongRt(), cost);
-            case redis:
-                return exceedCostThreshold(logProperties.getRedis().getLongRt(), cost);
-            case mybatis:
-                return exceedCostThreshold(logProperties.getMybatis().getLongRt(), cost);
-            case grpc_client:
-            case grpc_server:
-                return exceedCostThreshold(logProperties.getGrpc().getLongRt(), cost);
-            case http_client:
-                return exceedCostThreshold(logProperties.getHttpclient().getLongRt(), cost);
-            case http_server:
-                return exceedCostThreshold(logProperties.getWeb().getLongRt(), cost);
-            case feign_client:
-            case feign_server:
-                return exceedCostThreshold(logProperties.getFeign().getLongRt(), cost);
-            case rocketmq_consumer:
-            case rocketmq_producer:
-                return exceedCostThreshold(logProperties.getRocketmq().getLongRt(), cost);
-            case unknown:
-            case user_define:
-            default:
-                return false;
-        }
+        return logPoint != null && logPoint.exceedLongRtThreshold(getLogProperties(), logParams.getCost());
     }
-
-    private static boolean exceedCostThreshold(long threshold, long actualCost) {
-        if (threshold <= 0) {
-            return false;
-        }
-        return threshold < actualCost;
-    }
-
 
     /**
      * 统一打上环境标、应用名、打标类型、处理结果
@@ -321,56 +277,9 @@ class MoniLogUtil {
         if (excludePrint(logParams)) {
             return;
         }
-        LogOutputLevel detailLogLevel = null;
         LogPoint logPoint = logParams.getLogPoint();
-
-        switch (logPoint) {
-            case http_server:
-                detailLogLevel = properties.getWeb().getDetailLogLevel();
-                break;
-            case http_client:
-                detailLogLevel = properties.getHttpclient().getDetailLogLevel();
-                break;
-            case feign_server:
-                detailLogLevel = properties.getFeign().getServerDetailLogLevel();
-                break;
-            case feign_client:
-                detailLogLevel = properties.getFeign().getClientDetailLogLevel();
-                break;
-            case grpc_client:
-                detailLogLevel = properties.getGrpc().getClientDetailLogLevel();
-                break;
-            case grpc_server:
-                detailLogLevel = properties.getGrpc().getServerDetailLogLevel();
-                break;
-            case rocketmq_consumer:
-                detailLogLevel = properties.getRocketmq().getConsumerDetailLogLevel();
-                break;
-            case rocketmq_producer:
-                detailLogLevel = properties.getRocketmq().getProducerDetailLogLevel();
-                break;
-            case mybatis:
-                detailLogLevel = properties.getMybatis().getDetailLogLevel();
-                break;
-            case xxljob:
-                detailLogLevel = properties.getXxljob().getDetailLogLevel();
-                break;
-            case redis:
-                detailLogLevel = properties.getRedis().getDetailLogLevel();
-                break;
-            case unknown:
-            default:
-                break;
-        }
-        if (detailLogLevel == null) {
-            MoniLogProperties.PrinterProperties printerCfg = properties.getPrinter();
-            detailLogLevel = printerCfg.getDetailLogLevel();
-            if (detailLogLevel == null) {
-                detailLogLevel = LogOutputLevel.onException;
-            }
-        }
+        LogOutputLevel detailLogLevel = logPoint == null ? LogOutputLevel.none : logPoint.getDetailLogLevel(properties);
         boolean doPrinter = printLevelCheckPass(detailLogLevel, logParams);
-
         if (doPrinter) {
             printer.logDetail(logParams);
         }

@@ -36,11 +36,7 @@ public final class GrpcMoniLogInterceptor {
     private static class MonilogClientInterceptor implements ClientInterceptor {
         @Override
         public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> method, CallOptions callOptions, Channel channel) {
-            MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
-            // 判断开关
-            if (moniLogProperties == null ||
-                    !moniLogProperties.isComponentEnable(ComponentEnum.grpc, moniLogProperties.getGrpc().isEnable())
-                    || !moniLogProperties.isComponentEnable(ComponentEnum.grpc_client, moniLogProperties.getGrpc().isClientEnable())) {
+            if (!ComponentEnum.grpc_client.isEnable()) {
                 return channel.newCall(method, callOptions);
             }
             return new GrpcMoniLogClientCall<>(channel.newCall(method, callOptions), new ConcurrentHashMap<>(), method);
@@ -140,7 +136,7 @@ public final class GrpcMoniLogInterceptor {
                         params.setOutput(json);
                         LogParser cl = (LogParser) context.get("logParser");
                         if (json instanceof JSON) {
-                            ResultParseUtil.parseResultAndSet(cl, (JSON)json, params);
+                            ResultParseUtil.parseResultAndSet(cl, (JSON) json, params);
                         }
                     }
                     super.onMessage(message);
@@ -177,18 +173,15 @@ public final class GrpcMoniLogInterceptor {
     private static class MonilogServerInterceptor implements ServerInterceptor {
         @Override
         public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call, Metadata metadata, ServerCallHandler<ReqT, RespT> next) {
-            MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
             // 判断开关
-            if (moniLogProperties == null ||
-                    !moniLogProperties.isComponentEnable(ComponentEnum.grpc, moniLogProperties.getGrpc().isEnable())
-                    || !moniLogProperties.isComponentEnable(ComponentEnum.grpc_server, moniLogProperties.getGrpc().isServerEnable())) {
+            if (!ComponentEnum.grpc_server.isEnable()) {
                 return next.startCall(call, metadata);
             }
             MethodDescriptor<ReqT, RespT> method = call.getMethodDescriptor();
             Map<String, Object> context = new ConcurrentHashMap<>();
             Class<?> cls = getCurrentProtoClass(method);
             // grpc server 会通过InterceptCallHandler、GrpcAccessInterceptor、MetricCollectingServerInterceptor、TracingServerInterceptor调用到业务代码
-            StackTraceElement ste = ThreadUtil.getNextClassFromStack(cls,"io.grpc", "com.jiduauto.common","net.devh","io.opentelemetry");
+            StackTraceElement ste = ThreadUtil.getNextClassFromStack(cls, "io.grpc", "com.jiduauto.common", "net.devh", "io.opentelemetry");
             Class<?> serviceCls = GrpcService.class;
             String serviceName = method.getServiceName();
             String methodName = buildActionName(method.getFullMethodName(), serviceName);
@@ -242,7 +235,7 @@ public final class GrpcMoniLogInterceptor {
                     LogParser cl = (LogParser) context.get("logParser");
                     if (json instanceof JSON && cl != null) {
                         //尝试更精确的提取业务失败信息
-                        ResultParseUtil.parseResultAndSet(cl, (JSON)json, params);
+                        ResultParseUtil.parseResultAndSet(cl, (JSON) json, params);
                     }
                 }
                 super.sendMessage(message);

@@ -27,7 +27,7 @@ class RequestWrapper extends HttpServletRequestWrapper {
     }
 
     public String getBodyString() {
-        return new String(body, CHARSET);
+        return StringUtil.encodeByteArray(body, CHARSET, "Binary data");
     }
 
     /**
@@ -73,6 +73,7 @@ class RequestWrapper extends HttpServletRequestWrapper {
             public int read() {
                 return bis.read();
             }
+
             @Override
             public boolean isFinished() {
                 return false;
@@ -82,6 +83,7 @@ class RequestWrapper extends HttpServletRequestWrapper {
             public boolean isReady() {
                 return false;
             }
+
             @Override
             public void setReadListener(ReadListener readListener) {
             }

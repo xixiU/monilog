@@ -47,53 +47,17 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
     @SneakyThrows
     @Override
     @SuppressWarnings("unchecked")
-    public void doFilterInternal(@NonNull HttpServletRequest httpServletRequest, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws IOException, ServletException {
-        MoniLogProperties.WebProperties webProperties = moniLogProperties.getWeb();
-        if (webProperties == null) {
-            filterChain.doFilter(httpServletRequest, response);
+    public void doFilterInternal(@NonNull HttpServletRequest req, @NonNull HttpServletResponse resp, @NonNull FilterChain chain) throws IOException, ServletException {
+        RequestInfo reqInfo = checkEnable(req);
+        if (reqInfo == null) {
+            chain.doFilter(req, resp);
             return;
         }
-        boolean isMultipart;
-        HttpServletRequest request;
-        try {
-            isMultipart = ServletFileUpload.isMultipartContent(httpServletRequest);
-            request = isMultipart ? httpServletRequest : new RequestWrapper(httpServletRequest);
-        } catch (Exception e) {
-            MoniLogUtil.innerDebug("check multipart error: {}", e.getMessage());
-            filterChain.doFilter(httpServletRequest, response);
-            return;
-        }
-
-        String responseBodyStr = "";
+        boolean isMultipart = reqInfo.isMultipart;
+        HttpServletRequest request = reqInfo.wrappedRequest;
+        HandlerMethod method = reqInfo.method;
+        Map<String, String> requestHeaderMap = reqInfo.requestHeaderMap;
         MoniLogParams logParams = new MoniLogParams();
-        HandlerMethod method = null;
-        long startTime = System.currentTimeMillis();
-
-        String requestUri = request.getRequestURI();
-        Set<String> urlBlackList = webProperties.getUrlBlackList();
-        if (checkPathMatch(urlBlackList, requestUri)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-        Map<String, String> requestHeaderMap = new HashMap<>();
-        LogPoint logPoint = LogPoint.unknown;
-        boolean webEnable = false;
-        boolean feignEnable = false;
-        try {
-            webEnable = moniLogProperties.isComponentEnable(ComponentEnum.web, moniLogProperties.getWeb().isEnable());
-            feignEnable = moniLogProperties.isComponentEnable(ComponentEnum.feign, moniLogProperties.getFeign().isEnable());
-            requestHeaderMap = getRequestHeaders(request);
-            logPoint = parseLogPoint(requestHeaderMap);
-            method = getHandlerMethod(request);
-        } catch (Exception e) {
-            MoniLogUtil.innerDebug("getHandlerMethod error", e);
-        }
-        if (method == null || (logPoint == LogPoint.feign_server && !feignEnable) || (logPoint == LogPoint.http_server && !webEnable)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-
         try {
             MoniLogTags logTags = ReflectUtil.getAnnotation(MoniLogTags.class, method.getBeanType(), method.getMethod());
             List<String> tagList = StringUtil.getTagList(logTags);
@@ -106,8 +70,8 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             TagBuilder tagBuilder = TagBuilder.of(tagList).add("url", getUrl(request)).add("method", request.getMethod());
             logParams.setTags(tagBuilder.toArray());
 
-            Map<String, Object> requestBodyMap = new HashMap<>();
-            logParams.setLogPoint(logPoint);
+            Map<String, Object> requestBodyMap = new HashMap<>(3);
+            logParams.setLogPoint(reqInfo.logPoint);
             JSONObject jsonObject = formatRequestInfo(isMultipart, request, requestHeaderMap);
             Object o = jsonObject.get("body");
             if (o instanceof Map) {
@@ -124,10 +88,12 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
 
         logParams.setSuccess(true);
         Exception bizException = null;
+        String responseBodyStr = "";
+        long startTime = System.currentTimeMillis();
         try {
-            ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(response);
+            ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(resp);
             try {
-                filterChain.doFilter(request, wrapperResponse);
+                chain.doFilter(request, wrapperResponse);
             } catch (Exception e) {
                 // 业务异常
                 bizException = e;
@@ -174,6 +140,54 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
         }
     }
 
+    private RequestInfo checkEnable(HttpServletRequest req) {
+        try {
+            boolean webEnable = ComponentEnum.web.isEnable();
+            boolean feignEnable = ComponentEnum.feign.isEnable();
+            if (!webEnable && !feignEnable) {
+                return null;
+            }
+            Map<String, String> requestHeaderMap = new HashMap<>(32);
+            HandlerMethod method = null;
+            LogPoint logPoint = LogPoint.unknown;
+            try {
+                requestHeaderMap = getRequestHeaders(req);
+                logPoint = parseLogPoint(requestHeaderMap);
+                method = getHandlerMethod(req);
+            } catch (Exception e) {
+                MoniLogUtil.innerDebug("getHandlerMethod error", e);
+            }
+            if (method == null) {
+                return null;
+            }
+            String requestUri = req.getRequestURI();
+            if (logPoint == LogPoint.http_server) {
+                MoniLogProperties.WebProperties webProperties = moniLogProperties.getWeb();
+                if (!webEnable || webProperties == null || checkPathMatch(webProperties.getUrlBlackList(), requestUri)) {
+                    return null;
+                }
+            } else if (logPoint == LogPoint.feign_server) {
+                MoniLogProperties.FeignProperties feignProperties = moniLogProperties.getFeign();
+                if (!feignEnable || feignProperties == null || checkPathMatch(feignProperties.getUrlBlackList(), requestUri)) {
+                    return null;
+                }
+            }
+            boolean isMultipart = ServletFileUpload.isMultipartContent(req);
+            HttpServletRequest request = isMultipart ? req : new RequestWrapper(req);
+
+            RequestInfo reqInfo = new RequestInfo();
+            reqInfo.requestHeaderMap = requestHeaderMap;
+            reqInfo.logPoint = logPoint;
+            reqInfo.method = method;
+            reqInfo.isMultipart = isMultipart;
+            reqInfo.wrappedRequest = request;
+            return reqInfo;
+        } catch (Exception e) {
+            MoniLogUtil.innerDebug("check checkEnable error: {}", e.getMessage());
+            return null;
+        }
+    }
+
     @SuppressWarnings("all")
     private static String getUrl(HttpServletRequest request) {
         String originUrl = HttpRequestData.extractPath(request.getRequestURI());
@@ -201,7 +215,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
 
     private static Map<String, String> getRequestHeaders(HttpServletRequest request) {
         if (request == null) {
-            return new HashMap<>();
+            return new HashMap<>(32);
         }
         Map<String, String> map = new HashMap<>(32);
         Enumeration<String> headerNames = request.getHeaderNames();
@@ -324,7 +338,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             }
             String payload;
             // 限制length字节数组大于5w时不解析
-            if (buf.length > 10000 * 5) {
+            if (buf.length > 50000) {
                 payload = "[Data too long length:" + buf.length + "]";
                 return payload;
             }
@@ -357,5 +371,13 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             return LogPoint.feign_server;
         }
         return LogPoint.http_server;
+    }
+
+    private static class RequestInfo {
+        Map<String, String> requestHeaderMap;
+        HandlerMethod method;
+        LogPoint logPoint;
+        boolean isMultipart;
+        HttpServletRequest wrappedRequest;
     }
 }
