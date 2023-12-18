@@ -36,11 +36,11 @@ class RandomStringDetector {
         boolean userWordCheck = SpringUtils.useWordChecker();
         if (userWordCheck) {
             EnWordChecker checker = EnWordChecker.getInstance();
-            IWordCheckerContext checkerContext = getCheckerContextInstance();
-            if (checker.isCorrect(word, checkerContext)) {
+            Object checkerContext = getCheckerContextInstance();
+            if (checker.isCorrect(word, (IWordCheckerContext) checkerContext)) {
                 return false;
             }
-            String corrected = checker.correct(word, checkerContext);
+            String corrected = checker.correct(word, (IWordCheckerContext) checkerContext);
             if (corrected == null) {
                 return false;
             }
@@ -114,11 +114,11 @@ class RandomStringDetector {
         return dp[str1.length()][str2.length()];
     }
 
-    private static IWordCheckerContext getCheckerContextInstance() {
+    private static Object getCheckerContextInstance() {
         if (CHECKER_CTX == null) {
             CHECKER_CTX = WordCheckerContext.newInstance().wordData(EnglishWordDatas.mixed()).wordFormat(WordFormats.defaults());
         }
-        return (IWordCheckerContext) CHECKER_CTX;
+        return CHECKER_CTX;
     }
 
 
