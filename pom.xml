@@ -132,7 +132,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
             <version>${spring-boot-stater.version}</version>
-            <scope>provided</scope>
+<!--            <scope>provided</scope>-->
         </dependency>
 
         <dependency>

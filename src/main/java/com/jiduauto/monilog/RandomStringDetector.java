@@ -33,7 +33,7 @@ class RandomStringDetector {
     private static final double COMMON_BIGRAMS_THRESHOLD = 0.1d;
     private static final double UNCOMMON_BIGRAMS_THRESHOLD = 0.5d;
     private static final double DUPLICATED_BIGRAMS_THRESHOLD = 0.33d;
-    private static final double SAME_WORD_THRESHOLD = 0.8d;
+    private static final double SAME_WORD_THRESHOLD = 0.75d;
 
     static boolean isRandomWord(String word) {
         if (StringUtils.isBlank(word)) {
