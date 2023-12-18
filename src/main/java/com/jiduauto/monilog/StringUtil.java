@@ -22,6 +22,8 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 class StringUtil {
+    private static final int MIN_RANDOM_NUM_LEN = 4;
+    private static final int MIN_RANDOM_STR_LEN = 10;
     private static final Pattern RANDOM_NUM_PATTERN = Pattern.compile("^[0-9]+\\.?[0-9]+$");
     private static final Pattern RANDOM_STR_PATTERN = Pattern.compile("^[a-zA-Z0-9\\-]+$");
     private static final AntPathMatcher ANT_PATH_MATCHER = new AntPathMatcher();
@@ -250,14 +252,14 @@ class StringUtil {
     }
 
     static boolean isRandomNum(String str) {
-        if (StringUtils.isBlank(str) || str.length() < RandomStringDetector.MIN_RANDOM_LEN) {
+        if (StringUtils.isBlank(str) || str.length() < MIN_RANDOM_NUM_LEN) {
             return false;
         }
         return RANDOM_NUM_PATTERN.matcher(str).matches();
     }
 
     static boolean isRandomStr(String str) {
-        if (StringUtils.isBlank(str) || str.length() < 10) {
+        if (StringUtils.isBlank(str) || str.length() < MIN_RANDOM_STR_LEN) {
             return false;
         }
         if (!RANDOM_STR_PATTERN.matcher(str).matches()) {

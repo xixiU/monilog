@@ -16,7 +16,6 @@ import java.util.*;
  * @date 2023/12/18
  */
 class RandomStringDetector {
-    static final int MIN_RANDOM_LEN = 4;
     private static final Map<String, Double> BIGRAMS_MAP = initBigramsMap();
     private static final EnWordChecker INSTANCE;
     private static final IWordCheckerContext CTX;
