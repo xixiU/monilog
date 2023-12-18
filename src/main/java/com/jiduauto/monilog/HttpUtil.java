@@ -6,8 +6,9 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpHeaders;
 
-import java.util.*;
-import java.util.regex.Pattern;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 
 class HttpUtil {
     private static final String PATH_SEP = "/";
@@ -100,34 +101,14 @@ class HttpUtil {
         }
         String[] segments = path.split(PATH_SEP);
         for (int i = 0; i < segments.length; i++) {
-            if (isRandomNum(segments[i])) {
+            if (StringUtil.isRandomNum(segments[i])) {
                 segments[i] = "{num}";
             }
-            if (isRandomStr(segments[i])) {
+            if (StringUtil.isRandomStr(segments[i])) {
                 segments[i] = "{xxx}";
             }
         }
         return StringUtils.join(segments, PATH_SEP);
-    }
-
-    private static final Pattern RANDOM_NUM_PATTERN = Pattern.compile("^[0-9]+\\.?[0-9]+$");
-    private static final Pattern RANDOM_STR_PATTERN = Pattern.compile("^[a-zA-Z0-9\\-]+$");
-
-    static boolean isRandomNum(String str) {
-        if (StringUtils.isBlank(str) || str.length() < RandomStringDetector.MIN_RANDOM_LEN) {
-            return false;
-        }
-        return RANDOM_NUM_PATTERN.matcher(str).matches();
-    }
-
-    static boolean isRandomStr(String str) {
-        if (StringUtils.isBlank(str) || str.length() < 10) {
-            return false;
-        }
-        if (!RANDOM_STR_PATTERN.matcher(str).matches()) {
-            return false;
-        }
-        return RandomStringDetector.isRandomWord(str);
     }
 
     public static void main(String[] args) {
