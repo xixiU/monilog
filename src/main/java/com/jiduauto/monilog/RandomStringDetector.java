@@ -16,13 +16,8 @@ import java.util.*;
  * @date 2023/12/18
  */
 class RandomStringDetector {
-    private static final Map<String, Double> BIGRAMS_MAP = initBigramsMap();
+    private static Map<String, Double> BIGRAMS_MAP;
     private static Object CHECKER_CTX;
-
-    private static Map<String, Double> initBigramsMap() {
-        return JSON.parseObject(ENGLISH, new TypeReference<Map<String, Double>>() {
-        });
-    }
 
     private static final double COMMON_BIGRAMS_THRESHOLD = 0.1d;
     private static final double UNCOMMON_BIGRAMS_THRESHOLD = 0.5d;
@@ -63,8 +58,9 @@ class RandomStringDetector {
             return true;
         }
         double numCommonBigrams = 0;
+        Map<String, Double> bigramsMap = initBigramsMap();
         for (String bigram : bigrams) {
-            Double v = BIGRAMS_MAP.get(bigram);
+            Double v = bigramsMap.get(bigram);
             if (v != null && v > COMMON_BIGRAMS_THRESHOLD) {
                 numCommonBigrams += 1;
             }
@@ -112,6 +108,14 @@ class RandomStringDetector {
             }
         }
         return dp[str1.length()][str2.length()];
+    }
+
+    private static Map<String, Double> initBigramsMap() {
+        if (BIGRAMS_MAP == null) {
+            BIGRAMS_MAP = JSON.parseObject(ENGLISH, new TypeReference<Map<String, Double>>() {
+            });
+        }
+        return BIGRAMS_MAP;
     }
 
     private static Object getCheckerContextInstance() {
