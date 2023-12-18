@@ -3,6 +3,7 @@ package com.jiduauto.monilog;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONValidator;
 import com.alibaba.fastjson.TypeReference;
+import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -24,6 +25,14 @@ import java.util.stream.Collectors;
 class StringUtil {
     private static final int MIN_RANDOM_NUM_LEN = 4;
     private static final int MIN_RANDOM_STR_LEN = 10;
+    private static final Set<String> NORMAL_OP_PREFIX = Sets.newHashSet(
+            "add", "save", "insert", "create", "make", "build", "put", "new", "copy", "rename",
+            "delete", "move", "kill", "remove", "drop", "destroy", "close", "shutdown",
+            "destruct", "destructor", "clear", "clean", "reset", "empty",
+            "update", "write", "modify", "change", "set", "alter", "edit", "enable", "disable",
+            "start", "stop", "reload", "query", "list", "find", "get", "select", "fetch", "search",
+            "load", "check", "count", "show", "read", "import"
+    );
     private static final Pattern RANDOM_NUM_PATTERN = Pattern.compile("^[0-9]+\\.?[0-9]+$");
     private static final Pattern RANDOM_STR_PATTERN = Pattern.compile("^[a-zA-Z0-9\\-]+$");
     private static final AntPathMatcher ANT_PATH_MATCHER = new AntPathMatcher();
@@ -264,6 +273,11 @@ class StringUtil {
         }
         if (!RANDOM_STR_PATTERN.matcher(str).matches()) {
             return false;
+        }
+        for (String p : NORMAL_OP_PREFIX) {
+            if (StringUtils.startsWithIgnoreCase(str, p)) {
+                return false;
+            }
         }
         return RandomStringDetector.isRandomWord(str);
     }
