@@ -8,7 +8,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.net.URL;
 import java.util.*;
 
 /**
@@ -46,10 +45,9 @@ class HttpRequestData {
     }
 
     /**
-     *
      * @param requestUrl 请求地址
      * @param bodyParams body参数
-     * @param queries query参数
+     * @param queries    query参数
      * @param headers    header信息
      * @return
      */
@@ -94,7 +92,7 @@ class HttpRequestData {
         return obj;
     }
 
-    public static Map<String, Collection<String>> mergeMaps(Map<String, Collection<String>> map1, Map<String, Collection<String>> map2) {
+    private static Map<String, Collection<String>> mergeMaps(Map<String, Collection<String>> map1, Map<String, Collection<String>> map2) {
         Map<String, Collection<String>> mergedMap = new HashMap<>();
         if (map1 == null) {
             return map2;
@@ -125,28 +123,6 @@ class HttpRequestData {
         }
 
         return mergedMap;
-    }
-
-
-    /**
-     * 提取路径，如http://baidu.com/test?a=1 返回/test,此处针对restful分格的接口也会存在问题，如/getOrder/123
-     * @param url url
-     * @return 仅路径信息不包含参数与host
-     */
-    public static String extractPath(String url) {
-        if (StringUtils.isBlank(url)) {
-            return url;
-        }
-        try{
-            URL urlResource = new URL(url);
-            return urlResource.getPath();
-        }catch (Exception e){
-            if (StringUtils.isBlank(url) || !url.contains("?")) {
-                return url;
-            }
-            String[] uriAndParams = url.split("\\?");
-            return uriAndParams[0];
-        }
     }
 }
 

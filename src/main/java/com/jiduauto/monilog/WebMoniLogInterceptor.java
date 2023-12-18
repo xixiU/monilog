@@ -67,7 +67,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             logParams.setServiceCls(method.getBeanType());
             logParams.setService(ReflectUtil.getSimpleClassName(method.getBeanType()));
             logParams.setAction(method.getMethod().getName());
-            TagBuilder tagBuilder = TagBuilder.of(tagList).add("url", getUrl(request)).add("method", request.getMethod());
+            TagBuilder tagBuilder = TagBuilder.of(tagList).add("url", getUrlWithoutPathParam(request)).add("method", request.getMethod());
             logParams.setTags(tagBuilder.toArray());
 
             Map<String, Object> requestBodyMap = new HashMap<>(3);
@@ -189,23 +189,24 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
     }
 
     @SuppressWarnings("all")
-    private static String getUrl(HttpServletRequest request) {
-        String originUrl = HttpRequestData.extractPath(request.getRequestURI());
-
+    private static String getUrlWithoutPathParam(HttpServletRequest request) {
+        String originUrl = HttpUtil.extractPath(request.getRequestURI());
         try {
             Object attribute = request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE);
             if (attribute == null || !(attribute instanceof Map)) {
                 return originUrl;
             }
-            Map<String, String> attributeParmasMap = (Map<String, String>) attribute;
-            if (attributeParmasMap == null || attributeParmasMap.isEmpty()) {
+            Map<String, String> pathParmas = (Map<String, String>) attribute;
+            if (pathParmas == null || pathParmas.isEmpty()) {
                 return originUrl;
             }
-            for (Map.Entry<String, String> entry : attributeParmasMap.entrySet()) {
-                if (!originUrl.contains("/" + entry.getValue())) {
+            for (Map.Entry<String, String> entry : pathParmas.entrySet()) {
+                String paramName = entry.getKey();
+                String paramValue = entry.getValue();
+                if (!originUrl.contains("/" + paramValue)) {
                     continue;
                 }
-                originUrl = originUrl.replaceAll("/" + entry.getValue(), "{" + entry.getKey() + "}");
+                originUrl = originUrl.replaceAll("/" + paramValue, "{" + paramName + "}");
             }
             return originUrl;
         } catch (Exception e) {

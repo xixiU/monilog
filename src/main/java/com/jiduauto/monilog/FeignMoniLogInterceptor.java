@@ -46,12 +46,12 @@ public final class FeignMoniLogInterceptor {
         MoniLogProperties properties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
         assert properties != null;
         MoniLogProperties.FeignProperties feignProperties = properties.getFeign();
-        String requestUri = request.url();
+        String requestUrl = request.url();
         Set<String> urlBlackList = feignProperties.getUrlBlackList();
         if (CollectionUtils.isEmpty(urlBlackList)) {
             urlBlackList = new HashSet<>();
         }
-        if (StringUtil.checkPathMatch(urlBlackList, requestUri) || StringUtil.checkPathMatch(urlBlackList, HttpRequestData.extractPath(requestUri))) {
+        if (StringUtil.checkPathMatch(urlBlackList, requestUrl) || StringUtil.checkPathMatch(urlBlackList, HttpUtil.extractPath(requestUrl))) {
             return response;
         }
 
@@ -71,7 +71,7 @@ public final class FeignMoniLogInterceptor {
             mlp.setAction(st.getMethodName());
         }
 
-        mlp.setTags(new String[]{"method", getMethod(request), "url", HttpRequestData.extractPath(requestUri)});
+        mlp.setTags(new String[]{"method", getMethod(request), "url", HttpUtil.extractPathWithoutPathParams(requestUrl)});
 
         mlp.setCost(cost);
         mlp.setException(ex);

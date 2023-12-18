@@ -13,6 +13,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -21,6 +22,8 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 class StringUtil {
+    private static final Pattern RANDOM_NUM_PATTERN = Pattern.compile("^[0-9]+\\.?[0-9]+$");
+    private static final Pattern RANDOM_STR_PATTERN = Pattern.compile("^[a-zA-Z0-9\\-]+$");
     private static final AntPathMatcher ANT_PATH_MATCHER = new AntPathMatcher();
     private static final AntPathMatcher ANT_CLASS_MATCHER = new AntPathMatcher(".");
 
@@ -231,6 +234,7 @@ class StringUtil {
             return defaultStr;
         }
     }
+
     static boolean isBinaryArray(byte[] body, Charset charset) {
         // 任意一个为空则认为是二进制的
         if (body == null || charset == null) {
@@ -243,5 +247,22 @@ class StringUtil {
             // 无法解码认为是二进制的
             return true;
         }
+    }
+
+    static boolean isRandomNum(String str) {
+        if (StringUtils.isBlank(str) || str.length() < RandomStringDetector.MIN_RANDOM_LEN) {
+            return false;
+        }
+        return RANDOM_NUM_PATTERN.matcher(str).matches();
+    }
+
+    static boolean isRandomStr(String str) {
+        if (StringUtils.isBlank(str) || str.length() < 10) {
+            return false;
+        }
+        if (!RANDOM_STR_PATTERN.matcher(str).matches()) {
+            return false;
+        }
+        return RandomStringDetector.isRandomWord(str);
     }
 }

@@ -1,15 +1,16 @@
 package com.jiduauto.monilog;
 
+import cn.hutool.core.util.URLUtil;
 import com.google.common.collect.Sets;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpHeaders;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.regex.Pattern;
 
 class HttpUtil {
+    private static final String PATH_SEP = "/";
     private static final Set<String> TEXT_TYPES = Sets.newHashSet("application/json", "application/xml", "application/xhtml+xml", "text/");
 
     private static final Set<String> STREAMING_TYPES = Sets.newHashSet("application/octet-stream", "application/pdf", "application/zip", "application/x-", "application/vnd.", "application/ms", "image/", "audio/", "video/");
@@ -34,8 +35,7 @@ class HttpUtil {
 
     static boolean isDownstream(Map<String, String> headerMap) {
         String header = getMapValueIgnoreCase(headerMap, HttpHeaders.CONTENT_DISPOSITION);
-        return StringUtils.containsIgnoreCase(header, "attachment")
-                || StringUtils.containsIgnoreCase(header, "filename");
+        return StringUtils.containsIgnoreCase(header, "attachment") || StringUtils.containsIgnoreCase(header, "filename");
     }
 
     static String getMapValueIgnoreCase(Map<String, ?> headerMap, String headerKey) {
@@ -65,5 +65,93 @@ class HttpUtil {
             }
         }
         return null;
+    }
+
+    /**
+     * 提取路径，如http://baidu.com/test?a=1 返回/test,此处针对restful分格的接口也会存在问题，如/getOrder/123
+     *
+     * @param url url
+     * @return 仅路径信息不包含参数与host
+     */
+    static String extractPath(String url) {
+        if (StringUtils.isBlank(url)) {
+            return url;
+        }
+        try {
+            return URLUtil.getPath(url);
+        } catch (Exception e) {
+            return url;
+        }
+    }
+
+    /**
+     * 从url或uri中提取path路径，对于不可枚举的路径参数，将替换成常量占位符
+     */
+    static String extractPathWithoutPathParams(String url) {
+        if (StringUtils.isBlank(url)) {
+            return url;
+        }
+        String path = extractPath(url);
+        if (StringUtils.isBlank(path)) {
+            return PATH_SEP;
+        }
+        if (path.indexOf(PATH_SEP) == path.lastIndexOf(PATH_SEP)) {
+            return path;
+        }
+        String[] segments = path.split(PATH_SEP);
+        for (int i = 0; i < segments.length; i++) {
+            if (isRandomNum(segments[i])) {
+                segments[i] = "{num}";
+            }
+            if (isRandomStr(segments[i])) {
+                segments[i] = "{xxx}";
+            }
+        }
+        return StringUtils.join(segments, PATH_SEP);
+    }
+
+    private static final Pattern RANDOM_NUM_PATTERN = Pattern.compile("^[0-9]+\\.?[0-9]+$");
+    private static final Pattern RANDOM_STR_PATTERN = Pattern.compile("^[a-zA-Z0-9\\-]+$");
+
+    static boolean isRandomNum(String str) {
+        if (StringUtils.isBlank(str) || str.length() < RandomStringDetector.MIN_RANDOM_LEN) {
+            return false;
+        }
+        return RANDOM_NUM_PATTERN.matcher(str).matches();
+    }
+
+    static boolean isRandomStr(String str) {
+        if (StringUtils.isBlank(str) || str.length() < 10) {
+            return false;
+        }
+        if (!RANDOM_STR_PATTERN.matcher(str).matches()) {
+            return false;
+        }
+        return RandomStringDetector.isRandomWord(str);
+    }
+
+    public static void main(String[] args) {
+        boolean b50 = RandomStringDetector.isRandomWord("abcdkljlkalksdjfkls");
+        boolean b1 = RandomStringDetector.isRandomWord("alkjsdflkjsd");
+        boolean b2 = RandomStringDetector.isRandomWord("queryEmployeeInfo");
+        boolean b3 = RandomStringDetector.isRandomWord("hello123");
+        boolean b4 = RandomStringDetector.isRandomWord("abcdKLljlk20023");
+        boolean b51 = RandomStringDetector.isRandomWord("abcdkljlkalksdjfkls");
+        boolean b6 = RandomStringDetector.isRandomWord("httpClient");
+        System.out.println(b6);
+
+        String s1 = extractPathWithoutPathParams("http://baidu.com");
+        String s2 = extractPathWithoutPathParams("http://baidu.com/");
+        String s3 = extractPathWithoutPathParams("http://baidu.com/abc/de");
+        String s4 = extractPathWithoutPathParams("http://baidu.com/a/b/c/?t=23");
+        String s5 = extractPathWithoutPathParams("baidu.com/a=23&b=3");
+        String s6 = extractPathWithoutPathParams("http:/baidu.com?t=434");
+        String s7 = extractPathWithoutPathParams("/ab/c/d");
+        String s8 = extractPathWithoutPathParams("/a/b/c/d?t=23");
+        String s9 = extractPathWithoutPathParams("/a/b/230982432/d?t=23");
+        String s10 = extractPathWithoutPathParams("/a/b/bajklsdjfksljk2l3/d?t=23");
+        String s11 = extractPathWithoutPathParams("/a/b/bajklsdjfksljk/d?t=23");
+
+        System.out.println(s8);
     }
 }

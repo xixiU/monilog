@@ -108,7 +108,7 @@ public final class HttpClientMoniLogInterceptor {
                 p.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
                 p.setLogPoint(LogPoint.http_client);
 
-                p.setTags(TagBuilder.of("url", path, "method", method).toArray());
+                p.setTags(TagBuilder.of("url", HttpUtil.extractPathWithoutPathParams(path), "method", method).toArray());
                 httpContext.setAttribute(MONILOG_PARAMS_KEY, p);
             } catch (Exception e) {
                 MoniLogUtil.innerDebug("HttpClient.RequestInterceptor.process error", e);
