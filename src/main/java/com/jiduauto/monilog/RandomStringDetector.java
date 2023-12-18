@@ -7,7 +7,6 @@ import com.github.houbb.word.checker.core.impl.EnWordChecker;
 import com.github.houbb.word.checker.core.impl.WordCheckerContext;
 import com.github.houbb.word.checker.support.data.english.EnglishWordDatas;
 import com.github.houbb.word.checker.support.format.impl.WordFormats;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
@@ -16,7 +15,6 @@ import java.util.*;
  * @author yp
  * @date 2023/12/18
  */
-@Slf4j
 class RandomStringDetector {
     static final int MIN_RANDOM_LEN = 4;
     private static final Map<String, Double> BIGRAMS_MAP = initBigramsMap();
@@ -69,9 +67,7 @@ class RandomStringDetector {
         double numCommonBigrams = 0;
         for (String bigram : bigrams) {
             Double v = BIGRAMS_MAP.get(bigram);
-            if (v == null) {
-                log.info("not found: " + bigram);
-            } else if (v > COMMON_BIGRAMS_THRESHOLD) {
+            if (v != null && v > COMMON_BIGRAMS_THRESHOLD) {
                 numCommonBigrams += 1;
             }
         }
