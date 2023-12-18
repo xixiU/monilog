@@ -109,6 +109,7 @@ class HttpUtil {
     }
 
     public static void main(String[] args) {
+
         boolean b50 = RandomStringDetector.isRandomWord("abcdkljlkalksdjfkls");
         boolean b1 = RandomStringDetector.isRandomWord("alkjsdflkjsd");
         boolean b2 = RandomStringDetector.isRandomWord("queryEmployeeInfo");
@@ -118,6 +119,7 @@ class HttpUtil {
         boolean b6 = RandomStringDetector.isRandomWord("httpClient");
         System.out.println(b6);
 
+        String s0 = extractPathWithoutPathParams("http://baidu.com/doc/982304782304823092480392840?t=434");
         String s1 = extractPathWithoutPathParams("http://baidu.com");
         String s2 = extractPathWithoutPathParams("http://baidu.com/");
         String s3 = extractPathWithoutPathParams("http://baidu.com/abc/de");

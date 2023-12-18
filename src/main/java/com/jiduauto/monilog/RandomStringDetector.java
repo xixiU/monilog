@@ -17,17 +17,11 @@ import java.util.*;
  */
 class RandomStringDetector {
     private static final Map<String, Double> BIGRAMS_MAP = initBigramsMap();
-    private static final EnWordChecker INSTANCE;
-    private static final IWordCheckerContext CTX;
+    private static Object CHECKER_CTX;
 
     private static Map<String, Double> initBigramsMap() {
         return JSON.parseObject(ENGLISH, new TypeReference<Map<String, Double>>() {
         });
-    }
-
-    static {
-        INSTANCE = com.github.houbb.word.checker.core.impl.EnWordChecker.getInstance();
-        CTX = WordCheckerContext.newInstance().wordData(EnglishWordDatas.mixed()).wordFormat(WordFormats.defaults());
     }
 
     private static final double COMMON_BIGRAMS_THRESHOLD = 0.1d;
@@ -39,16 +33,21 @@ class RandomStringDetector {
         if (StringUtils.isBlank(word)) {
             return false;
         }
-        if (INSTANCE.isCorrect(word, CTX)) {
-            return false;
-        }
-        String corrected = EnWordChecker.getInstance().correct(word, CTX);
-        if (corrected == null) {
-            return false;
-        }
-        double sameRate = calculateSimilarity(word, corrected);
-        if (sameRate > SAME_WORD_THRESHOLD && sameRate < 1) {
-            return false;
+        boolean userWordCheck = SpringUtils.useWordChecker();
+        if (userWordCheck) {
+            EnWordChecker checker = EnWordChecker.getInstance();
+            IWordCheckerContext checkerContext = getCheckerContextInstance();
+            if (checker.isCorrect(word, checkerContext)) {
+                return false;
+            }
+            String corrected = checker.correct(word, checkerContext);
+            if (corrected == null) {
+                return false;
+            }
+            double sameRate = calculateSimilarity(word, corrected);
+            if (sameRate > SAME_WORD_THRESHOLD && sameRate < 1) {
+                return false;
+            }
         }
         Set<Character> set = new HashSet<>(word.length());
         List<String> bigrams = new ArrayList<>();
@@ -114,6 +113,14 @@ class RandomStringDetector {
         }
         return dp[str1.length()][str2.length()];
     }
+
+    private static IWordCheckerContext getCheckerContextInstance() {
+        if (CHECKER_CTX == null) {
+            CHECKER_CTX = WordCheckerContext.newInstance().wordData(EnglishWordDatas.mixed()).wordFormat(WordFormats.defaults());
+        }
+        return (IWordCheckerContext) CHECKER_CTX;
+    }
+
 
     private static final String ENGLISH = "{\n" +
             "    \"aa\": 0.0795775831992048,\n" +

@@ -195,6 +195,9 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
         }
         return false;
     }
+    public static boolean useWordChecker() {
+        return Boolean.parseBoolean(getProperty("monilog.config.user-word-checker"));
+    }
 
     /**
      * 通过class获取Bean
