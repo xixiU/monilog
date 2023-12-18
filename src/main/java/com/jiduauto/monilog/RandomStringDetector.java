@@ -2,7 +2,10 @@ package com.jiduauto.monilog;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
+import com.github.houbb.word.checker.core.IWordCheckerContext;
 import com.github.houbb.word.checker.core.impl.EnWordChecker;
+import com.github.houbb.word.checker.core.impl.WordCheckerContext;
+import com.github.houbb.word.checker.support.data.english.EnglishWordDatas;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -16,10 +19,17 @@ import java.util.*;
 class RandomStringDetector {
     static final int MIN_RANDOM_LEN = 4;
     private static final Map<String, Double> BIGRAMS_MAP = initBigramsMap();
+    private static final EnWordChecker INSTANCE;
+    private static final IWordCheckerContext CTX;
 
     private static Map<String, Double> initBigramsMap() {
         return JSON.parseObject(ENGLISH, new TypeReference<Map<String, Double>>() {
         });
+    }
+
+    static {
+        INSTANCE = com.github.houbb.word.checker.core.impl.EnWordChecker.getInstance();
+        CTX = WordCheckerContext.newInstance().wordData(EnglishWordDatas.mixed());
     }
 
     private static final double COMMON_BIGRAMS_THRESHOLD = 0.1d;
@@ -31,10 +41,10 @@ class RandomStringDetector {
         if (StringUtils.isBlank(word)) {
             return false;
         }
-        if (EnWordChecker.getInstance().isCorrect(word)) {
+        if (INSTANCE.isCorrect(word, CTX)) {
             return false;
         }
-        String corrected = EnWordChecker.getInstance().correct(word);
+        String corrected = EnWordChecker.getInstance().correct(word, CTX);
         if (corrected == null) {
             return false;
         }
