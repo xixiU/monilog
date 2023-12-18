@@ -51,7 +51,7 @@ public final class FeignMoniLogInterceptor {
         if (CollectionUtils.isEmpty(urlBlackList)) {
             urlBlackList = new HashSet<>();
         }
-        if (StringUtil.checkPathMatch(urlBlackList, requestUri)) {
+        if (StringUtil.checkPathMatch(urlBlackList, requestUri) || StringUtil.checkPathMatch(urlBlackList, HttpRequestData.extractPath(requestUri))) {
             return response;
         }
 
