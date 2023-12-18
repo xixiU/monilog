@@ -6,6 +6,7 @@ import com.github.houbb.word.checker.core.IWordCheckerContext;
 import com.github.houbb.word.checker.core.impl.EnWordChecker;
 import com.github.houbb.word.checker.core.impl.WordCheckerContext;
 import com.github.houbb.word.checker.support.data.english.EnglishWordDatas;
+import com.github.houbb.word.checker.support.format.impl.WordFormats;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -29,7 +30,7 @@ class RandomStringDetector {
 
     static {
         INSTANCE = com.github.houbb.word.checker.core.impl.EnWordChecker.getInstance();
-        CTX = WordCheckerContext.newInstance().wordData(EnglishWordDatas.mixed());
+        CTX = WordCheckerContext.newInstance().wordData(EnglishWordDatas.mixed()).wordFormat(WordFormats.defaults());
     }
 
     private static final double COMMON_BIGRAMS_THRESHOLD = 0.1d;
