@@ -8,9 +8,9 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.util.StreamUtils;
 
-import java.io.*;
+import java.io.Closeable;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -40,17 +40,18 @@ public final class FeignMoniLogInterceptor {
      * 需要注意request与response流的消耗
      */
     private static Response doFeignInvocationRecord(Method m, Request request, Response response, long cost, Throwable ex) {
-        MoniLogProperties properties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
-        MoniLogProperties.FeignProperties feignProperties = properties == null ? null : properties.getFeign();
-        if (feignProperties == null || !properties.isComponentEnable(ComponentEnum.feign, feignProperties.isEnable())) {
+        if (!ComponentEnum.feign.isEnable()) {
             return response;
         }
-        String requestUri = request.url();
+        MoniLogProperties properties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
+        assert properties != null;
+        MoniLogProperties.FeignProperties feignProperties = properties.getFeign();
+        String requestUrl = request.url();
         Set<String> urlBlackList = feignProperties.getUrlBlackList();
         if (CollectionUtils.isEmpty(urlBlackList)) {
             urlBlackList = new HashSet<>();
         }
-        if (StringUtil.checkPathMatch(urlBlackList, requestUri)) {
+        if (StringUtil.checkPathMatch(urlBlackList, requestUrl) || StringUtil.checkPathMatch(urlBlackList, HttpUtil.extractPath(requestUrl))) {
             return response;
         }
 
@@ -70,7 +71,7 @@ public final class FeignMoniLogInterceptor {
             mlp.setAction(st.getMethodName());
         }
 
-        mlp.setTags(new String[]{"method", getMethod(request), "url", HttpRequestData.extractPath(requestUri)});
+        mlp.setTags(new String[]{"method", getMethod(request), "url", HttpUtil.extractPathWithoutPathParams(requestUrl)});
 
         mlp.setCost(cost);
         mlp.setException(ex);
@@ -80,19 +81,15 @@ public final class FeignMoniLogInterceptor {
         mlp.setMsgCode(ErrorEnum.SUCCESS.name());
         mlp.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
         if (ex != null) {
-            Response failedResponseWhenFailed = getFailedResponseWhenFailed(response, ex, mlp);
+            handleException(ex, mlp);
             MoniLogUtil.log(mlp);
-            return failedResponseWhenFailed;
+            return response;
 
         }
-        //包装响应
-        Charset charset = request.charset();
-        if (charset == null) {
-            charset = StandardCharsets.UTF_8;
-        }
         Response ret;
+        BufferingFeignResponse bufferedResp = null;
         try {
-            BufferingFeignClientResponse bufferedResp = new BufferingFeignClientResponse(response);
+            bufferedResp = new BufferingFeignResponse(response);
             mlp.setSuccess(mlp.isSuccess() && response.status() < HttpStatus.BAD_REQUEST.value());
             if (!mlp.isSuccess()) {
                 mlp.setMsgCode(String.valueOf(bufferedResp.status()));
@@ -102,7 +99,7 @@ public final class FeignMoniLogInterceptor {
             if (bufferedResp.isDownstream()) {
                 mlp.setOutput("Binary data");
             } else {
-                resultStr = bufferedResp.body(); //读掉原始response中的数据
+                resultStr = bufferedResp.getBodyAsString();
                 mlp.setOutput(resultStr);
             }
             if (resultStr != null && bufferedResp.isJson()) {
@@ -122,21 +119,17 @@ public final class FeignMoniLogInterceptor {
                     mlp.setMsgInfo(parsedResult.getMsgInfo());
                 }
             }
-            if (resultStr != null) {
-                //重写将数据写入原始response的body中
-                ret = bufferedResp.getResponse(resultStr, charset);
-            } else {
-                ret = bufferedResp.getResponse();
-            }
-            bufferedResp.close();
+            // 再次新建一个流
+            ret = bufferedResp.getResponse();
+            Util.ensureClosed(bufferedResp);
         } catch (Exception e) {
             // 在执行解析的过程中可能会出现连接中断，这种情况需要把异常抛出去
             if (e instanceof FeignException) {
-                ex = e;
-                return getFailedResponseWhenFailed(response, ex, mlp);
+                handleException(e, mlp);
+                return response;
             } //其他异常可能是monilog的bug导致的
             MoniLogUtil.innerDebug("doFeignInvocationRecord error", e);
-            ret = response;
+            ret = bufferedResp == null ? response : bufferedResp.getResponse();
         } finally {
             MoniLogUtil.log(mlp);
         }
@@ -146,14 +139,13 @@ public final class FeignMoniLogInterceptor {
     /**
      * 当有异常时设置MoniLogParams并返回
      */
-    private static Response getFailedResponseWhenFailed(Response response, Throwable ex, MoniLogParams mlp) {
+    private static void handleException(Throwable ex, MoniLogParams mlp) {
         mlp.setSuccess(false);
         ErrorInfo errorInfo = ExceptionUtil.parseException(ex);
         if (errorInfo != null) {
             mlp.setMsgCode(errorInfo.getErrorCode());
             mlp.setMsgInfo(errorInfo.getErrorMsg());
         }
-        return response;
     }
 
 
@@ -217,7 +209,7 @@ public final class FeignMoniLogInterceptor {
     }
 
     private static Map<String, Collection<String>> getQuery(Request request) {
-        // com.netflix.feign根据feign.RequestTemplate.request原来可以看到query参数也会拼接到url中
+        //com.netflix.feign根据feign.RequestTemplate.request原来可以看到query参数也会拼接到url中
         Map<String, Collection<String>> queryMap = StringUtil.getQueryMap(request.url());
         if (queryMap == null) {
             queryMap = new HashMap<>();
@@ -231,55 +223,34 @@ public final class FeignMoniLogInterceptor {
         return queryMap.isEmpty() ? null : queryMap;
     }
 
-
-    // com.netflix.feign:feign-core 8.18.0 中没有request.isBinary()方法
-    private static boolean isBinary(byte[] body, Charset charset) {
-        return charset == null || body == null;
-    }
-
     // com.netflix.feign:feign-core 8.18.0 中没有request.length()方法
     private static int length(byte[] body) {
         return body != null ? body.length : 0;
     }
 
-    // 注意这里消耗的流
     private static String getBodyParams(Request request) {
         byte[] body = request.body();
-        if (isBinary(body, request.charset())) {
-            return "Binary data";
-        }
         if (length(body) == 0) {
             return null;
         }
-        return new String(body, request.charset()).trim();
+        //com.netflix.feign:feign-core 8.18.0 中没有request.isBinary()方法
+        return StringUtil.encodeByteArray(body, request.charset(), "Binary data");
     }
 
-    private static class BufferingFeignClientResponse implements Closeable {
-        private final Response response;
-        private byte[] body;
+    private static class BufferingFeignResponse implements Closeable {
+        private final Response originResponse;
+        private Response response;
+        private final byte[] buffer;
 
-        BufferingFeignClientResponse(Response response) {
-            this.response = response;
+        BufferingFeignResponse(Response response) throws IOException {
+            this.originResponse = response;
+            this.buffer = response.body() == null ? null : Util.toByteArray(response.body().asInputStream());
+            this.response = response.toBuilder().body(this.buffer).build();
         }
 
         Response getResponse() {
-            return this.response;
+            return response;
         }
-
-        Response getResponse(String text, Charset charset) {
-            try {
-                Class<?> cls = Class.forName("feign.Response$ByteArrayBody");
-                Method orNull = cls.getDeclaredMethod("orNull", String.class, Charset.class);
-                orNull.setAccessible(true);
-                Object body = orNull.invoke(null, text, charset);
-                // 通过反射获取Response.body,并修改值
-                ReflectUtil.setPropValue(this.response, "body", body, true);
-            } catch (Exception e) {
-                MoniLogUtil.innerDebug("setResponseBody error", e);
-            }
-            return this.response;
-        }
-
 
         int status() {
             return this.response.status();
@@ -289,9 +260,19 @@ public final class FeignMoniLogInterceptor {
             return this.response.headers();
         }
 
+        String getBodyAsString() {
+            Charset charset = response.request() == null ? null : response.request().charset();
+            if (charset == null) {
+                charset = StandardCharsets.UTF_8;
+            }
+            String bodyString = StringUtil.encodeByteArray(buffer, charset, "Binary data");
+            //复原response
+            this.response = response.toBuilder().body(buffer).build();
+            return bodyString;
+        }
 
         boolean isDownstream() {
-            String header = getFirstHeader(HttpHeaders.CONTENT_DISPOSITION);
+            String header = HttpUtil.getFirstHeader(headers(), HttpHeaders.CONTENT_DISPOSITION);
             return StringUtils.containsIgnoreCase(header, "attachment") || StringUtils.containsIgnoreCase(header, "filename");
         }
 
@@ -299,49 +280,13 @@ public final class FeignMoniLogInterceptor {
             if (isDownstream()) {
                 return false;
             }
-            String header = getFirstHeader(HttpHeaders.CONTENT_TYPE);
+            String header = HttpUtil.getFirstHeader(headers(), HttpHeaders.CONTENT_TYPE);
             return StringUtils.containsIgnoreCase(header, "application/json");
-        }
-
-        String getFirstHeader(String name) {
-            if (headers() == null || StringUtils.isBlank(name)) {
-                return null;
-            }
-            for (Map.Entry<String, Collection<String>> me : headers().entrySet()) {
-                if (me.getKey().equalsIgnoreCase(name)) {
-                    Collection<String> headers = me.getValue();
-                    if (headers == null || headers.isEmpty()) {
-                        return null;
-                    }
-                    return headers.iterator().next();
-                }
-            }
-            return null;
-        }
-
-        String body() throws IOException {
-            StringBuilder sb = new StringBuilder();
-            //TODO charset
-            try (InputStreamReader reader = new InputStreamReader(getBody())) {
-                char[] tmp = new char[1024];
-                int len;
-                while ((len = reader.read(tmp, 0, tmp.length)) != -1) {
-                    sb.append(new String(tmp, 0, len));
-                }
-            }
-            return sb.toString();
-        }
-
-        private InputStream getBody() throws IOException {
-            if (this.body == null) {
-                this.body = StreamUtils.copyToByteArray(this.response.body().asInputStream());
-            }
-            return new ByteArrayInputStream(this.body);
         }
 
         @Override
         public void close() {
-            this.response.close();
+            this.originResponse.close();
         }
     }
 }

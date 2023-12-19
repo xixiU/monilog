@@ -108,7 +108,7 @@ public final class HttpClientMoniLogInterceptor {
                 p.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
                 p.setLogPoint(LogPoint.http_client);
 
-                p.setTags(TagBuilder.of("url", path, "method", method).toArray());
+                p.setTags(TagBuilder.of("url", HttpUtil.extractPathWithoutPathParams(path), "method", method).toArray());
                 httpContext.setAttribute(MONILOG_PARAMS_KEY, p);
             } catch (Exception e) {
                 MoniLogUtil.innerDebug("HttpClient.RequestInterceptor.process error", e);
@@ -243,18 +243,15 @@ public final class HttpClientMoniLogInterceptor {
 
     //启用，则返回当前配置对象供后续链路使用，否则返回null
     private static MoniLogProperties.HttpClientProperties checkEnable(HttpHost host, String path) {
+        if (!ComponentEnum.httpclient.isEnable()) {
+            return null;
+        }
         MoniLogProperties mp = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
-        if (mp == null || !mp.isEnable() || mp.getHttpclient() == null) {
-            return null;
-        }
+        assert mp != null;
         MoniLogProperties.HttpClientProperties httpclient = mp.getHttpclient();
-        boolean enable = mp.isComponentEnable(ComponentEnum.httpclient, httpclient.isEnable());
-        if (!enable) {
-            return null;
-        }
         Set<String> urlBlackList = httpclient.getUrlBlackList();
         Set<String> hostBlackList = httpclient.getHostBlackList();
-        enable = !checkPathMatch(hostBlackList, host.getHostName()) && !checkPathMatch(urlBlackList, path);
+        boolean enable = !checkPathMatch(hostBlackList, host.getHostName()) && !checkPathMatch(urlBlackList, path);
         return enable ? httpclient : null;
     }
 

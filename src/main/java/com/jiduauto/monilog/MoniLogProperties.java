@@ -1,13 +1,9 @@
 package com.jiduauto.monilog;
 
-import com.ctrip.framework.apollo.ConfigChangeListener;
-import com.ctrip.framework.apollo.ConfigService;
-import com.ctrip.framework.apollo.model.ConfigChange;
 import com.google.common.collect.Sets;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -18,7 +14,6 @@ import org.springframework.context.ApplicationContext;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * @author yp
@@ -108,21 +103,6 @@ class MoniLogProperties implements InitializingBean {
      */
     private HttpClientProperties httpclient = new HttpClientProperties();
 
-    boolean isComponentEnable(ComponentEnum componentName, boolean componentEnable) {
-        // 这里必须判断全局enable开关，某个应用启动后修改enable为false会导致无法生效
-        if (!componentEnable || !enable) {
-            return false;
-        }
-        Set<ComponentEnum> componentExcludes = getComponentExcludes();
-        boolean excludeThis = componentExcludes != null && componentExcludes.contains(componentName);
-        if (!excludeThis) {//未排除，则enable
-            return true;
-        }
-        Set<ComponentEnum> componentIncludes = getComponentIncludes();
-        //即include 又exclude时，以include为准
-        return componentIncludes != null && componentIncludes.contains(componentName);
-    }
-
     public String getAppName() {
         if (StringUtils.isNotBlank(this.appName)) {
             return this.appName;
@@ -144,29 +124,7 @@ class MoniLogProperties implements InitializingBean {
         printBanner();
         MoniLogUtil.addSystemRecord();
         // 启用配置更新
-        addApolloListener();
-    }
-
-
-    private void addApolloListener() {
-        // 手动配置 apolloConfigListener，添加配置改动监听
-        ConfigChangeListener configChangeListener = configChangeEvent -> {
-            List<String> changedKeysList = configChangeEvent.changedKeys().stream().filter(item -> item.startsWith("monilog")).collect(Collectors.toList());
-            if (CollectionUtils.isEmpty(changedKeysList)) {
-                return;
-            }
-            // 日志记录
-            for (String key : changedKeysList) {
-                ConfigChange change = configChangeEvent.getChange(key);
-                String oldValue = change.getOldValue();
-                String newValue = change.getNewValue();
-                log.info("monilog properties changed #configChange key:{} new value:{} old value:{}", key, newValue, oldValue);
-            }
-            // 只需要bindValue 一次就行，不要放在for循环里面
-            bindValue();
-        };
-        // 使用ApolloConfigChangeListener方法不生效，手动注入一个监听器
-        ConfigService.getAppConfig().addChangeListener(configChangeListener);
+        ApolloListenerRegistry.register(this::bindValue);
     }
 
     private void bindValue() {
@@ -267,10 +225,10 @@ class MoniLogProperties implements InitializingBean {
          */
         private Set<String> excludeMsgCodes;
         /**
-         * 日志信息是否输出traceId，默认输出；
-         * 在告警时会在信息主体部分添加traceId，方便排查问题。但是此信息在日志平台直接观察时traceId会重复打印，若不想打印traceId可以设置此开关为false;
+         * 日志信息中是否再次输出traceId，默认不输出；
+         * 在告警时会在信息主体部分添加traceId，方便排查问题。但是若开启的话，在日志平台直接观察时traceId会重复打印
          */
-        private boolean printTraceId = true;
+        private boolean printTraceId = false;
         /**
          * 日志输出级别配置
          */

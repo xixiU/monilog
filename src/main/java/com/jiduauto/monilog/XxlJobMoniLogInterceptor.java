@@ -13,7 +13,7 @@ public final class XxlJobMoniLogInterceptor {
         return ProxyUtils.getProxy(bean, invocation -> {
             Method method = invocation.getMethod();
             Class<?> returnType = method.getReturnType();
-            boolean shouldMonilog = "execute".equals(method.getName()) && xxlJobEnable();
+            boolean shouldMonilog = "execute".equals(method.getName()) && ComponentEnum.xxljob.isEnable();
             return shouldMonilog ? MoniLogAop.processAround(invocation, buildLogParserForJob(returnType == ReturnT.class), LogPoint.xxljob) : invocation.proceed();
         });
     }
@@ -26,10 +26,5 @@ public final class XxlJobMoniLogInterceptor {
         } else {
             return LogParser.Default.buildInstance(ResultParseStrategy.IfNotException, null, null, null);
         }
-    }
-
-    private static boolean xxlJobEnable() {
-        MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
-        return moniLogProperties != null && moniLogProperties.isComponentEnable(ComponentEnum.xxljob, moniLogProperties.getXxljob().isEnable());
     }
 }

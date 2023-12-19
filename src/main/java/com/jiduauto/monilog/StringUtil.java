@@ -3,13 +3,18 @@ package com.jiduauto.monilog;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONValidator;
 import com.alibaba.fastjson.TypeReference;
+import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.AntPathMatcher;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -18,6 +23,18 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 class StringUtil {
+    private static final int MIN_RANDOM_NUM_LEN = 4;
+    private static final int MIN_RANDOM_STR_LEN = 10;
+    private static final Set<String> NORMAL_OP_PREFIX = Sets.newHashSet(
+            "add", "save", "insert", "create", "make", "build", "put", "new", "copy", "rename",
+            "delete", "move", "kill", "remove", "drop", "destroy", "close", "shutdown",
+            "destruct", "destructor", "clear", "clean", "reset", "empty",
+            "update", "write", "modify", "change", "set", "alter", "edit", "enable", "disable",
+            "start", "stop", "reload", "query", "list", "find", "get", "select", "fetch", "search",
+            "load", "check", "count", "show", "read", "import"
+    );
+    private static final Pattern RANDOM_NUM_PATTERN = Pattern.compile("^[0-9]+\\.?[0-9]+$");
+    private static final Pattern RANDOM_STR_PATTERN = Pattern.compile("^[a-zA-Z0-9\\-]+$");
     private static final AntPathMatcher ANT_PATH_MATCHER = new AntPathMatcher();
     private static final AntPathMatcher ANT_CLASS_MATCHER = new AntPathMatcher(".");
 
@@ -216,4 +233,52 @@ class StringUtil {
         return queryParams;
     }
 
+    static String encodeByteArray(byte[] body, Charset charset, String defaultStr) {
+        // 任意一个为空则认为是二进制的
+        if (body == null || charset == null) {
+            return defaultStr;
+        }
+        try {
+            return charset.newDecoder().decode(ByteBuffer.wrap(body)).toString();
+        } catch (CharacterCodingException ex) {
+            // 无法解码认为是二进制的
+            return defaultStr;
+        }
+    }
+
+    static boolean isBinaryArray(byte[] body, Charset charset) {
+        // 任意一个为空则认为是二进制的
+        if (body == null || charset == null) {
+            return true;
+        }
+        try {
+            charset.newDecoder().decode(ByteBuffer.wrap(body));
+            return false;
+        } catch (CharacterCodingException ex) {
+            // 无法解码认为是二进制的
+            return true;
+        }
+    }
+
+    static boolean isRandomNum(String str) {
+        if (StringUtils.isBlank(str) || str.length() < MIN_RANDOM_NUM_LEN) {
+            return false;
+        }
+        return RANDOM_NUM_PATTERN.matcher(str).matches();
+    }
+
+    static boolean isRandomStr(String str) {
+        if (StringUtils.isBlank(str) || str.length() < MIN_RANDOM_STR_LEN) {
+            return false;
+        }
+        if (!RANDOM_STR_PATTERN.matcher(str).matches()) {
+            return false;
+        }
+        for (String p : NORMAL_OP_PREFIX) {
+            if (StringUtils.containsIgnoreCase(str, p)) {
+                return false;
+            }
+        }
+        return RandomStringDetector.isRandomWord(str);
+    }
 }

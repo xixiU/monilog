@@ -23,7 +23,7 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         DETAIL,
         DIGEST,
         LONG_RT,
-        LARGE_SIZE;
+        LARGE_SIZE
     }
 
     private static final String DETAIL_LOG_PATTERN = "{}detail_log[{}]-{}.{}|{}|{}|{}|{}{} 【input】:{}, 【output】:{}";
@@ -104,7 +104,8 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         }
         return str;
     }
-    private  String getLogPattern(MoniLogParams p, LogType logType) {
+
+    private String getLogPattern(MoniLogParams p, LogType logType) {
         if (p == null) {
             return "";
         }
@@ -140,8 +141,9 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
                 return getLargeSizeLogLevel();
             case LONG_RT:
                 return getLongRtLogLevel();
+            default:
+                return level;
         }
-        return level;
     }
 
     private void logWithLevel(Logger logger, LogLevel level, String pattern, Object... params) {

@@ -36,10 +36,7 @@ public final class MybatisInterceptor implements Interceptor {
     @SneakyThrows
     @Override
     public Object intercept(Invocation invocation) {
-        MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
-        // 判断开关
-        if (moniLogProperties == null ||
-                !moniLogProperties.isComponentEnable(ComponentEnum.mybatis, moniLogProperties.getMybatis().isEnable())) {
+        if (!ComponentEnum.mybatis.isEnable()) {
             return invocation.proceed();
         }
         long nowTime = System.currentTimeMillis();

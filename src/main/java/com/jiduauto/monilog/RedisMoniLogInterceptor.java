@@ -38,6 +38,9 @@ public final class RedisMoniLogInterceptor {
     public static class RedisConnectionFactoryInterceptor implements MethodInterceptor {
         @Override
         public Object invoke(MethodInvocation invocation) throws Throwable {
+            if (!ComponentEnum.redis.isEnable()) {
+                return invocation.proceed();
+            }
             Method method = invocation.getMethod();
             String methodName = method.getName();
             if (SKIP_METHODS_FOR_REDIS.contains(methodName)) {
@@ -102,6 +105,9 @@ public final class RedisMoniLogInterceptor {
          * 访问修饰符、方法名不可修改
          */
         public static void redisRecordException(Throwable e, long cost) {
+            if (!ComponentEnum.redis.isEnable()) {
+                return;
+            }
             Method m;
             try {
                 m = JedisConnectionFactory.class.getDeclaredMethod("getConnection");
@@ -144,10 +150,7 @@ public final class RedisMoniLogInterceptor {
      */
     public static Object getRedissonProxy(RedissonClient client) {
         return ProxyUtils.getProxy(client, invocation -> {
-            MoniLogProperties moniLogProperties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
-            // 判断开关
-            if (moniLogProperties == null ||
-                    !moniLogProperties.isComponentEnable(ComponentEnum.redis, moniLogProperties.getRedis().isEnable())) {
+            if (!ComponentEnum.redis.isEnable()) {
                 return invocation.proceed();
             }
             long start = System.currentTimeMillis();

@@ -2,10 +2,10 @@ package com.jiduauto.monilog;
 
 import ch.qos.logback.classic.spi.EventArgUtil;
 import com.carrotsearch.sizeof.RamUsageEstimator;
-import com.metric.MetricMonitor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.annotation.Nullable;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -41,7 +41,7 @@ class MoniLogUtil {
     /**
      * 添加系统方法指标，每6小时打印一条系统信息
      */
-    private static void addSysRecord(){
+    private static void addSysRecord() {
         // 设置任务的初始延迟时间为3分钟，防止应用启动过程中执行
         long delay = 3 * 60 * 1000;
 
@@ -63,12 +63,12 @@ class MoniLogUtil {
     /**
      * 添加接入组件信息上报，仅上报基础信息，当前接入的版本，接入的应用，环境
      */
-    static void addSystemRecord(){
+    static void addSystemRecord() {
         try {
             TagBuilder tag = TagBuilder.of("application", SpringUtils.application)
                     .add("env", SpringUtils.activeProfile)
                     .add("version", MoniLogAutoConfiguration.class.getPackage().getImplementationVersion());
-            MetricMonitor.record(METRIC_PREFIX + "sysVersion", tag.toArray());
+            MonilogMetrics.record(METRIC_PREFIX + "sysVersion", tag.toArray());
         } catch (Exception e) {
             innerDebug("addSystemRecord error", e);
         }
@@ -118,7 +118,7 @@ class MoniLogUtil {
         log.warn(prefix + pattern, args);
         // 内部异常添加metric上报
         TagBuilder tagBuilder = TagBuilder.of("application", SpringUtils.application);
-        MetricMonitor.record(METRIC_PREFIX + "inner_debug", tagBuilder.toArray());
+        MonilogMetrics.record(METRIC_PREFIX + "inner_debug", tagBuilder.toArray());
     }
 
     private static void doMonitor(MoniLogParams logParams) {
@@ -133,13 +133,13 @@ class MoniLogUtil {
         String[] allTags = systemTags.add(logParams.getTags()).toArray();
 
         String name = METRIC_PREFIX + logPoint.name();
-        MetricMonitor.record(name + MonitorType.RECORD.getMark(), allTags);
+        MonilogMetrics.record(name + MonitorType.RECORD.getMark(), allTags);
         // 耗时只打印基础tag
-        MetricMonitor.eventDruation(name + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
+        MonilogMetrics.eventDuration(name + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
 
         if (logParams.isHasUserTag()) {
             name = name + "_" + logParams.getService() + "_" + logParams.getAction();
-            MetricMonitor.eventDruation(name + MonitorType.TIMER.getMark(), allTags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
+            MonilogMetrics.eventDuration(name + MonitorType.TIMER.getMark(), allTags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
         }
 
     }
@@ -158,72 +158,28 @@ class MoniLogUtil {
             return;
         }
         LogLongRtLevel rtTooLongLevel = logProperties.getPrinter().getLongRtLevel();
-        if (rtTooLongLevel == null || LogLongRtLevel.none.equals(rtTooLongLevel)) {
+        if (rtTooLongLevel == null || LogLongRtLevel.none == rtTooLongLevel) {
             return;
         }
         TagBuilder systemTags = getSystemTags(logParams);
         LogPoint logPoint = logParams.getLogPoint();
         String[] allTags = systemTags.add(logParams.getTags()).toArray();
-        if ((LogLongRtLevel.both.equals(rtTooLongLevel) || LogLongRtLevel.onlyPrometheus.equals(rtTooLongLevel)) && logProperties.isEnableMonitor()) {
+        if ((LogLongRtLevel.both == rtTooLongLevel || LogLongRtLevel.onlyPrometheus == rtTooLongLevel) && logProperties.isEnableMonitor()) {
             // 操作操作信息
             String operationCostTooLongMonitorPrefix = METRIC_PREFIX + "rt_too_long_" + logPoint.name();
-            MetricMonitor.record(operationCostTooLongMonitorPrefix + MonitorType.RECORD.getMark(), allTags);
+            MonilogMetrics.record(operationCostTooLongMonitorPrefix + MonitorType.RECORD.getMark(), allTags);
             // 耗时只打印基础tag
-            MetricMonitor.eventDruation(operationCostTooLongMonitorPrefix + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
+            MonilogMetrics.eventDuration(operationCostTooLongMonitorPrefix + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
         }
-        if (LogLongRtLevel.both.equals(rtTooLongLevel) || LogLongRtLevel.onlyLogger.equals(rtTooLongLevel)) {
+        if (LogLongRtLevel.both == rtTooLongLevel || LogLongRtLevel.onlyLogger == rtTooLongLevel) {
             printLongRtLog(logParams);
         }
     }
 
-
     private static boolean checkRtMonitor(MoniLogParams logParams) {
-        MoniLogProperties logProperties = getLogProperties();
-        if (logProperties == null || !logProperties.isMonitorLongRt()) {
-            return false;
-        }
         LogPoint logPoint = logParams.getLogPoint();
-        if (logPoint == null) {
-            return false;
-        }
-        long cost = logParams.getCost();
-        if (cost <= 0) {
-            return false;
-        }
-        switch (logPoint) {
-            case xxljob:
-                return exceedCostThreshold(logProperties.getXxljob().getLongRt(), cost);
-            case redis:
-                return exceedCostThreshold(logProperties.getRedis().getLongRt(), cost);
-            case mybatis:
-                return exceedCostThreshold(logProperties.getMybatis().getLongRt(), cost);
-            case grpc_client:
-            case grpc_server:
-                return exceedCostThreshold(logProperties.getGrpc().getLongRt(), cost);
-            case http_client:
-                return exceedCostThreshold(logProperties.getHttpclient().getLongRt(), cost);
-            case http_server:
-                return exceedCostThreshold(logProperties.getWeb().getLongRt(), cost);
-            case feign_client:
-            case feign_server:
-                return exceedCostThreshold(logProperties.getFeign().getLongRt(), cost);
-            case rocketmq_consumer:
-            case rocketmq_producer:
-                return exceedCostThreshold(logProperties.getRocketmq().getLongRt(), cost);
-            case unknown:
-            case user_define:
-            default:
-                return false;
-        }
+        return logPoint != null && logPoint.exceedLongRtThreshold(getLogProperties(), logParams.getCost());
     }
-
-    private static boolean exceedCostThreshold(long threshold, long actualCost) {
-        if (threshold <= 0) {
-            return false;
-        }
-        return threshold < actualCost;
-    }
-
 
     /**
      * 统一打上环境标、应用名、打标类型、处理结果
@@ -322,61 +278,15 @@ class MoniLogUtil {
         if (excludePrint(logParams)) {
             return;
         }
-        LogOutputLevel detailLogLevel = null;
         LogPoint logPoint = logParams.getLogPoint();
-
-        switch (logPoint) {
-            case http_server:
-                detailLogLevel = properties.getWeb().getDetailLogLevel();
-                break;
-            case http_client:
-                detailLogLevel = properties.getHttpclient().getDetailLogLevel();
-                break;
-            case feign_server:
-                detailLogLevel = properties.getFeign().getServerDetailLogLevel();
-                break;
-            case feign_client:
-                detailLogLevel = properties.getFeign().getClientDetailLogLevel();
-                break;
-            case grpc_client:
-                detailLogLevel = properties.getGrpc().getClientDetailLogLevel();
-                break;
-            case grpc_server:
-                detailLogLevel = properties.getGrpc().getServerDetailLogLevel();
-                break;
-            case rocketmq_consumer:
-                detailLogLevel = properties.getRocketmq().getConsumerDetailLogLevel();
-                break;
-            case rocketmq_producer:
-                detailLogLevel = properties.getRocketmq().getProducerDetailLogLevel();
-                break;
-            case mybatis:
-                detailLogLevel = properties.getMybatis().getDetailLogLevel();
-                break;
-            case xxljob:
-                detailLogLevel = properties.getXxljob().getDetailLogLevel();
-                break;
-            case redis:
-                detailLogLevel = properties.getRedis().getDetailLogLevel();
-                break;
-            case unknown:
-            default:
-                break;
-        }
-        if (detailLogLevel == null) {
-            MoniLogProperties.PrinterProperties printerCfg = properties.getPrinter();
-            detailLogLevel = printerCfg.getDetailLogLevel();
-            if (detailLogLevel == null) {
-                detailLogLevel = LogOutputLevel.onException;
-            }
-        }
+        LogOutputLevel detailLogLevel = logPoint == null ? LogOutputLevel.none : logPoint.getDetailLogLevel(properties);
         boolean doPrinter = printLevelCheckPass(detailLogLevel, logParams);
-
         if (doPrinter) {
             printer.logDetail(logParams);
         }
     }
 
+    @Nullable
     private static MoniLogPrinter getLogPrinter() {
         if (logPrinter != null) {
             return logPrinter;
@@ -459,6 +369,7 @@ class MoniLogUtil {
         return doPrinter;
     }
 
+    @Nullable
     private static MoniLogProperties getLogProperties() {
         if (logProperties != null) {
             return logProperties;

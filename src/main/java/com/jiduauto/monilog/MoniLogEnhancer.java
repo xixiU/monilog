@@ -58,14 +58,14 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
      */
     private MoniLogEnhancer(SpringApplication app, String[] args) {
         Set<Class<?>> set = new HashSet<>();
-        set.add(FeignMoniLogInterceptor.class);
-        set.add(RocketMqMoniLogInterceptor.class);
-        set.add(HttpClientMoniLogInterceptor.class);
-        set.add(OkHttpClientMoniLogInterceptor.class);
-        set.add(RedisMoniLogInterceptor.class);
-        set.add(XxlJobMoniLogInterceptor.class);
-        set.add(GrpcMoniLogInterceptor.class);
-        set.add(MybatisInterceptor.class);
+        set.add(loadInterceptorClass("com.jiduauto.monilog.FeignMoniLogInterceptor"));
+        set.add(loadInterceptorClass("com.jiduauto.monilog.RocketMqMoniLogInterceptor"));
+        set.add(loadInterceptorClass("com.jiduauto.monilog.HttpClientMoniLogInterceptor"));
+        set.add(loadInterceptorClass("com.jiduauto.monilog.OkHttpClientMoniLogInterceptor"));
+        set.add(loadInterceptorClass("com.jiduauto.monilog.RedisMoniLogInterceptor"));
+        set.add(loadInterceptorClass("com.jiduauto.monilog.XxlJobMoniLogInterceptor"));
+        set.add(loadInterceptorClass("com.jiduauto.monilog.GrpcMoniLogInterceptor"));
+        set.add(loadInterceptorClass("com.jiduauto.monilog.MybatisInterceptor"));
         log.debug("loaded class:{}", set.size());
         outputClass = args != null && args.length > 0 && Arrays.stream(args).anyMatch(e -> StringUtils.containsIgnoreCase(e.trim(), "outputClass=true"));
     }
@@ -87,6 +87,26 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
     @Override
     public int getOrder() {
         return Ordered.HIGHEST_PRECEDENCE;
+    }
+
+    private static Class<?> loadInterceptorClass(String clsName) {
+        try {
+            return Class.forName(clsName);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("ClassNotFoundException for interceptor: " + clsName);
+        } catch (NoClassDefFoundError e) {
+            log.info("monilog {} will not effect cause related class missing: {}", clsName, e.getCause().getMessage());
+            return Object.class;
+        } catch (Throwable e) {
+            log.error("monilog {} will not effect cause related class load error", clsName, e);
+            return Object.class;
+        }
+    }
+
+    private static CtClass getCtClass(String clsName) throws NotFoundException {
+        ClassPool classPool = ClassPool.getDefault();
+        classPool.appendClassPath(new LoaderClassPath(Thread.currentThread().getContextClassLoader()));
+        return classPool.getCtClass(clsName);
     }
 
     private static void enhanceHttpClient() {
@@ -163,12 +183,6 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         } catch (Throwable e) {
             logWarn(e, ROCKET_MQ_PRODUCER);
         }
-    }
-
-    private static CtClass getCtClass(String clsName) throws NotFoundException {
-        ClassPool classPool = ClassPool.getDefault();
-        classPool.appendClassPath(new LoaderClassPath(Thread.currentThread().getContextClassLoader()));
-        return classPool.getCtClass(clsName);
     }
 
     private static boolean doEnhanceHttp(String clsName, String helperMethod) {

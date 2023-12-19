@@ -11,7 +11,7 @@
 
     <groupId>com.jiduauto.monilog</groupId>
     <artifactId>monilog</artifactId>
-    <version>1.1.6</version>
+    <version>1.1.7</version>
     <modelVersion>4.0.0</modelVersion>
 
 
@@ -37,7 +37,8 @@
         <httpasyncclient.version>4.1.5</httpasyncclient.version>
         <redisson.version>3.22.0</redisson.version>
         <okhttpclient.version>3.14.9</okhttpclient.version>
-
+        <micrometer-core.version>1.5.14</micrometer-core.version>
+        <opentelemetry-api.version>1.9.1</opentelemetry-api.version>
     </properties>
 
 
@@ -49,26 +50,14 @@
         </dependency>
         <!-- metric监控 -->
         <dependency>
-            <groupId>com.jidu.monitor</groupId>
-            <artifactId>monitor-spring-boot-starter</artifactId>
-            <version>${monitor-spring-boot-starter.version}</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>grpc-netty-shaded</artifactId>
-                    <groupId>io.grpc</groupId>
-                </exclusion>
-            </exclusions>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+            <version>${micrometer-core.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.jiduauto.common</groupId>
-            <artifactId>jidu-opentelemetry-log</artifactId>
-            <version>${opentelemetry.log.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.grpc</groupId>
-                    <artifactId>grpc-api</artifactId>
-                </exclusion>
-            </exclusions>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
+            <version>${opentelemetry-api.version}</version>
         </dependency>
         <!-- 三方工具 -->
         <dependency>
@@ -100,6 +89,16 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-collections4</artifactId>
             <version>4.4</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+            <version>5.8.18</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.houbb</groupId>
+            <artifactId>word-checker</artifactId>
+            <version>1.1.0</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>

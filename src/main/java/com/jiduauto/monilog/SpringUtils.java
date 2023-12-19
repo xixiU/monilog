@@ -9,6 +9,7 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -94,6 +95,7 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
     }
 
     @SuppressWarnings("all")
+    @Nullable
     static <T> T getBeanWithoutException(Class<T> clazz) {
         try {
             //spring启动期间，如果在子线程中调用该方法容易发生死锁，因此这里最多等待200ms，取不到就先返回null，不阻塞主线程
@@ -152,7 +154,7 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
         if (StringUtils.isNotBlank(property)) {
             return property;
         }
-        throw new RuntimeException("appName is not set");
+        throw new RuntimeException("appName is not set, please check property: 'spring.application.name' or 'monilog.app-name'");
     }
 
     /**
@@ -192,6 +194,9 @@ class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware {
             }
         }
         return false;
+    }
+    public static boolean useWordChecker() {
+        return Boolean.parseBoolean(getProperty("monilog.config.user-word-checker"));
     }
 
     /**

@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+import static com.jiduauto.monilog.StringUtil.checkClassMatch;
+
 /**
  * OkHttpClient的拦截实现,
  * OKHttpClient的同步和异步拦截最后都是通过okhttp3.RealCall#getResponseWithInterceptorChain()执行，参考：https://blog.csdn.net/weixin_41939525/article/details/106419678
@@ -31,6 +33,10 @@ public final class OkHttpClientMoniLogInterceptor implements Interceptor {
             String path = request.url().url().getPath();
             MoniLogProperties.HttpClientProperties httpClientProperties = checkEnable(host, path);
             if (httpClientProperties == null) {
+                return chain.proceed(request);
+            }
+            StackTraceElement st = ThreadUtil.getNextClassFromStack(OkHttpClientMoniLogInterceptor.class);
+            if (!isClassEnable(httpClientProperties, st == null ? null : st.getClassName())) {
                 return chain.proceed(request);
             }
             Throwable bizException = null;
@@ -57,7 +63,6 @@ public final class OkHttpClientMoniLogInterceptor implements Interceptor {
                 p.setCost(System.currentTimeMillis() - nowTime);
                 Class<?> serviceCls = OkHttpClient.class;
                 String methodName = request.method();
-                StackTraceElement st = ThreadUtil.getNextClassFromStack(OkHttpClientMoniLogInterceptor.class);
                 if (st != null) {
                     try {
                         serviceCls = Class.forName(st.getClassName());
@@ -67,7 +72,7 @@ public final class OkHttpClientMoniLogInterceptor implements Interceptor {
                 p.setServiceCls(serviceCls);
                 p.setService(ReflectUtil.getSimpleClassName(p.getServiceCls()));
                 p.setAction(methodName);
-                p.setTags(TagBuilder.of("url", HttpRequestData.extractPath(request.url().toString()), "method", request.method()).toArray());
+                p.setTags(TagBuilder.of("url", HttpUtil.extractPathWithoutPathParams(request.url().toString()), "method", request.method()).toArray());
                 p.setInput(new Object[]{getInputObject(request)});
                 if (response != null) {
                     // 先塞调用的结果
@@ -102,19 +107,21 @@ public final class OkHttpClientMoniLogInterceptor implements Interceptor {
      * 校验是否开启
      */
     private static MoniLogProperties.HttpClientProperties checkEnable(String host, String path) {
-        MoniLogProperties mp = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
         // 判断开关
-        if (mp == null ||
-                !mp.isComponentEnable(ComponentEnum.httpclient, mp.getHttpclient().isEnable())) {
+        if (!ComponentEnum.httpclient.isEnable()) {
             return null;
         }
+        MoniLogProperties mp = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
+        assert mp != null;
         MoniLogProperties.HttpClientProperties clientProperties = mp.getHttpclient();
-        if (!clientProperties.isEnable()) {
-            return null;
-        }
         Set<String> urlBlackList = clientProperties.getUrlBlackList();
         Set<String> hostBlackList = clientProperties.getHostBlackList();
         return StringUtil.checkPathMatch(urlBlackList, path) || StringUtil.checkPathMatch(hostBlackList, host) ? null : clientProperties;
+    }
+
+    private static boolean isClassEnable(MoniLogProperties.HttpClientProperties httpclient, String invokerClass) {
+        Set<String> clientBlackList = httpclient.getClientBlackList();
+        return !checkClassMatch(clientBlackList, invokerClass);
     }
 
     private static JSONObject getInputObject(Request request) {

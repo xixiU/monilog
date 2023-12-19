@@ -46,53 +46,18 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
 
     @SneakyThrows
     @Override
-    public void doFilterInternal(@NonNull HttpServletRequest httpServletRequest, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws IOException, ServletException {
-        MoniLogProperties.WebProperties webProperties = moniLogProperties.getWeb();
-        if (webProperties == null ) {
-            filterChain.doFilter(httpServletRequest, response);
+    @SuppressWarnings("unchecked")
+    public void doFilterInternal(@NonNull HttpServletRequest req, @NonNull HttpServletResponse resp, @NonNull FilterChain chain) throws IOException, ServletException {
+        RequestInfo reqInfo = checkEnable(req);
+        if (reqInfo == null) {
+            chain.doFilter(req, resp);
             return;
         }
-        boolean isMultipart;
-        HttpServletRequest request;
-        try{
-            isMultipart = ServletFileUpload.isMultipartContent(httpServletRequest);
-            request = isMultipart ? httpServletRequest : new RequestWrapper(httpServletRequest);
-        }catch (Exception e){
-            MoniLogUtil.innerDebug("check multipart error: {}", e.getMessage());
-            filterChain.doFilter(httpServletRequest, response);
-            return;
-        }
-
-        String responseBodyStr = "";
+        boolean isMultipart = reqInfo.isMultipart;
+        HttpServletRequest request = reqInfo.wrappedRequest;
+        HandlerMethod method = reqInfo.method;
+        Map<String, String> requestHeaderMap = reqInfo.requestHeaderMap;
         MoniLogParams logParams = new MoniLogParams();
-        HandlerMethod method = null;
-        long startTime = System.currentTimeMillis();
-
-        String requestUri = request.getRequestURI();
-        Set<String> urlBlackList = webProperties.getUrlBlackList();
-        if (checkPathMatch(urlBlackList, requestUri)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-        Map<String, String> requestHeaderMap = new HashMap<>();
-        LogPoint logPoint = LogPoint.unknown;
-        boolean webEnable = false;
-        boolean feignEnable = false;
-        try {
-            webEnable = moniLogProperties.isComponentEnable(ComponentEnum.web, moniLogProperties.getWeb().isEnable());
-            feignEnable = moniLogProperties.isComponentEnable(ComponentEnum.feign, moniLogProperties.getFeign().isEnable());
-            requestHeaderMap = getRequestHeaders(request);
-            logPoint = parseLogPoint(requestHeaderMap);
-            method = getHandlerMethod(request);
-        } catch (Exception e) {
-            MoniLogUtil.innerDebug("getHandlerMethod error", e);
-        }
-        if (method == null || (logPoint == LogPoint.feign_server && !feignEnable) || (logPoint == LogPoint.http_server && !webEnable)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-
         try {
             MoniLogTags logTags = ReflectUtil.getAnnotation(MoniLogTags.class, method.getBeanType(), method.getMethod());
             List<String> tagList = StringUtil.getTagList(logTags);
@@ -102,11 +67,11 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             logParams.setServiceCls(method.getBeanType());
             logParams.setService(ReflectUtil.getSimpleClassName(method.getBeanType()));
             logParams.setAction(method.getMethod().getName());
-            TagBuilder tagBuilder = TagBuilder.of(tagList).add("url", getUrl(request)).add("method", request.getMethod());
+            TagBuilder tagBuilder = TagBuilder.of(tagList).add("url", getUrlWithoutPathParam(request)).add("method", request.getMethod());
             logParams.setTags(tagBuilder.toArray());
 
-            Map<String, Object> requestBodyMap = new HashMap<>();
-            logParams.setLogPoint(logPoint);
+            Map<String, Object> requestBodyMap = new HashMap<>(3);
+            logParams.setLogPoint(reqInfo.logPoint);
             JSONObject jsonObject = formatRequestInfo(isMultipart, request, requestHeaderMap);
             Object o = jsonObject.get("body");
             if (o instanceof Map) {
@@ -123,10 +88,12 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
 
         logParams.setSuccess(true);
         Exception bizException = null;
+        String responseBodyStr = "";
+        long startTime = System.currentTimeMillis();
         try {
-            ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(response);
+            ContentCachingResponseWrapper wrapperResponse = new ContentCachingResponseWrapper(resp);
             try {
-                filterChain.doFilter(request, wrapperResponse);
+                chain.doFilter(request, wrapperResponse);
             } catch (Exception e) {
                 // 业务异常
                 bizException = e;
@@ -143,7 +110,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
                 LogParser cl = ReflectUtil.getAnnotation(LogParser.class, method.getBeanType(), method.getMethod());
                 ResultParseUtil.parseResultAndSet(cl, json, logParams);
             }
-        } catch (ClientAbortException e){
+        } catch (ClientAbortException e) {
             // 解析请求时，客户端断开连接，异常直接抛出去
             logParams.setSuccess(false);
             logParams.setException(e);
@@ -162,7 +129,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
                 throw bizException;
             } else {
                 // 组件异常
-                MoniLogUtil.innerDebug( "webMoniLogInterceptor process error", e);
+                MoniLogUtil.innerDebug("webMoniLogInterceptor process error", e);
             }
         } finally {
             if (logParams.isSuccess() && StringUtils.isNotBlank(responseBodyStr) && isJson(requestHeaderMap)) {
@@ -172,34 +139,84 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             MoniLogUtil.log(logParams);
         }
     }
-    @SuppressWarnings("all")
-    private static String getUrl(HttpServletRequest request){
-        String originUrl = HttpRequestData.extractPath(request.getRequestURI());
 
-        try{
+    private RequestInfo checkEnable(HttpServletRequest req) {
+        try {
+            boolean webEnable = ComponentEnum.web.isEnable();
+            boolean feignEnable = ComponentEnum.feign.isEnable();
+            if (!webEnable && !feignEnable) {
+                return null;
+            }
+            Map<String, String> requestHeaderMap = new HashMap<>(32);
+            HandlerMethod method = null;
+            LogPoint logPoint = LogPoint.unknown;
+            try {
+                requestHeaderMap = getRequestHeaders(req);
+                logPoint = parseLogPoint(requestHeaderMap);
+                method = getHandlerMethod(req);
+            } catch (Exception e) {
+                MoniLogUtil.innerDebug("getHandlerMethod error", e);
+            }
+            if (method == null) {
+                return null;
+            }
+            String requestUri = req.getRequestURI();
+            if (logPoint == LogPoint.http_server) {
+                MoniLogProperties.WebProperties webProperties = moniLogProperties.getWeb();
+                if (!webEnable || webProperties == null || checkPathMatch(webProperties.getUrlBlackList(), requestUri)) {
+                    return null;
+                }
+            } else if (logPoint == LogPoint.feign_server) {
+                MoniLogProperties.FeignProperties feignProperties = moniLogProperties.getFeign();
+                if (!feignEnable || feignProperties == null || checkPathMatch(feignProperties.getUrlBlackList(), requestUri)) {
+                    return null;
+                }
+            }
+            boolean isMultipart = ServletFileUpload.isMultipartContent(req);
+            HttpServletRequest request = isMultipart ? req : new RequestWrapper(req);
+
+            RequestInfo reqInfo = new RequestInfo();
+            reqInfo.requestHeaderMap = requestHeaderMap;
+            reqInfo.logPoint = logPoint;
+            reqInfo.method = method;
+            reqInfo.isMultipart = isMultipart;
+            reqInfo.wrappedRequest = request;
+            return reqInfo;
+        } catch (Exception e) {
+            MoniLogUtil.innerDebug("check checkEnable error: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    @SuppressWarnings("all")
+    private static String getUrlWithoutPathParam(HttpServletRequest request) {
+        String originUrl = HttpUtil.extractPath(request.getRequestURI());
+        try {
             Object attribute = request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE);
             if (attribute == null || !(attribute instanceof Map)) {
                 return originUrl;
             }
-            Map<String, String> attributeParmasMap = (Map<String, String>) attribute;
-            if (attributeParmasMap == null || attributeParmasMap.isEmpty()) {
+            Map<String, String> pathParmas = (Map<String, String>) attribute;
+            if (pathParmas == null || pathParmas.isEmpty()) {
                 return originUrl;
             }
-            for (Map.Entry<String, String> entry : attributeParmasMap.entrySet()) {
-                if (!originUrl.contains("/"+entry.getValue())) {
+            for (Map.Entry<String, String> entry : pathParmas.entrySet()) {
+                String paramName = entry.getKey();
+                String paramValue = entry.getValue();
+                if (!originUrl.contains("/" + paramValue)) {
                     continue;
                 }
-                originUrl = originUrl.replaceAll("/"+entry.getValue(), "{"+entry.getKey()+"}");
+                originUrl = originUrl.replaceAll("/" + paramValue, "{" + paramName + "}");
             }
             return originUrl;
-        }catch (Exception e){
+        } catch (Exception e) {
             return originUrl;
         }
     }
 
     private static Map<String, String> getRequestHeaders(HttpServletRequest request) {
         if (request == null) {
-            return new HashMap<>();
+            return new HashMap<>(32);
         }
         Map<String, String> map = new HashMap<>(32);
         Enumeration<String> headerNames = request.getHeaderNames();
@@ -226,17 +243,11 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
             return false;
         }
 
-        if (isDownstream(headerMap)) {
+        if (HttpUtil.isDownstream(headerMap)) {
             return false;
         }
-        String header = getMapValueIgnoreCase(headerMap, HttpHeaders.CONTENT_TYPE);
+        String header = HttpUtil.getMapValueIgnoreCase(headerMap, HttpHeaders.CONTENT_TYPE);
         return StringUtils.containsIgnoreCase(header, MediaType.APPLICATION_JSON_VALUE);
-    }
-
-    private static boolean isDownstream(Map<String, String> headerMap) {
-        String header = getMapValueIgnoreCase(headerMap, HttpHeaders.CONTENT_DISPOSITION);
-        return StringUtils.containsIgnoreCase(header, "attachment")
-                || StringUtils.containsIgnoreCase(header, "filename");
     }
 
 
@@ -295,13 +306,13 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
                 continue;
             }
             // 再从body中取值
-            resultTagValue = getMapValueIgnoreCase(requestBodyMap, parameterName);
+            resultTagValue = HttpUtil.getMapValueIgnoreCase(requestBodyMap, parameterName);
             if (StringUtils.isNotBlank(resultTagValue)) {
                 oriTags[i] = resultTagValue;
                 continue;
             }
             // 再从header取值
-            resultTagValue = getMapValueIgnoreCase(headersMap, parameterName);
+            resultTagValue = HttpUtil.getMapValueIgnoreCase(headersMap, parameterName);
             if (StringUtils.isNotBlank(resultTagValue)) {
                 oriTags[i] = resultTagValue;
             }
@@ -317,18 +328,18 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
 
     private static String getResponseBody(ContentCachingResponseWrapper response) {
         Map<String, String> responseHeaders = getResponseHeaders(response);
-        if (isDownstream(responseHeaders)) {
+        if (HttpUtil.isDownstream(responseHeaders)) {
             return "Binary data";
         }
         ContentCachingResponseWrapper wrapper = WebUtils.getNativeResponse(response, ContentCachingResponseWrapper.class);
         if (wrapper != null) {
             byte[] buf = wrapper.getContentAsByteArray();
-            if (buf.length <=0) {
+            if (buf.length == 0) {
                 return null;
             }
             String payload;
             // 限制length字节数组大于5w时不解析
-            if (buf.length > 10000 * 5) {
+            if (buf.length > 50000) {
                 payload = "[Data too long length:" + buf.length + "]";
                 return payload;
             }
@@ -348,11 +359,11 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
         if (MapUtils.isEmpty(headerMap)) {
             return LogPoint.unknown;
         }
-        String jnsHeader = getMapValueIgnoreCase(headerMap, JIDU_JNS_HEADER);
+        String jnsHeader = HttpUtil.getMapValueIgnoreCase(headerMap, JIDU_JNS_HEADER);
         if (StringUtils.isNotBlank(jnsHeader)) {
             return LogPoint.feign_server;
         }
-        String userAgent = getMapValueIgnoreCase(headerMap, USER_AGENT);
+        String userAgent = HttpUtil.getMapValueIgnoreCase(headerMap, USER_AGENT);
         if (StringUtils.isBlank(userAgent)) {
             return LogPoint.unknown;
         }
@@ -363,22 +374,11 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
         return LogPoint.http_server;
     }
 
-
-    private static String getMapValueIgnoreCase(Map<String, ?> headerMap, String headerKey) {
-        if (MapUtils.isEmpty(headerMap) || StringUtils.isBlank(headerKey)) {
-            return null;
-        }
-        Object userAgent = headerMap.get(headerKey);
-        if (userAgent != null) {
-            return userAgent.toString();
-        }
-        // 全小写
-        userAgent = headerMap.get(headerKey.toLowerCase());
-        if (userAgent != null) {
-            return userAgent.toString();
-        }
-        // 全大写
-        Object o = headerMap.get(headerKey.toUpperCase());
-        return o != null ?  o.toString() : null;
+    private static class RequestInfo {
+        Map<String, String> requestHeaderMap;
+        HandlerMethod method;
+        LogPoint logPoint;
+        boolean isMultipart;
+        HttpServletRequest wrappedRequest;
     }
 }
