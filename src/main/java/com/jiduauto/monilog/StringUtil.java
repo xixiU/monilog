@@ -275,7 +275,7 @@ class StringUtil {
             return false;
         }
         for (String p : NORMAL_OP_PREFIX) {
-            if (StringUtils.startsWithIgnoreCase(str, p)) {
+            if (StringUtils.containsIgnoreCase(str, p)) {
                 return false;
             }
         }
