@@ -1,6 +1,5 @@
 package com.jiduauto.monilog;
 
-import cn.hutool.core.util.SerializeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerInterceptor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -11,7 +10,6 @@ import org.apache.kafka.clients.producer.ProducerInterceptor;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.record.TimestampType;
 
 import java.util.Iterator;
@@ -25,8 +23,6 @@ import java.util.Map;
  */
 @Slf4j
 public final class KafkaMonilogInterceptor {
-    private static final String MONILOG_PARAMS_KEY = "__MoniLogParams";
-
     public static <K, V> ConsumerInterceptor<K, V> getConsumerInterceptor() {
         return new KafkaMonilogInterceptor.MonilogConsumerInterceptor<>();
     }
@@ -65,6 +61,7 @@ public final class KafkaMonilogInterceptor {
                     p.setInput(new Object[]{value});
                     p.setTags(TagBuilder.of("topic", topic).toArray());
                     //...
+                    MoniLogUtil.log(p);
                 } catch (Exception e) {
                     MoniLogUtil.innerDebug("onSend error", e);
                 }
@@ -99,7 +96,6 @@ public final class KafkaMonilogInterceptor {
                 return record;
             }
             //该方法可能会被调用多次(框架重试)
-            Headers headers = record.headers();
             StackTraceElement st = ThreadUtil.getNextClassFromStack(KafkaProducer.class);
             String clsName;
             String action;
@@ -122,8 +118,7 @@ public final class KafkaMonilogInterceptor {
                 p.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
                 p.setInput(new Object[]{record.value()});
                 p.setTags(TagBuilder.of("topic", record.topic()).toArray());
-                byte[] bytes = SerializeUtil.serialize(p);
-                headers.add(MONILOG_PARAMS_KEY, bytes);
+                MoniLogUtil.log(p);
             } catch (Exception e) {
                 MoniLogUtil.innerDebug("onSend error", e);
             }
