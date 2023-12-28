@@ -23,6 +23,9 @@ enum ComponentEnum {
     rocketmq,
     rocketmq_consumer,
     rocketmq_producer,
+    kafka,
+    kafka_consumer,
+    kafka_producer,
     mybatis,
     redis;
 
@@ -62,6 +65,15 @@ enum ComponentEnum {
                 break;
             case rocketmq_producer:
                 componentEnable = properties.getRocketmq() != null && properties.getRocketmq().isEnable() && properties.getRocketmq().isProducerEnable();
+                break;
+            case kafka:
+                componentEnable = properties.getKafka() != null && properties.getKafka().isEnable();
+                break;
+            case kafka_consumer:
+                componentEnable = properties.getKafka() != null && properties.getKafka().isEnable() && properties.getKafka().isConsumerEnable();
+                break;
+            case kafka_producer:
+                componentEnable = properties.getKafka() != null && properties.getKafka().isEnable() && properties.getKafka().isProducerEnable();
                 break;
             case mybatis:
                 componentEnable = properties.getMybatis() != null && properties.getMybatis().isEnable();

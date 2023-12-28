@@ -34,6 +34,8 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
     private static final String GRPC_CLIENT_REGISTRY = "net.devh.boot.grpc.client.interceptor.GlobalClientInterceptorRegistry";
     private static final String GRPC_SERVER_REGISTRY = "net.devh.boot.grpc.server.interceptor.GlobalServerInterceptorRegistry";
     private static final String MYBATIS_INTERCEPTOR = "org.apache.ibatis.plugin.InterceptorChain";
+    private static final String KAFKA_PRODUCER_INTERCEPTORS = "org.apache.kafka.clients.producer.internals.ProducerInterceptors";
+    private static final String KAFKA_CONSUMER_INTERCEPTORS = "org.apache.kafka.clients.consumer.internals.ConsumerInterceptors";
 
     private static final Map<String, AtomicBoolean> FLAGS = new HashMap<String, AtomicBoolean>() {{
         put(HTTP_CLIENT_BUILDER, new AtomicBoolean());
@@ -51,6 +53,8 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         put(GRPC_CLIENT_REGISTRY, new AtomicBoolean());
         put(GRPC_SERVER_REGISTRY, new AtomicBoolean());
         put(MYBATIS_INTERCEPTOR, new AtomicBoolean());
+        put(KAFKA_PRODUCER_INTERCEPTORS, new AtomicBoolean());
+        put(KAFKA_CONSUMER_INTERCEPTORS, new AtomicBoolean());
     }};
 
     /**
@@ -66,6 +70,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         set.add(loadInterceptorClass("com.jiduauto.monilog.XxlJobMoniLogInterceptor"));
         set.add(loadInterceptorClass("com.jiduauto.monilog.GrpcMoniLogInterceptor"));
         set.add(loadInterceptorClass("com.jiduauto.monilog.MybatisInterceptor"));
+        set.add(loadInterceptorClass("com.jiduauto.monilog.KafkaMonilogInterceptor"));
         log.debug("loaded class:{}", set.size());
         outputClass = args != null && args.length > 0 && Arrays.stream(args).anyMatch(e -> StringUtils.containsIgnoreCase(e.trim(), "outputClass=true"));
     }
@@ -82,6 +87,8 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         enhanceGrpcServer();
         enhanceGrpcClient();
         enhanceMybatis();
+        enhanceKafkaConsumer();
+        enhanceKafkaProducer();
     }
 
     @Override
@@ -182,6 +189,50 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             FLAGS.get(ROCKET_MQ_PRODUCER).set(true);
         } catch (Throwable e) {
             logWarn(e, ROCKET_MQ_PRODUCER);
+        }
+    }
+
+    private static void enhanceKafkaConsumer() {
+        String clsName = KAFKA_CONSUMER_INTERCEPTORS;
+        if (FLAGS.get(clsName).get()) {
+            return;
+        }
+        try {
+            CtClass ctCls = getCtClass(clsName);
+            String body = "{java.util.List list = $1==null ? new java.util.ArrayList() : new java.util.ArrayList($1); " +
+                    "list.add(0," + KafkaMonilogInterceptor.class.getCanonicalName() + ".getConsumerInterceptor());" +
+                    "this.interceptors = list;}";
+            ctCls.getConstructor("(Ljava/util/List;)V").setBody(body);
+            Class<?> targetCls = ctCls.toClass();
+            log.debug("initServerInterceptors method of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            if (outputClass) {
+                ctCls.writeFile();
+            }
+            FLAGS.get(clsName).set(true);
+        } catch (Throwable e) {
+            logWarn(e, clsName);
+        }
+    }
+
+    private static void enhanceKafkaProducer() {
+        String clsName = KAFKA_PRODUCER_INTERCEPTORS;
+        if (FLAGS.get(clsName).get()) {
+            return;
+        }
+        try {
+            CtClass ctCls = getCtClass(clsName);
+            String body = "{java.util.List list = $1==null ? new java.util.ArrayList() : new java.util.ArrayList($1); " +
+                    "list.add(" + KafkaMonilogInterceptor.class.getCanonicalName() + ".getProducerInterceptor());" +
+                    "this.interceptors = list;}";
+            ctCls.getConstructor("(Ljava/util/List;)V").setBody(body);
+            Class<?> targetCls = ctCls.toClass();
+            log.debug("initServerInterceptors method of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            if (outputClass) {
+                ctCls.writeFile();
+            }
+            FLAGS.get(clsName).set(true);
+        } catch (Throwable e) {
+            logWarn(e, clsName);
         }
     }
 

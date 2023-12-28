@@ -14,12 +14,13 @@ public enum LogPoint {
     feign_server(true),
     grpc_server(true),
     rocketmq_consumer(true),
+    kafka_consumer(true),
     xxljob(true),
-
     http_client,
     feign_client,
     grpc_client,
     rocketmq_producer,
+    kafka_producer,
     mybatis,
     redis,
     /**
@@ -62,6 +63,9 @@ public enum LogPoint {
             case rocketmq_consumer:
             case rocketmq_producer:
                 return exceedLongRtThreshold(properties.getRocketmq().getLongRt(), cost);
+            case kafka_consumer:
+            case kafka_producer:
+                return exceedLongRtThreshold(properties.getKafka().getLongRt(), cost);
             case unknown:
             case user_define:
             default:
@@ -96,6 +100,12 @@ public enum LogPoint {
             case rocketmq_producer:
                 detailLogLevel = properties.getRocketmq().getProducerDetailLogLevel();
                 break;
+            case kafka_consumer:
+                detailLogLevel = properties.getKafka().getConsumerDetailLogLevel();
+                break;
+            case kafka_producer:
+                detailLogLevel = properties.getKafka().getProducerDetailLogLevel();
+                break;
             case mybatis:
                 detailLogLevel = properties.getMybatis().getDetailLogLevel();
                 break;
@@ -113,7 +123,7 @@ public enum LogPoint {
             MoniLogProperties.PrinterProperties printerCfg = properties.getPrinter();
             detailLogLevel = printerCfg.getDetailLogLevel();
             if (detailLogLevel == null) {
-                detailLogLevel = LogOutputLevel.onException;
+                detailLogLevel = LogOutputLevel.onFail;
             }
         }
         return detailLogLevel;
