@@ -127,6 +127,7 @@ public final class KafkaMonilogInterceptor {
 
         @Override
         public void onAcknowledgement(RecordMetadata metadata, Exception exception) {
+            String topic = metadata.topic();
             log.warn("onAcknowledgement...");
             //发送或异常时回调
         }
