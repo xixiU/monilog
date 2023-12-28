@@ -3,6 +3,7 @@ package com.jiduauto.monilog;
 import cn.hutool.core.util.SerializeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerInterceptor;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -11,7 +12,9 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.header.Headers;
+import org.apache.kafka.common.record.TimestampType;
 
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -38,6 +41,33 @@ public final class KafkaMonilogInterceptor {
             // 判断开关
             if (!ComponentEnum.kafka_consumer.isEnable()) {
                 return records;
+            }
+            Iterator<ConsumerRecord<K, V>> it = records.iterator();
+            while (it.hasNext()) {
+                try {
+                    ConsumerRecord<K, V> record = it.next();
+                    String topic = record.topic();
+                    V value = record.value();
+                    long timestamp = record.timestampType() == TimestampType.CREATE_TIME ? record.timestamp() : System.currentTimeMillis();
+                    if (timestamp <= 0) {
+                        timestamp = System.currentTimeMillis();
+                    }
+                    MoniLogParams p = new MoniLogParams();
+                    p.setLogPoint(LogPoint.kafka_consumer);
+                    p.setAction("onConsume");
+                    p.setService("kafkaConsumer"); //TODO
+                    p.setServiceCls(this.getClass());
+                    p.setCost(timestamp);
+                    p.setSuccess(true);
+                    p.setMsgCode(ErrorEnum.SUCCESS.name());
+                    p.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
+                    p.setInput(new Object[]{value});
+                    p.setTags(TagBuilder.of("topic", topic).toArray());
+                    //...
+                } catch (Exception e) {
+                    MoniLogUtil.innerDebug("onSend error", e);
+                }
+
             }
             log.warn("monilog kafka onConsume...");
             return records;
