@@ -189,7 +189,7 @@ class MoniLogProperties implements InitializingBean {
     @Setter
     static class PrinterProperties {
         /**
-         * 流量出入口的的摘要日志输出级别总开关，默认仅失败时输出
+         * 流量出入口的的摘要日志输出级别总开关，默认输出
          */
         private LogOutputLevel digestLogLevel = LogOutputLevel.always;
         /**
