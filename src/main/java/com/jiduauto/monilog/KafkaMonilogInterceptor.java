@@ -42,6 +42,7 @@ public final class KafkaMonilogInterceptor {
             if (!ComponentEnum.kafka_consumer.isEnable()) {
                 return records;
             }
+            //该方法可能会被调用多次(框架重试)
             Iterator<ConsumerRecord<K, V>> it = records.iterator();
             while (it.hasNext()) {
                 try {
@@ -75,6 +76,7 @@ public final class KafkaMonilogInterceptor {
 
         @Override
         public void onCommit(Map<TopicPartition, OffsetAndMetadata> offsets) {
+            //消费(失败重试)完成时回调
             log.warn("onCommit...");
         }
 
@@ -96,8 +98,8 @@ public final class KafkaMonilogInterceptor {
             if (!ComponentEnum.kafka_producer.isEnable()) {
                 return record;
             }
+            //该方法可能会被调用多次(框架重试)
             Headers headers = record.headers();
-            // 在发送完成后拦截，计算耗时并打印监控信息
             StackTraceElement st = ThreadUtil.getNextClassFromStack(KafkaProducer.class);
             String clsName;
             String action;
@@ -131,6 +133,7 @@ public final class KafkaMonilogInterceptor {
         @Override
         public void onAcknowledgement(RecordMetadata metadata, Exception exception) {
             log.warn("onAcknowledgement...");
+            //发送或异常时回调
         }
 
         @Override
