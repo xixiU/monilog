@@ -34,7 +34,6 @@ class StringUtil {
             "load", "check", "count", "show", "read", "import"
     );
     private static final Pattern RANDOM_NUM_PATTERN = Pattern.compile("^[0-9]+\\.?[0-9]+$");
-    private static final Pattern RANDOM_STR_PATTERN = Pattern.compile("^[a-zA-Z0-9\\-.]+$");
     private static final AntPathMatcher ANT_PATH_MATCHER = new AntPathMatcher();
     private static final AntPathMatcher ANT_CLASS_MATCHER = new AntPathMatcher(".");
 
@@ -269,9 +268,6 @@ class StringUtil {
 
     static boolean isRandomStr(String str) {
         if (StringUtils.isBlank(str) || str.length() < MIN_RANDOM_STR_LEN) {
-            return false;
-        }
-        if (!RANDOM_STR_PATTERN.matcher(str).matches()) {
             return false;
         }
         for (String p : NORMAL_OP_PREFIX) {
