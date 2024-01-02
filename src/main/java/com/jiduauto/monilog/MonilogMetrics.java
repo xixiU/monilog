@@ -7,6 +7,7 @@ import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -46,7 +47,6 @@ class MonilogMetrics {
     }
 
 
-
     static Timer eventDuration(String metricName, String... tags) {
         try {
             return Timer.builder(metricName).tags(tags).publishPercentiles(new double[]{0.75, 0.95, 0.99, 1.0}).register(MONILOG_REGISTRY);
@@ -64,7 +64,14 @@ class MonilogMetrics {
             if (!meter.getId().getName().startsWith(METRIC_PREFIX)) {
                 return;
             }
-            incrementAndGetCounter();
+            Object meterMap = ReflectUtil.getPropValue(MONILOG_REGISTRY, "meterMap", true);
+            if (meterMap == null) {
+                return;
+            }
+            Map<Meter.Id, Meter> idMeterMap = (Map<Meter.Id, Meter>) meterMap;
+            if (idMeterMap.get(meter.getId())!=null) {
+                incrementAndGetCounter();
+            }
         }
 
         @NotNull
