@@ -100,7 +100,7 @@ class HttpUtil {
             return path;
         }
         String[] segments = path.split(PATH_SEP);
-        for (int i = 0; i < segments.length; i++) {
+        for (int i = 3; i < segments.length; i++) {
             if (StringUtil.isRandomNum(segments[i]) || StringUtil.isRandomStr(segments[i])) {
                 segments[i] = "{xxx}";
             }
@@ -109,7 +109,8 @@ class HttpUtil {
     }
 
     public static void main(String[] args) {
-
+        String s = HttpUtil.extractPathWithoutPathParams("/{xxx}/_update/7935c413-4f9c-48bd-9f87-a0776dd7d163.1703565666");
+        System.out.println(s);
         boolean b50 = RandomStringDetector.isRandomWord("abcdkljlkalksdjfkls");
         boolean b1 = RandomStringDetector.isRandomWord("alkjsdflkjsd");
         boolean b2 = RandomStringDetector.isRandomWord("queryEmployeeInfo");

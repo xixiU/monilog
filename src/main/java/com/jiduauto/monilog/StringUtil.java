@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  * @date 2023/07/25
  */
 @Slf4j
-class StringUtil {
+public class StringUtil {
     private static final int MIN_RANDOM_NUM_LEN = 4;
     private static final int MIN_RANDOM_STR_LEN = 10;
     private static final Set<String> NORMAL_OP_PREFIX = Sets.newHashSet(
@@ -34,7 +34,7 @@ class StringUtil {
             "load", "check", "count", "show", "read", "import"
     );
     private static final Pattern RANDOM_NUM_PATTERN = Pattern.compile("^[0-9]+\\.?[0-9]+$");
-    private static final Pattern RANDOM_STR_PATTERN = Pattern.compile("^[a-zA-Z0-9\\-]+$");
+    private static final Pattern RANDOM_STR_PATTERN = Pattern.compile("^[a-zA-Z0-9\\-.]+$");
     private static final AntPathMatcher ANT_PATH_MATCHER = new AntPathMatcher();
     private static final AntPathMatcher ANT_CLASS_MATCHER = new AntPathMatcher(".");
 
