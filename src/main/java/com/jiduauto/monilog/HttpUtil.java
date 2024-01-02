@@ -100,7 +100,7 @@ class HttpUtil {
             return path;
         }
         String[] segments = path.split(PATH_SEP);
-        for (int i = 3; i < segments.length; i++) {
+        for (int i = 0; i < segments.length; i++) {
             if (StringUtil.isRandomNum(segments[i]) || StringUtil.isRandomStr(segments[i])) {
                 segments[i] = "{xxx}";
             }
