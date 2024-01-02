@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  * @date 2023/07/25
  */
 @Slf4j
-public class StringUtil {
+class StringUtil {
     private static final int MIN_RANDOM_NUM_LEN = 4;
     private static final int MIN_RANDOM_STR_LEN = 10;
     private static final Set<String> NORMAL_OP_PREFIX = Sets.newHashSet(
