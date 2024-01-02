@@ -69,7 +69,7 @@ class MonilogMetrics {
                 return;
             }
             Map<Meter.Id, Meter> idMeterMap = (Map<Meter.Id, Meter>) meterMap;
-            if (idMeterMap.get(meter.getId())!=null) {
+            if (idMeterMap.get(meter.getId())==null) {
                 incrementAndGetCounter();
             }
         }
