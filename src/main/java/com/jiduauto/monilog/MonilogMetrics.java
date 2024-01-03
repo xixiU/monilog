@@ -55,28 +55,26 @@ class MonilogMetrics {
     }
 
     static class MoniLogMetricsConsumer implements Consumer<Meter> {
-        private static final AtomicInteger MAX_METERS_SIZE = new AtomicInteger();
+        private final AtomicInteger METERS_COUNTER = new AtomicInteger();
 
         private Map<Meter.Id, Meter> idMeterMap;
+
+        public MoniLogMetricsConsumer(){
+            CompositeMeterRegistry registry = Metrics.globalRegistry;
+            idMeterMap = ReflectUtil.getPropValue(registry, "meterMap", true);
+        }
 
         @Override
         public void accept(Meter meter) {
             if (!meter.getId().getName().startsWith(METRIC_PREFIX)) {
                 return;
             }
-            initializeIdMeterMap();
             if (idMeterMap.get(meter.getId()) == null) {
                 incrementCounter();
             }
         }
 
-        private synchronized void initializeIdMeterMap() {
-            if (idMeterMap == null) {
-                // 使用 MetricsManager.getMetricsRegistry() 而不是 MONILOG_REGISTRY，避免循环依赖
-                CompositeMeterRegistry registry = Metrics.globalRegistry;
-                idMeterMap = ReflectUtil.getPropValue(registry, "meterMap", true);
-            }
-        }
+
 
         @NotNull
         @Override
@@ -85,7 +83,7 @@ class MonilogMetrics {
         }
 
         public int getCurrentCounterValue() {
-            return MAX_METERS_SIZE.get();
+            return METERS_COUNTER.get();
         }
 
         public boolean isCounterExceededThreshold() {
@@ -94,7 +92,7 @@ class MonilogMetrics {
         }
 
         private void incrementCounter() {
-            MAX_METERS_SIZE.incrementAndGet();
+            METERS_COUNTER.incrementAndGet();
         }
 
     }
