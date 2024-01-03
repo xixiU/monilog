@@ -22,10 +22,10 @@ class MonilogMetrics {
     private static final MoniLogMetricsConsumer METRICS_CONSUMER = new MoniLogMetricsConsumer();
 
 
-    private static final CompositeMeterRegistry MONILOG_REGISTRY = createMetricsRegistry();;
+    private static final CompositeMeterRegistry MONILOG_REGISTRY = getMetricsRegistry();;
 
 
-    private static CompositeMeterRegistry createMetricsRegistry() {
+    private static CompositeMeterRegistry getMetricsRegistry() {
         CompositeMeterRegistry registry = Metrics.globalRegistry;
         registry.config().onMeterAdded(METRICS_CONSUMER);
         return registry;
@@ -55,7 +55,7 @@ class MonilogMetrics {
     }
 
     static class MoniLogMetricsConsumer implements Consumer<Meter> {
-        private final AtomicInteger MAX_METERS_SIZE = new AtomicInteger();
+        private static final AtomicInteger MAX_METERS_SIZE = new AtomicInteger();
 
         private Map<Meter.Id, Meter> idMeterMap;
 
