@@ -22,16 +22,14 @@ class MonilogMetrics {
     private static final MoniLogMetricsConsumer METRICS_CONSUMER = new MoniLogMetricsConsumer();
 
 
-    // 最大meters数目,系统所有的meter
-    private static final CompositeMeterRegistry MONILOG_REGISTRY = getRegistry();
+    private static final CompositeMeterRegistry MONILOG_REGISTRY = createMetricsRegistry();;
 
 
-    private static CompositeMeterRegistry getRegistry() {
-        CompositeMeterRegistry init = Metrics.globalRegistry;
-        init.config().onMeterAdded(METRICS_CONSUMER);
-        return init;
+    private static CompositeMeterRegistry createMetricsRegistry() {
+        CompositeMeterRegistry registry = Metrics.globalRegistry;
+        registry.config().onMeterAdded(METRICS_CONSUMER);
+        return registry;
     }
-
 
 
     static void record(String metricName, String... tags) {
@@ -59,20 +57,24 @@ class MonilogMetrics {
     static class MoniLogMetricsConsumer implements Consumer<Meter> {
         private final AtomicInteger MAX_METERS_SIZE = new AtomicInteger();
 
-        private Object meterMap = ReflectUtil.getPropValue(MONILOG_REGISTRY, "meterMap", true);
+        private Map<Meter.Id, Meter> idMeterMap;
 
         @Override
         public void accept(Meter meter) {
             if (!meter.getId().getName().startsWith(METRIC_PREFIX)) {
                 return;
             }
-            if (meterMap == null) {
-                // 此处存在循环依赖
-                meterMap = ReflectUtil.getPropValue(MONILOG_REGISTRY, "meterMap", true);;
-            }
-            Map<Meter.Id, Meter> idMeterMap = (Map<Meter.Id, Meter>) meterMap;
-            if (idMeterMap.get(meter.getId())==null) {
+            initializeIdMeterMap();
+            if (idMeterMap.get(meter.getId()) == null) {
                 incrementCounter();
+            }
+        }
+
+        private synchronized void initializeIdMeterMap() {
+            if (idMeterMap == null) {
+                // 使用 MetricsManager.getMetricsRegistry() 而不是 MONILOG_REGISTRY，避免循环依赖
+                CompositeMeterRegistry registry = Metrics.globalRegistry;
+                idMeterMap = ReflectUtil.getPropValue(registry, "meterMap", true);
             }
         }
 
