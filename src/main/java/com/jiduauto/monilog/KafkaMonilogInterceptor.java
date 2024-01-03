@@ -123,7 +123,7 @@ public final class KafkaMonilogInterceptor {
             try {
                 p.setServiceCls(Class.forName(clsName));
                 p.setService(ReflectUtil.getSimpleClassName(p.getServiceCls()));
-                p.setCost(record.timestamp() == null ? System.currentTimeMillis() : record.timestamp());
+                p.setCost(0);
                 p.setSuccess(true);
                 p.setMsgCode(ErrorEnum.SUCCESS.name());
                 p.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
