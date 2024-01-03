@@ -22,10 +22,10 @@ class MonilogMetrics {
     private static final MoniLogMetricsConsumer METRICS_CONSUMER = new MoniLogMetricsConsumer();
 
 
-    private static final CompositeMeterRegistry MONILOG_REGISTRY = createMetricsRegistry();;
+    private static final CompositeMeterRegistry MONILOG_REGISTRY = getMetricsRegistry();;
 
 
-    private static CompositeMeterRegistry createMetricsRegistry() {
+    private static CompositeMeterRegistry getMetricsRegistry() {
         CompositeMeterRegistry registry = Metrics.globalRegistry;
         registry.config().onMeterAdded(METRICS_CONSUMER);
         return registry;
