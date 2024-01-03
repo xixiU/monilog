@@ -12,8 +12,10 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.TopicPartition;
 
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * kafka monilog处理器
@@ -56,7 +58,6 @@ public final class KafkaMonilogInterceptor {
                         clsName = st.getClassName();
                         action = st.getMethodName();
                     }
-                    log.info("st:{}", st);
                     p.setLogPoint(LogPoint.kafka_consumer);
                     p.setAction(action);
                     p.setServiceCls(Class.forName(clsName));
@@ -78,7 +79,15 @@ public final class KafkaMonilogInterceptor {
         @Override
         public void onCommit(Map<TopicPartition, OffsetAndMetadata> offsets) {
             //消费(失败重试)完成时回调
-            log.warn("kafka msg onCommit...");
+            try {
+                Set<String> topics = new HashSet<>(offsets.size());
+                for (Map.Entry<TopicPartition, OffsetAndMetadata> topicPartitionOffsetAndMetadataEntry : offsets.entrySet()) {
+                    topics.add(topicPartitionOffsetAndMetadataEntry.getKey().topic());
+                }
+                log.info("kafkaMsg[{}] onCommit", topics);
+            } catch (Throwable e) {
+                MoniLogUtil.innerDebug("kafka onCommit error", e);
+            }
         }
 
         @Override
