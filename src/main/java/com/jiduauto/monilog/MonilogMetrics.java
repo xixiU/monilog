@@ -70,7 +70,7 @@ class MonilogMetrics {
             }
             Map<Meter.Id, Meter> idMeterMap = (Map<Meter.Id, Meter>) meterMap;
             if (idMeterMap.get(meter.getId())==null) {
-                incrementAndGetCounter();
+                incrementCounter();
             }
         }
 
@@ -89,7 +89,7 @@ class MonilogMetrics {
             return getCurrentCounterValue() > threshold;
         }
 
-        private void incrementAndGetCounter() {
+        private void incrementCounter() {
             MAX_METERS_SIZE.incrementAndGet();
         }
 
