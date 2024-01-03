@@ -59,12 +59,13 @@ class MonilogMetrics {
     static class MoniLogMetricsConsumer implements Consumer<Meter> {
         private final AtomicInteger MAX_METERS_SIZE = new AtomicInteger();
 
+        private final Object meterMap = ReflectUtil.getPropValue(MONILOG_REGISTRY, "meterMap", true);
+
         @Override
         public void accept(Meter meter) {
             if (!meter.getId().getName().startsWith(METRIC_PREFIX)) {
                 return;
             }
-            Object meterMap = ReflectUtil.getPropValue(MONILOG_REGISTRY, "meterMap", true);
             if (meterMap == null) {
                 return;
             }
