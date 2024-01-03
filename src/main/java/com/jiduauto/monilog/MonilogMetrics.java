@@ -59,7 +59,7 @@ class MonilogMetrics {
     static class MoniLogMetricsConsumer implements Consumer<Meter> {
         private final AtomicInteger MAX_METERS_SIZE = new AtomicInteger();
 
-        private final Object meterMap = ReflectUtil.getPropValue(MONILOG_REGISTRY, "meterMap", true);
+        private Object meterMap = ReflectUtil.getPropValue(MONILOG_REGISTRY, "meterMap", true);
 
         @Override
         public void accept(Meter meter) {
@@ -67,7 +67,8 @@ class MonilogMetrics {
                 return;
             }
             if (meterMap == null) {
-                return;
+                // 此处存在循环依赖
+                meterMap = ReflectUtil.getPropValue(MONILOG_REGISTRY, "meterMap", true);;
             }
             Map<Meter.Id, Meter> idMeterMap = (Map<Meter.Id, Meter>) meterMap;
             if (idMeterMap.get(meter.getId())==null) {
