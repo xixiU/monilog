@@ -14,6 +14,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -34,6 +35,7 @@ class StringUtil {
             "load", "check", "count", "show", "read", "import"
     );
     private static final Pattern RANDOM_NUM_PATTERN = Pattern.compile("^[0-9]+\\.?[0-9]+$");
+    private static final Pattern FILE_EXT = Pattern.compile("(.*[^.])(\\.[a-zA-Z]{2,4})$");
     private static final AntPathMatcher ANT_PATH_MATCHER = new AntPathMatcher();
     private static final AntPathMatcher ANT_CLASS_MATCHER = new AntPathMatcher(".");
 
@@ -276,5 +278,19 @@ class StringUtil {
             }
         }
         return RandomStringDetector.isRandomWord(str);
+    }
+
+    static String[] parseFileName(String filename) {
+        String[] arr = new String[]{filename,""};
+        if (StringUtils.isBlank(filename)) {
+            return arr;
+        }
+        Matcher m = FILE_EXT.matcher(filename);
+        if (!m.matches()) {
+            return arr;
+        }
+        arr[0] = m.group(1);
+        arr[1] = m.group(2);
+        return arr;
     }
 }
