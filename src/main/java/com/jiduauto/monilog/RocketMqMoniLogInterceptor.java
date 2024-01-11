@@ -87,6 +87,7 @@ public final class RocketMqMoniLogInterceptor {
         private static final String LISTENER_CONTAINER_CLASS_NAME = "org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer";
         private final MessageListener listener;
         private final Class<?> cls;
+        private final String method;
 
         private ConsumerDelegation(MessageListener listener) {
             this.listener = listener;
@@ -102,6 +103,7 @@ public final class RocketMqMoniLogInterceptor {
                 listenerCls = listener.getClass();
             }
             this.cls = listenerCls;
+            this.method = "onMessage";
         }
 
         private Object doConsume(List<MessageExt> msgs, Object context) {
@@ -116,7 +118,7 @@ public final class RocketMqMoniLogInterceptor {
             }
             MoniLogParams params = new MoniLogParams();
             params.setServiceCls(cls);
-            params.setAction("onMessage");
+            params.setAction(method);
             params.setService(ReflectUtil.getSimpleClassName(cls));
             params.setLogPoint(LogPoint.rocketmq_consumer);
             Object result;
