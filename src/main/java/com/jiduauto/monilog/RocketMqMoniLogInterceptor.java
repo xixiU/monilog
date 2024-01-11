@@ -34,7 +34,7 @@ public final class RocketMqMoniLogInterceptor {
 
         @Override
         public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs, ConsumeConcurrentlyContext context) {
-            return (ConsumeConcurrentlyStatus) new ConsumerDelegation(delegate).apply(msgs, context);
+            return (ConsumeConcurrentlyStatus) new ConsumerDelegation(delegate).onMessage(msgs, context);
         }
     }
 
@@ -44,7 +44,7 @@ public final class RocketMqMoniLogInterceptor {
 
         @Override
         public ConsumeOrderlyStatus consumeMessage(List<MessageExt> msgs, ConsumeOrderlyContext context) {
-            return (ConsumeOrderlyStatus) new ConsumerDelegation(delegate).apply(msgs, context);
+            return (ConsumeOrderlyStatus) new ConsumerDelegation(delegate).onMessage(msgs, context);
         }
     }
 
@@ -63,7 +63,7 @@ public final class RocketMqMoniLogInterceptor {
                     ((MessageListenerOrderly) listener).consumeMessage(msgs, (ConsumeOrderlyContext) context);
         }
 
-        public Object apply(List<MessageExt> msgs, Object c) {
+        public Object onMessage(List<MessageExt> msgs, Object c) {
             if (!ComponentEnum.rocketmq_consumer.isEnable()) {
                 return doConsume(msgs, c);
             }
