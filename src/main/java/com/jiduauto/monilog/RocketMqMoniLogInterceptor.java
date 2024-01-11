@@ -93,7 +93,7 @@ public final class RocketMqMoniLogInterceptor {
             Class<?> listenerCls = null;
             Object outerInstance = ReflectUtil.getPropValue(listener, "this$0", true);
             if (outerInstance != null && LISTENER_CONTAINER_CLASS_NAME.equals(outerInstance.getClass().getCanonicalName())) {
-                Object realListener = ReflectUtil.getPropValue(listener, "rocketMQListener", true);
+                Object realListener = ReflectUtil.getPropValue(outerInstance, "rocketMQListener", true);
                 if (realListener != null) {
                     listenerCls = realListener.getClass();
                 }
@@ -165,6 +165,8 @@ public final class RocketMqMoniLogInterceptor {
 
     @Slf4j
     public static class RocketMQProducerEnhanceProcessor implements SendMessageHook {
+        private static final String START_TIME = "__mqSend_StartTime";
+
         @Override
         public String hookName() {
             return this.getClass().getName();
@@ -175,13 +177,16 @@ public final class RocketMqMoniLogInterceptor {
             if (null == context.getProps()) {
                 context.setProps(new HashMap<>());
             }
-            context.getProps().put("startTime", String.valueOf(System.currentTimeMillis()));
+            context.getProps().put(START_TIME, String.valueOf(System.currentTimeMillis()));
         }
 
         @Override
         public void sendMessageAfter(SendMessageContext context) {
             // 异步的时候会调用两次sendMessageAfter,第二次的sendResult会有发送结果，取第二次
             if (CommunicationMode.ASYNC == context.getCommunicationMode() && context.getSendResult() == null) {
+                return;
+            }
+            if (context.getProps() == null || !context.getProps().containsKey(START_TIME)) {
                 return;
             }
             if (!ComponentEnum.rocketmq_producer.isEnable()) {
@@ -210,7 +215,7 @@ public final class RocketMqMoniLogInterceptor {
             try {
                 logParams.setServiceCls(Class.forName(clsName));
                 logParams.setService(ReflectUtil.getSimpleClassName(logParams.getServiceCls()));
-                String startTimeStr = context.getProps().get("startTime");
+                String startTimeStr = context.getProps().get(START_TIME);
                 long startTime = NumberUtils.isCreatable(startTimeStr) ? Long.parseLong(startTimeStr) : 0L;
                 logParams.setCost(System.currentTimeMillis() - startTime);
                 logParams.setException(context.getException());
