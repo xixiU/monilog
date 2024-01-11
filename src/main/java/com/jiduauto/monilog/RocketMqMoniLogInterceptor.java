@@ -26,49 +26,60 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.function.BiFunction;
 
 public final class RocketMqMoniLogInterceptor {
     @AllArgsConstructor
     public static class EnhancedListenerConcurrently implements MessageListenerConcurrently {
         private final MessageListenerConcurrently delegate;
+
         @Override
         public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs, ConsumeConcurrentlyContext context) {
-            return new ConsumerHook<>(delegate::consumeMessage, delegate.getClass()).apply(msgs, context);
+            return (ConsumeConcurrentlyStatus) new ConsumerDelegation(delegate).apply(msgs, context);
         }
     }
 
     @AllArgsConstructor
     public static class EnhancedListenerOrderly implements MessageListenerOrderly {
         private final MessageListenerOrderly delegate;
+
         @Override
         public ConsumeOrderlyStatus consumeMessage(List<MessageExt> msgs, ConsumeOrderlyContext context) {
-            return new ConsumerHook<>(delegate::consumeMessage, delegate.getClass()).apply(msgs, context);
+            return (ConsumeOrderlyStatus) new ConsumerDelegation(delegate).apply(msgs, context);
         }
     }
 
-    @AllArgsConstructor
-    private static class ConsumerHook<C, R> implements BiFunction<List<MessageExt>, C, R> {
-        private final BiFunction<List<MessageExt>, C, R> delegate;
+    private static class ConsumerDelegation {
+        private final MessageListener listener;
         private final Class<?> cls;
-        @Override
-        public R apply(List<MessageExt> msgs, C c) {
+
+        private ConsumerDelegation(MessageListener listener) {
+            this.listener = listener;
+            this.cls = listener.getClass();
+        }
+
+        private Object doConsume(List<MessageExt> msgs, Object context) {
+            return listener instanceof MessageListenerConcurrently ?
+                    ((MessageListenerConcurrently) listener).consumeMessage(msgs, (ConsumeConcurrentlyContext) context) :
+                    ((MessageListenerOrderly) listener).consumeMessage(msgs, (ConsumeOrderlyContext) context);
+        }
+
+        public Object apply(List<MessageExt> msgs, Object c) {
             if (!ComponentEnum.rocketmq_consumer.isEnable()) {
-                return delegate.apply(msgs, c);
+                return doConsume(msgs, c);
             }
             MoniLogParams params = new MoniLogParams();
             params.setServiceCls(cls);
             params.setAction("onMessage");
             params.setService(ReflectUtil.getSimpleClassName(cls));
             params.setLogPoint(LogPoint.rocketmq_consumer);
-            R result;
+            Object result;
             long start = System.currentTimeMillis();
             try {
                 params.setInput(formatInputMsgs(msgs));
                 MessageExt messageExt = msgs.get(0);
                 String[] tags = TagBuilder.of("topic", messageExt.getTopic(), "tag", messageExt.getTags()).toArray();
                 params.setTags(tags);
-                result = delegate.apply(msgs, c);
+                result = doConsume(msgs, c);
                 params.setSuccess(Objects.equals(result, ConsumeConcurrentlyStatus.CONSUME_SUCCESS) || Objects.equals(result, ConsumeOrderlyStatus.SUCCESS));
                 params.setMsgCode(result.toString());
                 params.setMsgInfo(params.isSuccess() ? "成功" : "失败");
@@ -107,7 +118,6 @@ public final class RocketMqMoniLogInterceptor {
 
     @Slf4j
     public static class RocketMQProducerEnhanceProcessor implements SendMessageHook {
-        private static final String MONILOG_PARAMS_KEY = "__MoniLogParamsCount";
         @Override
         public String hookName() {
             return this.getClass().getName();
@@ -186,8 +196,8 @@ public final class RocketMqMoniLogInterceptor {
                 if (sendResult != null) {
                     Map<String, Object> sendResultMap = new HashMap<>();
                     sendResultMap.put("msgId", sendResult.getMsgId());
-                    sendResultMap.put("regionId", sendResult.getRegionId() );
-                    sendResultMap.put("sendStatus", sendResult.getSendStatus() );
+                    sendResultMap.put("regionId", sendResult.getRegionId());
+                    sendResultMap.put("sendStatus", sendResult.getSendStatus());
                     logParams.setOutput(sendResultMap);
                 }
 
