@@ -63,7 +63,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
      * 构建本类时，主动load相关class到ClassPool，防止增强失败
      */
     private MoniLogEnhancer(SpringApplication app, String[] args) {
-        if (!FLAGS.get(MONI_LOG_ENHANCER_CONSTRUCT).get()) {
+        if (FLAGS.get(MONI_LOG_ENHANCER_CONSTRUCT).get()) {
             return;
         }
         FLAGS.put(MONI_LOG_ENHANCER_CONSTRUCT,new AtomicBoolean(true));
