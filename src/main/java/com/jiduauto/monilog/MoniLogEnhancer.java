@@ -56,16 +56,16 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         put(MYBATIS_INTERCEPTOR, new AtomicBoolean());
         put(KAFKA_PRODUCER_INTERCEPTORS, new AtomicBoolean());
         put(KAFKA_CONSUMER_INTERCEPTORS, new AtomicBoolean());
+        put(MONI_LOG_ENHANCER_CONSTRUCT, new AtomicBoolean());
     }};
 
     /**
      * 构建本类时，主动load相关class到ClassPool，防止增强失败
      */
     private MoniLogEnhancer(SpringApplication app, String[] args) {
-        if (FLAGS.get(MONI_LOG_ENHANCER_CONSTRUCT).get()) {
+        if (FLAGS.containsKey(MONI_LOG_ENHANCER_CONSTRUCT)) {
             return;
         }
-        FLAGS.get(MONI_LOG_ENHANCER_CONSTRUCT).set(true);
         Set<Class<?>> set = new HashSet<>();
         set.add(loadInterceptorClass("com.jiduauto.monilog.FeignMoniLogInterceptor"));
         set.add(loadInterceptorClass("com.jiduauto.monilog.RocketMqMoniLogInterceptor"));
