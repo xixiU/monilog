@@ -18,6 +18,7 @@ import static com.jiduauto.monilog.MoniLogUtil.INNER_DEBUG_LOG_PREFIX;
  */
 @Slf4j
 final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
+    private static final String MONI_LOG_ENHANCER_CONSTRUCT = "com.jiduauto.monilog.MoniLogEnhancer";
     private static boolean outputClass = false;
     private static final String HTTP_SYNC_CLIENT = "org.apache.http.impl.client.CloseableHttpClient";
     private static final String HTTP_ASYNC_CLIENT_EXCHANGE_HANDLER = "org.apache.http.impl.nio.client.AbstractClientExchangeHandler";
@@ -61,6 +62,10 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
      * 构建本类时，主动load相关class到ClassPool，防止增强失败
      */
     private MoniLogEnhancer(SpringApplication app, String[] args) {
+        if (FLAGS.get(MONI_LOG_ENHANCER_CONSTRUCT).get()) {
+            return;
+        }
+        FLAGS.get(MONI_LOG_ENHANCER_CONSTRUCT).set(true);
         Set<Class<?>> set = new HashSet<>();
         set.add(loadInterceptorClass("com.jiduauto.monilog.FeignMoniLogInterceptor"));
         set.add(loadInterceptorClass("com.jiduauto.monilog.RocketMqMoniLogInterceptor"));
@@ -102,7 +107,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("ClassNotFoundException for interceptor: " + clsName);
         } catch (NoClassDefFoundError e) {
-            log.info("monilog {} will not effect cause related class missing: {}", clsName, e.getCause().getMessage());
+            log.info("monilog {} will not effect cause related class missing: {}", clsName, e.getCause() != null ?  e.getCause().getMessage() : e.getMessage());
             return Object.class;
         } catch (Throwable e) {
             log.error("monilog {} will not effect cause related class load error", clsName, e);
