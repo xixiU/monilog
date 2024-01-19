@@ -67,7 +67,6 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             return;
         }
         FLAGS.put(MONI_LOG_ENHANCER_CONSTRUCT,new AtomicBoolean(true));
-
         Set<Class<?>> set = new HashSet<>();
         set.add(loadInterceptorClass("com.jiduauto.monilog.FeignMoniLogInterceptor"));
         set.add(loadInterceptorClass("com.jiduauto.monilog.RocketMqMoniLogInterceptor"));
