@@ -56,7 +56,7 @@ public final class KafkaMonilogInterceptor {
                     String action;
                     if (st == null) {
                         clsName = KafkaConsumer.class.getCanonicalName();
-                        action = "send";
+                        action = "onConsume";
                     } else {
                         clsName = st.getClassName();
                         action = st.getMethodName();
@@ -86,11 +86,9 @@ public final class KafkaMonilogInterceptor {
         public void onCommit(Map<TopicPartition, OffsetAndMetadata> offsets) {
             //消费(失败重试)完成时回调
             try {
-                Set<String> topics = new HashSet<>(offsets.size());
                 for (Map.Entry<TopicPartition, OffsetAndMetadata> topicPartitionOffsetAndMetadataEntry : offsets.entrySet()) {
                     TopicPartition tp = topicPartitionOffsetAndMetadataEntry.getKey();
                     String topic = tp.topic();
-                    topics.add(tp.topic());
                     int partition = tp.partition();
                     String key = topic + "_" + partition;
                     Object ctx = KAFKA_CTX.get().get(key);
@@ -103,7 +101,6 @@ public final class KafkaMonilogInterceptor {
                     MoniLogUtil.log(p);
                     KAFKA_CTX.get().remove(key);
                 }
-                log.info("kafkaMsg[{}] onCommit", topics);
             } catch (Throwable e) {
                 MoniLogUtil.innerDebug("kafka onCommit error", e);
             }
@@ -160,8 +157,6 @@ public final class KafkaMonilogInterceptor {
             String topic = metadata.topic();
             if (e != null) {
                 log.error("kafkaMsg[{}] send error:{}", topic, e.getMessage());
-            } else {
-                log.info("kafkaMsg[{}] send", topic);
             }
         }
 
