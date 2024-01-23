@@ -35,7 +35,7 @@ class MonilogMetrics {
     static void record(String metricName, String... tags) {
         try {
             if (METRICS_CONSUMER.isCounterExceededThreshold()) {
-                log.error("too many metrics.current size:{}",METRICS_CONSUMER.getCurrentCounterValue());
+                log.warn("too many metrics.current size:{}",METRICS_CONSUMER.getCurrentCounterValue());
                 return;
             }
             MONILOG_REGISTRY.counter(metricName, tags).increment();
