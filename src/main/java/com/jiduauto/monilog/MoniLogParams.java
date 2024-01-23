@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 
@@ -15,7 +16,8 @@ import java.util.List;
  */
 @Getter
 @Setter
-public class MoniLogParams {
+public class MoniLogParams implements Serializable {
+    private static final long serialVersionUID = 1L;
     private Class<?> serviceCls;
     private LogPoint logPoint;
     private String service;

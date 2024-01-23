@@ -59,11 +59,11 @@ class MoniLogProperties implements InitializingBean {
      */
     private String globalDefaultBoolExpr = "+$.code==0,$.code==200,$.Code==0,$.Code==200";
     /**
-     * 监控开启组件清单，默认为支持的全部组件，当前支持web,feign,xxljob,httpclient,grpc,grpc_client,grpc_server,rocketmq,rocketmq_consumer,rocketmq_producer,mybatis,redis，可以一键设置开启.
+     * 监控开启组件清单，默认为支持的全部组件，当前支持的组件名参考: ComponentEnum类，可以一键设置开启.
      */
     private Set<ComponentEnum> componentIncludes = new HashSet<>(Arrays.asList(ComponentEnum.values()));
     /**
-     * 监控不开启组件清单，默认为为空，当前支持web,feign,xxljob,httpclient,grpc,grpc_client,grpc_server,rocketmq,rocketmq_consumer,rocketmq_producer,mybatis,redis，可以一键排除设置开启.
+     * 监控不开启组件清单，默认为为空，当前支持的组件名参考: ComponentEnum类，可以一键设置开启，可以一键排除设置开启.
      */
     private Set<ComponentEnum> componentExcludes;
     /**
@@ -94,6 +94,10 @@ class MoniLogProperties implements InitializingBean {
      * rocketmq监控配置
      */
     private RocketMqProperties rocketmq = new RocketMqProperties();
+    /**
+     * kafka监控配置
+     */
+    private KafkaProperties kafka = new KafkaProperties();
     /**
      * redis监控配置
      */
@@ -185,13 +189,13 @@ class MoniLogProperties implements InitializingBean {
     @Setter
     static class PrinterProperties {
         /**
-         * 流量出入口的的摘要日志输出级别总开关，默认仅异常时输出
+         * 流量出入口的的摘要日志输出级别总开关，默认总是输出
          */
         private LogOutputLevel digestLogLevel = LogOutputLevel.always;
         /**
-         * 流量出入口的的详情日志输出级别总开关，默认仅异常时输出
+         * 流量出入口的的详情日志输出级别总开关，默认仅失败时输出
          */
-        private LogOutputLevel detailLogLevel = LogOutputLevel.onException;
+        private LogOutputLevel detailLogLevel = LogOutputLevel.onFail;
         /**
          * 慢操作日志输出开关，默认prometheus与日志均打印
          */
@@ -201,7 +205,7 @@ class MoniLogProperties implements InitializingBean {
          */
         private Integer maxTextLen = 10000;
         /**
-         * 日志打印时要排除的组件名称列表，默认为空，即所有类型的都会打印。组件名称包括：web,feign,xxljob,httpclient,grpc,grpc_client,grpc_server,rocketmq,rocketmq_consumer,rocketmq_producer,mybatis,redis.详见ComponentEnum
+         * 日志打印时要排除的组件名称列表，默认为空，即所有类型的都会打印。支持的组件名称参考ComponentEnum
          */
         private Set<String> excludeComponents;
         /**
@@ -260,13 +264,13 @@ class MoniLogProperties implements InitializingBean {
          */
         private boolean enable = true;
         /**
-         * http(非rpc类)入口流量的详情日志输出级别，默认仅异常时输出
+         * http(非rpc类)入口流量的详情日志输出级别，默认仅失败时输出
          */
         private LogOutputLevel detailLogLevel;
         /**
-         * 不监控的url清单，支持模糊路径如a/*， 默认值：/actuator/health, /misc/ping, /actuator/prometheus
+         * 不监控的url清单，支持模糊路径如a/*， 默认值：/actuator/**, /misc/ping
          */
-        private Set<String> urlBlackList = Sets.newHashSet("/actuator/health", "/misc/ping", "/actuator/prometheus");
+        private Set<String> urlBlackList = Sets.newHashSet("/actuator/**", "/misc/ping");
 
         /**
          * web慢接口，单位毫秒.
@@ -291,11 +295,11 @@ class MoniLogProperties implements InitializingBean {
          */
         private boolean clientEnable = true;
         /**
-         * grpc入口流量的详情日志输出级别，默认仅异常时输出
+         * grpc入口流量的详情日志输出级别，默认仅失败时输出
          */
         private LogOutputLevel serverDetailLogLevel;
         /**
-         * grpc出口流量的详情日志输出级别，默认仅异常时输出
+         * grpc出口流量的详情日志输出级别，默认仅失败时输出
          */
         private LogOutputLevel clientDetailLogLevel;
 
@@ -313,7 +317,7 @@ class MoniLogProperties implements InitializingBean {
          */
         private boolean enable = true;
         /**
-         * xxljob的详情日志输出级别，默认仅异常时输出
+         * xxljob的详情日志输出级别，默认仅失败时输出
          */
         private LogOutputLevel detailLogLevel;
 
@@ -331,11 +335,11 @@ class MoniLogProperties implements InitializingBean {
          */
         private boolean enable = true;
         /**
-         * feign入口流量的详情日志输出级别，默认仅异常时输出
+         * feign入口流量的详情日志输出级别，默认仅失败时输出
          */
         private LogOutputLevel serverDetailLogLevel;
         /**
-         * feign出口流量的详情日志输出级别，默认仅异常时输出
+         * feign出口流量的详情日志输出级别，默认仅失败时输出
          */
         private LogOutputLevel clientDetailLogLevel;
         /**
@@ -345,9 +349,9 @@ class MoniLogProperties implements InitializingBean {
         private String defaultBoolExpr = "+$.status==200";
 
         /**
-         * 不监控的url清单，支持模糊路径如a/*， 默认值：/actuator/health, /misc/ping, /actuator/prometheus
+         * 不监控的url清单，支持模糊路径如a/*， 默认值：/actuator/**, /misc/ping
          */
-        private Set<String> urlBlackList = Sets.newHashSet("/actuator/health", "/misc/ping", "/actuator/prometheus");
+        private Set<String> urlBlackList = Sets.newHashSet("/actuator/**", "/misc/ping");
 
         /**
          * feign慢接口，单位毫秒.
@@ -367,7 +371,7 @@ class MoniLogProperties implements InitializingBean {
          */
         private boolean enable = true;
         /**
-         * mybatis的详情日志输出级别，默认仅异常时输出
+         * mybatis的详情日志输出级别，默认仅失败时输出
          */
         private LogOutputLevel detailLogLevel;
         /**
@@ -392,15 +396,44 @@ class MoniLogProperties implements InitializingBean {
          */
         private boolean producerEnable = true;
         /**
-         * rocketmq消费者的详情日志输出级别，默认仅异常时输出
+         * rocketmq消费者的详情日志输出级别，默认仅失败时输出
          */
         private LogOutputLevel consumerDetailLogLevel;
         /**
-         * rocketmq发送者的详情日志输出级别，默认仅异常时输出
+         * rocketmq发送者的详情日志输出级别，默认仅失败时输出
          */
         private LogOutputLevel producerDetailLogLevel;
         /**
          * rocketmq慢接口，单位毫秒.
+         */
+        private long longRt = -1;
+    }
+
+    @Getter
+    @Setter
+    static class KafkaProperties {
+        /**
+         * 开启kafka监控+日志
+         */
+        private boolean enable = true;
+        /**
+         * 开启kafka消费者监控
+         */
+        private boolean consumerEnable = true;
+        /**
+         * 开启kafka生产者监控
+         */
+        private boolean producerEnable = true;
+        /**
+         * kafka消费者的详情日志输出级别，默认仅失败时输出
+         */
+        private LogOutputLevel consumerDetailLogLevel;
+        /**
+         * kafka发送者的详情日志输出级别，默认仅失败时输出
+         */
+        private LogOutputLevel producerDetailLogLevel;
+        /**
+         * kafka慢接口，单位毫秒.
          */
         private long longRt = -1;
     }
@@ -413,7 +446,7 @@ class MoniLogProperties implements InitializingBean {
          */
         private boolean enable = true;
         /**
-         * redis的详情日志输出级别，默认仅异常时输出
+         * redis的详情日志输出级别，默认仅失败时输出
          */
         private LogOutputLevel detailLogLevel;
         /**
@@ -435,7 +468,7 @@ class MoniLogProperties implements InitializingBean {
          */
         private boolean enable = true;
         /**
-         * httpClient的详情日志输出级别，默认仅异常时输出
+         * httpClient的详情日志输出级别，默认仅失败时输出
          */
         private LogOutputLevel detailLogLevel;
 

@@ -80,7 +80,7 @@ public final class RedisMoniLogInterceptor {
                 MoniLogUtil.printLargeSizeLog(p, ri.maybeKey);
                 String msgPrefix = "";
                 if (StringUtils.isNotBlank(ri.maybeKey)) {
-                    msgPrefix = "[key=" + ri.maybeKey + "]";
+                    msgPrefix = "[key='" + ri.maybeKey + "']";
                 }
                 p.setMsgInfo(msgPrefix + p.getMsgInfo());
                 MoniLogUtil.log(p);
@@ -135,7 +135,7 @@ public final class RedisMoniLogInterceptor {
 
                 String msgPrefix = "";
                 if (StringUtils.isNotBlank(ri.maybeKey)) {
-                    msgPrefix = "[key=" + ri.maybeKey + "]";
+                    msgPrefix = "[key='" + ri.maybeKey + "']";
                 }
                 p.setMsgInfo(msgPrefix + p.getMsgInfo());
                 MoniLogUtil.log(p);
@@ -221,7 +221,7 @@ public final class RedisMoniLogInterceptor {
                 String msgPrefix = "";
                 //与redisTemplate保持一致
                 if (StringUtils.isNotBlank(maybeKey)) {
-                    msgPrefix = "[key=" + maybeKey + "]";
+                    msgPrefix = "[key='" + maybeKey + "']";
                 }
                 p.setMsgInfo(msgPrefix + p.getMsgInfo());
                 MoniLogUtil.log(p);

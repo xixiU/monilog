@@ -17,7 +17,6 @@ import org.apache.rocketmq.client.producer.SendStatus;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.topic.TopicValidator;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -26,49 +25,110 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.function.BiFunction;
 
 public final class RocketMqMoniLogInterceptor {
+    // Will be created at broker when isAutoCreateTopicEnable
+    private static final String AUTO_CREATE_TOPIC_KEY_TOPIC = "TBW102";
+    private static final String RMQ_SYS_SCHEDULE_TOPIC = "SCHEDULE_TOPIC_XXXX";
+    private static final String RMQ_SYS_BENCHMARK_TOPIC = "BenchmarkTest";
+    private static final String RMQ_SYS_TRANS_HALF_TOPIC = "RMQ_SYS_TRANS_HALF_TOPIC";
+    private static final String RMQ_SYS_TRACE_TOPIC = "RMQ_SYS_TRACE_TOPIC";
+    private static final String RMQ_SYS_TRANS_OP_HALF_TOPIC = "RMQ_SYS_TRANS_OP_HALF_TOPIC";
+    private static final String RMQ_SYS_TRANS_CHECK_MAX_TIME_TOPIC = "TRANS_CHECK_MAX_TIME_TOPIC";
+    private static final String RMQ_SYS_SELF_TEST_TOPIC = "SELF_TEST_TOPIC";
+    private static final String RMQ_SYS_OFFSET_MOVED_EVENT = "OFFSET_MOVED_EVENT";
+    public static final String SYSTEM_TOPIC_PREFIX = "rmq_sys_";
+    private static final Set<String> SYSTEM_TOPIC_SET = new HashSet<>(10);
+    /**
+     * Topics'set which client can not send msg!
+     */
+    private static final Set<String> NOT_ALLOWED_SEND_TOPIC_SET = new HashSet<>(8);
+
+    static {
+        SYSTEM_TOPIC_SET.add(AUTO_CREATE_TOPIC_KEY_TOPIC);
+        SYSTEM_TOPIC_SET.add(RMQ_SYS_SCHEDULE_TOPIC);
+        SYSTEM_TOPIC_SET.add(RMQ_SYS_BENCHMARK_TOPIC);
+        SYSTEM_TOPIC_SET.add(RMQ_SYS_TRANS_HALF_TOPIC);
+        SYSTEM_TOPIC_SET.add(RMQ_SYS_TRACE_TOPIC);
+        SYSTEM_TOPIC_SET.add(RMQ_SYS_TRANS_OP_HALF_TOPIC);
+        SYSTEM_TOPIC_SET.add(RMQ_SYS_TRANS_CHECK_MAX_TIME_TOPIC);
+        SYSTEM_TOPIC_SET.add(RMQ_SYS_SELF_TEST_TOPIC);
+        SYSTEM_TOPIC_SET.add(RMQ_SYS_OFFSET_MOVED_EVENT);
+
+        NOT_ALLOWED_SEND_TOPIC_SET.add(RMQ_SYS_SCHEDULE_TOPIC);
+        NOT_ALLOWED_SEND_TOPIC_SET.add(RMQ_SYS_TRANS_HALF_TOPIC);
+        NOT_ALLOWED_SEND_TOPIC_SET.add(RMQ_SYS_TRANS_OP_HALF_TOPIC);
+        NOT_ALLOWED_SEND_TOPIC_SET.add(RMQ_SYS_TRANS_CHECK_MAX_TIME_TOPIC);
+        NOT_ALLOWED_SEND_TOPIC_SET.add(RMQ_SYS_SELF_TEST_TOPIC);
+        NOT_ALLOWED_SEND_TOPIC_SET.add(RMQ_SYS_OFFSET_MOVED_EVENT);
+    }
+
     @AllArgsConstructor
     public static class EnhancedListenerConcurrently implements MessageListenerConcurrently {
         private final MessageListenerConcurrently delegate;
+
         @Override
         public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs, ConsumeConcurrentlyContext context) {
-            return new ConsumerHook<>(delegate::consumeMessage, delegate.getClass()).apply(msgs, context);
+            return (ConsumeConcurrentlyStatus) new ConsumerDelegation(delegate).onMessage(msgs, context);
         }
     }
 
     @AllArgsConstructor
     public static class EnhancedListenerOrderly implements MessageListenerOrderly {
         private final MessageListenerOrderly delegate;
+
         @Override
         public ConsumeOrderlyStatus consumeMessage(List<MessageExt> msgs, ConsumeOrderlyContext context) {
-            return new ConsumerHook<>(delegate::consumeMessage, delegate.getClass()).apply(msgs, context);
+            return (ConsumeOrderlyStatus) new ConsumerDelegation(delegate).onMessage(msgs, context);
         }
     }
 
-    @AllArgsConstructor
-    private static class ConsumerHook<C, R> implements BiFunction<List<MessageExt>, C, R> {
-        private final BiFunction<List<MessageExt>, C, R> delegate;
+    private static class ConsumerDelegation {
+        private static final String LISTENER_CONTAINER_CLASS_NAME = "org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer";
+        private final MessageListener listener;
         private final Class<?> cls;
-        @Override
-        public R apply(List<MessageExt> msgs, C c) {
+        private final String method;
+
+        private ConsumerDelegation(MessageListener listener) {
+            this.listener = listener;
+            Class<?> listenerCls = null;
+            Object outerInstance = ReflectUtil.getPropValue(listener, "this$0", true);
+            if (outerInstance != null && LISTENER_CONTAINER_CLASS_NAME.equals(outerInstance.getClass().getCanonicalName())) {
+                Object realListener = ReflectUtil.getPropValue(outerInstance, "rocketMQListener", true);
+                if (realListener != null) {
+                    listenerCls = realListener.getClass();
+                }
+            }
+            if (listenerCls == null) {
+                listenerCls = listener.getClass();
+            }
+            this.cls = listenerCls;
+            this.method = "onMessage";
+        }
+
+        private Object doConsume(List<MessageExt> msgs, Object context) {
+            return listener instanceof MessageListenerConcurrently ?
+                    ((MessageListenerConcurrently) listener).consumeMessage(msgs, (ConsumeConcurrentlyContext) context) :
+                    ((MessageListenerOrderly) listener).consumeMessage(msgs, (ConsumeOrderlyContext) context);
+        }
+
+        public Object onMessage(List<MessageExt> msgs, Object c) {
             if (!ComponentEnum.rocketmq_consumer.isEnable()) {
-                return delegate.apply(msgs, c);
+                return doConsume(msgs, c);
             }
             MoniLogParams params = new MoniLogParams();
             params.setServiceCls(cls);
-            params.setAction("onMessage");
+            params.setAction(method);
             params.setService(ReflectUtil.getSimpleClassName(cls));
             params.setLogPoint(LogPoint.rocketmq_consumer);
-            R result;
+            Object result;
             long start = System.currentTimeMillis();
             try {
                 params.setInput(formatInputMsgs(msgs));
                 MessageExt messageExt = msgs.get(0);
                 String[] tags = TagBuilder.of("topic", messageExt.getTopic(), "tag", messageExt.getTags()).toArray();
                 params.setTags(tags);
-                result = delegate.apply(msgs, c);
+                result = doConsume(msgs, c);
                 params.setSuccess(Objects.equals(result, ConsumeConcurrentlyStatus.CONSUME_SUCCESS) || Objects.equals(result, ConsumeOrderlyStatus.SUCCESS));
                 params.setMsgCode(result.toString());
                 params.setMsgInfo(params.isSuccess() ? "成功" : "失败");
@@ -107,7 +167,8 @@ public final class RocketMqMoniLogInterceptor {
 
     @Slf4j
     public static class RocketMQProducerEnhanceProcessor implements SendMessageHook {
-        private static final String MONILOG_PARAMS_KEY = "__MoniLogParamsCount";
+        private static final String START_TIME = "__mqSend_StartTime";
+
         @Override
         public String hookName() {
             return this.getClass().getName();
@@ -118,7 +179,7 @@ public final class RocketMqMoniLogInterceptor {
             if (null == context.getProps()) {
                 context.setProps(new HashMap<>());
             }
-            context.getProps().put("startTime", String.valueOf(System.currentTimeMillis()));
+            context.getProps().put(START_TIME, String.valueOf(System.currentTimeMillis()));
         }
 
         @Override
@@ -127,13 +188,16 @@ public final class RocketMqMoniLogInterceptor {
             if (CommunicationMode.ASYNC == context.getCommunicationMode() && context.getSendResult() == null) {
                 return;
             }
+            if (context.getProps() == null || !context.getProps().containsKey(START_TIME)) {
+                return;
+            }
             if (!ComponentEnum.rocketmq_producer.isEnable()) {
                 return;
             }
             Message message = context.getMessage();
             String topic = message.getTopic();
             // rocketmq内部消息追踪的topic,跳过
-            if (TopicValidator.isSystemTopic(topic) || TopicValidator.isNotAllowedSendTopic(topic)) {
+            if (isSystemTopic(topic) || isNotAllowedSendTopic(topic)) {
                 return;
             }
             // 在发送完成后拦截，计算耗时并打印监控信息
@@ -153,7 +217,7 @@ public final class RocketMqMoniLogInterceptor {
             try {
                 logParams.setServiceCls(Class.forName(clsName));
                 logParams.setService(ReflectUtil.getSimpleClassName(logParams.getServiceCls()));
-                String startTimeStr = context.getProps().get("startTime");
+                String startTimeStr = context.getProps().get(START_TIME);
                 long startTime = NumberUtils.isCreatable(startTimeStr) ? Long.parseLong(startTimeStr) : 0L;
                 logParams.setCost(System.currentTimeMillis() - startTime);
                 logParams.setException(context.getException());
@@ -186,8 +250,8 @@ public final class RocketMqMoniLogInterceptor {
                 if (sendResult != null) {
                     Map<String, Object> sendResultMap = new HashMap<>();
                     sendResultMap.put("msgId", sendResult.getMsgId());
-                    sendResultMap.put("regionId", sendResult.getRegionId() );
-                    sendResultMap.put("sendStatus", sendResult.getSendStatus() );
+                    sendResultMap.put("regionId", sendResult.getRegionId());
+                    sendResultMap.put("sendStatus", sendResult.getSendStatus());
                     logParams.setOutput(sendResultMap);
                 }
 
@@ -216,6 +280,13 @@ public final class RocketMqMoniLogInterceptor {
 
     }
 
+    private static boolean isSystemTopic(String topic) {
+        return SYSTEM_TOPIC_SET.contains(topic) || topic.startsWith(SYSTEM_TOPIC_PREFIX);
+    }
+
+    private static boolean isNotAllowedSendTopic(String topic) {
+        return NOT_ALLOWED_SEND_TOPIC_SET.contains(topic);
+    }
 
     /**
      * 获取消息体

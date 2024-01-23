@@ -11,7 +11,7 @@
 
     <groupId>com.jiduauto.monilog</groupId>
     <artifactId>monilog</artifactId>
-    <version>1.1.7</version>
+    <version>1.1.8</version>
     <modelVersion>4.0.0</modelVersion>
 
 
@@ -29,6 +29,7 @@
         <monitor-spring-boot-starter.version>1.1.1</monitor-spring-boot-starter.version>
         <xxl.job.version>2.3.1</xxl.job.version>
         <rocketmq.starter.version>2.2.3</rocketmq.starter.version>
+        <kafka.version>2.5.1</kafka.version>
         <mybatis.version>3.5.2</mybatis.version>
         <grpc.starter.version>2.10.3</grpc.starter.version>
         <openfeign.version>10.10.1</openfeign.version>
@@ -177,6 +178,12 @@
             <groupId>org.apache.rocketmq</groupId>
             <artifactId>rocketmq-spring-boot-starter</artifactId>
             <version>${rocketmq.starter.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>${kafka.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

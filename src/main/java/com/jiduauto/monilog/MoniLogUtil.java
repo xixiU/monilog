@@ -12,6 +12,7 @@ import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 import static com.carrotsearch.sizeof.RamUsageEstimator.ONE_KB;
+import static com.jiduauto.monilog.MonilogMetrics.METRIC_PREFIX;
 
 /**
  * 日志工具类
@@ -25,7 +26,6 @@ class MoniLogUtil {
     /**
      * 组件监控前缀
      */
-    private static final String METRIC_PREFIX = "monilog_";
     // 这个后面的分隔符不能去掉，去掉会导致日志检索的时候查不到对应的日志
     static final String INNER_DEBUG_LOG_PREFIX = "__monilog_warn__|";
 
