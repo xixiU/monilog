@@ -35,7 +35,7 @@ class MonilogMetrics {
     static void record(String metricName, String... tags) {
         try {
             if (METRICS_CONSUMER.isCounterExceededThreshold()) {
-                log.error("too many metrics.current size:{}",METRICS_CONSUMER.getCurrentCounterValue());
+                log.error("too many metrics.current size:{}", METRICS_CONSUMER.getCurrentCounterValue());
                 return;
             }
             MONILOG_REGISTRY.counter(metricName, tags).increment();
@@ -57,7 +57,7 @@ class MonilogMetrics {
     static class MoniLogMetricsConsumer implements Consumer<Meter> {
         private final AtomicInteger METERS_COUNTER = new AtomicInteger();
 
-        private Map<Meter.Id, Meter> idMeterMap;
+        private final Map<Meter.Id, Meter> idMeterMap;
 
         public MoniLogMetricsConsumer(){
             CompositeMeterRegistry registry = Metrics.globalRegistry;
