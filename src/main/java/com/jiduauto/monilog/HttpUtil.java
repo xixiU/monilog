@@ -119,8 +119,7 @@ class HttpUtil {
     }
 
     public static void main(String[] args) {
-
-        String st = HttpUtil.extractPathWithoutPathParams("/v1/{xxx}/jidu_dd96ceac-afc4-431e-8127-72452efa34af.png");
+        String st = HttpUtil.extractPathWithoutPathParams("/order-center-platform/order/relation/detail");
         System.out.println(st);
         String s = HttpUtil.extractPathWithoutPathParams("/{xxx}/_update/7935c413-4f9c-48bd-9f87-a0776dd7d163.1703565666");
         System.out.println(s);

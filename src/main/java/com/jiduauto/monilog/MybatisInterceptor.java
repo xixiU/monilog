@@ -8,10 +8,7 @@ import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.executor.statement.StatementHandler;
 import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.MappedStatement;
-import org.apache.ibatis.plugin.Interceptor;
-import org.apache.ibatis.plugin.Intercepts;
-import org.apache.ibatis.plugin.Invocation;
-import org.apache.ibatis.plugin.Signature;
+import org.apache.ibatis.plugin.*;
 import org.apache.ibatis.reflection.MetaObject;
 import org.apache.ibatis.reflection.SystemMetaObject;
 import org.apache.ibatis.session.ResultHandler;
@@ -87,6 +84,12 @@ public final class MybatisInterceptor implements Interceptor {
             logParams.setCost(costTime < 0 ? System.currentTimeMillis() - nowTime + 1 : costTime);
             MoniLogUtil.log(logParams);
         }
+    }
+
+    // 使用 Plugin 包装拦截器，不然如果业务系统也存在拦截器，会导致业务系统拦截器结构发生变化，变成代理类。
+    @Override
+    public Object plugin(Object target) {
+        return Plugin.wrap(target, this);
     }
 
     private static class MybatisInvocationInfo {
