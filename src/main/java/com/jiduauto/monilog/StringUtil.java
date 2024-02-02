@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 @Slf4j
 class StringUtil {
     private static final int MIN_RANDOM_NUM_LEN = 4;
-    private static final int MIN_RANDOM_STR_LEN = 10;
     private static final Set<String> NORMAL_OP_PREFIX = Sets.newHashSet(
             "add", "save", "insert", "create", "make", "build", "put", "new", "copy", "rename",
             "delete", "move", "kill", "remove", "drop", "destroy", "close", "shutdown",
@@ -269,7 +268,7 @@ class StringUtil {
     }
 
     static boolean isRandomStr(String str) {
-        if (StringUtils.isBlank(str) || str.length() < MIN_RANDOM_STR_LEN) {
+        if (StringUtils.isBlank(str) || str.length() < RandomStringDetector.MIN_RANDOM_STR_LEN) {
             return false;
         }
         for (String p : NORMAL_OP_PREFIX) {

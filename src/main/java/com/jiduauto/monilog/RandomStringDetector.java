@@ -16,66 +16,71 @@ import java.util.*;
  * @date 2023/12/18
  */
 class RandomStringDetector {
+    static final int MIN_RANDOM_STR_LEN = 8;
     private static Map<String, Double> BIGRAMS_MAP;
     private static Object CHECKER_CTX;
 
     private static final double COMMON_BIGRAMS_THRESHOLD = 0.1d;
     private static final double UNCOMMON_BIGRAMS_THRESHOLD = 0.5d;
     private static final double DUPLICATED_BIGRAMS_THRESHOLD = 0.33d;
+
     private static final double SAME_WORD_THRESHOLD = 0.75d;
+    private static final double AVG_FREQ_THRESHOLD = 10.0d;
 
     static boolean isRandomWord(String word) {
-        if (StringUtils.isBlank(word)) {
-            return false;
+        return calcAvgNormalFrequence(word) <= AVG_FREQ_THRESHOLD;
+    }
+
+    static double calcAvgNormalFrequence(String word) {
+        double normalFreqThreshold = 100.0d;
+        if (StringUtils.isBlank(word) || word.length() < MIN_RANDOM_STR_LEN) {
+            return normalFreqThreshold;
         }
         boolean userWordCheck = SpringUtils.useWordChecker();
         if (userWordCheck) {
             EnWordChecker checker = EnWordChecker.getInstance();
             Object checkerContext = getCheckerContextInstance();
             if (checker.isCorrect(word, (IWordCheckerContext) checkerContext)) {
-                return false;
+                return normalFreqThreshold;
             }
             String corrected = checker.correct(word, (IWordCheckerContext) checkerContext);
             if (corrected == null) {
-                return false;
+                return normalFreqThreshold;
             }
             double sameRate = calculateSimilarity(word, corrected);
             if (sameRate > SAME_WORD_THRESHOLD && sameRate < 1) {
-                return false;
+                return normalFreqThreshold;
             }
         }
-        Set<Character> set = new HashSet<>(word.length());
-        List<String> bigrams = new ArrayList<>();
+        Set<Character> charSet = new HashSet<>(word.length());
+        List<String> doubleChars = new ArrayList<>();
         word = word.toLowerCase();
         for (int i = 0; i < word.length(); i++) {
-            set.add(word.charAt(i));
-            if (i < word.length() - 1) {
-                bigrams.add(word.substring(i, i + 2));
+            char c = word.charAt(i);
+            charSet.add(c);
+            if (!Character.isLetter(c)) {
+                continue;
+            }
+            if (i < word.length() - 1 && Character.isLetter(word.charAt(i + 1))) {
+                doubleChars.add(word.substring(i, i + 2));
             }
         }
-        int distinctSize = set.size();
-        if (distinctSize == 1) {
-            return true;
+        int charCount = charSet.size();
+        if (charCount == 1) {
+            return 0.0d;
         }
-        double numCommonBigrams = 0;
-        Map<String, Double> bigramsMap = initBigramsMap();
-        for (String bigram : bigrams) {
-            Double v = bigramsMap.get(bigram);
-            if (v != null && v > COMMON_BIGRAMS_THRESHOLD) {
-                numCommonBigrams += 1;
+        double sumFreq = 0;
+        Map<String, Double> freqMap = initFreqMap();
+        for (String seq : doubleChars) {
+            //连续字母出现的频率
+            Double v = freqMap.get(seq);
+            if (v == null) {
+                continue;
             }
+            sumFreq += v;
         }
-        int size = bigrams.size();
-        double unCommonSize = size - numCommonBigrams;
-        double duplicateSize = size - distinctSize;
-
-        if (unCommonSize / size > UNCOMMON_BIGRAMS_THRESHOLD) {
-            //连码率
-            return true;
-        } else {
-            //重复率
-            return duplicateSize / size > DUPLICATED_BIGRAMS_THRESHOLD;
-        }
+        //该字符串的平均正常率
+        return sumFreq / doubleChars.size();
     }
 
     /**
@@ -110,7 +115,7 @@ class RandomStringDetector {
         return dp[str1.length()][str2.length()];
     }
 
-    private static Map<String, Double> initBigramsMap() {
+    private static Map<String, Double> initFreqMap() {
         if (BIGRAMS_MAP == null) {
             BIGRAMS_MAP = JSON.parseObject(ENGLISH, new TypeReference<Map<String, Double>>() {
             });
