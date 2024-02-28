@@ -106,7 +106,7 @@ class HttpUtil {
             if (StringUtils.isBlank(segment)) {
                 continue;
             }
-            if (StringUtil.isRandomNum(segment)) {
+            if (StringUtil.hasRandomNum(segment)) {
                 segments[i] = "{n}";
                 continue;
             }

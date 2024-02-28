@@ -33,7 +33,7 @@ class StringUtil {
             "start", "stop", "reload", "query", "list", "find", "get", "select", "fetch", "search",
             "load", "check", "count", "show", "read", "import"
     );
-    private static final Pattern RANDOM_NUM_PATTERN = Pattern.compile("^[0-9]+\\.?[0-9]+$");
+    private static final Pattern RANDOM_NUM_PATTERN = Pattern.compile("([0-9]+\\.?[0-9]+)");
     private static final Pattern FILE_EXT = Pattern.compile("(.*[^.])(\\.[a-zA-Z]{2,4})$");
     private static final AntPathMatcher ANT_PATH_MATCHER = new AntPathMatcher();
     private static final AntPathMatcher ANT_CLASS_MATCHER = new AntPathMatcher(".");
@@ -260,11 +260,11 @@ class StringUtil {
         }
     }
 
-    static boolean isRandomNum(String str) {
+    static boolean hasRandomNum(String str) {
         if (StringUtils.isBlank(str) || str.length() < MIN_RANDOM_NUM_LEN) {
             return false;
         }
-        return RANDOM_NUM_PATTERN.matcher(str).matches();
+        return RANDOM_NUM_PATTERN.matcher(str).find();
     }
 
     static boolean isRandomStr(String str) {
