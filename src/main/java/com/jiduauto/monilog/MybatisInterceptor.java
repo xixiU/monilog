@@ -138,7 +138,8 @@ public final class MybatisInterceptor implements Interceptor {
                         // 获取sql
                         BoundSql boundSql = mappedStatement.getBoundSql(args[1]);
                         sql = getSqlAndSetParams(boundSql, mappedStatement);
-                    } catch (Throwable ignored) {
+                    } catch (Throwable e) {
+                        MoniLogUtil.innerDebug("parseMybatisExecuteInfo error#1", e);
                     }
                 }
             }
@@ -159,7 +160,7 @@ public final class MybatisInterceptor implements Interceptor {
                 }
             }
         } catch (Throwable e) {
-            MoniLogUtil.innerDebug("parseMybatisExecuteInfo error", e);
+            MoniLogUtil.innerDebug("parseMybatisExecuteInfo error#2", e);
         }
         info.sql = sql;
         return info;
