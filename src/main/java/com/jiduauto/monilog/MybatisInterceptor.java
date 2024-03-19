@@ -9,14 +9,21 @@ import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.executor.statement.StatementHandler;
 import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.MappedStatement;
+import org.apache.ibatis.mapping.ParameterMapping;
+import org.apache.ibatis.mapping.ParameterMode;
 import org.apache.ibatis.plugin.*;
 import org.apache.ibatis.reflection.MetaObject;
 import org.apache.ibatis.reflection.SystemMetaObject;
+import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
+import org.apache.ibatis.type.TypeHandlerRegistry;
 
 import java.lang.reflect.Proxy;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Intercepts({
@@ -28,9 +35,12 @@ import java.util.Map;
 @Slf4j
 public final class MybatisInterceptor implements Interceptor {
     private static final Map<String, Class<?>> CACHED_CLASS = new HashMap<>();
-    public static Interceptor getInstance(){
+    private static final ThreadLocal<SimpleDateFormat> DATE_FORMAT_THREAD_LOCAL = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS"));
+
+    public static Interceptor getInstance() {
         return new MybatisInterceptor();
     }
+
     @SneakyThrows
     @Override
     public Object intercept(Invocation invocation) {
@@ -128,7 +138,8 @@ public final class MybatisInterceptor implements Interceptor {
                 setServiceClsAndMethodName(mappedStatement, info);
                 try {
                     // 获取sql
-                    sql = mappedStatement.getBoundSql(args[1]).getSql().replaceAll("--[^\n|\\\\n].+(\n|\\\\n)", "").replaceAll("(\\\\n)+|\n+|\r+|\\s+", " ");
+                    BoundSql boundSql = mappedStatement.getBoundSql(args[1]);
+                    sql = getSqlAndSetParams(boundSql, mappedStatement);
                 } catch (Throwable ignored) {
                 }
                 // 这个错误在执行的时候抛出来，此错误直接吞掉
@@ -147,7 +158,7 @@ public final class MybatisInterceptor implements Interceptor {
                     setServiceClsAndMethodName(mappedStatement, info);
                     BoundSql boundSql = statementHandler.getBoundSql();
                     //去除sql中的注释、换行、多余空格等
-                    sql = boundSql.getSql().replaceAll("--[^\n|\\\\n].+(\n|\\\\n)", "").replaceAll("(\\\\n)+|\n+|\r+|\\s+", " ");
+                    sql = getSqlAndSetParams(boundSql, mappedStatement);
                 }
             }
         } catch (Throwable e) {
@@ -192,5 +203,62 @@ public final class MybatisInterceptor implements Interceptor {
             return null;
         }
         return expectedStatementHandler;
+    }
+    /**
+     * 获取完整的sql实体的信息
+     */
+    private static String getSqlAndSetParams(BoundSql boundSql, MappedStatement ms) {
+        String sql = formatSql(boundSql.getSql());
+        List<ParameterMapping> parameterMappings = boundSql.getParameterMappings();
+        Configuration configuration = ms.getConfiguration();
+        if (configuration == null || StringUtils.isBlank(sql) || parameterMappings == null) {
+            return sql;
+        }
+        //参考mybatis 源码 DefaultParameterHandler
+        TypeHandlerRegistry typeHandlerRegistry = configuration.getTypeHandlerRegistry();
+        Object param = boundSql.getParameterObject();
+        for (ParameterMapping pm : parameterMappings) {
+            if (pm.getMode() == ParameterMode.OUT) {
+                continue;
+            }
+            Object value;
+            String propertyName = pm.getProperty();
+            if (boundSql.hasAdditionalParameter(propertyName)) {
+                value = boundSql.getAdditionalParameter(propertyName);
+            } else if (param == null) {
+                value = null;
+            } else if (typeHandlerRegistry.hasTypeHandler(param.getClass())) {
+                value = param;
+            } else {
+                MetaObject metaObject = configuration.newMetaObject(param);
+                value = metaObject.getValue(propertyName);
+            }
+
+            String paramValueStr;
+            if (value instanceof String) {
+                paramValueStr = "'" + value + "'";
+            } else if (value instanceof Date) {
+                paramValueStr = "'" + DATE_FORMAT_THREAD_LOCAL.get().format(value) + "'";
+            } else {
+                paramValueStr = value + "";
+            }
+            sql = sql.replaceFirst("\\?", paramValueStr);
+        }
+        return sql;
+    }
+
+
+    /**
+     * 去除sql中的注释、换行、多余空格等
+     */
+    private static String formatSql(String sql) {
+        if (StringUtils.isBlank(sql)) {
+            return sql;
+        }
+        sql = sql.trim().replaceAll("--[^\n|\\\\n].+(\n|\\\\n)", "").replaceAll("(\\\\n)+|\n+|\r+|\\s+", " ");
+        if (!sql.endsWith(";")) {
+            sql += ";";
+        }
+        return sql;
     }
 }
