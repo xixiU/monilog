@@ -252,7 +252,13 @@ public final class MybatisInterceptor implements Interceptor {
         if (StringUtils.isBlank(sql)) {
             return sql;
         }
-        sql = sql.trim().replaceAll("--[^\n|\\\\n].+(\n|\\\\n)", "").replaceAll("(\\\\n)+|\n+|\r+|\\s+", " ");
+        sql = sql.trim()
+                //去掉注释
+                .replaceAll("--[^\n|\\\\n].+(\n|\\\\n)", "")
+                //去掉多余的换行或空格
+                .replaceAll("(\\\\n)+|\n+|\r+|\\s+", " ")
+                //去掉','左右的空格
+                .replaceAll("\\s*,\\s*", ",");
         if (!sql.endsWith(";")) {
             sql += ";";
         }
