@@ -25,6 +25,7 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public final class RocketMqMoniLogInterceptor {
     // Will be created at broker when isAutoCreateTopicEnable
@@ -153,12 +154,16 @@ public final class RocketMqMoniLogInterceptor {
             return null;
         }
         List<Object> obj = new ArrayList<>();
+        Map<String,Object> msgInfoMap = new HashMap<>();
         try {
             for (MessageExt msg : msgs) {
                 String str = new String(msg.getBody(), StandardCharsets.UTF_8);
                 JSON json = StringUtil.tryConvert2Json(str);
                 obj.add(json == null ? str : json);
             }
+            msgInfoMap.put("msgId", msgs.stream().map(MessageExt::getMsgId).collect(Collectors.joining(",")));
+            msgInfoMap.put("topic", msgs.stream().map(MessageExt::getTopic).distinct().collect(Collectors.joining(",")));
+            obj.add(JSON.toJSONString(msgInfoMap));
         } catch (Exception e) {
             MoniLogUtil.innerDebug("RocketMqMoniLogInterceptor.formatInputMsgs error", e.getMessage());
         }

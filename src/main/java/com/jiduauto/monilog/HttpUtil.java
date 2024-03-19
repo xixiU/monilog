@@ -1,5 +1,6 @@
 package com.jiduauto.monilog;
 
+import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.URLUtil;
 import com.google.common.collect.Sets;
 import org.apache.commons.collections4.MapUtils;
@@ -105,7 +106,7 @@ class HttpUtil {
             if (StringUtils.isBlank(segment)) {
                 continue;
             }
-            if (StringUtil.isRandomNum(segment)) {
+            if (StringUtil.hasRandomNum(segment)) {
                 segments[i] = "{n}";
                 continue;
             }
@@ -119,33 +120,44 @@ class HttpUtil {
     }
 
     public static void main(String[] args) {
+        checkRandom("JFS-21002",true);
+        checkRandom("job", false);
+        checkRandom("api", false);
+        checkRandom("order-center-platform",false);
+        checkRandom("crm-customer-platform-server", false);
+        checkRandom("crm-customer-platform", false);
+        checkRandom("crm-auth-service", false);
+        checkRandom("b-plat-voc", false);
+        checkRandom("crm-user-base", false);
+        checkRandom("millow", false);
+        checkRandom("customer-platform", false);
+        checkRandom("jidu_dd96ceac-afc4-431e-8127-72452efa34af.png", true);
+        checkRandom("crm-customer-data", false);
+        checkRandom("abcdkljlkalksdjfkls", true);
+        checkRandom("alkjsdflkjsd", true);
+        checkRandom("queryEmployeeInfo", false);
+        checkRandom("hello123", false);
+        checkRandom("abcdKLljlk20023", true);
+        checkRandom("abcdkljlkalksdjfkls", true);
+        checkRandom("httpClient", false);
+        checkRandom("hello world", false);
+        checkRandom("i-love-you", false);
+        checkRandom("xxl-job", false);
+        checkRandom("ap", false);
+        checkRandom("pi", false);
+        checkRandom("xxl", false);
+        checkRandom(RandomUtil.randomString(10), true);
+        System.out.println("over");
+    }
 
-        String st = HttpUtil.extractPathWithoutPathParams("/v1/{xxx}/jidu_dd96ceac-afc4-431e-8127-72452efa34af.png");
-        System.out.println(st);
-        String s = HttpUtil.extractPathWithoutPathParams("/{xxx}/_update/7935c413-4f9c-48bd-9f87-a0776dd7d163.1703565666");
-        System.out.println(s);
-        boolean b50 = RandomStringDetector.isRandomWord("abcdkljlkalksdjfkls");
-        boolean b1 = RandomStringDetector.isRandomWord("alkjsdflkjsd");
-        boolean b2 = RandomStringDetector.isRandomWord("queryEmployeeInfo");
-        boolean b3 = RandomStringDetector.isRandomWord("hello123");
-        boolean b4 = RandomStringDetector.isRandomWord("abcdKLljlk20023");
-        boolean b51 = RandomStringDetector.isRandomWord("abcdkljlkalksdjfkls");
-        boolean b6 = RandomStringDetector.isRandomWord("httpClient");
-        System.out.println(b6);
-
-        String s0 = extractPathWithoutPathParams("http://baidu.com/doc/982304782304823092480392840?t=434");
-        String s1 = extractPathWithoutPathParams("http://baidu.com");
-        String s2 = extractPathWithoutPathParams("http://baidu.com/");
-        String s3 = extractPathWithoutPathParams("http://baidu.com/abc/de");
-        String s4 = extractPathWithoutPathParams("http://baidu.com/a/b/c/?t=23");
-        String s5 = extractPathWithoutPathParams("baidu.com/a=23&b=3");
-        String s6 = extractPathWithoutPathParams("http:/baidu.com?t=434");
-        String s7 = extractPathWithoutPathParams("/ab/c/d");
-        String s8 = extractPathWithoutPathParams("/a/b/c/d?t=23");
-        String s9 = extractPathWithoutPathParams("/a/b/230982432/d?t=23");
-        String s10 = extractPathWithoutPathParams("/a/b/bajklsdjfksljk2l3/d?t=23");
-        String s11 = extractPathWithoutPathParams("/a/b/bajklsdjfksljk/d?t=23");
-
-        System.out.println(s8);
+    private static void checkRandom(String word, boolean expect) {
+        double avgFreq = RandomStringDetector.calcAvgNormalFrequence(word);
+        boolean result = avgFreq <= 10.0d;
+        boolean exp = result == expect;
+        if (exp) {
+            System.out.printf("avgFreq: %.2f, %s, word: %s\n", avgFreq, result, word);
+        } else {
+            System.err.printf("avgFreq: %.2f, %s, word: %s\n", avgFreq, result, word);
+        }
     }
 }
