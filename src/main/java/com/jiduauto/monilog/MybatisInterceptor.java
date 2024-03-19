@@ -3,6 +3,7 @@ package com.jiduauto.monilog;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.cache.CacheKey;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.executor.statement.StatementHandler;
@@ -115,7 +116,8 @@ public final class MybatisInterceptor implements Interceptor {
         Class<?> serviceCls = invocation.getTarget().getClass();
         String methodName = invocation.getMethod().getName();
         MybatisInvocationInfo info = new MybatisInvocationInfo(serviceCls, methodName);
-        String sql = "[parseSqlFailed]";
+        String initSql = "[parseSqlFailed]";
+        String sql = initSql;
         try {
             if (Executor.class.isAssignableFrom(serviceCls)) {
                 Object[] args = invocation.getArgs();
@@ -130,6 +132,10 @@ public final class MybatisInterceptor implements Interceptor {
                 } catch (Throwable ignored) {
                 }
                 // 这个错误在执行的时候抛出来，此错误直接吞掉
+            }
+            if (!StringUtils.equals(sql, initSql) && StringUtils.isNotBlank(sql)) {
+                info.sql = sql;
+                return info;
             }
             // 这段代码走不到了
             if (StatementHandler.class.isAssignableFrom(serviceCls)) {
