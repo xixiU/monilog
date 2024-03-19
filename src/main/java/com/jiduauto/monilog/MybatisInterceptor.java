@@ -131,28 +131,25 @@ public final class MybatisInterceptor implements Interceptor {
         try {
             if (Executor.class.isAssignableFrom(serviceCls)) {
                 Object[] args = invocation.getArgs();
-                if (args == null || args.length < 2 || !MappedStatement.class.isAssignableFrom(args[0].getClass())) {
-                    return info;
+                if (args != null && args.length >= 2 && MappedStatement.class.isAssignableFrom(args[0].getClass())) {
+                    MappedStatement mappedStatement = (MappedStatement) args[0];
+                    setServiceClsAndMethodName(mappedStatement, info);
+                    try {
+                        // 获取sql
+                        BoundSql boundSql = mappedStatement.getBoundSql(args[1]);
+                        sql = getSqlAndSetParams(boundSql, mappedStatement);
+                    } catch (Throwable ignored) {
+                    }
                 }
-                MappedStatement mappedStatement = (MappedStatement) args[0];
-                setServiceClsAndMethodName(mappedStatement, info);
-                try {
-                    // 获取sql
-                    BoundSql boundSql = mappedStatement.getBoundSql(args[1]);
-                    sql = getSqlAndSetParams(boundSql, mappedStatement);
-                } catch (Throwable ignored) {
-                }
-                // 这个错误在执行的时候抛出来，此错误直接吞掉
             }
-            if (!StringUtils.equals(sql, initSql) && StringUtils.isNotBlank(sql)) {
+            if (StringUtils.isNotBlank(sql) && !StringUtils.equals(sql, initSql)) {
                 info.sql = sql;
                 return info;
             }
-            // 这段代码走不到了
+            //这段代码走不到了
             if (StatementHandler.class.isAssignableFrom(serviceCls)) {
-                Object expectedStatementHandler = getStatementHandlerObject(invocation);
-                if (expectedStatementHandler != null) {
-                    StatementHandler statementHandler = (StatementHandler) expectedStatementHandler;
+                StatementHandler statementHandler = getStatementHandlerObject(invocation);
+                if (statementHandler != null) {
                     MetaObject metaObject = SystemMetaObject.forObject(statementHandler);
                     MappedStatement mappedStatement = (MappedStatement) metaObject.getValue("delegate.mappedStatement");
                     setServiceClsAndMethodName(mappedStatement, info);
@@ -188,7 +185,7 @@ public final class MybatisInterceptor implements Interceptor {
         return aClass;
     }
 
-    private static Object getStatementHandlerObject(Invocation invocation) {
+    private static StatementHandler getStatementHandlerObject(Invocation invocation) {
         Object expectedStatementHandler = invocation.getTarget();
         while (Proxy.isProxyClass(expectedStatementHandler.getClass())) {
             MetaObject metaObject = SystemMetaObject.forObject(expectedStatementHandler);
@@ -202,7 +199,7 @@ public final class MybatisInterceptor implements Interceptor {
         if (!(expectedStatementHandler instanceof StatementHandler)) {
             return null;
         }
-        return expectedStatementHandler;
+        return (StatementHandler) expectedStatementHandler;
     }
     /**
      * 获取完整的sql实体的信息
