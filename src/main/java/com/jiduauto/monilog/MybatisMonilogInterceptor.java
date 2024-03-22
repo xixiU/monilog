@@ -30,12 +30,12 @@ import java.util.*;
         @Signature(type = Executor.class, method = "update", args = {MappedStatement.class, Object.class})
 })
 @Slf4j
-public final class MybatisInterceptor implements Interceptor {
+public final class MybatisMonilogInterceptor implements Interceptor {
     private static final Map<String, Class<?>> CACHED_CLASS = new HashMap<>();
     private static final ThreadLocal<SimpleDateFormat> DATE_FORMAT_THREAD_LOCAL = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS"));
 
     public static Interceptor getInstance() {
-        return new MybatisInterceptor();
+        return new MybatisMonilogInterceptor();
     }
 
     @SneakyThrows

@@ -69,7 +69,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         set.add(loadInterceptorClass("com.jiduauto.monilog.RedisMoniLogInterceptor"));
         set.add(loadInterceptorClass("com.jiduauto.monilog.XxlJobMoniLogInterceptor"));
         set.add(loadInterceptorClass("com.jiduauto.monilog.GrpcMoniLogInterceptor"));
-        set.add(loadInterceptorClass("com.jiduauto.monilog.MybatisInterceptor"));
+        set.add(loadInterceptorClass("com.jiduauto.monilog.MybatisMonilogInterceptor"));
         set.add(loadInterceptorClass("com.jiduauto.monilog.KafkaMonilogInterceptor"));
         log.debug("loaded class:{}", set.size());
         outputClass = args != null && args.length > 0 && Arrays.stream(args).anyMatch(e -> StringUtils.containsIgnoreCase(e.trim(), "outputClass=true"));
@@ -469,7 +469,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         }
         try {
             CtClass ctCls = getCtClass(clsName);
-            String body = "{if(this.interceptors==null){this.interceptors = new java.util.ArrayList();}this.interceptors.add( " + MybatisInterceptor.class.getCanonicalName() + ".getInstance());}";
+            String body = "{if(this.interceptors==null){this.interceptors = new java.util.ArrayList();}this.interceptors.add( " + MybatisMonilogInterceptor.class.getCanonicalName() + ".getInstance());}";
             ctCls.getConstructor("()V").setBody(body);
             Class<?> targetCls = ctCls.toClass();
             log.debug("constructor of '{}' has bean enhanced.", targetCls.getCanonicalName());
