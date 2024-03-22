@@ -257,21 +257,24 @@ public final class MybatisMonilogInterceptor implements Interceptor {
     }
 
     private static Object correntValue(Object value, TypeHandler<?> typeHandler) {
-        if (value == null || ClassUtil.isSimpleValueType(value.getClass())) {
-            return value;
-        }
-        if (typeHandler != null) {
-            Class<? extends TypeHandler> cls = typeHandler.getClass();
-            String clsName = cls.getSimpleName().toLowerCase();
-            if (StringUtils.containsAny(clsName, "json", "jackson", "gson")) {
-                return JSON.toJSONString(value);
+        try {
+            if (value == null || ClassUtil.isSimpleValueType(value.getClass())) {
+                return value;
             }
-            if (ClassUtil.isAssignable(Collection.class, cls) || ClassUtil.isAssignable(Map.class, cls) || cls.isArray()) {
-                //ignore
+            if (typeHandler != null) {
+                Class<? extends TypeHandler> cls = typeHandler.getClass();
+                String clsName = cls.getSimpleName().toLowerCase();
+                if (StringUtils.containsAny(clsName, "json", "jackson", "gson")) {
+                    return JSON.toJSONString(value);
+                }
+                if (ClassUtil.isAssignable(Collection.class, cls) || ClassUtil.isAssignable(Map.class, cls) || cls.isArray()) {
+                    //ignore
+                }
+                if (StringUtils.contains(clsName, "unknowntype")) {
+                    //ignore
+                }
             }
-            if (StringUtils.contains(clsName, "unknowntype")) {
-                //ignore
-            }
+        } catch (Exception ignore) {
         }
         return value;
     }
