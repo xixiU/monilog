@@ -1,5 +1,7 @@
 package com.jiduauto.monilog;
 
+import cn.hutool.core.util.ClassUtil;
+import com.alibaba.fastjson.JSON;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
@@ -17,14 +19,12 @@ import org.apache.ibatis.reflection.SystemMetaObject;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
+import org.apache.ibatis.type.TypeHandler;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 
 import java.lang.reflect.Proxy;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Intercepts({
         @Signature(type = Executor.class, method = "query", args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class, CacheKey.class, BoundSql.class}),
@@ -33,12 +33,12 @@ import java.util.Map;
         @Signature(type = Executor.class, method = "update", args = {MappedStatement.class, Object.class})
 })
 @Slf4j
-public final class MybatisInterceptor implements Interceptor {
+public final class MybatisMonilogInterceptor implements Interceptor {
     private static final Map<String, Class<?>> CACHED_CLASS = new HashMap<>();
-    private static final ThreadLocal<SimpleDateFormat> DATE_FORMAT_THREAD_LOCAL = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS"));
+    private static final ThreadLocal<SimpleDateFormat> DATE_FORMAT_THREAD_LOCAL = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
 
     public static Interceptor getInstance() {
-        return new MybatisInterceptor();
+        return new MybatisMonilogInterceptor();
     }
 
     @SneakyThrows
@@ -202,47 +202,81 @@ public final class MybatisInterceptor implements Interceptor {
         }
         return (StatementHandler) expectedStatementHandler;
     }
+
     /**
      * 获取完整的sql实体的信息
      */
     private static String getSqlAndSetParams(BoundSql boundSql, MappedStatement ms) {
         String sql = formatSql(boundSql.getSql());
-        List<ParameterMapping> parameterMappings = boundSql.getParameterMappings();
-        Configuration configuration = ms.getConfiguration();
-        if (configuration == null || StringUtils.isBlank(sql) || parameterMappings == null) {
+        try {
+            List<ParameterMapping> parameterMappings = boundSql.getParameterMappings();
+            Configuration configuration = ms.getConfiguration();
+            if (configuration == null || StringUtils.isBlank(sql) || parameterMappings == null) {
+                return sql;
+            }
+            //参考mybatis 源码 DefaultParameterHandler
+            TypeHandlerRegistry typeHandlerRegistry = configuration.getTypeHandlerRegistry();
+            Object param = boundSql.getParameterObject();
+            List<String> params = new ArrayList<>();
+            for (ParameterMapping pm : parameterMappings) {
+                if (pm.getMode() == ParameterMode.OUT) {
+                    continue;
+                }
+                Object value;
+                TypeHandler<?> typeHandler = null;
+                String propertyName = pm.getProperty();
+                if (boundSql.hasAdditionalParameter(propertyName)) {
+                    value = boundSql.getAdditionalParameter(propertyName);
+                } else if (param == null) {
+                    value = null;
+                } else if (typeHandlerRegistry.hasTypeHandler(param.getClass())) {
+                    typeHandler = typeHandlerRegistry.getTypeHandler(params.getClass());
+                    value = param;
+                } else {
+                    MetaObject metaObject = configuration.newMetaObject(param);
+                    value = metaObject.getValue(propertyName);
+                    typeHandler = pm.getTypeHandler();
+                }
+
+                Object sqlValue = correntValue(value, typeHandler);
+                String paramValueStr;
+                if (sqlValue instanceof String) {
+                    paramValueStr = "'" + sqlValue + "'";
+                } else if (sqlValue instanceof Date) {
+                    paramValueStr = "'" + DATE_FORMAT_THREAD_LOCAL.get().format(sqlValue) + "'";
+                } else {
+                    paramValueStr = sqlValue + "";
+                }
+                params.add(paramValueStr);
+            }
+            return StringUtil.fillParams(sql, "?", params);
+        } catch (Exception e) {
+            MoniLogUtil.innerDebug("fillParams for sql error, sql:{}", sql, e);
             return sql;
         }
-        //参考mybatis 源码 DefaultParameterHandler
-        TypeHandlerRegistry typeHandlerRegistry = configuration.getTypeHandlerRegistry();
-        Object param = boundSql.getParameterObject();
-        for (ParameterMapping pm : parameterMappings) {
-            if (pm.getMode() == ParameterMode.OUT) {
-                continue;
-            }
-            Object value;
-            String propertyName = pm.getProperty();
-            if (boundSql.hasAdditionalParameter(propertyName)) {
-                value = boundSql.getAdditionalParameter(propertyName);
-            } else if (param == null) {
-                value = null;
-            } else if (typeHandlerRegistry.hasTypeHandler(param.getClass())) {
-                value = param;
-            } else {
-                MetaObject metaObject = configuration.newMetaObject(param);
-                value = metaObject.getValue(propertyName);
-            }
+    }
 
-            String paramValueStr;
-            if (value instanceof String) {
-                paramValueStr = "'" + value + "'";
-            } else if (value instanceof Date) {
-                paramValueStr = "'" + DATE_FORMAT_THREAD_LOCAL.get().format(value) + "'";
-            } else {
-                paramValueStr = value + "";
+    private static Object correntValue(Object value, TypeHandler<?> typeHandler) {
+        try {
+            if (value == null || ClassUtil.isSimpleValueType(value.getClass())) {
+                return value;
             }
-            sql = sql.replaceFirst("\\?", paramValueStr);
+            if (typeHandler != null) {
+                Class<? extends TypeHandler> cls = typeHandler.getClass();
+                String clsName = cls.getSimpleName().toLowerCase();
+                if (StringUtils.containsAny(clsName, "json", "jackson", "gson")) {
+                    return JSON.toJSONString(value);
+                }
+                if (ClassUtil.isAssignable(Collection.class, cls) || ClassUtil.isAssignable(Map.class, cls) || cls.isArray()) {
+                    //ignore
+                }
+                if (StringUtils.contains(clsName, "unknowntype")) {
+                    //ignore
+                }
+            }
+        } catch (Exception ignore) {
         }
-        return sql;
+        return value;
     }
 
 
@@ -253,15 +287,20 @@ public final class MybatisInterceptor implements Interceptor {
         if (StringUtils.isBlank(sql)) {
             return sql;
         }
-        sql = sql.trim()
-                //去掉注释
-                .replaceAll("--[^\n|\\\\n].+(\n|\\\\n)", "")
-                //去掉多余的换行或空格
-                .replaceAll("(\\\\n)+|\n+|\r+|\\s+", " ")
-                //去掉','左右的空格
-                .replaceAll("\\s*,\\s*", ",");
-        if (!sql.endsWith(";")) {
-            sql += ";";
+        try {
+            sql = sql.trim()
+                    //去掉注释
+                    .replaceAll("--[^\n|\\\\n].+(\n|\\\\n)", "")
+                    //去掉多余的换行或空格
+                    .replaceAll("(\\\\n)+|\n+|\r+|\\s+", " ")
+                    //去掉','左右的空格
+                    .replaceAll("\\s*,\\s*", ",");
+            if (!sql.endsWith(";")) {
+                sql += ";";
+            }
+        } catch (Exception e) {
+            MoniLogUtil.innerDebug("formatSql error, sql:{}", sql, e);
+            return sql;
         }
         return sql;
     }
