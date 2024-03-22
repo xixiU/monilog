@@ -262,14 +262,14 @@ public final class MybatisMonilogInterceptor implements Interceptor {
         }
         if (typeHandler != null) {
             Class<? extends TypeHandler> cls = typeHandler.getClass();
-            String clsName = cls.getSimpleName();
-            if (StringUtils.containsAnyIgnoreCase(clsName, "json", "jackson", "gson")) {
+            String clsName = cls.getSimpleName().toLowerCase();
+            if (StringUtils.containsAny(clsName, "json", "jackson", "gson")) {
                 return JSON.toJSONString(value);
             }
             if (ClassUtil.isAssignable(Collection.class, cls) || ClassUtil.isAssignable(Map.class, cls) || cls.isArray()) {
                 //ignore
             }
-            if (StringUtils.containsIgnoreCase(clsName, "UnknownType")) {
+            if (StringUtils.contains(clsName, "unknowntype")) {
                 //ignore
             }
         }
