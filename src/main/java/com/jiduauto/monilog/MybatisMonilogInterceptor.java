@@ -17,6 +17,7 @@ import org.apache.ibatis.reflection.SystemMetaObject;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
+import org.apache.ibatis.type.TypeHandler;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 
 import java.lang.reflect.Proxy;
@@ -220,25 +221,29 @@ public final class MybatisMonilogInterceptor implements Interceptor {
                     continue;
                 }
                 Object value;
+                TypeHandler<?> typeHandler = null;
                 String propertyName = pm.getProperty();
                 if (boundSql.hasAdditionalParameter(propertyName)) {
                     value = boundSql.getAdditionalParameter(propertyName);
                 } else if (param == null) {
                     value = null;
                 } else if (typeHandlerRegistry.hasTypeHandler(param.getClass())) {
+                    typeHandler = typeHandlerRegistry.getTypeHandler(params.getClass());
                     value = param;
                 } else {
                     MetaObject metaObject = configuration.newMetaObject(param);
                     value = metaObject.getValue(propertyName);
+                    typeHandler = pm.getTypeHandler();
                 }
 
+                Object sqlValue = correntValue(value, typeHandler);
                 String paramValueStr;
-                if (value instanceof String) {
-                    paramValueStr = "'" + value + "'";
-                } else if (value instanceof Date) {
-                    paramValueStr = "'" + DATE_FORMAT_THREAD_LOCAL.get().format(value) + "'";
+                if (sqlValue instanceof String) {
+                    paramValueStr = "'" + sqlValue + "'";
+                } else if (sqlValue instanceof Date) {
+                    paramValueStr = "'" + DATE_FORMAT_THREAD_LOCAL.get().format(sqlValue) + "'";
                 } else {
-                    paramValueStr = value + "";
+                    paramValueStr = sqlValue + "";
                 }
                 params.add(paramValueStr);
             }
@@ -247,6 +252,17 @@ public final class MybatisMonilogInterceptor implements Interceptor {
             MoniLogUtil.innerDebug("fillParams for sql error, sql:{}", sql, e);
             return sql;
         }
+    }
+
+    private static Object correntValue(Object value, TypeHandler<?> typeHandler) {
+        if (value == null) {
+            return null;
+        }
+        if (typeHandler != null) {
+
+        }
+
+        return value;
     }
 
 
