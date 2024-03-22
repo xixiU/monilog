@@ -35,7 +35,7 @@ import java.util.*;
 @Slf4j
 public final class MybatisMonilogInterceptor implements Interceptor {
     private static final Map<String, Class<?>> CACHED_CLASS = new HashMap<>();
-    private static final ThreadLocal<SimpleDateFormat> DATE_FORMAT_THREAD_LOCAL = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS"));
+    private static final ThreadLocal<SimpleDateFormat> DATE_FORMAT_THREAD_LOCAL = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
 
     public static Interceptor getInstance() {
         return new MybatisMonilogInterceptor();
