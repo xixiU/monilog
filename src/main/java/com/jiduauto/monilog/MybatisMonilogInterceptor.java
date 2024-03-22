@@ -1,5 +1,7 @@
 package com.jiduauto.monilog;
 
+import cn.hutool.core.util.ClassUtil;
+import com.alibaba.fastjson.JSON;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
@@ -255,13 +257,22 @@ public final class MybatisMonilogInterceptor implements Interceptor {
     }
 
     private static Object correntValue(Object value, TypeHandler<?> typeHandler) {
-        if (value == null) {
-            return null;
+        if (value == null || ClassUtil.isSimpleValueType(value.getClass())) {
+            return value;
         }
         if (typeHandler != null) {
-
+            Class<? extends TypeHandler> cls = typeHandler.getClass();
+            String clsName = cls.getSimpleName();
+            if (StringUtils.containsAnyIgnoreCase(clsName, "json", "jackson", "gson")) {
+                return JSON.toJSONString(value);
+            }
+            if (ClassUtil.isAssignable(Collection.class, cls) || ClassUtil.isAssignable(Map.class, cls) || cls.isArray()) {
+                //ignore
+            }
+            if (StringUtils.containsIgnoreCase(clsName, "UnknownType")) {
+                //ignore
+            }
         }
-
         return value;
     }
 
