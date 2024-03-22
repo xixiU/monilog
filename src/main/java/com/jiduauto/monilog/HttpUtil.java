@@ -120,10 +120,10 @@ class HttpUtil {
     }
 
     public static void main(String[] args) {
-        checkRandom("JFS-21002",true);
+        checkRandom("JFS-21002", true);
         checkRandom("job", false);
         checkRandom("api", false);
-        checkRandom("order-center-platform",false);
+        checkRandom("order-center-platform", false);
         checkRandom("crm-customer-platform-server", false);
         checkRandom("crm-customer-platform", false);
         checkRandom("crm-auth-service", false);

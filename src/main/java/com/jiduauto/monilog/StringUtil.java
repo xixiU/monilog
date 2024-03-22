@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONValidator;
 import com.alibaba.fastjson.TypeReference;
 import com.google.common.collect.Sets;
+import com.sun.org.apache.xpath.internal.operations.String;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -25,6 +26,8 @@ import java.util.stream.Collectors;
 @Slf4j
 class StringUtil {
     private static final int MIN_RANDOM_NUM_LEN = 4;
+    private static final String TEMP_PLACEHOLDER = "@monilog@";
+    private static final String TEMP_PLACEHOLDER2 = "%s";
     private static final Set<String> NORMAL_OP_PREFIX = Sets.newHashSet(
             "add", "save", "insert", "create", "make", "build", "put", "new", "copy", "rename",
             "delete", "move", "kill", "remove", "drop", "destroy", "close", "shutdown",
@@ -277,6 +280,17 @@ class StringUtil {
             }
         }
         return RandomStringDetector.isRandomWord(str);
+    }
+
+    static String fillParams(String src, String searchStr, List<String> params) {
+        if (StringUtils.isBlank(src) || params == null || params.size() == 0 || StringUtils.isBlank(searchStr)) {
+            return src;
+        }
+        Object[] paramArr = params.toArray();
+        String prepare = StringUtils.replace(src, TEMP_PLACEHOLDER2, TEMP_PLACEHOLDER);
+        String formatted = StringUtils.replace(prepare, searchStr, TEMP_PLACEHOLDER2);
+        String filled = String.format(formatted, paramArr);
+        return StringUtils.replace(filled, TEMP_PLACEHOLDER, TEMP_PLACEHOLDER2);
     }
 
     static String[] parseFileName(String filename) {

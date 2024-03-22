@@ -21,10 +21,7 @@ import org.apache.ibatis.type.TypeHandlerRegistry;
 
 import java.lang.reflect.Proxy;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Intercepts({
         @Signature(type = Executor.class, method = "query", args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class, CacheKey.class, BoundSql.class}),
@@ -215,6 +212,7 @@ public final class MybatisInterceptor implements Interceptor {
         //参考mybatis 源码 DefaultParameterHandler
         TypeHandlerRegistry typeHandlerRegistry = configuration.getTypeHandlerRegistry();
         Object param = boundSql.getParameterObject();
+        List<String> params = new ArrayList<>();
         for (ParameterMapping pm : parameterMappings) {
             if (pm.getMode() == ParameterMode.OUT) {
                 continue;
@@ -240,9 +238,9 @@ public final class MybatisInterceptor implements Interceptor {
             } else {
                 paramValueStr = value + "";
             }
-            sql = sql.replaceFirst("\\?", paramValueStr);
+            params.add(paramValueStr);
         }
-        return sql;
+        return StringUtil.fillParams(sql, "?", params);
     }
 
 
