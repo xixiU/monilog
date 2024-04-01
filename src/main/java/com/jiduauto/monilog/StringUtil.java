@@ -26,7 +26,8 @@ import java.util.stream.Collectors;
 class StringUtil {
     private static final int MIN_RANDOM_NUM_LEN = 4;
     private static final String TEMP_PLACEHOLDER = "@monilog@";
-    private static final String TEMP_PLACEHOLDER2 = "%s";
+    private static final String TEMP_PLACEHOLDER2 = "%";
+    private static final String TEMP_PLACEHOLDER3 = "%s";
     private static final Set<String> NORMAL_OP_PREFIX = Sets.newHashSet(
             "add", "save", "insert", "create", "make", "build", "put", "new", "copy", "rename",
             "delete", "move", "kill", "remove", "drop", "destroy", "close", "shutdown",
@@ -287,7 +288,7 @@ class StringUtil {
         }
         Object[] paramArr = params.toArray();
         String prepare = StringUtils.replace(src, TEMP_PLACEHOLDER2, TEMP_PLACEHOLDER);
-        String formatted = StringUtils.replace(prepare, searchStr, TEMP_PLACEHOLDER2);
+        String formatted = StringUtils.replace(prepare, searchStr, TEMP_PLACEHOLDER3);
         String filled = String.format(formatted, paramArr);
         return StringUtils.replace(filled, TEMP_PLACEHOLDER, TEMP_PLACEHOLDER2);
     }
