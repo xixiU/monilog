@@ -249,7 +249,7 @@ public final class MybatisMonilogInterceptor implements Interceptor {
                 }
                 params.add(paramValueStr);
             }
-            return StringUtil.fillParams(sql, "?", params);
+            return StringUtil.fillSqlParams(sql,params);
         } catch (Exception e) {
             MoniLogUtil.innerDebug("fillParams for sql error, sql:{}, params:{}", sql, params,e);
             return sql;

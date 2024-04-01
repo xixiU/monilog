@@ -282,13 +282,13 @@ class StringUtil {
         return RandomStringDetector.isRandomWord(str);
     }
 
-    static String fillParams(String src, String searchStr, List<String> params) {
-        if (StringUtils.isBlank(src) || params == null || params.size() == 0 || StringUtils.isBlank(searchStr)) {
+    static String fillSqlParams(String src, List<String> params) {
+        if (StringUtils.isBlank(src) || params == null || params.isEmpty()) {
             return src;
         }
         Object[] paramArr = params.toArray();
         String prepare = StringUtils.replace(src, TEMP_PLACEHOLDER2, TEMP_PLACEHOLDER);
-        String formatted = StringUtils.replace(prepare, searchStr, TEMP_PLACEHOLDER3);
+        String formatted = StringUtils.replace(prepare, "?", TEMP_PLACEHOLDER3);
         String filled = String.format(formatted, paramArr);
         return StringUtils.replace(filled, TEMP_PLACEHOLDER, TEMP_PLACEHOLDER2);
     }
