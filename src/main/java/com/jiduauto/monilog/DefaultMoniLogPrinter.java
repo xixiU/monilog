@@ -179,8 +179,20 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         List<Object> logParamsList = new ArrayList<>(Arrays.asList(getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr));
         LogType logType = LogType.DIGEST;
         if (isDetail) {
-            String input = formatArg(p.getInput());
-            String output = formatArg(p.getOutput());
+            Object input;
+            if (p.getPayload(MoniLogParams.PAYLOAD_FORMATTED_INPUT) != null) {
+                input = p.getPayload(MoniLogParams.PAYLOAD_FORMATTED_INPUT);
+            } else {
+                input = formatArg(p.getInput());
+                p.addPayload(MoniLogParams.PAYLOAD_FORMATTED_INPUT, input);
+            }
+            Object output;
+            if (p.getPayload(MoniLogParams.PAYLOAD_FORMATTED_OUTPUT) != null) {
+                output = p.getPayload(MoniLogParams.PAYLOAD_FORMATTED_OUTPUT);
+            } else {
+                output = formatArg(p.getOutput());
+                p.addPayload(MoniLogParams.PAYLOAD_FORMATTED_OUTPUT, output);
+            }
             logParamsList.add(input);
             logParamsList.add(output);
             logType = LogType.DETAIL;

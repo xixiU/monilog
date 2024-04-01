@@ -8,7 +8,9 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author yp
@@ -17,6 +19,8 @@ import java.util.List;
 @Getter
 @Setter
 public class MoniLogParams implements Serializable {
+    static final String PAYLOAD_FORMATTED_OUTPUT = "FORMATTED_OUTPUT";
+    static final String PAYLOAD_FORMATTED_INPUT = "FORMATTED_INPUT";
     private static final long serialVersionUID = 1L;
     private Class<?> serviceCls;
     private LogPoint logPoint;
@@ -32,6 +36,23 @@ public class MoniLogParams implements Serializable {
 
     private String[] tags;
     private boolean hasUserTag;
+
+    /**
+     * 存放monilog计算过程中的临时数据
+     */
+    private transient Map<String, Object> payload = new HashMap<>();
+
+    public MoniLogParams addPayload(String key, Object value) {
+        if (key == null || value == null) {
+            return this;
+        }
+        this.payload.put(key, value);
+        return this;
+    }
+
+    public Object getPayload(String key) {
+        return this.payload.get(key);
+    }
 
     public String getMsgCode() {
         boolean blank = StringUtils.isBlank(msgCode);
