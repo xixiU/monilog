@@ -75,6 +75,19 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         logWithLevel(logger, getLogLevel(p, LogType.LARGE_SIZE), getLogPattern(p, LogType.LARGE_SIZE), getLogPrefix(), p.getLogPoint(), p.getService(), p.getAction(), key, readableSize, rt);
     }
 
+    @Override
+    public String formatArg(Object o) {
+        if (o == null) {
+            return null;
+        }
+        Integer maxLen = moniLogProperties.getPrinter() == null ? null : moniLogProperties.getPrinter().getMaxTextLen();
+        String str = JSON.toJSONString(o);
+        if (null != maxLen && str.length() > maxLen) {
+            return str.substring(0, maxLen - 3) + "...";
+        }
+        return str;
+    }
+
     private LogLevel getFalseResultLogLevel() {
         MoniLogProperties.LogLevelConfig cfg = moniLogProperties.getPrinter().getLogLevel();
         LogLevel ll = (cfg == null ? new MoniLogProperties.LogLevelConfig() : cfg).getFalseResult();
@@ -91,18 +104,6 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         MoniLogProperties.LogLevelConfig cfg = moniLogProperties.getPrinter().getLogLevel();
         LogLevel ll = (cfg == null ? new MoniLogProperties.LogLevelConfig() : cfg).getLargeSize();
         return ll == null ? LogLevel.ERROR : ll;
-    }
-
-    private String formatLongText(Object o) {
-        int maxTextLen = moniLogProperties.getPrinter().getMaxTextLen();
-        if (o == null) {
-            return null;
-        }
-        String str = JSON.toJSONString(o);
-        if (str.length() > maxTextLen) {
-            return str.substring(0, maxTextLen - 3) + "...";
-        }
-        return str;
     }
 
     private String getLogPattern(MoniLogParams p, LogType logType) {
@@ -178,8 +179,8 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         List<Object> logParamsList = new ArrayList<>(Arrays.asList(getLogPrefix(), logPoint, service, action, success, rt, code, msg, tagStr));
         LogType logType = LogType.DIGEST;
         if (isDetail) {
-            String input = formatLongText(p.getInput());
-            String output = formatLongText(p.getOutput());
+            String input = formatArg(p.getInput());
+            String output = formatArg(p.getOutput());
             logParamsList.add(input);
             logParamsList.add(output);
             logType = LogType.DETAIL;

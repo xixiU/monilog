@@ -222,7 +222,8 @@ class MoniLogUtil {
         }
         long valueLen;
         try {
-            valueLen = RamUsageEstimator.sizeOf(p.getOutput());
+            String formatted = printer.formatArg(p.getOutput());
+            valueLen = RamUsageEstimator.sizeOf(formatted == null ? p.getOutput() : formatted);
         } catch (Exception e) {
             MoniLogUtil.innerDebug("parseResultSize error", e);
             return;

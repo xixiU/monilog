@@ -2,6 +2,7 @@ package com.jiduauto.monilog;
 
 
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.TraceId;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +38,11 @@ public interface MoniLogPrinter {
     void logLargeSize(MoniLogParams logParams, String key, long sizeInBytes);
 
     /**
+     * 将未知类型参数格式化成字符串格式，以便日志中可以输出
+     */
+    String formatArg(Object o);
+
+    /**
      * 日志前缀
      */
     default String getLogPrefix() {
@@ -53,10 +59,10 @@ public interface MoniLogPrinter {
             if (StringUtils.isBlank(traceId)) {
                 traceId = Span.current().getSpanContext().getTraceId();
             }
-            if ("00000000000000000000000000000000".equals(traceId)) {
+            if (!TraceId.getInvalid().equals(traceId)) {
                 return "";
             }
-        } catch (Exception ignore) {
+        } catch (Throwable ignore) {
         }
         return traceId;
     }
