@@ -1,13 +1,11 @@
 package com.jiduauto.monilog;
 
 import org.aopalliance.intercept.MethodInterceptor;
+import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.aop.framework.ProxyFactory;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
+import java.lang.reflect.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,6 +28,37 @@ class ProxyUtils {
         proxy.addAdvice(interceptor);
         return (T) proxy.getProxy();
     }
+
+    static MethodInvocation buildInvocation(Object instance, Method method, Object[] args) {
+        return new MethodInvocation() {
+            @Override
+            public Method getMethod() {
+                return method;
+            }
+
+            @Override
+            public Object[] getArguments() {
+                return args;
+            }
+
+            @Override
+            public Object proceed() throws Throwable {
+                //执行实际方法
+                return method.invoke(instance, args);
+            }
+
+            @Override
+            public Object getThis() {
+                return instance;
+            }
+
+            @Override
+            public AccessibleObject getStaticPart() {
+                return null;
+            }
+        };
+    }
+
     static <T extends Annotation> T copyAnnotation(T anno) {
         return copyAnnotation(anno, null);
     }

@@ -1,6 +1,7 @@
 package com.jiduauto.monilog;
 
 
+import cn.hutool.aop.ProxyUtil;
 import com.google.common.collect.Sets;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -18,7 +19,9 @@ import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.SerializationException;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -172,13 +175,40 @@ public final class RedisMoniLogInterceptor {
             p.setMsgCode(ErrorEnum.SUCCESS.name());
             p.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
             try {
-                return ProxyUtils.getProxy(result, new RedissonResultProxy(p, new AtomicLong(start)));
+                return getRedissonObjProxy(result, p, start);
             } catch (Throwable e) {
                 MoniLogUtil.innerDebug("interceptRedisson error", e);
                 return result;
             }
         });
     }
+
+    private static Object getRedissonObjProxy(Object redissonResult, MoniLogParams p, long start) {
+        RedissonResultProxy methodInterceptor = new RedissonResultProxy(p, new AtomicLong(start));
+        Object cglibProxy = ProxyUtils.getProxy(redissonResult, methodInterceptor);
+        if (!(redissonResult instanceof RMap)) {
+            return cglibProxy;
+        }
+        JDKProxyHandlerForRedisson jdkProxy = new JDKProxyHandlerForRedisson(redissonResult, methodInterceptor, cglibProxy);
+        return ProxyUtil.newProxyInstance(jdkProxy, RMap.class);
+    }
+
+    @AllArgsConstructor
+    private static class JDKProxyHandlerForRedisson implements InvocationHandler {
+        private final Object origin;
+        private final RedissonResultProxy methodInterceptor;
+        private final Object cglibProxy;
+
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+            Method m = ReflectUtil.getMethodWithoutException(origin, method.getName(), args);
+            if (m != null && !Modifier.isFinal(m.getModifiers())) {
+                return method.invoke(cglibProxy, args);
+            }
+            return methodInterceptor.invoke(ProxyUtils.buildInvocation(origin, method, args));
+        }
+    }
+
     @AllArgsConstructor
     private static class RedissonResultProxy implements MethodInterceptor {
         private final MoniLogParams p;
