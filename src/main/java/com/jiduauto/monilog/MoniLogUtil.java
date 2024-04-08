@@ -95,6 +95,7 @@ class MoniLogUtil {
         } catch (Exception e) {
             innerDebug("printDetailLog error", e);
         }
+        logParams.setOutdated(true);
     }
 
     /**

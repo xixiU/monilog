@@ -1,5 +1,7 @@
 package com.jiduauto.monilog;
 
+import cn.hutool.core.bean.copier.BeanCopier;
+import cn.hutool.core.bean.copier.CopyOptions;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import lombok.Getter;
@@ -41,12 +43,35 @@ public class MoniLogParams implements Serializable {
      * 存放monilog计算过程中的临时数据
      */
     private transient Map<String, Object> payload = new HashMap<>();
+    /**
+     * 是否是已过时的数据
+     */
+    private transient boolean outdated;
+
+    /**
+     * copy一份
+     */
+    MoniLogParams copy() {
+        MoniLogParams target = new MoniLogParams();
+        CopyOptions options = CopyOptions.create().setTransientSupport(false);
+        BeanCopier<MoniLogParams> copier = BeanCopier.create(this, target, options);
+        copier.copy();
+        return target;
+    }
 
     public MoniLogParams addPayload(String key, Object value) {
         if (key == null || value == null) {
             return this;
         }
         this.payload.put(key, value);
+        return this;
+    }
+
+    public MoniLogParams removePayload(String key) {
+        if (key == null || this.payload == null) {
+            return this;
+        }
+        this.payload.remove(key);
         return this;
     }
 

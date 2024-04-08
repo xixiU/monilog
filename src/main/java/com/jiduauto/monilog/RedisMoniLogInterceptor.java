@@ -211,24 +211,33 @@ public final class RedisMoniLogInterceptor {
 
     @AllArgsConstructor
     private static class RedissonResultProxy implements MethodInterceptor {
-        private final MoniLogParams p;
-        private final AtomicLong startTime;
+        private final MoniLogParams params;
+        private final AtomicLong start;
 
         @Override
         public Object invoke(MethodInvocation invocation) throws Throwable {
             Method method = invocation.getMethod();
             String methodName = method.getName();
-            if (!TARGET_REDISSON_METHODS.contains(methodName) || p == null) {
+            if (!TARGET_REDISSON_METHODS.contains(methodName) || params == null) {
                 return invocation.proceed();
+            }
+            AtomicLong startTime = new AtomicLong(this.start.get());
+            MoniLogParams p = params.copy();
+            p.removePayload(MoniLogParams.PAYLOAD_FORMATTED_OUTPUT);
+            String asyncMethodTag = "().";
+            if (p.isOutdated()) {
+                p.setOutdated(false);
+                startTime.set(System.currentTimeMillis());
+                if (p.getAction() != null && p.getAction().contains(asyncMethodTag)) {
+                    p.setAction(StringUtils.split(p.getAction(), asyncMethodTag)[0]);
+                }
             }
             Class<?> serviceCls = p.getServiceCls();
             String methodClsName = method.getDeclaringClass().getCanonicalName();
             String redissonPkgPrefix = "org.redisson";
             if (methodClsName.startsWith(redissonPkgPrefix) || (serviceCls != null && serviceCls.getCanonicalName().startsWith(redissonPkgPrefix))) {
                 //e.g. : getBucket().set
-                if (p.getAction() != null && !p.getAction().contains("().")) {
-                    p.setAction(p.getAction() + "()." + methodName);
-                }
+                p.setAction(p.getAction() + asyncMethodTag + methodName);
             }
             Object ret;
             try {
@@ -247,9 +256,7 @@ public final class RedisMoniLogInterceptor {
                 p.setMsgInfo(errorInfo.getErrorMsg());
                 throw e;
             } finally {
-                long newStart = System.currentTimeMillis();
-                long oldStart = startTime.getAndSet(newStart);
-                p.setCost(newStart - oldStart);
+                p.setCost(System.currentTimeMillis() - startTime.get());
                 String maybeKey = chooseStringKey(p.getInput());
                 MoniLogUtil.printLargeSizeLog(p, maybeKey);
                 String msgPrefix = "";
@@ -259,6 +266,7 @@ public final class RedisMoniLogInterceptor {
                 }
                 p.setMsgInfo(msgPrefix + p.getMsgInfo());
                 MoniLogUtil.log(p);
+                params.setOutdated(true);
             }
         }
     }
