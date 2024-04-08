@@ -222,9 +222,13 @@ public final class RedisMoniLogInterceptor {
                 return invocation.proceed();
             }
             Class<?> serviceCls = p.getServiceCls();
-            if (serviceCls != null && serviceCls.getPackage().getName().startsWith("org.redisson")) {
+            String methodClsName = method.getDeclaringClass().getCanonicalName();
+            String redissonPkgPrefix = "org.redisson";
+            if (methodClsName.startsWith(redissonPkgPrefix) || (serviceCls != null && serviceCls.getCanonicalName().startsWith(redissonPkgPrefix))) {
                 //e.g. : getBucket().set
-                p.setAction(p.getAction() + "()." + methodName);
+                if (p.getAction() != null && !p.getAction().contains("().")) {
+                    p.setAction(p.getAction() + "()." + methodName);
+                }
             }
             Object ret;
             try {
