@@ -189,8 +189,8 @@ public final class RedisMoniLogInterceptor {
         if (!(redissonResult instanceof RMap)) {
             return cglibProxy;
         }
-        JDKProxyHandlerForRedisson jdkProxy = new JDKProxyHandlerForRedisson(redissonResult, methodInterceptor, cglibProxy);
-        return ProxyUtil.newProxyInstance(jdkProxy, RMap.class);
+        JDKProxyHandlerForRedisson jdkProxyHandler = new JDKProxyHandlerForRedisson(redissonResult, methodInterceptor, cglibProxy);
+        return ProxyUtil.newProxyInstance(jdkProxyHandler, RMap.class);
     }
 
     @AllArgsConstructor
