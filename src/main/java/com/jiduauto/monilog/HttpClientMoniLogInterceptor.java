@@ -2,25 +2,28 @@ package com.jiduauto.monilog;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.*;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.DecompressingEntity;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.entity.BufferedHttpEntity;
-import org.apache.http.entity.FileEntity;
-import org.apache.http.entity.StringEntity;
+import org.apache.http.entity.*;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.springframework.http.HttpHeaders;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.zip.GZIPInputStream;
 
 import static com.jiduauto.monilog.StringUtil.checkClassMatch;
 import static com.jiduauto.monilog.StringUtil.checkPathMatch;
@@ -152,16 +155,26 @@ public final class HttpClientMoniLogInterceptor {
                                     BufferedHttpEntity bufferedEntity = new MonilogBufferedHttpEntity(innerEntity);
                                     responseBody = EntityUtils.toString(bufferedEntity);
                                     jsonBody = StringUtil.tryConvert2Json(responseBody);
-                                    ReflectUtil.setPropValue(entity, entityField, bufferedEntity, false);
+                                    if (entity instanceof DecompressingEntity) {
+                                        ReflectUtil.setPropValue(entity, entityField, new DecompressingEntity(new InputStreamEntity(new ByteArrayInputStream(JSON.toJSONString(jsonBody).getBytes())), GZIPInputStream::new), false);
+                                    } else {
+                                        ReflectUtil.setPropValue(entity, entityField, bufferedEntity, false);
+                                    }
                                 }
                             } else {
                                 responseBody = "[parseResponseDataFailed]";
                             }
                         } else {
-                            BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
+                            HttpEntity bufferedEntity = null;
+                            if (entity instanceof DecompressingEntity) {
+                                bufferedEntity = new DecompressingEntityWrapper(entity);
+                            } else {
+                                bufferedEntity = new BufferedHttpEntity(entity);
+                            }
                             responseBody = EntityUtils.toString(bufferedEntity);
                             jsonBody = StringUtil.tryConvert2Json(responseBody);
                             httpResponse.setEntity(bufferedEntity);
+
                         }
                     }
                 }
@@ -194,6 +207,7 @@ public final class HttpClientMoniLogInterceptor {
         }
     }
 
+
     private static class MonilogBufferedHttpEntity extends BufferedHttpEntity {
         public MonilogBufferedHttpEntity(HttpEntity entity) throws IOException {
             super(entity);
@@ -207,6 +221,29 @@ public final class HttpClientMoniLogInterceptor {
         @Override
         public boolean isStreaming() {
             return wrappedEntity.isStreaming();
+        }
+    }
+
+    public static class DecompressingEntityWrapper extends HttpEntityWrapper {
+
+        private final InputStream content;
+
+        @Getter
+        private final byte[] buffer;
+
+        public DecompressingEntityWrapper(HttpEntity wrapped) throws IOException{
+            super(wrapped);
+            try {
+                this.buffer = EntityUtils.toByteArray(wrapped);
+                this.content = new ByteArrayInputStream(buffer);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to obtain content stream from wrapped entity", e);
+            }
+        }
+
+        @Override
+        public InputStream getContent() throws IOException {
+            return new ByteArrayInputStream(buffer);
         }
     }
 
