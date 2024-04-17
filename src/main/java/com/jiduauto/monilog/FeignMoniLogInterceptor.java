@@ -9,6 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 
+import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -245,7 +246,7 @@ public final class FeignMoniLogInterceptor {
         BufferingFeignResponse(Response response) throws IOException {
             this.originResponse = response;
             this.buffer = response.body() == null ? null : Util.toByteArray(response.body().asInputStream());
-            this.response = response.toBuilder().body(this.buffer).build();
+            resetResponse();
         }
 
         Response getResponse() {
@@ -267,8 +268,21 @@ public final class FeignMoniLogInterceptor {
             }
             String bodyString = StringUtil.encodeByteArray(buffer, charset, "Binary data");
             //复原response
-            this.response = response.toBuilder().body(buffer).build();
+            resetResponse();
+
             return bodyString;
+        }
+
+        private void resetResponse() {
+            if (ReflectUtil.hasProperty(response.getClass(), "length")) {
+                if (this.buffer == null) {
+                    this.response = response.toBuilder().body(new ByteArrayInputStream(new byte[0]),response.body().length()).build();
+                }else{
+                    this.response = response.toBuilder().body(new ByteArrayInputStream(this.buffer),response.body().length()).build();
+                }
+            }else{
+                this.response = response.toBuilder().body(this.buffer).build();
+            }
         }
 
         boolean isDownstream() {
