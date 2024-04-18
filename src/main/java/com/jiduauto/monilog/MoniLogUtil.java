@@ -95,6 +95,7 @@ class MoniLogUtil {
         } catch (Exception e) {
             innerDebug("printDetailLog error", e);
         }
+        logParams.setOutdated(true);
     }
 
     /**
@@ -222,7 +223,14 @@ class MoniLogUtil {
         }
         long valueLen;
         try {
-            valueLen = RamUsageEstimator.sizeOf(p.getOutput());
+            Object formatted;
+            if (p.getPayload(MoniLogParams.PAYLOAD_FORMATTED_OUTPUT) != null) {
+                formatted = p.getPayload(MoniLogParams.PAYLOAD_FORMATTED_OUTPUT);
+            } else {
+                formatted = printer.formatArg(p.getOutput());
+                p.addPayload(MoniLogParams.PAYLOAD_FORMATTED_OUTPUT, formatted);
+            }
+            valueLen = RamUsageEstimator.sizeOf(formatted == null ? p.getOutput() : formatted);
         } catch (Exception e) {
             MoniLogUtil.innerDebug("parseResultSize error", e);
             return;

@@ -1,5 +1,7 @@
 package com.jiduauto.monilog;
 
+import cn.hutool.core.bean.copier.BeanCopier;
+import cn.hutool.core.bean.copier.CopyOptions;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import lombok.Getter;
@@ -8,7 +10,9 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author yp
@@ -17,6 +21,8 @@ import java.util.List;
 @Getter
 @Setter
 public class MoniLogParams implements Serializable {
+    static final String PAYLOAD_FORMATTED_OUTPUT = "FORMATTED_OUTPUT";
+    static final String PAYLOAD_FORMATTED_INPUT = "FORMATTED_INPUT";
     private static final long serialVersionUID = 1L;
     private Class<?> serviceCls;
     private LogPoint logPoint;
@@ -32,6 +38,46 @@ public class MoniLogParams implements Serializable {
 
     private String[] tags;
     private boolean hasUserTag;
+
+    /**
+     * 存放monilog计算过程中的临时数据
+     */
+    private transient Map<String, Object> payload = new HashMap<>();
+    /**
+     * 是否是已过时的数据
+     */
+    private transient boolean outdated;
+
+    /**
+     * copy一份
+     */
+    MoniLogParams copy() {
+        MoniLogParams target = new MoniLogParams();
+        CopyOptions options = CopyOptions.create().setTransientSupport(false);
+        BeanCopier<MoniLogParams> copier = BeanCopier.create(this, target, options);
+        copier.copy();
+        return target;
+    }
+
+    public MoniLogParams addPayload(String key, Object value) {
+        if (key == null || value == null) {
+            return this;
+        }
+        this.payload.put(key, value);
+        return this;
+    }
+
+    public MoniLogParams removePayload(String key) {
+        if (key == null || this.payload == null) {
+            return this;
+        }
+        this.payload.remove(key);
+        return this;
+    }
+
+    public Object getPayload(String key) {
+        return this.payload.get(key);
+    }
 
     public String getMsgCode() {
         boolean blank = StringUtils.isBlank(msgCode);

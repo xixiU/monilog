@@ -1,6 +1,7 @@
 package com.jiduauto.monilog;
 
 
+import cn.hutool.aop.ProxyUtil;
 import com.google.common.collect.Sets;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -18,7 +19,9 @@ import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.SerializationException;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -172,29 +175,69 @@ public final class RedisMoniLogInterceptor {
             p.setMsgCode(ErrorEnum.SUCCESS.name());
             p.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
             try {
-                return ProxyUtils.getProxy(result, new RedissonResultProxy(p, new AtomicLong(start)));
+                return getRedissonObjProxy(result, p, start);
             } catch (Throwable e) {
                 MoniLogUtil.innerDebug("interceptRedisson error", e);
                 return result;
             }
         });
     }
+
+    private static Object getRedissonObjProxy(Object redissonResult, MoniLogParams p, long start) {
+        RedissonResultProxy methodInterceptor = new RedissonResultProxy(p, new AtomicLong(start));
+        Object cglibProxy = ProxyUtils.getProxy(redissonResult, methodInterceptor);
+        if (!(redissonResult instanceof RMap)) {
+            return cglibProxy;
+        }
+        JDKProxyHandlerForRedisson jdkProxyHandler = new JDKProxyHandlerForRedisson(redissonResult, methodInterceptor, cglibProxy);
+        return ProxyUtil.newProxyInstance(jdkProxyHandler, RMap.class);
+    }
+
+    @AllArgsConstructor
+    private static class JDKProxyHandlerForRedisson implements InvocationHandler {
+        private final Object origin;
+        private final RedissonResultProxy methodInterceptor;
+        private final Object cglibProxy;
+
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+            Method m = ReflectUtil.getMethodWithoutException(origin, method.getName(), args);
+            if (m != null && !Modifier.isFinal(m.getModifiers())) {
+                return method.invoke(cglibProxy, args);
+            }
+            return methodInterceptor.invoke(ProxyUtils.buildInvocation(origin, method, args));
+        }
+    }
+
     @AllArgsConstructor
     private static class RedissonResultProxy implements MethodInterceptor {
-        private final MoniLogParams p;
-        private final AtomicLong startTime;
+        private final MoniLogParams params;
+        private final AtomicLong start;
 
         @Override
         public Object invoke(MethodInvocation invocation) throws Throwable {
             Method method = invocation.getMethod();
             String methodName = method.getName();
-            if (!TARGET_REDISSON_METHODS.contains(methodName) || p == null) {
+            if (!TARGET_REDISSON_METHODS.contains(methodName) || params == null) {
                 return invocation.proceed();
             }
+            AtomicLong startTime = new AtomicLong(this.start.get());
+            MoniLogParams p = params.copy();
+            p.removePayload(MoniLogParams.PAYLOAD_FORMATTED_OUTPUT);
+            String asyncMethodTag = "().";
+            if (p.isOutdated()) {
+                p.setOutdated(false);
+                startTime.set(System.currentTimeMillis());
+                if (p.getAction() != null && p.getAction().contains(asyncMethodTag)) {
+                    p.setAction(StringUtils.split(p.getAction(), asyncMethodTag)[0]);
+                }
+            }
             Class<?> serviceCls = p.getServiceCls();
-            if (serviceCls != null && serviceCls.getPackage().getName().startsWith("org.redisson")) {
+            String methodClsName = method.getDeclaringClass().getCanonicalName();
+            String redissonPkgPrefix = "org.redisson";
+            if (methodClsName.startsWith(redissonPkgPrefix) || (serviceCls != null && serviceCls.getCanonicalName().startsWith(redissonPkgPrefix))) {
                 //e.g. : getBucket().set
-                p.setAction(p.getAction() + "()." + methodName);
+                p.setAction(p.getAction() + asyncMethodTag + methodName);
             }
             Object ret;
             try {
@@ -213,9 +256,7 @@ public final class RedisMoniLogInterceptor {
                 p.setMsgInfo(errorInfo.getErrorMsg());
                 throw e;
             } finally {
-                long newStart = System.currentTimeMillis();
-                long oldStart = startTime.getAndSet(newStart);
-                p.setCost(newStart - oldStart);
+                p.setCost(System.currentTimeMillis() - startTime.get());
                 String maybeKey = chooseStringKey(p.getInput());
                 MoniLogUtil.printLargeSizeLog(p, maybeKey);
                 String msgPrefix = "";
@@ -225,6 +266,7 @@ public final class RedisMoniLogInterceptor {
                 }
                 p.setMsgInfo(msgPrefix + p.getMsgInfo());
                 MoniLogUtil.log(p);
+                params.setOutdated(true);
             }
         }
     }

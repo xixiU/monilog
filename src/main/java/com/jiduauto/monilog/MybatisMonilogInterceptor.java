@@ -208,6 +208,7 @@ public final class MybatisMonilogInterceptor implements Interceptor {
      */
     private static String getSqlAndSetParams(BoundSql boundSql, MappedStatement ms) {
         String sql = formatSql(boundSql.getSql());
+        List<String> params = new ArrayList<>();
         try {
             List<ParameterMapping> parameterMappings = boundSql.getParameterMappings();
             Configuration configuration = ms.getConfiguration();
@@ -217,7 +218,6 @@ public final class MybatisMonilogInterceptor implements Interceptor {
             //参考mybatis 源码 DefaultParameterHandler
             TypeHandlerRegistry typeHandlerRegistry = configuration.getTypeHandlerRegistry();
             Object param = boundSql.getParameterObject();
-            List<String> params = new ArrayList<>();
             for (ParameterMapping pm : parameterMappings) {
                 if (pm.getMode() == ParameterMode.OUT) {
                     continue;
@@ -249,9 +249,9 @@ public final class MybatisMonilogInterceptor implements Interceptor {
                 }
                 params.add(paramValueStr);
             }
-            return StringUtil.fillParams(sql, "?", params);
+            return StringUtil.fillSqlParams(sql,params);
         } catch (Exception e) {
-            MoniLogUtil.innerDebug("fillParams for sql error, sql:{}", sql, e);
+            MoniLogUtil.innerDebug("fillParams for sql error, sql:{}, params:{}", sql, params,e);
             return sql;
         }
     }
