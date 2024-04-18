@@ -11,7 +11,10 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.DecompressingEntity;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.entity.*;
+import org.apache.http.entity.BufferedHttpEntity;
+import org.apache.http.entity.FileEntity;
+import org.apache.http.entity.HttpEntityWrapper;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.apache.http.protocol.HttpContext;
@@ -23,7 +26,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.zip.GZIPInputStream;
 
 import static com.jiduauto.monilog.StringUtil.checkClassMatch;
 import static com.jiduauto.monilog.StringUtil.checkPathMatch;
@@ -155,11 +157,7 @@ public final class HttpClientMoniLogInterceptor {
                                     BufferedHttpEntity bufferedEntity = new MonilogBufferedHttpEntity(innerEntity);
                                     responseBody = EntityUtils.toString(bufferedEntity);
                                     jsonBody = StringUtil.tryConvert2Json(responseBody);
-                                    if (entity instanceof DecompressingEntity) {
-                                        ReflectUtil.setPropValue(entity, entityField, new DecompressingEntity(new InputStreamEntity(new ByteArrayInputStream(JSON.toJSONString(jsonBody).getBytes())), GZIPInputStream::new), false);
-                                    } else {
-                                        ReflectUtil.setPropValue(entity, entityField, bufferedEntity, false);
-                                    }
+                                    ReflectUtil.setPropValue(entity, entityField, bufferedEntity, false);
                                 }
                             } else {
                                 responseBody = "[parseResponseDataFailed]";
@@ -226,8 +224,6 @@ public final class HttpClientMoniLogInterceptor {
 
     public static class DecompressingEntityWrapper extends HttpEntityWrapper {
 
-        private final InputStream content;
-
         @Getter
         private final byte[] buffer;
 
@@ -235,7 +231,6 @@ public final class HttpClientMoniLogInterceptor {
             super(wrapped);
             try {
                 this.buffer = EntityUtils.toByteArray(wrapped);
-                this.content = new ByteArrayInputStream(buffer);
             } catch (IOException e) {
                 throw new RuntimeException("Failed to obtain content stream from wrapped entity", e);
             }
