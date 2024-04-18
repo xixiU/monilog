@@ -172,7 +172,6 @@ public final class HttpClientMoniLogInterceptor {
                             responseBody = EntityUtils.toString(bufferedEntity);
                             jsonBody = StringUtil.tryConvert2Json(responseBody);
                             httpResponse.setEntity(bufferedEntity);
-
                         }
                     }
                 }
