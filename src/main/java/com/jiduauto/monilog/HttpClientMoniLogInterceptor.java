@@ -222,7 +222,7 @@ public final class HttpClientMoniLogInterceptor {
         }
     }
 
-    public static class DecompressingEntityWrapper extends HttpEntityWrapper {
+    private static class DecompressingEntityWrapper extends HttpEntityWrapper {
 
         @Getter
         private final byte[] buffer;
