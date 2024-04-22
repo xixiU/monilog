@@ -59,7 +59,7 @@ public interface MoniLogPrinter {
             if (StringUtils.isBlank(traceId)) {
                 traceId = Span.current().getSpanContext().getTraceId();
             }
-            if (!TraceId.getInvalid().equals(traceId)) {
+            if (TraceId.getInvalid().equals(traceId)) {
                 return "";
             }
         } catch (Throwable ignore) {
