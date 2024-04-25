@@ -256,6 +256,18 @@ class MoniLogUtil {
         return detailLogLevel;
     }
 
+    private static LogOutputLevel getDetailLogLevel(MoniLogParams logParams) {
+        LogPoint logPoint = logParams.getLogPoint();
+        MoniLogProperties properties = getLogProperties();
+        if (properties == null) {
+            return LogOutputLevel.none;
+        }
+        if (properties.isDebug()) {
+            return LogOutputLevel.always;
+        }
+        return logPoint == null ? LogOutputLevel.none : logPoint.getDetailLogLevel(properties);
+    }
+
     /**
      * 打印摘要日志
      */
@@ -266,7 +278,13 @@ class MoniLogUtil {
         }
         boolean doPrinter = printLevelCheckPass(getDigestLogLevel(), logParams);
         if (doPrinter) {
+            boolean doPrinterDetail = printLevelCheckPass(getDetailLogLevel(logParams), logParams);
+            // 如果详情日志也打印跳过打印摘要日志，避免日志重复
+            if (doPrinterDetail) {
+                return;
+            }
             printer.logDigest(logParams);
+
         }
     }
 
@@ -286,9 +304,7 @@ class MoniLogUtil {
         if (excludePrint(logParams)) {
             return;
         }
-        LogPoint logPoint = logParams.getLogPoint();
-        LogOutputLevel detailLogLevel = logPoint == null ? LogOutputLevel.none : logPoint.getDetailLogLevel(properties);
-        boolean doPrinter = printLevelCheckPass(detailLogLevel, logParams);
+        boolean doPrinter = printLevelCheckPass(getDetailLogLevel(logParams), logParams);
         if (doPrinter) {
             printer.logDetail(logParams);
         }
