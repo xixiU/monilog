@@ -108,12 +108,12 @@ class ReflectUtil {
 
     /**
      * 从当前类以及该类的父类、接口上寻找符合签名的方法(含非public方法)，找到一个就立即返回
-     * getDeclaredMethods:获取当前类的所有方法；包括 protected/默认/private 修饰的方法；不包括父类 、接口 public 修饰的方法
-     * getMethods：获取当前类或父类或父接口的 public 修饰的字段；包含接口中 default 修饰的方法
      */
     private static List<Method> getClsMethods(Class<?> cls, String methodName, Object[] args) {
         List<Method> results = new ArrayList<>();
-        Optional<Method> first = Arrays.stream(cls.getDeclaredMethods()).filter(e -> matchMethod(e, methodName, args)).findFirst();
+        Optional<Method> first = getClassSelfMethods(cls).stream().filter(e -> matchMethod(e, methodName, args))
+                .min(Comparator.comparingInt(Method::getModifiers)
+                        .thenComparing(Method::getName));
         if (first.isPresent()) {
             results.add(first.get());
             return results;
@@ -137,7 +137,22 @@ class ReflectUtil {
                 break;
             }
         }
+
         return results;
+    }
+
+    /**
+     * getDeclaredMethods:获取当前类的所有方法；包括 protected/默认/private 修饰的方法；不包括父类 、接口 public 修饰的方法
+     * getMethods：获取当前类或父类或父接口的 public 修饰的字段；包含接口中 default 修饰的方法
+     * 获取类的所有方法，最好使用两者的合集作为结果
+     */
+    private static Set<Method> getClassSelfMethods(Class<?> cls) {
+        Method[] declaredMethods = cls.getDeclaredMethods();
+        Method[] methods = cls.getMethods();
+        Set<Method> sets = new HashSet<>();
+        sets.addAll(Arrays.asList(declaredMethods));
+        sets.addAll(Arrays.asList(methods));
+        return sets;
     }
 
     private static boolean matchMethod(Method method, String methodName, Object[] args) {
