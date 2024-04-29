@@ -114,7 +114,7 @@ public final class RocketMqMoniLogInterceptor {
         }
 
         public Object onMessage(List<MessageExt> msgs, Object c) {
-            if (!ComponentEnum.rocketmq_consumer.isEnable()) {
+            if (!ComponentEnum.rocketmq_consumer.isEnable() || CollectionUtils.isEmpty(msgs)) {
                 return doConsume(msgs, c);
             }
             MoniLogParams params = new MoniLogParams();
