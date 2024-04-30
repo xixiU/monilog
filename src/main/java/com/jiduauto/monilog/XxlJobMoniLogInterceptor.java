@@ -3,6 +3,10 @@ package com.jiduauto.monilog;
 
 import com.xxl.job.core.biz.model.ReturnT;
 import com.xxl.job.core.handler.IJobHandler;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Scope;
 
 import java.lang.reflect.Method;
 
@@ -14,8 +18,26 @@ public final class XxlJobMoniLogInterceptor {
             Method method = invocation.getMethod();
             Class<?> returnType = method.getReturnType();
             boolean shouldMonilog = "execute".equals(method.getName()) && ComponentEnum.xxljob.isEnable();
-            return shouldMonilog ? MoniLogAop.processAround(invocation, buildLogParserForJob(returnType == ReturnT.class), LogPoint.xxljob) : invocation.proceed();
+            if (!shouldMonilog) {
+                return invocation.proceed();
+            }
+            //必须使用javakit-xxljob才会自动提供traceId，否则会没有traceId，这里按javakit-xxljob相同的方式统一生成traceId
+            Tracer tracer = GlobalOpenTelemetry.getTracer(getTraceInstrument(invocation.getThis().getClass()), "0.0.1");
+            Span span = tracer.spanBuilder("xxl-job").startSpan();
+            try (Scope ignore = span.makeCurrent()) {
+                return MoniLogAop.processAround(invocation, buildLogParserForJob(returnType == ReturnT.class), LogPoint.xxljob);
+            } catch (Throwable t) {
+                span.recordException(t);
+                throw t;
+            } finally {
+                span.end();
+            }
         });
+    }
+
+    private static String getTraceInstrument(Class<?> cls) {
+        String pkg = cls.getPackage().getName();
+        return pkg.split("job")[0] + "job";
     }
 
     private static LogParser buildLogParserForJob(boolean hasReturnT) {
