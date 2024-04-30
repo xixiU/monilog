@@ -79,7 +79,7 @@ class MoniLogUtil {
     }
 
     static void log(MoniLogParams logParams) {
-        setTraceAndSpanId(logParams.getPayload(MoniLogParams.REQUEST_TRACE_ID), logParams.getPayload(MoniLogParams.REQUEST_SPAN_ID));
+        setTraceAndSpanIdIfMissing(logParams.getPayload(MoniLogParams.REQUEST_TRACE_ID), logParams.getPayload(MoniLogParams.REQUEST_SPAN_ID));
         try {
             doMonitor(logParams);
         } catch (Exception e) {
@@ -433,7 +433,7 @@ class MoniLogUtil {
         return spanId;
     }
 
-    private static void setTraceAndSpanId(Object traceIdFromReq, Object spanIdFromReq) {
+    private static void setTraceAndSpanIdIfMissing(Object traceIdFromReq, Object spanIdFromReq) {
         if (traceIdFromReq != null && getTraceId() == null) {
             MDC.put("trace_id", String.valueOf(traceIdFromReq));
         }
