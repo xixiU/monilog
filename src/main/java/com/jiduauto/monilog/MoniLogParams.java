@@ -23,6 +23,8 @@ import java.util.Map;
 public class MoniLogParams implements Serializable {
     static final String PAYLOAD_FORMATTED_OUTPUT = "FORMATTED_OUTPUT";
     static final String PAYLOAD_FORMATTED_INPUT = "FORMATTED_INPUT";
+    static final String REQUEST_TRACE_ID = "REQ_TRACE_ID";
+    static final String REQUEST_SPAN_ID = "REQ_SPAN_ID";
     private static final long serialVersionUID = 1L;
     private Class<?> serviceCls;
     private LogPoint logPoint;
@@ -47,6 +49,12 @@ public class MoniLogParams implements Serializable {
      * 是否是已过时的数据
      */
     private transient boolean outdated;
+
+    public MoniLogParams() {
+        //在某些组件的异步场景下，trace信息并不会正常传递，这里尝试获取请求前的trace信息并暂存下来
+        addPayload(REQUEST_TRACE_ID, MoniLogUtil.getTraceId());
+        addPayload(REQUEST_SPAN_ID, MoniLogUtil.getSpanId());
+    }
 
     /**
      * copy一份

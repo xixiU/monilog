@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSON;
 import com.carrotsearch.sizeof.RamUsageEstimator;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
 import javax.annotation.Resource;
@@ -110,8 +111,8 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         if (p == null) {
             return "";
         }
-        boolean includeTraceId = moniLogProperties.getPrinter().isPrintTraceId();
         String traceId = getTraceId();
+        boolean includeTraceId = StringUtils.isNotBlank(traceId) && moniLogProperties.getPrinter().isPrintTraceId();
         switch (logType) {
             case DETAIL:
                 return includeTraceId ? "[" + traceId + "]" + DETAIL_LOG_PATTERN : DETAIL_LOG_PATTERN;

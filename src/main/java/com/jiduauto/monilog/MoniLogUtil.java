@@ -2,8 +2,12 @@ package com.jiduauto.monilog;
 
 import ch.qos.logback.classic.spi.EventArgUtil;
 import com.carrotsearch.sizeof.RamUsageEstimator;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanId;
+import io.opentelemetry.api.trace.TraceId;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.MDC;
 
 import javax.annotation.Nullable;
 import java.util.Set;
@@ -75,6 +79,7 @@ class MoniLogUtil {
     }
 
     static void log(MoniLogParams logParams) {
+        setTraceAndSpanId(logParams.getPayload(MoniLogParams.REQUEST_TRACE_ID), logParams.getPayload(MoniLogParams.REQUEST_SPAN_ID));
         try {
             doMonitor(logParams);
         } catch (Exception e) {
@@ -400,5 +405,40 @@ class MoniLogUtil {
         }
         MoniLogProperties properties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
         return (logProperties = properties);
+    }
+
+    static String getTraceId() {
+        String traceId = null;
+        try {
+            traceId = Span.current().getSpanContext().getTraceId();
+            if (StringUtils.isBlank(traceId) || TraceId.getInvalid().equals(traceId)) {
+                traceId = MDC.get("trace_id");
+            }
+            return StringUtils.isBlank(traceId) || TraceId.getInvalid().equals(traceId) ? null : traceId;
+        } catch (Throwable ignore) {
+        }
+        return traceId;
+    }
+
+    public static String getSpanId() {
+        String spanId = null;
+        try {
+            spanId = Span.current().getSpanContext().getSpanId();
+            if (StringUtils.isBlank(spanId) || SpanId.getInvalid().equals(spanId)) {
+                spanId = MDC.get("span_id");
+            }
+            return StringUtils.isBlank(spanId) || SpanId.getInvalid().equals(spanId) ? null : spanId;
+        } catch (Throwable ignore) {
+        }
+        return spanId;
+    }
+
+    private static void setTraceAndSpanId(Object traceIdFromReq, Object spanIdFromReq) {
+        if (traceIdFromReq != null && getTraceId() == null) {
+            MDC.put("trace_id", String.valueOf(traceIdFromReq));
+        }
+        if (spanIdFromReq != null && getSpanId() == null) {
+            MDC.put("span_id", String.valueOf(spanIdFromReq));
+        }
     }
 }
