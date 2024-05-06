@@ -259,7 +259,7 @@ public final class MybatisMonilogInterceptor implements Interceptor {
                         if (StringUtils.containsIgnoreCase(arg.getClass().getSimpleName(), "TypeHandler")) {
                             Object typeHandler = ReflectUtil.getPropValue(arg, "typeHandler");
                             Object value = ReflectUtil.getPropValue(arg, "value");
-                            if (typeHandler instanceof TypeHandler && value != null) {
+                            if (typeHandler instanceof TypeHandler) {
                                 sqlValue = correntValue(value, (TypeHandler<?>) typeHandler);
                             }
                         }
