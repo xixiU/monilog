@@ -20,6 +20,7 @@ import org.apache.ibatis.reflection.SystemMetaObject;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
+import org.apache.ibatis.type.EnumOrdinalTypeHandler;
 import org.apache.ibatis.type.TypeHandler;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 
@@ -241,15 +242,7 @@ public final class MybatisMonilogInterceptor implements Interceptor {
                     }
 
                     Object sqlValue = correntValue(value, typeHandler);
-                    String paramValueStr;
-                    if (sqlValue instanceof String) {
-                        paramValueStr = "'" + sqlValue + "'";
-                    } else if (sqlValue instanceof Date) {
-                        paramValueStr = "'" + DATE_FORMAT_THREAD_LOCAL.get().format(sqlValue) + "'";
-                    } else {
-                        paramValueStr = sqlValue + "";
-                    }
-                    params.add(paramValueStr);
+                    params.add(sqlValueToString(sqlValue));
                 }
             } else if (param instanceof Map && ((Map<?, ?>) param).containsKey("$$sql_args")) {
                 Object[] args = (Object[])((Map<?, ?>) param).get("$$sql_args");
@@ -263,15 +256,7 @@ public final class MybatisMonilogInterceptor implements Interceptor {
                                 sqlValue = correntValue(value, (TypeHandler<?>) typeHandler);
                             }
                         }
-                        String paramValueStr;
-                        if (sqlValue instanceof String) {
-                            paramValueStr = "'" + sqlValue + "'";
-                        } else if (sqlValue instanceof Date) {
-                            paramValueStr = "'" + DATE_FORMAT_THREAD_LOCAL.get().format(sqlValue) + "'";
-                        } else {
-                            paramValueStr = sqlValue + "";
-                        }
-                        params.add(paramValueStr);
+                        params.add(sqlValueToString(sqlValue));
                     }
                 }
             }
@@ -284,7 +269,14 @@ public final class MybatisMonilogInterceptor implements Interceptor {
 
     private static Object correntValue(Object value, TypeHandler<?> typeHandler) {
         try {
-            if (value == null || ClassUtil.isSimpleValueType(value.getClass())) {
+            if (value == null) {
+                return null;
+            }
+            if (value.getClass().isEnum() && typeHandler instanceof EnumOrdinalTypeHandler) {
+                Enum<?> e = (Enum<?>) value;
+                return e.ordinal();
+            }
+            if (ClassUtil.isSimpleValueType(value.getClass())) {
                 return value;
             }
             if (typeHandler != null) {
@@ -305,6 +297,21 @@ public final class MybatisMonilogInterceptor implements Interceptor {
         return value;
     }
 
+
+    private static String sqlValueToString(Object sqlValue) {
+        String s;
+        if (sqlValue instanceof String) {
+            s = "'" + sqlValue + "'";
+        } else if (sqlValue instanceof Date) {
+            s = "'" + DATE_FORMAT_THREAD_LOCAL.get().format(sqlValue) + "'";
+        } else if (sqlValue != null && sqlValue.getClass().isEnum()) {
+            //枚举类型这里传递字面量，暂时无法获取枚举code之类的值
+            s = "'" + sqlValue + "'";
+        } else {
+            s = sqlValue + "";
+        }
+        return s;
+    }
 
     /**
      * 去除sql中的注释、换行、多余空格等
