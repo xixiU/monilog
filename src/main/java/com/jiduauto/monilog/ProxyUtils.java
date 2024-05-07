@@ -1,5 +1,6 @@
 package com.jiduauto.monilog;
 
+import cn.hutool.aop.ProxyUtil;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.aop.framework.ProxyFactory;
@@ -14,6 +15,26 @@ import java.util.Map;
  * @date 2023/07/30
  */
 class ProxyUtils {
+    @SuppressWarnings("unchecked")
+    static <T> T tryGetProxy(T obj, MethodInterceptor interceptor, Class<?> interfaceCls) {
+        T result = obj;
+        try {
+            ProxyFactory proxy = new ProxyFactory(obj);
+            proxy.setProxyTargetClass(true);
+            proxy.addAdvice(interceptor);
+            return (T) proxy.getProxy();
+        } catch (Throwable e) {
+            try {
+                result = ProxyUtil.newProxyInstance((proxy, method, args) -> interceptor.invoke(ProxyUtils.buildInvocation(obj, method, args)), interfaceCls);
+            } catch (Throwable ex) {
+                String clsName = obj.getClass().getSimpleName();
+                MoniLogUtil.innerDebug("buildProxy for {} failed, monilog of {} will not effect, msg: {}", clsName, e.getMessage(), e);
+            }
+            return result;
+        }
+    }
+
+
     /**
      * 创建指定对象的代理类
      *
@@ -29,7 +50,8 @@ class ProxyUtils {
             proxy.addAdvice(interceptor);
             return (T) proxy.getProxy();
         } catch (Throwable e) {
-            MoniLogUtil.innerDebug("buildProxy failed, monilog of {} will not effect, msg: {}", obj.getClass().getSimpleName(), e.getMessage(), e);
+            String clsName = obj.getClass().getSimpleName();
+            MoniLogUtil.innerDebug("buildProxy for {} failed, monilog of {} will not effect, msg: {}", clsName, e.getMessage(), e);
             return obj;
         }
     }

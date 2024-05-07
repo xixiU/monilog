@@ -152,7 +152,7 @@ public final class RedisMoniLogInterceptor {
      * 对RedissonClient的执行进行监控，禁止修改该方法的签名
      */
     public static Object getRedissonProxy(RedissonClient client) {
-        return ProxyUtils.getProxy(client, invocation -> {
+        return ProxyUtils.tryGetProxy(client, invocation -> {
             if (!ComponentEnum.redis.isEnable()) {
                 return invocation.proceed();
             }
@@ -180,7 +180,7 @@ public final class RedisMoniLogInterceptor {
                 MoniLogUtil.innerDebug("interceptRedisson error", e);
                 return result;
             }
-        });
+        }, RedissonClient.class);
     }
 
     private static Object getRedissonObjProxy(Object redissonResult, MoniLogParams p, long start) {
