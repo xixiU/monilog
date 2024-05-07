@@ -254,11 +254,11 @@ class MoniLogUtil {
         if (printerCfg == null) {
             return LogOutputLevel.always;
         }
-        LogOutputLevel detailLogLevel = printerCfg.getDigestLogLevel();
-        if (detailLogLevel == null) {
+        LogOutputLevel digestLogLevel = printerCfg.getDigestLogLevel();
+        if (digestLogLevel == null) {
             return LogOutputLevel.always;
         }
-        return detailLogLevel;
+        return digestLogLevel;
     }
 
     protected static LogOutputLevel getDetailLogLevel(MoniLogParams logParams) {
