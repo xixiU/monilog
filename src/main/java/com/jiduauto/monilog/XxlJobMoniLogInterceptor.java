@@ -15,7 +15,7 @@ import java.lang.reflect.Method;
 public final class XxlJobMoniLogInterceptor {
     //增强xxljob，请勿改动此方法
     public static IJobHandler getProxyBean(IJobHandler bean) {
-        return ProxyUtils.getProxy(bean, invocation -> {
+        return ProxyUtils.tryGetProxy(bean, invocation -> {
             Method method = invocation.getMethod();
             Class<?> returnType = method.getReturnType();
             boolean shouldMonilog = "execute".equals(method.getName()) && ComponentEnum.xxljob.isEnable();
@@ -35,7 +35,7 @@ public final class XxlJobMoniLogInterceptor {
             } finally {
                 span.end();
             }
-        });
+        }, IJobHandler.class);
     }
 
     private static String getTraceInstrument(Class<?> cls) {

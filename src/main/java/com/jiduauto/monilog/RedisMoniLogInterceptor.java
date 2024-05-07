@@ -94,14 +94,14 @@ public final class RedisMoniLogInterceptor {
          * 访问修饰符、方法名不可修改
          */
         public static RedisConnection buildProxyForRedisConnection(RedisConnection conn) {
-            return ProxyUtils.getProxy(conn, new RedisConnectionFactoryInterceptor());
+            return ProxyUtils.tryGetProxy(conn, new RedisConnectionFactoryInterceptor(), RedisConnection.class);
         }
 
         /**
          * 访问修饰符、方法名不可修改
          */
         public static RedisClusterConnection buildProxyForRedisClusterConnection(RedisClusterConnection conn) {
-            return ProxyUtils.getProxy(conn, new RedisConnectionFactoryInterceptor());
+            return ProxyUtils.tryGetProxy(conn, new RedisConnectionFactoryInterceptor(), RedisClusterConnection.class);
         }
 
         /**
