@@ -23,10 +23,15 @@ class ProxyUtils {
      */
     @SuppressWarnings("unchecked")
     static <T> T getProxy(T obj, MethodInterceptor interceptor) {
-        ProxyFactory proxy = new ProxyFactory(obj);
-        proxy.setProxyTargetClass(true);
-        proxy.addAdvice(interceptor);
-        return (T) proxy.getProxy();
+        try {
+            ProxyFactory proxy = new ProxyFactory(obj);
+            proxy.setProxyTargetClass(true);
+            proxy.addAdvice(interceptor);
+            return (T) proxy.getProxy();
+        } catch (Throwable e) {
+            MoniLogUtil.innerDebug("buildProxy failed, monilog of {} will not effect, msg: {}", obj.getClass().getSimpleName(), e.getMessage(), e);
+            return obj;
+        }
     }
 
     static MethodInvocation buildInvocation(Object instance, Method method, Object[] args) {
