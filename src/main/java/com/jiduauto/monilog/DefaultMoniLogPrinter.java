@@ -199,6 +199,14 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
             logType = LogType.DETAIL;
         }
         LogLevel level = getLogLevel(p, logType);
+        if (!isDetail) {
+            // 摘要日志校验详情日志是否打印，如果详情日志打印，则摘要日志默认采用info级别打印。避免摘要日志与详情日志error重复
+            boolean printDetailLog = MoniLogUtil.printLevelCheckPass(MoniLogUtil.getDetailLogLevel(p), p);
+            if (printDetailLog) {
+                level = LogLevel.INFO;
+            }
+            // 详情日志不打印，则采用默认配置的摘要日志打印级别
+        }
         String pattern = getLogPattern(p, logType);
         if (ex != null) {
             logParamsList.add(ex);
