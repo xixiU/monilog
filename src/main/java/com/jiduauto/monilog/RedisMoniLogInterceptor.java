@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Slf4j
 public final class RedisMoniLogInterceptor {
     private static final Set<String> SKIP_METHODS_FOR_REDIS = Sets.newHashSet("isPipelined", "close", "isClosed", "getNativeConnection", "isQueueing", "closePipeline", "evaluate");
-    private static final Set<String> TARGET_REDISSON_METHODS = Sets.newHashSet("get", "getAndDelete", "getAndSet", "getAndExpire", "getAndClearExpire", "put", "putIfAbsent", "putIfExists", "randomEntries", "randomKeys", "addAndGet", "containsKey", "containsValue", "remove", "replace", "putAll", "fastPut", "fastRemove", "fastReplace", "fastPutIfAbsent", "fastPutIfExists", "readAllKeySet", "readAllValues", "readAllEntrySet", "readAllMap", "keySet", "values", "entrySet", "addAfter", "addBefore", "fastSet", "readAll", "range", "random", "removeRandom", "tryAdd", "set", "trySet", "setAndKeepTTL", "setIfAbsent", "setIfExists", "compareAndSet", "tryLock", "lock", "tryLock", "lockInterruptibly");
+    private static final Set<String> TARGET_REDISSON_METHODS = Sets.newHashSet("get", "getAndDelete", "readAll", "delete", "isExists", "getAndSet", "getAndExpire", "getAndClearExpire", "put", "putIfAbsent", "putIfExists", "randomEntries", "randomKeys", "addAndGet", "containsKey", "containsValue", "remove", "replace", "putAll", "fastPut", "fastRemove", "fastReplace", "fastPutIfAbsent", "fastPutIfExists", "readAllKeySet", "readAllValues", "readAllEntrySet", "readAllMap", "keySet", "values", "entrySet", "addAfter", "addBefore", "fastSet", "readAll", "range", "random", "removeRandom", "tryAdd", "set", "trySet", "setAndKeepTTL", "setIfAbsent", "setIfExists", "compareAndSet", "tryLock", "lock", "tryLock", "unlock", "forceUnlock", "lockInterruptibly", "expire", "expireAt", "expireIfSet", "expireIfNotSet", "expireIfGreater", "expireIfLess", "clearExpire");
     private static final RedisSerializer<?> stringSerializer = new StringRedisSerializer();
     private static final RedisSerializer<?> jdkSerializer = new JdkSerializationRedisSerializer();
 
@@ -218,9 +218,19 @@ public final class RedisMoniLogInterceptor {
         public Object invoke(MethodInvocation invocation) throws Throwable {
             Method method = invocation.getMethod();
             String methodName = method.getName();
-            if (!TARGET_REDISSON_METHODS.contains(methodName) || params == null) {
+            if (params == null) {
                 return invocation.proceed();
             }
+            if (!TARGET_REDISSON_METHODS.contains(methodName)) {
+                if (methodName.endsWith("Async")) {
+                    if (!TARGET_REDISSON_METHODS.contains(StringUtils.removeEnd(methodName, "Async"))) {
+                        return invocation.proceed();
+                    }
+                } else {
+                    return invocation.proceed();
+                }
+            }
+
             AtomicLong startTime = new AtomicLong(this.start.get());
             MoniLogParams p = params.copy();
             p.removePayload(MoniLogParams.PAYLOAD_FORMATTED_OUTPUT);
