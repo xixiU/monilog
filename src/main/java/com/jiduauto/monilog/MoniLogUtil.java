@@ -261,7 +261,7 @@ class MoniLogUtil {
         return detailLogLevel;
     }
 
-    public static LogOutputLevel getDetailLogLevel(MoniLogParams logParams) {
+    protected static LogOutputLevel getDetailLogLevel(MoniLogParams logParams) {
         LogPoint logPoint = logParams.getLogPoint();
         MoniLogProperties properties = getLogProperties();
         if (properties == null) {
