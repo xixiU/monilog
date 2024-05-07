@@ -2,8 +2,12 @@ package com.jiduauto.monilog;
 
 import ch.qos.logback.classic.spi.EventArgUtil;
 import com.carrotsearch.sizeof.RamUsageEstimator;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanId;
+import io.opentelemetry.api.trace.TraceId;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.MDC;
 
 import javax.annotation.Nullable;
 import java.util.Set;
@@ -75,6 +79,7 @@ class MoniLogUtil {
     }
 
     static void log(MoniLogParams logParams) {
+        setTraceAndSpanIdIfMissing(logParams.getPayload(MoniLogParams.REQUEST_TRACE_ID), logParams.getPayload(MoniLogParams.REQUEST_SPAN_ID));
         try {
             doMonitor(logParams);
         } catch (Exception e) {
@@ -249,11 +254,23 @@ class MoniLogUtil {
         if (printerCfg == null) {
             return LogOutputLevel.always;
         }
-        LogOutputLevel detailLogLevel = printerCfg.getDigestLogLevel();
-        if (detailLogLevel == null) {
+        LogOutputLevel digestLogLevel = printerCfg.getDigestLogLevel();
+        if (digestLogLevel == null) {
             return LogOutputLevel.always;
         }
-        return detailLogLevel;
+        return digestLogLevel;
+    }
+
+    protected static LogOutputLevel getDetailLogLevel(MoniLogParams logParams) {
+        LogPoint logPoint = logParams.getLogPoint();
+        MoniLogProperties properties = getLogProperties();
+        if (properties == null) {
+            return LogOutputLevel.none;
+        }
+        if (properties.isDebug()) {
+            return LogOutputLevel.always;
+        }
+        return logPoint == null ? LogOutputLevel.none : logPoint.getDetailLogLevel(properties);
     }
 
     /**
@@ -286,9 +303,7 @@ class MoniLogUtil {
         if (excludePrint(logParams)) {
             return;
         }
-        LogPoint logPoint = logParams.getLogPoint();
-        LogOutputLevel detailLogLevel = logPoint == null ? LogOutputLevel.none : logPoint.getDetailLogLevel(properties);
-        boolean doPrinter = printLevelCheckPass(detailLogLevel, logParams);
+        boolean doPrinter = printLevelCheckPass(getDetailLogLevel(logParams), logParams);
         if (doPrinter) {
             printer.logDetail(logParams);
         }
@@ -358,7 +373,7 @@ class MoniLogUtil {
         return StringUtil.checkListItemContains(exceptions, exception.getClass().getCanonicalName());
     }
 
-    private static boolean printLevelCheckPass(LogOutputLevel detailLogLevel, MoniLogParams logParams) {
+    protected static boolean printLevelCheckPass(LogOutputLevel detailLogLevel, MoniLogParams logParams) {
         boolean doPrinter = false;
         switch (detailLogLevel) {
             case always:
@@ -384,5 +399,40 @@ class MoniLogUtil {
         }
         MoniLogProperties properties = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
         return (logProperties = properties);
+    }
+
+    static String getTraceId() {
+        String traceId = null;
+        try {
+            traceId = Span.current().getSpanContext().getTraceId();
+            if (StringUtils.isBlank(traceId) || TraceId.getInvalid().equals(traceId)) {
+                traceId = MDC.get("trace_id");
+            }
+            return StringUtils.isBlank(traceId) || TraceId.getInvalid().equals(traceId) ? null : traceId;
+        } catch (Throwable ignore) {
+        }
+        return traceId;
+    }
+
+    public static String getSpanId() {
+        String spanId = null;
+        try {
+            spanId = Span.current().getSpanContext().getSpanId();
+            if (StringUtils.isBlank(spanId) || SpanId.getInvalid().equals(spanId)) {
+                spanId = MDC.get("span_id");
+            }
+            return StringUtils.isBlank(spanId) || SpanId.getInvalid().equals(spanId) ? null : spanId;
+        } catch (Throwable ignore) {
+        }
+        return spanId;
+    }
+
+    private static void setTraceAndSpanIdIfMissing(Object traceIdFromReq, Object spanIdFromReq) {
+        if (traceIdFromReq != null && getTraceId() == null) {
+            MDC.put("trace_id", String.valueOf(traceIdFromReq));
+        }
+        if (spanIdFromReq != null && getSpanId() == null) {
+            MDC.put("span_id", String.valueOf(spanIdFromReq));
+        }
     }
 }

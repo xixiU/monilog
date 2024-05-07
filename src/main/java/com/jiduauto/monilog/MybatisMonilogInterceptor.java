@@ -4,6 +4,7 @@ import cn.hutool.core.util.ClassUtil;
 import com.alibaba.fastjson.JSON;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.cache.CacheKey;
@@ -19,6 +20,7 @@ import org.apache.ibatis.reflection.SystemMetaObject;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
+import org.apache.ibatis.type.EnumOrdinalTypeHandler;
 import org.apache.ibatis.type.TypeHandler;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 
@@ -218,36 +220,45 @@ public final class MybatisMonilogInterceptor implements Interceptor {
             //参考mybatis 源码 DefaultParameterHandler
             TypeHandlerRegistry typeHandlerRegistry = configuration.getTypeHandlerRegistry();
             Object param = boundSql.getParameterObject();
-            for (ParameterMapping pm : parameterMappings) {
-                if (pm.getMode() == ParameterMode.OUT) {
-                    continue;
-                }
-                Object value;
-                TypeHandler<?> typeHandler = null;
-                String propertyName = pm.getProperty();
-                if (boundSql.hasAdditionalParameter(propertyName)) {
-                    value = boundSql.getAdditionalParameter(propertyName);
-                } else if (param == null) {
-                    value = null;
-                } else if (typeHandlerRegistry.hasTypeHandler(param.getClass())) {
-                    typeHandler = typeHandlerRegistry.getTypeHandler(params.getClass());
-                    value = param;
-                } else {
-                    MetaObject metaObject = configuration.newMetaObject(param);
-                    value = metaObject.getValue(propertyName);
-                    typeHandler = pm.getTypeHandler();
-                }
+            if (CollectionUtils.isNotEmpty(parameterMappings)) {
+                for (ParameterMapping pm : parameterMappings) {
+                    if (pm.getMode() == ParameterMode.OUT) {
+                        continue;
+                    }
+                    Object value;
+                    TypeHandler<?> typeHandler = null;
+                    String propertyName = pm.getProperty();
+                    if (boundSql.hasAdditionalParameter(propertyName)) {
+                        value = boundSql.getAdditionalParameter(propertyName);
+                    } else if (param == null) {
+                        value = null;
+                    } else if (typeHandlerRegistry.hasTypeHandler(param.getClass())) {
+                        typeHandler = typeHandlerRegistry.getTypeHandler(params.getClass());
+                        value = param;
+                    } else {
+                        MetaObject metaObject = configuration.newMetaObject(param);
+                        value = metaObject.getValue(propertyName);
+                        typeHandler = pm.getTypeHandler();
+                    }
 
-                Object sqlValue = correntValue(value, typeHandler);
-                String paramValueStr;
-                if (sqlValue instanceof String) {
-                    paramValueStr = "'" + sqlValue + "'";
-                } else if (sqlValue instanceof Date) {
-                    paramValueStr = "'" + DATE_FORMAT_THREAD_LOCAL.get().format(sqlValue) + "'";
-                } else {
-                    paramValueStr = sqlValue + "";
+                    Object sqlValue = correntValue(value, typeHandler);
+                    params.add(sqlValueToString(sqlValue));
                 }
-                params.add(paramValueStr);
+            } else if (param instanceof Map && ((Map<?, ?>) param).containsKey("$$sql_args")) {
+                Object[] args = (Object[])((Map<?, ?>) param).get("$$sql_args");
+                if (args != null) {
+                    for (Object arg : args) {
+                        Object sqlValue = correntValue(arg, null);
+                        if (StringUtils.containsIgnoreCase(arg.getClass().getSimpleName(), "TypeHandler")) {
+                            Object typeHandler = ReflectUtil.getPropValue(arg, "typeHandler");
+                            Object value = ReflectUtil.getPropValue(arg, "value");
+                            if (typeHandler instanceof TypeHandler) {
+                                sqlValue = correntValue(value, (TypeHandler<?>) typeHandler);
+                            }
+                        }
+                        params.add(sqlValueToString(sqlValue));
+                    }
+                }
             }
             return StringUtil.fillSqlParams(sql,params);
         } catch (Exception e) {
@@ -258,7 +269,14 @@ public final class MybatisMonilogInterceptor implements Interceptor {
 
     private static Object correntValue(Object value, TypeHandler<?> typeHandler) {
         try {
-            if (value == null || ClassUtil.isSimpleValueType(value.getClass())) {
+            if (value == null) {
+                return null;
+            }
+            if (value.getClass().isEnum() && typeHandler instanceof EnumOrdinalTypeHandler) {
+                Enum<?> e = (Enum<?>) value;
+                return e.ordinal();
+            }
+            if (ClassUtil.isSimpleValueType(value.getClass())) {
                 return value;
             }
             if (typeHandler != null) {
@@ -279,6 +297,21 @@ public final class MybatisMonilogInterceptor implements Interceptor {
         return value;
     }
 
+
+    private static String sqlValueToString(Object sqlValue) {
+        String s;
+        if (sqlValue instanceof String) {
+            s = "'" + sqlValue + "'";
+        } else if (sqlValue instanceof Date) {
+            s = "'" + DATE_FORMAT_THREAD_LOCAL.get().format(sqlValue) + "'";
+        } else if (sqlValue != null && sqlValue.getClass().isEnum()) {
+            //枚举类型这里传递字面量，暂时无法获取枚举code之类的值
+            s = "'" + sqlValue + "'";
+        } else {
+            s = sqlValue + "";
+        }
+        return s;
+    }
 
     /**
      * 去除sql中的注释、换行、多余空格等

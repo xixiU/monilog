@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSON;
 import com.carrotsearch.sizeof.RamUsageEstimator;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
 import javax.annotation.Resource;
@@ -110,8 +111,8 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
         if (p == null) {
             return "";
         }
-        boolean includeTraceId = moniLogProperties.getPrinter().isPrintTraceId();
         String traceId = getTraceId();
+        boolean includeTraceId = StringUtils.isNotBlank(traceId) && moniLogProperties.getPrinter().isPrintTraceId();
         switch (logType) {
             case DETAIL:
                 return includeTraceId ? "[" + traceId + "]" + DETAIL_LOG_PATTERN : DETAIL_LOG_PATTERN;
@@ -198,6 +199,14 @@ class DefaultMoniLogPrinter implements MoniLogPrinter {
             logType = LogType.DETAIL;
         }
         LogLevel level = getLogLevel(p, logType);
+        if (!isDetail && level == LogLevel.ERROR) {
+            // 摘要日志校验详情日志是否打印，如果详情日志打印，则摘要日志默认采用info级别打印。避免摘要日志与详情日志error重复
+            boolean printDetailLog = MoniLogUtil.printLevelCheckPass(MoniLogUtil.getDetailLogLevel(p), p);
+            if (printDetailLog && getLogLevel(p, LogType.DETAIL) == LogLevel.ERROR) {
+                level = LogLevel.INFO;
+            }
+            // 详情日志不打印，则采用默认配置的摘要日志打印级别
+        }
         String pattern = getLogPattern(p, logType);
         if (ex != null) {
             logParamsList.add(ex);
