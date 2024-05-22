@@ -139,12 +139,17 @@ class MoniLogUtil {
         String[] allTags = systemTags.add(logParams.getTags()).toArray();
 
         String name = METRIC_PREFIX + logPoint.name();
+        if (logPoint == LogPoint.user_define) {
+            name = name + logParams.getService() + "_" + logParams.getAction();
+        }
         MonilogMetrics.record(name + MonitorType.RECORD.getMark(), allTags);
         // 耗时只打印基础tag
         MonilogMetrics.eventDuration(name + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
 
         if (logParams.isHasUserTag()) {
-            name = name + "_" + logParams.getService() + "_" + logParams.getAction();
+            if (logPoint != LogPoint.user_define) {
+                name = name + logParams.getService() + "_" + logParams.getAction();
+            }
             MonilogMetrics.eventDuration(name + MonitorType.TIMER.getMark(), allTags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
         }
 
