@@ -120,6 +120,10 @@ class MoniLogAop {
                 return oriTags;
             }
             // 默认只解析第一个参数里面的对象，多个参数没法确定解析顺序
+            // 如果第一个参数是字符串，尝试直接从字符串中提取，注意字符串需要是json格式，因为变量的名称在编译时会替换
+            if (input[0] instanceof String) {
+                return StringUtil.processUserTag(StringUtil.tryConvert2Map((String) input[0]), oriTags);
+            }
             Map<String, String> jsonMap = StringUtil.tryConvert2Map(JSON.toJSONString(input[0]));
             return StringUtil.processUserTag(jsonMap, oriTags);
         } catch (Exception e) {
