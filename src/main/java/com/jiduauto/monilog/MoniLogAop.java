@@ -85,7 +85,6 @@ class MoniLogAop {
     }
 
     private static void afterProcess(MoniLogAspectCtx ctx) {
-        String[] tags = ctx.getTags();
         MoniLogParams params = new MoniLogParams();
         ParsedResult parsedResult = ctx.getParsedResult();
         params.setServiceCls(ctx.getMethodOwnedClass());
@@ -99,16 +98,16 @@ class MoniLogAop {
         params.setException(ctx.getException());
         params.setInput(ctx.getArgs());
         params.setOutput(ctx.getResult());
-        if (tags != null && tags.length > 0) {
+        if (ctx.getTags() != null && ctx.getTags().length > 0) {
             params.setHasUserTag(true);
             // 处理输入参数
-            params.setTags(processUserTag(ctx.getArgs(), tags));
+            params.setTags(processUserTag(ctx.getArgs(), ctx.getTags()));
             if (ctx.getResult() instanceof String) {
-                params.setTags(StringUtil.processUserTag((String) ctx.getResult(),tags));
+                params.setTags(StringUtil.processUserTag((String) ctx.getResult(),params.getTags()));
             }else{
-                params.setTags(StringUtil.processUserTag(JSON.toJSONString(ctx.getResult()),tags));
+                params.setTags(StringUtil.processUserTag(JSON.toJSONString(ctx.getResult()),params.getTags()));
             }
-            params.setTags(processUserTag(ctx.getArgs(), tags));
+            params.setTags(processUserTag(ctx.getArgs(), params.getTags()));
         }
         try {
             MoniLogUtil.log(params);
