@@ -85,7 +85,6 @@ class MoniLogAop {
     }
 
     private static void afterProcess(MoniLogAspectCtx ctx) {
-        String[] tags = ctx.getTags();
         MoniLogParams params = new MoniLogParams();
         ParsedResult parsedResult = ctx.getParsedResult();
         params.setServiceCls(ctx.getMethodOwnedClass());
@@ -99,10 +98,16 @@ class MoniLogAop {
         params.setException(ctx.getException());
         params.setInput(ctx.getArgs());
         params.setOutput(ctx.getResult());
-        if (tags != null && tags.length > 0) {
+        if (ctx.getTags() != null && ctx.getTags().length > 0) {
             params.setHasUserTag(true);
-            //
-            params.setTags(processUserTag(ctx.getArgs(), tags));
+            // 处理输入参数
+            params.setTags(processUserTag(ctx.getArgs(), ctx.getTags()));
+            if (ctx.getResult() instanceof String) {
+                params.setTags(StringUtil.processUserTag((String) ctx.getResult(),params.getTags()));
+            }else{
+                params.setTags(StringUtil.processUserTag(JSON.toJSONString(ctx.getResult()),params.getTags()));
+            }
+            params.setTags(processUserTag(ctx.getArgs(), params.getTags()));
         }
         try {
             MoniLogUtil.log(params);
@@ -120,6 +125,10 @@ class MoniLogAop {
                 return oriTags;
             }
             // 默认只解析第一个参数里面的对象，多个参数没法确定解析顺序
+            // 如果第一个参数是字符串，尝试直接从字符串中提取，注意字符串需要是json格式，因为变量的名称在编译时会替换
+            if (input[0] instanceof String) {
+                return StringUtil.processUserTag((String) input[0], oriTags);
+            }
             Map<String, String> jsonMap = StringUtil.tryConvert2Map(JSON.toJSONString(input[0]));
             return StringUtil.processUserTag(jsonMap, oriTags);
         } catch (Exception e) {
