@@ -23,5 +23,5 @@ public @interface MoniLogTags {
     /**
      * 自定义metricName名称，业务方保证稳定性(tag的枚举值稳定且tag的key相同)，monilog保证唯一性(应用名+业务指定的metricName)
      */
-    String metricName();
+    String metricName() default "";
 }

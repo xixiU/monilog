@@ -144,8 +144,8 @@ class MoniLogUtil {
         // 耗时只打印基础tag
         Objects.requireNonNull(MonilogMetrics.eventDuration(name + MonitorType.TIMER.getMark(), systemTags.toArray())).record(logParams.getCost(), TimeUnit.MILLISECONDS);
 
-        if (logParams.getUserTags() != null && StringUtils.isNotBlank(logParams.getUserMetricName())) {
-            name = SpringUtils.application + "_" + logParams.getUserMetricName();
+        if (logParams.getUserTags() != null || StringUtils.isNotBlank(logParams.getUserMetricName())) {
+            name = StringUtils.isNotBlank(logParams.getUserMetricName()) ? SpringUtils.application + "_" + logParams.getUserMetricName() : name + logParams.getService() + "_" + logParams.getAction();;
             allTags = systemTags.add(logParams.getUserTags()).add(logParams.getTags()).toArray();
 
             MonilogMetrics.record(name + MonitorType.RECORD.getMark(), allTags);
