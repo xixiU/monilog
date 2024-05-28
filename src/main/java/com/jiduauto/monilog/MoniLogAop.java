@@ -98,16 +98,16 @@ class MoniLogAop {
         params.setException(ctx.getException());
         params.setInput(ctx.getArgs());
         params.setOutput(ctx.getResult());
+        params.setUserMetricName(ctx.getMetricName());
         if (ctx.getTags() != null && ctx.getTags().length > 0) {
-            params.setHasUserTag(true);
             // 处理输入参数
-            params.setTags(processUserTag(ctx.getArgs(), ctx.getTags()));
+            params.setUserTags(processUserTag(ctx.getArgs(), ctx.getTags()));
             if (ctx.getResult() instanceof String) {
-                params.setTags(StringUtil.processUserTag((String) ctx.getResult(),params.getTags()));
-            }else{
-                params.setTags(StringUtil.processUserTag(JSON.toJSONString(ctx.getResult()),params.getTags()));
+                params.setUserTags(StringUtil.processUserTag((String) ctx.getResult(), params.getUserTags()));
+            } else {
+                params.setUserTags(StringUtil.processUserTag(JSON.toJSONString(ctx.getResult()), params.getUserTags()));
             }
-            params.setTags(processUserTag(ctx.getArgs(), params.getTags()));
+            params.setUserTags(processUserTag(ctx.getArgs(), params.getUserTags()));
         }
         try {
             MoniLogUtil.log(params);

@@ -38,6 +38,11 @@ class MoniLogAspectCtx {
     private final String[] tags;
 
     /**
+     * 指标名称
+     */
+    private final String metricName;
+
+    /**
      * 根据响响应结果，解析到的"success/msgCode/msgInfo"三元组
      */
     private ParsedResult parsedResult;
@@ -62,7 +67,7 @@ class MoniLogAspectCtx {
         MoniLogTags logTags = ReflectUtil.getAnnotation(MoniLogTags.class, methodOwnedClass, targetMethod, method);
         this.logPoint = anno == null ? LogPoint.unknown : anno.value();
         this.tags = StringUtil.getTagArray(logTags);
-
+        this.metricName = logTags!= null ? logTags.metricName() : "";
     }
 
     public MoniLogAspectCtx buildResult(long cost, Object result, Throwable exception) {

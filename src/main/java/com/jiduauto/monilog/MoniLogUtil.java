@@ -10,6 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.MDC;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -139,20 +140,17 @@ class MoniLogUtil {
         String[] allTags = systemTags.add(logParams.getTags()).toArray();
 
         String name = METRIC_PREFIX + logPoint.name();
-        if (logPoint == LogPoint.user_define) {
-            name = name + logParams.getService() + "_" + logParams.getAction();
-        }
         MonilogMetrics.record(name + MonitorType.RECORD.getMark(), allTags);
         // 耗时只打印基础tag
-        MonilogMetrics.eventDuration(name + MonitorType.TIMER.getMark(), systemTags.toArray()).record(logParams.getCost(), TimeUnit.MILLISECONDS);
+        Objects.requireNonNull(MonilogMetrics.eventDuration(name + MonitorType.TIMER.getMark(), systemTags.toArray())).record(logParams.getCost(), TimeUnit.MILLISECONDS);
 
-        if (logParams.isHasUserTag()) {
-            if (logPoint != LogPoint.user_define) {
-                name = name + logParams.getService() + "_" + logParams.getAction();
-            }
-            MonilogMetrics.eventDuration(name + MonitorType.TIMER.getMark(), allTags).record(logParams.getCost(), TimeUnit.MILLISECONDS);
+        if (logParams.getUserTags() != null && StringUtils.isNotBlank(logParams.getUserMetricName())) {
+            name = SpringUtils.application + "_" + logParams.getUserMetricName();
+            allTags = systemTags.add(logParams.getUserTags()).add(logParams.getTags()).toArray();
+
+            MonilogMetrics.record(name + MonitorType.RECORD.getMark(), allTags);
+            Objects.requireNonNull(MonilogMetrics.eventDuration(name + MonitorType.TIMER.getMark(), allTags)).record(logParams.getCost(), TimeUnit.MILLISECONDS);
         }
-
     }
 
     private static boolean checkDoMonitor() {

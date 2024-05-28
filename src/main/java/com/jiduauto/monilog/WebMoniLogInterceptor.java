@@ -60,14 +60,17 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
         MoniLogParams logParams = new MoniLogParams();
         try {
             MoniLogTags logTags = ReflectUtil.getAnnotation(MoniLogTags.class, method.getBeanType(), method.getMethod());
+            if (logTags != null) {
+                logParams.setUserMetricName(logTags.metricName());
+            }
             List<String> tagList = StringUtil.getTagList(logTags);
             if (tagList != null && tagList.size() > 1) {
-                logParams.setHasUserTag(true);
+                logParams.setUserTags(tagList.toArray(new String[0]));
             }
             logParams.setServiceCls(method.getBeanType());
             logParams.setService(ReflectUtil.getSimpleClassName(method.getBeanType()));
             logParams.setAction(method.getMethod().getName());
-            TagBuilder tagBuilder = TagBuilder.of(tagList).add("url", getUrlWithoutPathParam(request)).add("method", request.getMethod());
+            TagBuilder tagBuilder = TagBuilder.of("url", getUrlWithoutPathParam(request)).add("method", request.getMethod());
             logParams.setTags(tagBuilder.toArray());
 
             Map<String, Object> requestBodyMap = new HashMap<>(3);
@@ -289,7 +292,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
      * 处理请求tag
      */
     private void dealRequestTags(HttpServletRequest request, MoniLogParams logParams, Map<String, String> requestHeaderMap, Map<String, Object> requestBodyMap) {
-        String[] oriTags = logParams.getTags();
+        String[] oriTags = logParams.getUserTags();
         Map<String, String> headersMap = MapUtils.isNotEmpty(requestHeaderMap) ? requestHeaderMap : new HashMap<>();
 
 
@@ -317,7 +320,7 @@ class WebMoniLogInterceptor extends OncePerRequestFilter {
                 oriTags[i] = resultTagValue;
             }
         }
-        logParams.setTags(oriTags);
+        logParams.setUserTags(oriTags);
     }
 
     private JSONObject formatRequestInfo(boolean isMultipart, HttpServletRequest request, Map<String, String> requestHeaderMap) {

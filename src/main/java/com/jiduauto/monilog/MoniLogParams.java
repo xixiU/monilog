@@ -39,7 +39,15 @@ public class MoniLogParams implements Serializable {
     private Object output;
 
     private String[] tags;
-    private boolean hasUserTag;
+    /**
+     * 用户自定义tag
+     */
+    private String[] userTags;
+
+    /**
+     * 用户自定义的指标名称
+     */
+    private String userMetricName;
 
     /**
      * 存放monilog计算过程中的临时数据
