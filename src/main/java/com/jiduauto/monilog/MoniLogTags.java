@@ -19,4 +19,9 @@ public @interface MoniLogTags {
      * 注意，这里指定的tag值应当是稳定可枚举的，不能使用不可枚举的值，例如用户ID、订单号、时间戳等。如果使用这种不可枚举的值会导致promethues输出过多的监控指标，会给业务应用带来压力
      */
     String[] value();
+
+    /**
+     * 自定义metricName名称，业务方保证稳定性(tag的枚举值稳定且tag的key相同)，monilog保证唯一性(应用名+业务指定的metricName)
+     */
+    String metricName() default "";
 }
