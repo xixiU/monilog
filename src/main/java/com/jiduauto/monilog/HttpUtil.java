@@ -120,6 +120,10 @@ class HttpUtil {
     }
 
     public static void main(String[] args) {
+        checkRandom("/jiduUpmApi/upm/validateSignInUser",false);
+        String str = extractPathWithoutPathParams("/jiduUpmApi/upm/validateSignInUser");
+        System.out.println(str);
+
         checkRandom("JFS-21002",true);
         checkRandom("job", false);
         checkRandom("api", false);

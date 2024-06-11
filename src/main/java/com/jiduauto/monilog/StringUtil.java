@@ -34,7 +34,7 @@ class StringUtil {
             "destruct", "destructor", "clear", "clean", "reset", "empty",
             "update", "write", "modify", "change", "set", "alter", "edit", "enable", "disable",
             "start", "stop", "reload", "query", "list", "find", "get", "select", "fetch", "search",
-            "load", "check", "count", "show", "read", "import"
+            "load", "check", "count", "show", "read", "import","jidu"
     );
     private static final Pattern RANDOM_NUM_PATTERN = Pattern.compile("([0-9]+\\.?[0-9]+)");
     private static final Pattern FILE_EXT = Pattern.compile("(.*[^.])(\\.[a-zA-Z]{2,4})$");
