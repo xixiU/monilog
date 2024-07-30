@@ -25,7 +25,7 @@ import java.util.*;
 @Getter
 @Setter
 @Slf4j
-class MoniLogProperties implements InitializingBean {
+class MoniLogProperties{
     /**
      * 服务名，默认取值：${spring.application.name}
      */
@@ -122,14 +122,11 @@ class MoniLogProperties implements InitializingBean {
         return this.appName;
     }
 
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        bindValue();
-    }
 
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationReady() {
         // 应用程序完全启动后执行一次性初始化
+        bindValue();
         getAppName();
         // banner输出
         printBanner();
