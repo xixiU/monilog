@@ -210,7 +210,12 @@ public final class HttpClientMoniLogInterceptor {
     private static BufferedHttpEntity getEntity(HttpEntity entity) throws IOException, InvocationTargetException, IllegalAccessException {
         BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
         // bos 中的都是RestartableInputStream的子类
-        Method restart = cn.hutool.core.util.ReflectUtil.getMethodByName(entity.getContent().getClass(), "restart");
+        // 此处不引入bce,直接通过包名和方法判断是否为RestartableInputStream子类
+        Class<? extends InputStream> aClass = entity.getContent().getClass();
+        if (!aClass.getCanonicalName().contains("com.baidubce.internal")) {
+            return bufferedEntity;
+        }
+        Method restart = cn.hutool.core.util.ReflectUtil.getMethodByName(aClass, "restart");
         if (restart != null) {
             restart.invoke(entity.getContent());
         }
