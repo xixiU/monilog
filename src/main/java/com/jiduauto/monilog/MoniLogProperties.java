@@ -124,7 +124,7 @@ class MoniLogProperties implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        String isInitialized = System.getProperty("monilog.isInitialized");
+        String isInitialized = System.getProperty("monilog.isInitialized", "N");
         if ("Y".equals(isInitialized)) {
             return;
         }
