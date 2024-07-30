@@ -133,7 +133,7 @@ class MoniLogProperties implements InitializingBean {
         MoniLogUtil.addSystemRecord();
         // 启用配置更新
         ApolloListenerRegistry.register(this::bindValue);
-        System.setProperty("monilog.isInitialized","N");
+        System.setProperty("monilog.isInitialized","Y");
     }
 
     @EventListener(ApplicationReadyEvent.class)
