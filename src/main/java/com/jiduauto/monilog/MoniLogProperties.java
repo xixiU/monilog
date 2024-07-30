@@ -6,10 +6,12 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.BindResult;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.event.EventListener;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -123,6 +125,11 @@ class MoniLogProperties implements InitializingBean {
     @Override
     public void afterPropertiesSet() throws Exception {
         bindValue();
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void onApplicationReady() {
+        // 应用程序完全启动后执行一次性初始化
         getAppName();
         // banner输出
         printBanner();
@@ -131,8 +138,8 @@ class MoniLogProperties implements InitializingBean {
         ApolloListenerRegistry.register(this::bindValue);
     }
 
+
     private void bindValue() {
-        log.info("monilog properties binding...");
         ApplicationContext applicationContext = SpringUtils.getApplicationContext();
         if (applicationContext == null) {
             log.warn(MoniLogUtil.INNER_DEBUG_LOG_PREFIX + "properties bind failed,applicationCtx is null");
@@ -143,6 +150,7 @@ class MoniLogProperties implements InitializingBean {
             if (!monilogBindResult.isBound()) {
                 return;
             }
+            log.info("monilog properties binding...");
             // 当存在属性值进行属性替换，防止配置不生效
             MoniLogProperties newProp = monilogBindResult.get();
             Field[] fields = MoniLogProperties.class.getDeclaredFields();
