@@ -141,7 +141,6 @@ class MoniLogProperties implements InitializingBean {
         // 应用程序完全启动后再打印banner
         // banner输出
         printBanner();
-
     }
 
 
