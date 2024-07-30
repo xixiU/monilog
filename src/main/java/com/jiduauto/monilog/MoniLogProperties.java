@@ -139,13 +139,9 @@ class MoniLogProperties implements InitializingBean {
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationReady() {
         // 应用程序完全启动后再打印banner
-        bindValue();
-        getAppName();
         // banner输出
         printBanner();
-        MoniLogUtil.addSystemRecord();
-        // 启用配置更新
-        ApolloListenerRegistry.register(this::bindValue);
+
     }
 
 
