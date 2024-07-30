@@ -25,7 +25,7 @@ import java.util.*;
 @Getter
 @Setter
 @Slf4j
-class MoniLogProperties{
+class MoniLogProperties implements InitializingBean {
     /**
      * 服务名，默认取值：${spring.application.name}
      */
@@ -122,10 +122,23 @@ class MoniLogProperties{
         return this.appName;
     }
 
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        String isInitialized = System.getProperty("monilog.isInitialized");
+        if ("Y".equals(isInitialized)) {
+            return;
+        }
+        bindValue();
+        getAppName();
+        MoniLogUtil.addSystemRecord();
+        // 启用配置更新
+        ApolloListenerRegistry.register(this::bindValue);
+        System.setProperty("monilog.isInitialized","N");
+    }
 
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationReady() {
-        // 应用程序完全启动后执行一次性初始化
+        // 应用程序完全启动后再打印banner
         bindValue();
         getAppName();
         // banner输出
