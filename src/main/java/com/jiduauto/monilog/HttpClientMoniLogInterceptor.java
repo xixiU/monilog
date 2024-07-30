@@ -24,6 +24,8 @@ import org.springframework.http.HttpHeaders;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -83,7 +85,7 @@ public final class HttpClientMoniLogInterceptor {
                         if (isStreaming(entity, request.getAllHeaders())) {
                             bodyParams = "Binary Data";
                         } else {
-                            BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
+                            BufferedHttpEntity bufferedEntity = getEntity(entity);
                             bodyParams = EntityUtils.toString(bufferedEntity);
                             ((HttpEntityEnclosingRequest) request).setEntity(bufferedEntity);
                         }
@@ -120,6 +122,7 @@ public final class HttpClientMoniLogInterceptor {
             }
         }
     }
+
 
     private static class ResponseInterceptor implements HttpResponseInterceptor {
         @Override
@@ -167,7 +170,7 @@ public final class HttpClientMoniLogInterceptor {
                             if (entity instanceof DecompressingEntity) {
                                 bufferedEntity = new DecompressingEntityWrapper(entity);
                             } else {
-                                bufferedEntity = new BufferedHttpEntity(entity);
+                                bufferedEntity = getEntity(entity);
                             }
                             responseBody = EntityUtils.toString(bufferedEntity);
                             jsonBody = StringUtil.tryConvert2Json(responseBody);
@@ -204,6 +207,16 @@ public final class HttpClientMoniLogInterceptor {
         }
     }
 
+    private static BufferedHttpEntity getEntity(HttpEntity entity) throws IOException, InvocationTargetException, IllegalAccessException {
+        BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
+        // bos 中的都是RestartableInputStream的子类
+        Method restart = cn.hutool.core.util.ReflectUtil.getMethodByName(entity.getContent().getClass(), "restart");
+        if (restart != null) {
+            restart.invoke(entity.getContent());
+        }
+
+        return bufferedEntity;
+    }
 
     private static class MonilogBufferedHttpEntity extends BufferedHttpEntity {
         public MonilogBufferedHttpEntity(HttpEntity entity) throws IOException {
