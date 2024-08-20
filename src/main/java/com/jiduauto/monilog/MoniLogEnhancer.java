@@ -198,14 +198,14 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             return;
         }
         try {
-            String originalInvokeMethod = "invoke";
-            String originalInvokeMethodDesc = "(Lorg/springframework/messaging/Message;[java/lang/Object;)Ljava/lang/Object;";
+            String targetMethod = "invoke";
+            String targetMethodDesc = "(Lorg/springframework/messaging/Message;[Ljava/lang/Object;)Ljava/lang/Object;";
             String newBody = "{"+MoniLogParams.class.getCanonicalName()+" mp = " + KafkaMonilogInterceptor.ConsumerInterceptor.class.getCanonicalName() + ".beforeInvoke($1, $2);" +
                     "Exception ex = null;Object result = null;long start = System.currentTimeMillis();" +
                     "try{result = __invoke($1, $2);} catch (Exception e) {ex = e;throw e;} finally {" +
                     KafkaMonilogInterceptor.ConsumerInterceptor.class.getCanonicalName() + ".afterInvoke(mp, start, ex, result);}}";
             CtClass ctCls = getCtClass(clsName);
-            CtMethod originalMethod = ctCls.getMethod(originalInvokeMethod, originalInvokeMethodDesc);
+            CtMethod originalMethod = ctCls.getMethod(targetMethod, targetMethodDesc);
             CtMethod copiedMethod = CtNewMethod.copy(originalMethod, "__invoke", ctCls, null);
             ctCls.addMethod(copiedMethod);
             originalMethod.setBody(newBody);
@@ -226,12 +226,12 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             return;
         }
         try {
-            String originalInvokeMethod = "send";
-            String originalInvokeMethodDesc = "(Lorg/apache/kafka/clients/producer/ProducerRecord;org/apache/kafka/clients/producer/Callback;)Ljava/util/concurrent/Future;";
+            String targetMethod = "send";
+            String targetMethodDesc = "(Lorg/apache/kafka/clients/producer/ProducerRecord;Lorg/apache/kafka/clients/producer/Callback;)Ljava/util/concurrent/Future;";
             String newBody = "{" + MoniLogParams.class.getCanonicalName() + " mp = " + KafkaMonilogInterceptor.ProducerInterceptor.class.getCanonicalName() + ".beforeSend($1);" +
                     "return __send($1,new " + KafkaMonilogInterceptor.ProducerInterceptor.KfkSendCallback.class.getCanonicalName() + "($2, System.currentTimeMillis(), mp));}";
             CtClass ctCls = getCtClass(clsName);
-            CtMethod originalMethod = ctCls.getMethod(originalInvokeMethod, originalInvokeMethodDesc);
+            CtMethod originalMethod = ctCls.getMethod(targetMethod, targetMethodDesc);
             CtMethod copiedMethod = CtNewMethod.copy(originalMethod, "__send", ctCls, null);
             ctCls.addMethod(copiedMethod);
             originalMethod.setBody(newBody);
