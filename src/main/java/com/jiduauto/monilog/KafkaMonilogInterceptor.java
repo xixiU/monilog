@@ -66,16 +66,20 @@ public final class KafkaMonilogInterceptor {
             if (p == null) {
                 return;
             }
-            p.setCost(System.currentTimeMillis() - start);
-            p.setOutput(result);
-            p.setException(ex);
-            p.setSuccess(ex == null);
-            if (ex != null) {
-                ErrorInfo errorInfo = ExceptionUtil.parseException(ex);
-                p.setMsgCode(errorInfo.getErrorCode());
-                p.setMsgInfo(errorInfo.getErrorMsg());
+            try {
+                p.setCost(System.currentTimeMillis() - start);
+                p.setOutput(result);
+                p.setException(ex);
+                p.setSuccess(ex == null);
+                if (ex != null) {
+                    ErrorInfo errorInfo = ExceptionUtil.parseException(ex);
+                    p.setMsgCode(errorInfo.getErrorCode());
+                    p.setMsgInfo(errorInfo.getErrorMsg());
+                }
+                MoniLogUtil.log(p);
+            } catch (Throwable t) {
+                MoniLogUtil.innerDebug("kafka onConsume afterInvoke error", t);
             }
-            MoniLogUtil.log(p);
         }
 
         private static ConsumerRecord<?, ?> findConsumerRecord(Object... providedArgs) {
@@ -99,21 +103,21 @@ public final class KafkaMonilogInterceptor {
             if (!ComponentEnum.kafka_producer.isEnable()) {
                 return null;
             }
-            //该方法可能会被调用多次(框架重试)
-            StackTraceElement st = ThreadUtil.getNextClassFromStack(ProducerInterceptor.class);
-            String clsName;
-            String action;
-            if (st == null) {
-                clsName = KafkaProducer.class.getCanonicalName();
-                action = "send";
-            } else {
-                clsName = st.getClassName();
-                action = st.getMethodName();
-            }
-            MoniLogParams p = new MoniLogParams();
-            p.setLogPoint(LogPoint.kafka_producer);
-            p.setAction(action);
             try {
+                //该方法可能会被调用多次(框架重试)
+                StackTraceElement st = ThreadUtil.getNextClassFromStack(ProducerInterceptor.class);
+                String clsName;
+                String action;
+                if (st == null) {
+                    clsName = KafkaProducer.class.getCanonicalName();
+                    action = "send";
+                } else {
+                    clsName = st.getClassName();
+                    action = st.getMethodName();
+                }
+                MoniLogParams p = new MoniLogParams();
+                p.setLogPoint(LogPoint.kafka_producer);
+                p.setAction(action);
                 p.setServiceCls(Class.forName(clsName));
                 p.setService(ReflectUtil.getSimpleClassName(p.getServiceCls()));
                 p.setCost(System.currentTimeMillis());
@@ -124,12 +128,12 @@ public final class KafkaMonilogInterceptor {
                 p.setTags(TagBuilder.of("topic", record.topic()).toArray());
                 return p;
             } catch (Exception e) {
-                MoniLogUtil.innerDebug("kafka onSend error", e);
+                MoniLogUtil.innerDebug("kafka beforeSend error", e);
             }
             return null;
         }
 
-        static class KfkSendCallback implements Callback {
+        public static class KfkSendCallback implements Callback {
             private final Callback delegate;
             private final long timestamp;
             private final MoniLogParams mp;

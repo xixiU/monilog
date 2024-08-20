@@ -203,7 +203,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             String newBody = "{"+MoniLogParams.class.getCanonicalName()+" mp = " + KafkaMonilogInterceptor.ConsumerInterceptor.class.getCanonicalName() + ".beforeInvoke($1, $2);" +
                     "Exception ex = null;Object result = null;long start = System.currentTimeMillis();" +
                     "try{result = __invoke($1, $2);} catch (Exception e) {ex = e;throw e;} finally {" +
-                    KafkaMonilogInterceptor.ConsumerInterceptor.class.getCanonicalName() + ".afterInvoke(mp, start, ex, result);}}";
+                    KafkaMonilogInterceptor.ConsumerInterceptor.class.getCanonicalName() + ".afterInvoke(mp, start, ex, result);}return result;}";
             CtClass ctCls = getCtClass(clsName);
             CtMethod originalMethod = ctCls.getMethod(targetMethod, targetMethodDesc);
             CtMethod copiedMethod = CtNewMethod.copy(originalMethod, "__invoke", ctCls, null);
