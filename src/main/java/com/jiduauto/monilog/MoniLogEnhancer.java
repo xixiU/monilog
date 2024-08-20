@@ -34,8 +34,8 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
     private static final String GRPC_CLIENT_REGISTRY = "net.devh.boot.grpc.client.interceptor.GlobalClientInterceptorRegistry";
     private static final String GRPC_SERVER_REGISTRY = "net.devh.boot.grpc.server.interceptor.GlobalServerInterceptorRegistry";
     private static final String MYBATIS_INTERCEPTOR = "org.apache.ibatis.plugin.InterceptorChain";
-    private static final String KAFKA_PRODUCER_INTERCEPTORS = "org.apache.kafka.clients.producer.internals.ProducerInterceptors";
-    private static final String KAFKA_CONSUMER_INTERCEPTORS = "org.apache.kafka.clients.consumer.internals.ConsumerInterceptors";
+    private static final String KAFKA_PRODUCER = "org.apache.kafka.clients.producer.KafkaProducer";
+    private static final String KAFKA_CONSUMER_HANDLER_ADAPTER = "org.springframework.kafka.listener.adapter.HandlerAdapter";
 
     private static final Map<String, AtomicBoolean> FLAGS = new HashMap<String, AtomicBoolean>() {{
         put(HTTP_CLIENT_BUILDER, new AtomicBoolean());
@@ -53,8 +53,8 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
         put(GRPC_CLIENT_REGISTRY, new AtomicBoolean());
         put(GRPC_SERVER_REGISTRY, new AtomicBoolean());
         put(MYBATIS_INTERCEPTOR, new AtomicBoolean());
-        put(KAFKA_PRODUCER_INTERCEPTORS, new AtomicBoolean());
-        put(KAFKA_CONSUMER_INTERCEPTORS, new AtomicBoolean());
+        put(KAFKA_PRODUCER, new AtomicBoolean());
+        put(KAFKA_CONSUMER_HANDLER_ADAPTER, new AtomicBoolean());
     }};
 
     /**
@@ -141,7 +141,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             nestedClasses[0].getDeclaredMethod("execute").setBody(newMethod);
             Class<?> targetCls = nestedClasses[0].toClass();
 
-            log.debug("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            log.debug("execute method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             if (outputClass) {
                 ctCls.writeFile();
             }
@@ -163,7 +163,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             CtClass ctCls = getCtClass(ROCKET_MQ_CONSUMER);
             ctCls.getMethod("setMessageListener", desc).setBody(enhancedBody);
             Class<?> targetCls = ctCls.toClass();
-            log.debug("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            log.debug("setMessageListener method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             if (outputClass) {
                 ctCls.writeFile();
             }
@@ -182,7 +182,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             CtClass ctCls = getCtClass(ROCKET_MQ_PRODUCER);
             ctCls.getMethod("start", "()V").setBody(enhancedBody);
             Class<?> targetCls = ctCls.toClass();
-            log.debug("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            log.debug("start method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             if (outputClass) {
                 ctCls.writeFile();
             }
@@ -193,18 +193,24 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
     }
 
     private static void enhanceKafkaConsumer() {
-        String clsName = KAFKA_CONSUMER_INTERCEPTORS;
+        String clsName = KAFKA_CONSUMER_HANDLER_ADAPTER;
         if (FLAGS.get(clsName).get()) {
             return;
         }
         try {
+            String originalInvokeMethod = "invoke";
+            String originalInvokeMethodDesc = "(Lorg/springframework/messaging/Message;[java/lang/Object;)Ljava/lang/Object;";
+            String newBody = "{"+MoniLogParams.class.getCanonicalName()+" mp = " + KafkaMonilogInterceptor.ConsumerInterceptor.class.getCanonicalName() + ".beforeInvoke($1, $2);" +
+                    "Exception ex = null;Object result = null;long start = System.currentTimeMillis();" +
+                    "try{result = __invoke($1, $2);} catch (Exception e) {ex = e;throw e;} finally {" +
+                    KafkaMonilogInterceptor.ConsumerInterceptor.class.getCanonicalName() + ".afterInvoke(mp, start, ex, result);}}";
             CtClass ctCls = getCtClass(clsName);
-            String body = "{java.util.List list = $1==null ? new java.util.ArrayList() : new java.util.ArrayList($1); " +
-                    "list.add(0," + KafkaMonilogInterceptor.class.getCanonicalName() + ".getConsumerInterceptor());" +
-                    "this.interceptors = list;}";
-            ctCls.getConstructor("(Ljava/util/List;)V").setBody(body);
+            CtMethod originalMethod = ctCls.getMethod(originalInvokeMethod, originalInvokeMethodDesc);
+            CtMethod copiedMethod = CtNewMethod.copy(originalMethod, "__invoke", ctCls, null);
+            ctCls.addMethod(copiedMethod);
+            originalMethod.setBody(newBody);
             Class<?> targetCls = ctCls.toClass();
-            log.debug("initServerInterceptors method of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            log.debug("invoke method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             if (outputClass) {
                 ctCls.writeFile();
             }
@@ -215,18 +221,22 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
     }
 
     private static void enhanceKafkaProducer() {
-        String clsName = KAFKA_PRODUCER_INTERCEPTORS;
+        String clsName = KAFKA_PRODUCER;
         if (FLAGS.get(clsName).get()) {
             return;
         }
         try {
+            String originalInvokeMethod = "send";
+            String originalInvokeMethodDesc = "(Lorg/apache/kafka/clients/producer/ProducerRecord;org/apache/kafka/clients/producer/Callback;)Ljava/util/concurrent/Future;";
+            String newBody = "{" + MoniLogParams.class.getCanonicalName() + " mp = " + KafkaMonilogInterceptor.ProducerInterceptor.class.getCanonicalName() + ".beforeSend($1);" +
+                    "return __send($1,new " + KafkaMonilogInterceptor.ProducerInterceptor.KfkSendCallback.class.getCanonicalName() + "($2, System.currentTimeMillis(), mp));}";
             CtClass ctCls = getCtClass(clsName);
-            String body = "{java.util.List list = $1==null ? new java.util.ArrayList() : new java.util.ArrayList($1); " +
-                    "list.add(" + KafkaMonilogInterceptor.class.getCanonicalName() + ".getProducerInterceptor());" +
-                    "this.interceptors = list;}";
-            ctCls.getConstructor("(Ljava/util/List;)V").setBody(body);
+            CtMethod originalMethod = ctCls.getMethod(originalInvokeMethod, originalInvokeMethodDesc);
+            CtMethod copiedMethod = CtNewMethod.copy(originalMethod, "__send", ctCls, null);
+            ctCls.addMethod(copiedMethod);
+            originalMethod.setBody(newBody);
             Class<?> targetCls = ctCls.toClass();
-            log.debug("initServerInterceptors method of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            log.debug("send method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             if (outputClass) {
                 ctCls.writeFile();
             }
@@ -302,7 +312,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             ctCls.getMethod("execute", desc3).setBody(body3);
 
             Class<?> targetCls = ctCls.toClass();
-            log.debug("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            log.debug("execute method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             if (outputClass) {
                 ctCls.writeFile();
             }
@@ -322,7 +332,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
             CtMethod method = ctCls.getMethod("failed", "(Ljava/lang/Exception;)V");
             method.setBody(body);
             Class<?> targetCls = ctCls.toClass();
-            log.debug("method of '{}' has bean enhanced.", targetCls.getCanonicalName());
+            log.debug("failed method of '{}' has bean enhanced.", targetCls.getCanonicalName());
             if (outputClass) {
                 ctCls.writeFile();
             }
@@ -385,7 +395,7 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
 
             CtMethod originalMethod2 = ctCls.getMethod(methodName2, methodDesc2);
             // 拷贝原始方法2成一个新方法，新方法名称__getConnection
-            CtMethod copiedMethod2 = CtNewMethod.copy(originalMethod1, "__getClusterConnection", ctCls, null);
+            CtMethod copiedMethod2 = CtNewMethod.copy(originalMethod2, "__getClusterConnection", ctCls, null);
             // 添加新方法2到类中
             ctCls.addMethod(copiedMethod2);
             // 将原始方法2设置try catch同时增强返回结果

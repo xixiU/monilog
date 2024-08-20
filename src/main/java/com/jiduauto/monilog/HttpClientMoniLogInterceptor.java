@@ -211,11 +211,11 @@ public final class HttpClientMoniLogInterceptor {
         BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
         // bos 中的都是RestartableInputStream的子类
         // 此处不引入bce,直接通过包名和方法判断是否为RestartableInputStream子类
-        Class<? extends InputStream> aClass = entity.getContent().getClass();
-        if (!aClass.getCanonicalName().contains("com.baidubce.internal")) {
+        Class<? extends InputStream> contentCls = entity.getContent().getClass();
+        if (!contentCls.getCanonicalName().contains("com.baidubce.internal")) {
             return bufferedEntity;
         }
-        Method restart = cn.hutool.core.util.ReflectUtil.getMethodByName(aClass, "restart");
+        Method restart = cn.hutool.core.util.ReflectUtil.getMethodByName(contentCls, "restart");
         if (restart != null) {
             restart.invoke(entity.getContent());
         }
