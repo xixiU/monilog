@@ -124,16 +124,11 @@ class MoniLogProperties implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        String isInitialized = System.getProperty("monilog.isInitialized", "N");
-        if ("Y".equals(isInitialized)) {
-            return;
-        }
         bindValue();
         getAppName();
         MoniLogUtil.addSystemRecord();
         // 启用配置更新
         ApolloListenerRegistry.register(this::bindValue);
-        System.setProperty("monilog.isInitialized","Y");
     }
 
     @EventListener(ApplicationReadyEvent.class)
