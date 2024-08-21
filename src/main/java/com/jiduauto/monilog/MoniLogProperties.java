@@ -483,7 +483,7 @@ class MoniLogProperties implements InitializingBean {
         /**
          * 不监控的url清单，支持模糊路径如a/*
          */
-        private Set<String> urlBlackList;
+        private Set<String> urlBlackList = Sets.newHashSet("/v1/status/leader","/v1/health/service/**");
 
         /**
          * 不监控的host清单，支持模糊路径如a/*,仅当此配置不空且元素个数大于0时才生效
