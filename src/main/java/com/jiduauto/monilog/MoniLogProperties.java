@@ -6,10 +6,12 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.BindResult;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.event.EventListener;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -124,15 +126,20 @@ class MoniLogProperties implements InitializingBean {
     public void afterPropertiesSet() throws Exception {
         bindValue();
         getAppName();
-        // banner输出
-        printBanner();
         MoniLogUtil.addSystemRecord();
         // 启用配置更新
         ApolloListenerRegistry.register(this::bindValue);
     }
 
+    @EventListener(ApplicationReadyEvent.class)
+    public void onApplicationReady() {
+        // 应用程序完全启动后再打印banner
+        // banner输出
+        printBanner();
+    }
+
+
     private void bindValue() {
-        log.info("monilog properties binding...");
         ApplicationContext applicationContext = SpringUtils.getApplicationContext();
         if (applicationContext == null) {
             log.warn(MoniLogUtil.INNER_DEBUG_LOG_PREFIX + "properties bind failed,applicationCtx is null");
@@ -143,6 +150,7 @@ class MoniLogProperties implements InitializingBean {
             if (!monilogBindResult.isBound()) {
                 return;
             }
+            log.info("monilog properties binding...");
             // 当存在属性值进行属性替换，防止配置不生效
             MoniLogProperties newProp = monilogBindResult.get();
             Field[] fields = MoniLogProperties.class.getDeclaredFields();
@@ -475,7 +483,7 @@ class MoniLogProperties implements InitializingBean {
         /**
          * 不监控的url清单，支持模糊路径如a/*
          */
-        private Set<String> urlBlackList;
+        private Set<String> urlBlackList = Sets.newHashSet("/v1/status/leader","/v1/health/service/**");
 
         /**
          * 不监控的host清单，支持模糊路径如a/*,仅当此配置不空且元素个数大于0时才生效
@@ -485,7 +493,7 @@ class MoniLogProperties implements InitializingBean {
         /**
          * 不监控的特定业务client类，支持模糊路径如com.ecwid.**，注意模糊匹配语法：?匹配单个字符，*匹配0个或多个字符，**匹配0个或多个目录
          */
-        private Set<String> clientBlackList = Sets.newHashSet("com.ecwid.consul.**");
+        private Set<String> clientBlackList = Sets.newHashSet("com.ecwid.consul.**","com.orbitz.consul.**");
 
         /**
          * 解析httpClient调用结果的默认表达式，默认校验返回编码是否等于0或者200有一个匹配即认为调用成功,多个表达式直接逗号分割.

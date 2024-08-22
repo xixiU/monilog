@@ -13,6 +13,7 @@ import java.lang.reflect.Method;
 
 
 public final class XxlJobMoniLogInterceptor {
+
     //增强xxljob，请勿改动此方法
     public static IJobHandler getProxyBean(IJobHandler bean) {
         return ProxyUtils.tryGetProxy(bean, invocation -> {

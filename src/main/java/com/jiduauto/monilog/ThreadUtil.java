@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 class ThreadUtil {
     private static final String PROXY_CLS = "com.sun.proxy.$Proxy";
     //遍历线程栈找业务类时需要排除掉的包(类)前缀
-    private final static Set<String> DEFAULT_EXCLUDE_PKGS = Sets.newHashSet("java.lang.Thread", "java", "sun.reflect", PROXY_CLS, "org.springframework", "org.apache", "kong.unirest.apache", "com.jiduauto.monilog", "com.jiduauto.javakit", "okhttp3", "org.elasticsearch.client");
+    private final static Set<String> DEFAULT_EXCLUDE_PKGS = Sets.newHashSet("java.lang.Thread", "java", "sun.reflect", PROXY_CLS, "org.springframework", "org.apache", "kong.unirest.apache", "com.jiduauto.monilog", "com.jiduauto.javakit", "okhttp3", "org.elasticsearch.client","retrofit2");
 
     /**
      * 从当前线程栈中，按先后顺序找到指定类的下一个类对应的栈帧，返回找到的第一个栈帧
