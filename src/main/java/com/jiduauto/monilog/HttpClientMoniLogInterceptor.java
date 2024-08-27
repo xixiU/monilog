@@ -95,33 +95,47 @@ public final class HttpClientMoniLogInterceptor {
                 Map<String, Collection<String>> queryMap = parseParams(params);
                 Map<String, String> headerMap = parseHeaders(request.getAllHeaders());
                 JSONObject input = HttpRequestData.of3(requestLine.getUri(), bodyParams, queryMap, headerMap).toJSON();
-                Class<?> serviceCls = HttpClient.class;
-                String methodName = method;
-                if (st != null) {
-                    try {
-                        serviceCls = Class.forName(st.getClassName());
-                        methodName = st.getMethodName();
-                    } catch (Exception ignore) {
-                    }
-                }
+
                 MoniLogParams p = new MoniLogParams();
                 p.setCost(System.currentTimeMillis());
-                p.setServiceCls(serviceCls);
-                p.setService(ReflectUtil.getSimpleClassName(p.getServiceCls()));
-                p.setAction(methodName);
+
                 p.setInput(new Object[]{input});
                 p.setSuccess(true);
                 p.setMsgCode(ErrorEnum.SUCCESS.name());
                 p.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
-                p.setLogPoint(LogPoint.http_client);
-
+                resetLogPoint(p,st,method);
                 p.setTags(TagBuilder.of("url", HttpUtil.extractPathWithoutPathParams(path), "method", method).toArray());
                 httpContext.setAttribute(MONILOG_PARAMS_KEY, p);
             } catch (Exception e) {
                 MoniLogUtil.innerDebug("HttpClient.RequestInterceptor.process error", e);
             }
         }
+
+        private void resetLogPoint(MoniLogParams p, StackTraceElement st,String method) {
+            p.setLogPoint(LogPoint.http_client);
+            if (st == null) {
+                return;
+            }
+            if (st.getClassName().contains("feign")) {
+                p.setLogPoint(LogPoint.feign_client);
+                StackTraceElement realSt = ThreadUtil.getNextClassFromStack(HttpClientMoniLogInterceptor.class, "feign", "com.netflix", "rx");
+                if (realSt != null) {
+                    st = realSt;
+                }
+            }
+
+            Class<?> serviceCls = HttpClient.class;
+            String methodName = method;
+            try {
+                serviceCls = Class.forName(st.getClassName());
+                methodName = st.getMethodName();
+            } catch (Exception ignore) {}
+            p.setServiceCls(serviceCls);
+            p.setService(ReflectUtil.getSimpleClassName(p.getServiceCls()));
+            p.setAction(methodName);
+        }
     }
+
 
 
     private static class ResponseInterceptor implements HttpResponseInterceptor {
