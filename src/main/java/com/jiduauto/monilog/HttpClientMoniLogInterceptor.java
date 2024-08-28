@@ -68,12 +68,18 @@ public final class HttpClientMoniLogInterceptor {
             //携带有参数的uri
             String[] uriAndParams = requestLine.getUri().split("\\?");
             String path = uriAndParams[0];
-            MoniLogProperties.HttpClientProperties httpClientProperties = checkEnable(host, path);
-            if (httpClientProperties == null) {//fail-fast
-                return;
-            }
+
+            LogPoint logPoint = LogPoint.http_client;
             StackTraceElement st = ThreadUtil.getNextClassFromStack(HttpClientMoniLogInterceptor.class);
-            if (!isClassEnable(httpClientProperties, st == null ? null : st.getClassName())) {
+            if (st != null && st.getClassName().contains("feign")) {
+                logPoint = LogPoint.feign_client;
+                StackTraceElement realSt = ThreadUtil.getNextClassFromStack(HttpClientMoniLogInterceptor.class, "feign", "com.netflix", "rx");
+                if (realSt != null) {
+                    st = realSt;
+                }
+            }
+
+            if (!checkEnable(host, path, logPoint, st)) {
                 return;
             }
             try {
@@ -95,47 +101,33 @@ public final class HttpClientMoniLogInterceptor {
                 Map<String, Collection<String>> queryMap = parseParams(params);
                 Map<String, String> headerMap = parseHeaders(request.getAllHeaders());
                 JSONObject input = HttpRequestData.of3(requestLine.getUri(), bodyParams, queryMap, headerMap).toJSON();
-
+                Class<?> serviceCls = HttpClient.class;
+                String methodName = method;
+                if (st != null) {
+                    try {
+                        serviceCls = Class.forName(st.getClassName());
+                        methodName = st.getMethodName();
+                    } catch (Exception ignore) {
+                    }
+                }
                 MoniLogParams p = new MoniLogParams();
                 p.setCost(System.currentTimeMillis());
-
+                p.setServiceCls(serviceCls);
+                p.setService(ReflectUtil.getSimpleClassName(p.getServiceCls()));
+                p.setAction(methodName);
                 p.setInput(new Object[]{input});
                 p.setSuccess(true);
                 p.setMsgCode(ErrorEnum.SUCCESS.name());
                 p.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
-                resetLogPoint(p,st,method);
+                p.setLogPoint(LogPoint.http_client);
+
                 p.setTags(TagBuilder.of("url", HttpUtil.extractPathWithoutPathParams(path), "method", method).toArray());
                 httpContext.setAttribute(MONILOG_PARAMS_KEY, p);
             } catch (Exception e) {
                 MoniLogUtil.innerDebug("HttpClient.RequestInterceptor.process error", e);
             }
         }
-
-        private void resetLogPoint(MoniLogParams p, StackTraceElement st,String method) {
-            p.setLogPoint(LogPoint.http_client);
-            if (st == null) {
-                return;
-            }
-            if (st.getClassName().contains("feign")) {
-                p.setLogPoint(LogPoint.feign_client);
-                StackTraceElement realSt = ThreadUtil.getNextClassFromStack(HttpClientMoniLogInterceptor.class, "feign", "com.netflix", "rx");
-                if (realSt != null) {
-                    st = realSt;
-                }
-            }
-
-            Class<?> serviceCls = HttpClient.class;
-            String methodName = method;
-            try {
-                serviceCls = Class.forName(st.getClassName());
-                methodName = st.getMethodName();
-            } catch (Exception ignore) {}
-            p.setServiceCls(serviceCls);
-            p.setService(ReflectUtil.getSimpleClassName(p.getServiceCls()));
-            p.setAction(methodName);
-        }
     }
-
 
 
     private static class ResponseInterceptor implements HttpResponseInterceptor {
@@ -305,23 +297,46 @@ public final class HttpClientMoniLogInterceptor {
     }
 
     //启用，则返回当前配置对象供后续链路使用，否则返回null
-    private static MoniLogProperties.HttpClientProperties checkEnable(HttpHost host, String path) {
+    private static boolean checkEnable(HttpHost host, String path, LogPoint logPoint, StackTraceElement st) {
+        if (LogPoint.http_client.equals(logPoint)) {
+            return checkHttpClientEnable(host, path, st);
+        }
+        if (LogPoint.feign_client.equals(logPoint)) {
+            return checkFeignEnable(path);
+        }
+        return false;
+    }
+
+    private static boolean checkFeignEnable(String path){
+        if (!ComponentEnum.feign.isEnable()) {
+            return false;
+        }
+        MoniLogProperties mp = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
+        assert mp != null;
+        MoniLogProperties.FeignProperties feignProperties = mp.getFeign();
+        if (feignProperties == null) {
+            return false;
+        }
+        Set<String> urlBlackList = feignProperties.getUrlBlackList();
+        return !checkPathMatch(urlBlackList, path) && !checkPathMatch(urlBlackList, HttpUtil.extractPath(path));
+    }
+
+    private static boolean checkHttpClientEnable(HttpHost host, String path, StackTraceElement st) {
         if (!ComponentEnum.httpclient.isEnable()) {
-            return null;
+            return false;
         }
         MoniLogProperties mp = SpringUtils.getBeanWithoutException(MoniLogProperties.class);
         assert mp != null;
         MoniLogProperties.HttpClientProperties httpclient = mp.getHttpclient();
+        if (httpclient == null) {
+            return false;
+        }
         Set<String> urlBlackList = httpclient.getUrlBlackList();
         Set<String> hostBlackList = httpclient.getHostBlackList();
-        boolean enable = !checkPathMatch(hostBlackList, host.getHostName()) && !checkPathMatch(urlBlackList, path);
-        return enable ? httpclient : null;
+        return !checkPathMatch(hostBlackList, host.getHostName()) && !checkPathMatch(urlBlackList, path) &&
+                !checkClassMatch(httpclient.getClientBlackList(), st == null ? null : st.getClassName());
     }
 
-    private static boolean isClassEnable(MoniLogProperties.HttpClientProperties httpclient, String invokerClass) {
-        Set<String> clientBlackList = httpclient.getClientBlackList();
-        return !checkClassMatch(clientBlackList, invokerClass);
-    }
 
     private static boolean isValidEntity(HttpEntity entity) {
         if (entity == null) {
