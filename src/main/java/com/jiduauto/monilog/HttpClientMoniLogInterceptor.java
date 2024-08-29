@@ -119,7 +119,7 @@ public final class HttpClientMoniLogInterceptor {
                 p.setSuccess(true);
                 p.setMsgCode(ErrorEnum.SUCCESS.name());
                 p.setMsgInfo(ErrorEnum.SUCCESS.getMsg());
-                p.setLogPoint(LogPoint.http_client);
+                p.setLogPoint(logPoint);
 
                 p.setTags(TagBuilder.of("url", HttpUtil.extractPathWithoutPathParams(path), "method", method).toArray());
                 httpContext.setAttribute(MONILOG_PARAMS_KEY, p);
