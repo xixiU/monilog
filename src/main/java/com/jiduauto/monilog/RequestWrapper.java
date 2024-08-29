@@ -17,9 +17,11 @@ import java.util.*;
 class RequestWrapper extends HttpServletRequestWrapper {
     private static final Charset CHARSET = StandardCharsets.UTF_8;
     private byte[] body;
+    private Map<String, String[]> modifiableParameters;
 
     public RequestWrapper(HttpServletRequest request) throws IOException {
         super(request);
+        modifiableParameters = new HashMap<>(request.getParameterMap());
         String sessionStream = getBodyString(request);
         body = sessionStream.getBytes(CHARSET);
     }
@@ -86,6 +88,48 @@ class RequestWrapper extends HttpServletRequestWrapper {
             public void setReadListener(ReadListener readListener) {
             }
         };
+    }
+
+    /**
+     * 赋值给body字段
+     *
+     * @param body 赋值信息
+     */
+    public void setBody(String body) {
+        this.body = body.getBytes(CHARSET);
+    }
+
+    public void setParameter(String key, Object value) {
+        Map<String, String[]> additionalParams = new TreeMap<>(modifiableParameters);
+        additionalParams.put(key, new String[]{value.toString()});
+        this.modifiableParameters = additionalParams;
+    }
+
+    @Override
+    public String getParameter(String name) {
+        String[] strings = getParameterMap().get(name);
+        if (strings != null) {
+            return strings[0];
+        }
+        return super.getParameter(name);
+    }
+
+    @Override
+    public Map<String, String[]> getParameterMap() {
+        if (modifiableParameters == null) {
+            modifiableParameters = new TreeMap<>();
+        }
+        return Collections.unmodifiableMap(modifiableParameters);
+    }
+
+    @Override
+    public Enumeration<String> getParameterNames() {
+        return Collections.enumeration(getParameterMap().keySet());
+    }
+
+    @Override
+    public String[] getParameterValues(String name) {
+        return getParameterMap().get(name);
     }
 
 }
