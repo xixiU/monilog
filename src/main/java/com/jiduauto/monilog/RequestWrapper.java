@@ -23,7 +23,7 @@ class RequestWrapper extends HttpServletRequestWrapper {
         super(request);
         String sessionStream = getBodyString(request);
         body = sessionStream.getBytes(CHARSET);
-        modifiableParameters = new HashMap<>(request.getParameterMap());
+        modifiableParameters = new HashMap<>(super.getParameterMap());
     }
 
     public String getBodyString() {
