@@ -66,13 +66,13 @@ public final class MybatisMonilogInterceptor implements Interceptor {
             logParams.setAction(invocationInfo.methodName);
             logParams.setInput(new String[]{invocationInfo.sql});
             try {
+                nowTime = System.currentTimeMillis();
                 obj = invocation.proceed();
             } catch (Throwable t) {
                 bizException = t;
             }
             logParams.setOutput(obj);
-            costTime = System.currentTimeMillis() - nowTime + 1;
-            logParams.setCost(costTime);
+            logParams.setCost((costTime = System.currentTimeMillis() - nowTime));
             if (bizException == null) {
                 return obj;
             } else {
@@ -94,7 +94,7 @@ public final class MybatisMonilogInterceptor implements Interceptor {
                 return obj;
             }
         } finally {
-            logParams.setCost(costTime < 0 ? System.currentTimeMillis() - nowTime + 1 : costTime);
+            logParams.setCost(costTime < 0 ? System.currentTimeMillis() - nowTime : costTime);
             MoniLogUtil.log(logParams);
         }
     }
