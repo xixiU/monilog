@@ -42,6 +42,7 @@ import static com.jiduauto.monilog.StringUtil.checkPathMatch;
 public final class HttpClientMoniLogInterceptor {
     private static final String MONILOG_PARAMS_KEY = "__MoniLogParams";
     private static final String ResponseEntityProxy = "org.apache.http.impl.execchain.ResponseEntityProxy";
+    private static final String FEIGN_CLIENT_HTTP_CLS = "feign.httpclient.ApacheHttpClient";
 
     /**
      * 为HttpClient注册拦截器, 注意，此处注册的拦截器仅能处理正常返回的情况，对于异常情况(如超时)则由onFailed方法处理
@@ -71,7 +72,7 @@ public final class HttpClientMoniLogInterceptor {
 
             LogPoint logPoint = LogPoint.http_client;
             StackTraceElement st = ThreadUtil.getNextClassFromStack(HttpClientMoniLogInterceptor.class);
-            if (st != null && st.getClassName().contains("feign")) {
+            if (st != null && FEIGN_CLIENT_HTTP_CLS.equals(st.getClassName())) {
                 logPoint = LogPoint.feign_client;
                 StackTraceElement realSt = ThreadUtil.getNextClassFromStack(HttpClientMoniLogInterceptor.class, "feign", "com.netflix", "rx");
                 if (realSt != null) {
