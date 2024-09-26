@@ -125,10 +125,11 @@ class MoniLogProperties implements InitializingBean {
         bindValue();
         getAppName();
         // banner输出
-        String isInitialized = System.getProperty("monilog.isBannerPrinted", "N");
+        String bannerPrintedTag = "monilog.isBannerPrinted";
+        String isInitialized = System.getProperty(bannerPrintedTag, "N");
         if ("N".equals(isInitialized)) {
             printBanner();
-            System.setProperty("monilog.isBannerPrinted", "Y");
+            System.setProperty(bannerPrintedTag, "Y");
         }
         MoniLogUtil.addSystemRecord();
         // 启用配置更新

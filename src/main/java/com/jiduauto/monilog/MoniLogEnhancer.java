@@ -432,11 +432,10 @@ final class MoniLogEnhancer implements SpringApplicationRunListener, Ordered {
                     "    } catch (Exception e) { " +
                     "        e.printStackTrace(); " +
                     "    } " +
-                    "    return (com.xxl.job.core.handler.IJobHandler) handler; " +
+                    "    return this.handler!=null && handler!=null && this.handler.getClass().isAssignableFrom(handler.getClass()) ? handler : this.handler; " +
                     "}";
 
             ctCls.getDeclaredMethod("getHandler").setBody(getHandlerBody);
-
             Class<?> targetCls = ctCls.toClass();
             log.debug("constructor of '{}' has bean enhanced.", targetCls.getCanonicalName());
             if (outputClass) {
