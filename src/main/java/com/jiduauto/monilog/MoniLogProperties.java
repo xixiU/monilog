@@ -6,12 +6,10 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.BindResult;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.event.EventListener;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -126,18 +124,17 @@ class MoniLogProperties implements InitializingBean {
     public void afterPropertiesSet() throws Exception {
         bindValue();
         getAppName();
+        // banner输出
+        String bannerPrintedTag = "monilog.isBannerPrinted";
+        String isInitialized = System.getProperty(bannerPrintedTag, "N");
+        if ("N".equals(isInitialized)) {
+            printBanner();
+            System.setProperty(bannerPrintedTag, "Y");
+        }
         MoniLogUtil.addSystemRecord();
         // 启用配置更新
         ApolloListenerRegistry.register(this::bindValue);
     }
-
-    @EventListener(ApplicationReadyEvent.class)
-    public void onApplicationReady() {
-        // 应用程序完全启动后再打印banner
-        // banner输出
-        printBanner();
-    }
-
 
     private void bindValue() {
         ApplicationContext applicationContext = SpringUtils.getApplicationContext();

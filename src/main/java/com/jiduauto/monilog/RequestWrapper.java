@@ -21,9 +21,9 @@ class RequestWrapper extends HttpServletRequestWrapper {
 
     public RequestWrapper(HttpServletRequest request) throws IOException {
         super(request);
+        modifiableParameters = new HashMap<>(request.getParameterMap());
         String sessionStream = getBodyString(request);
         body = sessionStream.getBytes(CHARSET);
-        modifiableParameters = new HashMap<>(request.getParameterMap());
     }
 
     public String getBodyString() {
