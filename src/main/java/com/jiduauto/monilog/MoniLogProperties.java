@@ -126,6 +126,12 @@ class MoniLogProperties implements InitializingBean {
     public void afterPropertiesSet() throws Exception {
         bindValue();
         getAppName();
+        // banner输出
+        String isInitialized = System.getProperty("monilog.isBannerPrinted", "N");
+        if ("N".equals(isInitialized)) {
+            printBanner();
+            System.setProperty("monilog.isBannerPrinted", "Y");
+        }
         MoniLogUtil.addSystemRecord();
         // 启用配置更新
         ApolloListenerRegistry.register(this::bindValue);
