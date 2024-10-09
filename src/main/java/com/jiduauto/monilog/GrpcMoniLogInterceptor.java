@@ -67,7 +67,7 @@ public final class GrpcMoniLogInterceptor {
                         serviceCls = Class.forName(ste.getClassName());
                         serviceName = ReflectUtil.getSimpleClassName(serviceCls);
                         methodName = ste.getMethodName();
-                        List<Method> list = Arrays.stream(serviceCls.getMethods()).filter(e -> ste.getMethodName().equals(e.getName())).collect(Collectors.toList());
+                        List<Method> list = Arrays.stream(serviceCls.getDeclaredMethods()).filter(e -> ste.getMethodName().equals(e.getName())).collect(Collectors.toList());
                         Method[] array = list.toArray(new Method[]{});
                         LogParser logParser = ReflectUtil.getAnnotation(LogParser.class, serviceCls, array);
                         if (logParser != null) {
