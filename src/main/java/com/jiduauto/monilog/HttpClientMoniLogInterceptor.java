@@ -267,13 +267,13 @@ public final class HttpClientMoniLogInterceptor {
         }
 
         @Override
-        public void writeTo(OutputStream outstream) throws IOException {
+        public void writeTo(OutputStream outStream) throws IOException {
             // 将缓存的内容写入输出流
             try (InputStream contentStream = getContent()) {
                 byte[] tmp = new byte[4096];
                 int bytesRead;
                 while ((bytesRead = contentStream.read(tmp)) != -1) {
-                    outstream.write(tmp, 0, bytesRead);
+                    outStream.write(tmp, 0, bytesRead);
                 }
             }
         }
