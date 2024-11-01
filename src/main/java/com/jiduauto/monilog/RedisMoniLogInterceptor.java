@@ -190,12 +190,8 @@ public final class RedisMoniLogInterceptor {
             return cglibProxy;
         }
         JDKProxyHandlerForRedisson jdkProxyHandler = new JDKProxyHandlerForRedisson(redissonResult, methodInterceptor, cglibProxy);
-
-        // 其他类型的怀疑也有问题，要测试下
-        if (redissonResult instanceof RMapCache) {
-            return ProxyUtil.newProxyInstance(jdkProxyHandler, RMapCache.class);  // 指定RMapCache接口
-        }
-        return ProxyUtil.newProxyInstance(jdkProxyHandler, RMap.class);
+        Class<?> firstBoundInterface = ReflectUtil.getFirstBoundInterface(redissonResult.getClass(), RMap.class);
+        return ProxyUtil.newProxyInstance(jdkProxyHandler, firstBoundInterface);
     }
 
     @AllArgsConstructor
