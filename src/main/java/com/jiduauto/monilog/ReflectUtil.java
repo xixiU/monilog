@@ -146,7 +146,7 @@ class ReflectUtil {
      * getMethods：获取当前类或父类或父接口的 public 修饰的字段；包含接口中 default 修饰的方法
      * 获取类的所有方法，最好使用两者的合集作为结果
      */
-    private static Set<Method> getClassSelfMethods(Class<?> cls) {
+    static Set<Method> getClassSelfMethods(Class<?> cls) {
         Method[] declaredMethods = cls.getDeclaredMethods();
         Method[] methods = cls.getMethods();
         Set<Method> sets = new HashSet<>();
@@ -387,6 +387,16 @@ class ReflectUtil {
             }
         }
         return list;
+    }
+
+    static Class<?> getFirstBoundInterface(Class<?> objCls,Class<?> boundInterCls){
+        List<Class<?>> list = getAllInterfaces(objCls);
+        for (Class<?> c : list) {
+            if (boundInterCls.isAssignableFrom(c)){
+                return c;
+            }
+        }
+        return null;
     }
 
     private static boolean compatible(Object arg, Type type) {

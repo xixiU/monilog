@@ -24,6 +24,7 @@ import org.springframework.http.HttpHeaders;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
@@ -263,6 +264,18 @@ public final class HttpClientMoniLogInterceptor {
         @Override
         public InputStream getContent() throws IOException {
             return new ByteArrayInputStream(buffer);
+        }
+
+        @Override
+        public void writeTo(OutputStream outStream) throws IOException {
+            // 将缓存的内容写入输出流
+            try (InputStream contentStream = getContent()) {
+                byte[] tmp = new byte[4096];
+                int bytesRead;
+                while ((bytesRead = contentStream.read(tmp)) != -1) {
+                    outStream.write(tmp, 0, bytesRead);
+                }
+            }
         }
     }
 

@@ -190,7 +190,8 @@ public final class RedisMoniLogInterceptor {
             return cglibProxy;
         }
         JDKProxyHandlerForRedisson jdkProxyHandler = new JDKProxyHandlerForRedisson(redissonResult, methodInterceptor, cglibProxy);
-        return ProxyUtil.newProxyInstance(jdkProxyHandler, RMap.class);
+        Class<?> firstBoundInterface = ReflectUtil.getFirstBoundInterface(redissonResult.getClass(), RMap.class);
+        return ProxyUtil.newProxyInstance(jdkProxyHandler, firstBoundInterface);
     }
 
     @AllArgsConstructor

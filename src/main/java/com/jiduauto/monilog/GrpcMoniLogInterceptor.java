@@ -10,7 +10,7 @@ import net.devh.boot.grpc.server.service.GrpcService;
 import org.apache.commons.lang3.StringUtils;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -67,7 +67,7 @@ public final class GrpcMoniLogInterceptor {
                         serviceCls = Class.forName(ste.getClassName());
                         serviceName = ReflectUtil.getSimpleClassName(serviceCls);
                         methodName = ste.getMethodName();
-                        List<Method> list = Arrays.stream(serviceCls.getMethods()).filter(e -> ste.getMethodName().equals(e.getName())).collect(Collectors.toList());
+                        List<Method> list = new ArrayList<>(ReflectUtil.getClassSelfMethods(serviceCls)).stream().filter(e -> ste.getMethodName().equals(e.getName())).collect(Collectors.toList());
                         Method[] array = list.toArray(new Method[]{});
                         LogParser logParser = ReflectUtil.getAnnotation(LogParser.class, serviceCls, array);
                         if (logParser != null) {
@@ -190,7 +190,7 @@ public final class GrpcMoniLogInterceptor {
                     serviceCls = Class.forName(ste.getClassName());
                     serviceName = ReflectUtil.getSimpleClassName(serviceCls);
                     methodName = ste.getMethodName();
-                    List<Method> list = Arrays.stream(serviceCls.getMethods()).filter(e -> ste.getMethodName().equals(e.getName())).collect(Collectors.toList());
+                    List<Method> list = new ArrayList<>(ReflectUtil.getClassSelfMethods(serviceCls)).stream().filter(e -> ste.getMethodName().equals(e.getName())).collect(Collectors.toList());
                     Method[] array = list.toArray(new Method[]{});
                     LogParser logParser = ReflectUtil.getAnnotation(LogParser.class, serviceCls, array);
                     if (logParser != null) {
