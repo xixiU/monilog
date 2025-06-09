@@ -31,7 +31,7 @@
         <rocketmq.starter.version>2.2.3</rocketmq.starter.version>
         <kafka.version>2.5.1</kafka.version>
         <mybatis.version>3.5.2</mybatis.version>
-        <grpc.starter.version>2.10.3</grpc.starter.version>
+        <grpc.starter.version>2.11.0.RELEASE</grpc.starter.version>
         <openfeign.version>10.10.1</openfeign.version>
         <spring.data.redis.version>2.7.2</spring.data.redis.version>
         <httpclient.version>4.5.14</httpclient.version>
