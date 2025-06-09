@@ -1,0 +1,126 @@
+package com.example.monilog;
+
+import cn.hutool.aop.ProxyUtil;
+import org.aopalliance.intercept.MethodInterceptor;
+import org.aopalliance.intercept.MethodInvocation;
+import org.springframework.aop.framework.ProxyFactory;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.*;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * @author yp
+ * @date 2023/07/30
+ */
+class ProxyUtils {
+    @SuppressWarnings("unchecked")
+    static <T> T tryGetProxy(T obj, MethodInterceptor interceptor, Class<?> interfaceCls) {
+        T result = obj;
+        try {
+            ProxyFactory proxy = new ProxyFactory(obj);
+            proxy.setProxyTargetClass(true);
+            proxy.addAdvice(interceptor);
+            return (T) proxy.getProxy();
+        } catch (Throwable e) {
+            try {
+                result = ProxyUtil.newProxyInstance((proxy, method, args) -> interceptor.invoke(ProxyUtils.buildInvocation(obj, method, args)), interfaceCls);
+            } catch (Throwable ex) {
+                String clsName = obj.getClass().getSimpleName();
+                MoniLogUtil.innerDebug("buildProxy for {} failed, monilog of {} will not effect, msg: {}", clsName, e.getMessage(), e);
+            }
+            return result;
+        }
+    }
+
+
+    /**
+     * 创建指定对象的代理类
+     *
+     * @param obj         对象
+     * @param interceptor 代理方法
+     * @return 代理类
+     */
+    @SuppressWarnings("unchecked")
+    static <T> T getProxy(T obj, MethodInterceptor interceptor) {
+        try {
+            ProxyFactory proxy = new ProxyFactory(obj);
+            proxy.setProxyTargetClass(true);
+            proxy.addAdvice(interceptor);
+            return (T) proxy.getProxy();
+        } catch (Throwable e) {
+            String clsName = obj.getClass().getSimpleName();
+            MoniLogUtil.innerDebug("buildProxy for {} failed, monilog of {} will not effect, msg: {}", clsName, e.getMessage(), e);
+            return obj;
+        }
+    }
+
+    static MethodInvocation buildInvocation(Object instance, Method method, Object[] args) {
+        return new MethodInvocation() {
+            @Override
+            public Method getMethod() {
+                return method;
+            }
+
+            @Override
+            public Object[] getArguments() {
+                return args;
+            }
+
+            @Override
+            public Object proceed() throws Throwable {
+                //执行实际方法
+                return method.invoke(instance, args);
+            }
+
+            @Override
+            public Object getThis() {
+                return instance;
+            }
+
+            @Override
+            public AccessibleObject getStaticPart() {
+                return null;
+            }
+        };
+    }
+
+    static <T extends Annotation> T copyAnnotation(T anno) {
+        return copyAnnotation(anno, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T extends Annotation> T copyAnnotation(T origin, Map<String, Object> specifiedValues) {
+        final String memberValuesFieldName = "memberValues";
+        try {
+            Class<?> cls = origin.getClass();
+            if (Proxy.isProxyClass(cls)) {
+                cls = origin.annotationType();
+            }
+            InvocationHandler handler = Proxy.getInvocationHandler(origin);
+            Field memberValuesField = handler.getClass().getDeclaredField(memberValuesFieldName);
+            memberValuesField.setAccessible(true);
+            Map<String, Object> oldValues = (Map<String, Object>) memberValuesField.get(handler);
+
+            Constructor<?> constructor = Class.forName("sun.reflect.annotation.AnnotationInvocationHandler").getDeclaredConstructor(Class.class, Map.class);
+            constructor.setAccessible(true);
+            InvocationHandler proxyHandler = (InvocationHandler) constructor.newInstance(cls, new HashMap<>(oldValues));
+            Annotation proxy = (Annotation) Proxy.newProxyInstance(cls.getClassLoader(), new Class[]{cls}, proxyHandler);
+            if (specifiedValues != null) {
+                InvocationHandler newHandler = Proxy.getInvocationHandler(proxy);
+                Field newField = newHandler.getClass().getDeclaredField(memberValuesFieldName);
+                newField.setAccessible(true);
+                Map<String, Object> newValues = (Map<String, Object>) newField.get(newHandler);
+                for (Map.Entry<String, Object> me : specifiedValues.entrySet()) {
+                    if (me.getKey() != null && me.getValue() != null) {
+                        newValues.put(me.getKey(), me.getValue());
+                    }
+                }
+            }
+            return (T) proxy;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+}

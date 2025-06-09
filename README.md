@@ -55,4 +55,4 @@ spring.application.name=xxx
 - 1.0.0: 初始版本
 
 ## 更多文档
-详细使用文档请参考：[技术Wiki](https://wiki.jiduauto.com/pages/viewpage.action?pageId=633398362)
+详细使用文档请参考：[技术Wiki](https://ncn3hjlyonrl.feishu.cn/wiki/AVSHw5r4liZO1Fktiojc4zVEnqf?from=from_copylink)

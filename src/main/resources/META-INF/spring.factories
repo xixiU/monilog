@@ -1,5 +1,5 @@
 # AutoConfiguration
 org.springframework.boot.SpringApplicationRunListener=\
-  com.jiduauto.monilog.MoniLogEnhancer
+  com.example.monilog.MoniLogEnhancer
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  com.jiduauto.monilog.MoniLogAutoConfiguration
+  com.example.monilog.MoniLogAutoConfiguration
