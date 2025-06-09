@@ -29,10 +29,10 @@ spring.application.name=xxx
 ## 详细配置
 通过`MoniLogProperties`类可配置以下参数，在idea中也有填写提示，以下是部分示例：
 
-| 参数                    | 默认值   | 说明                     |
-|-----------------------|-------|------------------------|
-| monilog.enable        | false | 当出现问题时可以一键关闭所有         |
-| monilog.web.enable    | false | 当出现问题时可以一键关闭web监控，其他类似 |
+| 参数                    | 默认值   | 说明                       |
+|-----------------------|-------|--------------------------|
+| monilog.enable        | false | 当出现问题时可以一键关闭所有           |
+| monilog.web.enable    | false | 当出现web监控问题时可以一键关闭监控，其他类似 |
 
 
 ## 支持组件
