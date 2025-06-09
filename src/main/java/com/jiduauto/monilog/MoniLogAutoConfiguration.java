@@ -50,7 +50,8 @@ class MoniLogAutoConfiguration {
     FilterRegistrationBean<WebMoniLogInterceptor> webMoniLogInterceptor(MoniLogProperties moniLogProperties) {
         FilterRegistrationBean<WebMoniLogInterceptor> filterRegBean = new FilterRegistrationBean<>();
         filterRegBean.setFilter(new WebMoniLogInterceptor(moniLogProperties));
-        filterRegBean.setOrder(Ordered.HIGHEST_PRECEDENCE + 10000); //这个order顺序不能随便改
+        //这个order顺序不能随便改
+        filterRegBean.setOrder(Ordered.HIGHEST_PRECEDENCE + 10000);
         filterRegBean.setEnabled(true);
         filterRegBean.setName("webMoniLogInterceptor");
         filterRegBean.setAsyncSupported(true);
