@@ -31,11 +31,9 @@ spring.application.name=xxx
 
 | 参数                    | 默认值   | 说明                     |
 |-----------------------|-------|------------------------|
-| monilog.enable        | true  | 是否启用监控                 |
 | monilog.enable        | false | 当出现问题时可以一键关闭所有         |
 | monilog.web.enable    | false | 当出现问题时可以一键关闭web监控，其他类似 |
-| monilog.output-level  | INFO  | 日志输出级别                 |
-| monilog.exclude-paths | -     | 排除的URL路径               |
+
 
 ## 支持组件
 - Web请求拦截
