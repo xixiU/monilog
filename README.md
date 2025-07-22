@@ -14,7 +14,7 @@ MoniLog是一个基于Spring Boot的轻量级日志监控组件，提供统一�
 ### 添加依赖
 ```xml
 <dependency>
-    <groupId>com.jiduauto.monilog</groupId>
+    <groupId>com.example.monilog</groupId>
     <artifactId>monilog</artifactId>
     <version>1.2.2</version>
 </dependency>
